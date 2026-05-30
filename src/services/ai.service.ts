@@ -50,56 +50,187 @@ const SCAN_PROMPTS: Record<string, string> = {
 }
 Se non riesci a leggere un campo metti null. NON inventare dati. Rispondi SOLO con il JSON.`,
 
-  Scarpe: `Sei un autenticatore e identificatore di sneakers e scarpe di lusso di livello professionale, con conoscenza equivalente a un venditore StockX/GOAT verificato.
+  Scarpe: `Sei il massimo esperto mondiale di calzature: conosci ogni sneaker streetwear E ogni scarpa di lusso come un autenticatore StockX + un personal shopper dei migliori department store di Parigi e Milano. Analizza questa scarpa con attenzione assoluta a OGNI dettaglio visibile: logo, suola, tomaia, cuciture, etichette, colori, texture, hardware, pattern, silhouette.
 
-Analizza questa scarpa con attenzione maniacale a OGNI dettaglio: logo, suola, tomaia, cuciture, etichette, colori, texture, hardware.
-
-GUIDA IDENTIFICAZIONE PER BRAND:
+━━━ SNEAKER / STREETWEAR ━━━
 
 NIKE / AIR JORDAN:
-- Air Jordan 1 High/Mid/Low: identifica il colorway esatto (es: Chicago=rosso/bianco/nero, Bred=nero/rosso, Royal=blu/nero, Shadow=grigio/nero, Mocha=marrone/bianco, Lost & Found, Satin Snake, Midnight Navy, Trophy Room)
-- Air Force 1: Low/Mid/High, colore suola, materiale (pelle/canvas/suede), eventuali collaborazioni
-- Nike Dunk: Low/High/SB, colorway (Panda=bianco/nero, Paisley, Cacao Wow, Fog, Mystic Red)
-- Air Max: modello (90/95/97/270/2090/Plus TN), colorway
-- Style code Nike formato: XXXXXX-XXX (6 cifre, trattino, 3 cifre) — leggilo se visibile sull'etichetta
-- Sacai, Off-White, Travis Scott: cerca dettagli collaborazione (reverse Swoosh, zip ties, Cactus Jack)
+- Air Jordan 1 High: Chicago (rosso/bianco/nero), Bred Banned/Toe/Reimagined (nero/rosso), Royal/Reimagined (blu/nero), Shadow (grigio/nero), Mocha (marrone/bianco), Lost & Found (marrone vintage), Satin Snake, Midnight Navy, Trophy Room, Rookie of the Year, Spider-Man, Volt Gold, Electro Orange, Dark Mocha, University Blue, Hyper Royal, Canary Yellow, Tie-Dye, Seafoam, Washed Heritage
+- Air Jordan 1 Mid: colore + materiale
+- Air Jordan 1 Low: colore + eventuali collab
+- Air Jordan 3: White Cement Reimagined, Fire Red, Black Cement, True Blue, Wizards, A Ma Maniére
+- Air Jordan 4: Military Black, Bred Reimagined, White Thunder, Red Thunder, Cool Grey, University Blue, Taupe Haze, Canyon Purple, Neon, Off-White Sail
+- Air Jordan 11: Concord, Bred, Space Jam, Legend Blue, Win Like 96, Jubilee
+- Air Jordan 6: Carmine, Infrared, DMP, Washed Denim, Georgetown
+- Nike Dunk Low: Panda (bianco/nero), Cacao Wow, Paisley, Mystic Red, Fog, Rose Whisper, Setsubun, Olive, Black White, Wheat Mocha, SB Travis Scott, SB Ben & Jerry's, SB Chunky Dunky, SB Civilist, SB Medicom
+- Nike Air Force 1 Low/Mid/High: colore + eventuali collab (Travis Scott, Off-White, Tiffany, Supreme)
+- Nike Air Max 90/95/97/270/Plus TN: colorway preciso
+- Style code Nike: formato XXXXXX-XXX (es: 555088-711) — leggi da etichetta interna/scatola se visibile
 
 ADIDAS / YEEZY:
-- Yeezy Boost 350 V2: identifica il colorway (Zebra=bianco/nero, Bred=nero, Static=grigio, Clay=beige/rosa, Beluga=arancio, Onyx=nero totale, Natural, MX Rock, Sulfur)
-- Yeezy 700: V1/V2/V3, colorway (Wave Runner=multicolor, Mauve, Salt, Inertia, Analog)
-- Yeezy 500: colorway (Blush=deserto, Utility Black, Bone White, Enflame)
-- Yeezy Foam Runner: colorway (Ararat=verde, MX Cream/Bone, Stone Sage, Vermilion)
-- Adidas Samba: OG/Vegan/collab, colorway
-- Adidas Gazelle: colore
-- Codice articolo Adidas: 6 caratteri alfanumerici (es: FZ5421)
+- Yeezy Boost 350 V2: Zebra (bianco/nero), Bred (nero totale), Static (grigio), Clay (beige/rosa), Beluga (arancio), Onyx (nero), Natural (beige), MX Rock, MX Oat, Sulfur, Ash Stone, Ash Pearl, Bone, Fade, Carbon, Salt, Oreo, Lundmark, Citrin, Yecheil, Israfil, Cinder
+- Yeezy Boost 700: Wave Runner (multicolor), Mauve (rosa/grigio), Salt (bianco sporco), Inertia (grigio/beige), Analog (beige), Teal Blue, Azareth, Vanta (nero total), Bright Blue, Sun
+- Yeezy 500: Blush (sabbia/deserto), Utility Black, Bone White, Enflame, Stone, Granite, Taupe, Ash Grey
+- Yeezy Foam Runner: Ararat (verde oliva), MX Cream/Bone, Stone Sage, Vermilion (rosso), Sand, Mist, Onyx
+- Yeezy Slide: Pure (beige), Onyx (nero), Bone, Azure, MX Sand Grey, Flax, Slate Marine, Core
+- Adidas Samba: OG Classic (bianco-nero-verde), Pony Hair, Black Gum, White/Silver, Hazy Green, collab (Wales Bonner, Sporty & Rich, Notitle)
+- Adidas Gazelle: Indoor, Bold, colore
+- Adidas Campus 00s: colore
+- Codice Adidas: 6 caratteri (es: FZ5421, IE3452)
 
 NEW BALANCE:
-- 990: v1/v2/v3/v4/v5/v6, colore (Grey/Navy/Black/Green)
-- 992: colorway (Grey, Navy, Teal, Made in USA)
-- 993: grigio/viola
-- 2002R: colorway (Protection Pack, Sea Salt, Rain Cloud, Phantom)
-- 550: colorway (White/Red, White/Navy, Cream, Green)
-- 574: colore
-- 1906: colore
-- 530: colore
-- Collaborazioni: Joe Freshgoods, Aime Leon Dore, Teddy Santis, Casablanca
+- 990v3/v4/v5/v6: Grey/Navy/Black/Green (Made in USA)
+- 992: Grey/Navy/Teal/Steel/Tan (Made in USA)
+- 993: Grey/Brown/Marblehead
+- 2002R: Protection Pack (Sea Salt, Rain Cloud, Phantom), Mirage Grey, Quartz Grey, Moonrock, Orb Grey, collab (Joe Freshgoods Conversations, ALD, Casablanca, Stray Rats)
+- 550: White/Red, White/Navy, Aime Leon Dore (bianco/verde/blu/panna), Cream, White/Green
+- 574: colore base
+- 1906R/D: Protection Pack, colore
+- 530: White/Silver, Munsell White, colore
+- 327: colore + eventuali collab
+- Collaborazioni: Joe Freshgoods, Aime Leon Dore, Teddy Santis, Casablanca, Bodega, SNS
 
 SALOMON:
-- XT-6: colorway (Black/Alloy, Vanilla Ice, Plein Air)
-- ACS Pro: colorway
+- XT-6: Black/Alloy/Ebony, Vanilla Ice/Almond Milk, Plein Air/Lunar Rock, Taos Taupe, collab (Kith, Auralee, And Wander, Sporty & Rich)
+- ACS Pro/Advanced: colorway
 - Speedcross 3/5: colorway
-- Sense Ride: colore
+- Sense Ride 5: colorway
+- XA Pro 3D: colorway
 
-SCARPE DI LUSSO:
-- Louis Vuitton: pattern monogramma LV (canvas marrone/beige), Damier Ebene/Azur/Graphite, Epi leather, hardware dorato/argentato con logo LV. Modelli: LV Skate Sneaker, LV Runner Tatic, LV Trainer, LV Archlight, LV Frontrow, LV Time Out (donna), LV Boombox, Stellar
-- Gucci: pattern GG canvas (doppia G intrecciata), strisce rosse/verdi Web, Horsebit. Modelli: Ace (con ape/tigre/cuore ricamato), Rhyton (logo Gucci grande), New Ace, Tennis 1977
-- Balenciaga: Triple S (tre suole sovrapposte, logo sul tallone), Speed Trainer (calzino elasticizzato), Track (multisuola tecnica), Triple White, 3XL, Le Cagole
-- Dior: pattern Dior Oblique (CD obliquo), B23/B27 Sneaker, Walk'n'Dior
-- Prada: logo triangolare Prada, America's Cup (gommata), Monolith (lug sole)
-- Bottega Veneta: Puddle Boot, Speedster, tessuto intrecciato Intrecciato
-- Alexander McQueen: Oversole chunky bianca, piattaforma alta
-- Off-White: zip ties, freccia, virgolette, testo OFFWHITE
-- Maison Margiela: Replica (suola tennis con strisce), painted logo
+ASICS:
+- Gel-Kayano 14: Cream/White, collab (Kith, Ronnie Fieg)
+- Gel-1130/Nimbus 9/GT-2160: colorway
+- Gel-Lyte III/V: colorway, collab
+
+━━━ SCARPE DI LUSSO — ANALISI MANIACALE ━━━
+
+LOUIS VUITTON (priorità massima — è il brand più comune nel resell di lusso):
+PATTERN RICONOSCIMENTO:
+- Monogramma Canvas: pattern LV (L e V intrecciati) su fondo marrone/beige caldo — SIMMETRICO e UNIFORME
+- Damier Ebene: scacchiera marrone/beige scuro con "Louis Vuitton Paris" nelle caselle
+- Damier Azur: scacchiera bianco/beige/blu chiaro
+- Damier Graphite: scacchiera grigio scuro/nero
+- Epi Leather: pelle con texture a grana fine con striature, colori vividi (nero, rosso, blu, verde, bianco)
+- Monogramma Giant: monogramma ingrandito in vari colori (nero/grigio, bianco/grigio, arancio/nero, giallo, rosa)
+- Vernis: pelle verniciata lucidissima, monogramma in rilievo
+MODELLI LV SNEAKER (identifica quale):
+- LV Skate Sneaker: silhouette bassa tipo skate, suola vulcanizzata, patch LV sul lato, canvas monogramma o pelle — colorway: Monogram Brown, Damier Graphite, nero/bianco, bianco/bianco
+- LV Runner Tatic: runner tecnico, tomaia mesh/tessuto con overlay LV, suola chunky multicolore/bicolore — riconosci il logo LV sulla linguetta e tallone
+- LV Trainer #54: sneaker robusta, overlay in pelle, logo LV grande in rilievo sul lato, disponibile in molti colori
+- LV Archlight 2.0: suola chunky curva futuristica, tomaia mesh, LV sul tallone e laterale
+- LV Time Out (principalmente donna): stile tennis low-top, bordo suola colorato, LV sul fianco
+- LV Frontrow: runner femminile, monogramma in evidenza
+- LV Stellar: stile sportivo, logo sul lato
+- LV Boombox: silhouette chunky alta, logo laterale
+- LV Escape Sneaker: tessuto leggero, suola gomma, colorato
+- LV Rivoli: pelle classica con logo LV inciso, stile oxford/derby
+HARDWARE LV: logo LV inciso in rilievo su fibbie/zip/occhielli — mai stampato piatto
+
+GUCCI:
+PATTERN:
+- GG Canvas (beige/marrone, grigio/nero): doppia G intrecciata perfettamente simmetrica e specchiata
+- Strisce Web: rosso-verde-rosso o blu-rosso-blu, parallele e uniformi
+- GG Supreme: simile a GG Canvas ma su fondo diverso
+- Interlocking G: due G intrecciate in metallo dorato su fibbia/dettagli
+MODELLI GUCCI SNEAKER:
+- Gucci Ace: low-top pelle bianca, spesso con patch ricamato (ape, tigre, cuore, serpente, farfalla, fiore), striscia Web sul fianco, logo GUCCI in verde/rosso
+- Gucci Rhyton: chunky con logo GUCCI grande stampato, disponibile in canvas GG o pelle, suola oversize
+- Gucci Tennis 1977: canvas GG, striscia Web, low-top stile vintage
+- Gucci Run: runner tecnico, GG canvas, suola multicolore
+- Gucci Ultrapace: pelle/suede, suola chunky, logo laterale
+- Gucci Screener: stile vintage, GG canvas/pelle, strisce rosse/verdi
+- Gucci New Ace: evoluzione Ace con platform
+- Gucci Flashtrek: trekking-inspired, logo laterale
+- Gucci Basket: pelle, logo sul fianco, alta/bassa
+
+BALENCIAGA:
+- Triple S: TRE strati suola sovrapposti (colori diversi), logo BALENCIAGA sul tallone in font preciso Balenciaga, upper multi-materiale. Colorway: Triple White, Grey/Pink, Black/Red, Blue Yellow, Speed Hunters, Clear Sole, ecc.
+- Speed Trainer/Runner: calzino elasticizzato senza suola tradizionale, logo laterale
+- Track/Track.2: suola tecnica con elementi multipli, mesh upper, logo laterale
+- 3XL: chunky estremo, logo piccolo, silhouette futuristica
+- Defender: suola altissima con borchie, logo testa
+- Phantom: runner tecnico, logo sul tallone
+- Cargo Sneak: stile cargo militare
+- Drive: stile sportivo pulito
+
+DIOR:
+- Pattern Dior Oblique: CD obliquo ripetuto (C e D sovrapposte) — beige/marrone, nero/grigio, blu
+- Logo "Christian Dior" o "DIOR" in font serif elegante
+MODELLI:
+- B23 High/Low: canvas Dior Oblique, suola con "DIOR" scritto, alta/bassa
+- B27: bicolore, pelle+canvas Oblique, "DIOR" laterale
+- B22: runner tecnico, mesh + overlay, logo laterale
+- Explorer: suola chunky, canvas Oblique
+- Walk'n'Dior: stile platform, canvas Oblique o pelle
+- Dior-ID: runner futuristico
+
+PRADA:
+- Logo triangolare PRADA in metallo/smalto (proporzioni precise, font serif classico)
+- Re-Nylon: nylon riciclato tecnico con logo
+MODELLI:
+- America's Cup: gomma/pelle, logo laterale, silhouette chunky classica anni 90
+- Monolith: suola lug enorme, pelle spazzolata, logo frontale o laterale
+- Wheel: suola rotonda oversize, logo
+- Downtown: sneaker pulita, logo sul fianco
+- Macro Re-Nylon: suola big, tessuto Re-Nylon
+- Cloudbust Thunder: knit upper, suola chunky
+
+BOTTEGA VENETA:
+- Pattern Intrecciato: intreccio di strisce di pelle (NON una stampa — strisce REALI intrecciate a mano)
+- MODELLI: Puddle Boot (stivale gomma lucida), Speedster (runner con Intrecciato), Tire (sandalo piattaforma), Stretch mule
+
+VALENTINO:
+- VLTN: lettera V stilizzata con LTN, logo VLogo
+- Garavani Open: sneaker con vstrap/borchie
+- Rockstud: borchie piramidali metalliche su tomaia o suola
+- Roman Stud: borchie quadrate più grandi
+
+CELINE:
+- Logo CELINE in font sans-serif (senza accent sulla E dal 2018 con Slimane)
+- MODELLI: Triomphe (canvas monogramma Triomphe), CT-07, Block/Runner, Asics collab
+
+LOEWE:
+- Logo L stilizzato, Anagram canvas (L intrecciate in pattern)
+- MODELLI: Flow Runner, Flex Sneaker, Ballet Runner
+
+COMMON PROJECTS (Achilles):
+- Numero di serie dorato sul tallone in formato: [codice colore]-[taglia]-[anno] (es: 0506 44 09)
+- Pelle liscia bianca/nera/colorata, suola Margom bianca, ZERO logo visibile — SOLO il numero dorato
+- Modelli: Achilles Low/High/Retro, Bball High/Low, Track, Resort Runner
+
+GOLDEN GOOSE (GGDB):
+- Stella argentata/glitterata sul fianco (in varie forme), aspetto volutamente invecchiato/used
+- Pelle/suede consumata intenzionalmente, lacci colorati, suola spessa
+- Modelli: Superstar (stella classica), Slide, Ball Star, Mid Star, Hi Star, Running Sole
+
+MAISON MARGIELA:
+- Replica: suola da scarpa da tennis (Court), strisce laterali, logo MM6 o numero romano (esempio: MM6) sul insole, paint brushstroke sul logo
+- Tabi: punta biforcata (pollice separato), caratteristico unico al mondo
+- Future: sneaker futuristica, logo MM in rilievo
+
+RICK OWENS:
+- Silhouette estrema, spesso platform alta
+- Ramones: low-top pelle, suola carro armato, logo RA sul tallone
+- Geobasket: alta, silhouette geometrica
+- DRKSHDW: linea più streetwear, logo DRKSHDW
+- Turbowpn/Woven: costruzione particolare
+
+LANVIN:
+- Curb: suola chunky ondulata caratteristica, logo LANVIN sul tallone, silhouette chunky ma elegante. Colorway: bianco/arancio, nero, bianco/rosso, multicolor
+
+ALEXANDER MCQUEEN:
+- Oversole: suola chunky bianca altissima, platform esagerata, logo AM McQ sul tallone, pelle liscia
+- Tread Slick: suola con tread pattern, piattaforma
+
+OFF-WHITE (Virgil Abloh):
+- Zip ties pendenti con testo (es: "FOR WALKING", "SHOELACES")
+- Virgolette " " su ogni pezzo
+- Freccia diagonale, testo OFFWHITE, Industrial strap
+- Collab Nike: costruzione speciale, zip tie caratteristica
+
+LORO PIANA:
+- Materiali premium (cashmere, lana, pelle pregiata), branding minimalista, logo LP
+- Modelli: LP BB (bicolor bassa), Walk & Wander, Summer Walk
 
 Rispondi SOLO in JSON valido (senza markdown):
 {
@@ -109,11 +240,12 @@ Rispondi SOLO in JSON valido (senza markdown):
   "styleCode": "codice articolo visibile su etichetta/suola, altrimenti null",
   "size": "taglia visibile su etichetta interna o scatola, altrimenti null",
   "condition": "DS|VNDS|Used|Worn|null",
-  "collaboration": "nome collaborazione se presente (es: Travis Scott, Sacai, ALD), altrimenti null",
-  "luxuryMarkers": "dettagli identificativi visibili del brand di lusso, altrimenti null",
-  "notes": "note aggiuntive utili per la valutazione"
+  "collaboration": "nome collaborazione se presente, altrimenti null",
+  "luxuryMarkers": "descrivi ESATTAMENTE i dettagli di lusso visibili: pattern, hardware, testo, suola, costruzione — null se non lusso",
+  "priceRange": "fascia prezzo stimata (es: 200-400€, 600-1200€, 12000-16000€) basata sul brand/modello",
+  "notes": "qualsiasi altro dettaglio utile per identificazione e valutazione"
 }
-NON inventare brand o modelli. Se non riconosci metti null. Rispondi SOLO JSON.`,
+NON inventare brand o modelli. Se non riconosci con certezza metti null. Per lusso: descrivi SEMPRE i marker visibili nel campo luxuryMarkers. Rispondi SOLO JSON.`,
 
   Vestiti: `Sei un esperto autenticatore e identificatore di streetwear e abbigliamento di lusso di livello professionale.
 
@@ -450,17 +582,44 @@ export async function estimateMarketPrice(params: {
 - Grand Seiko Snowflake (SBGA211): 4.000-6.000€
 - TAG Heuer Monaco (CAW211P): 3.000-4.500€`;
   } else if (isLuxuryFashion) {
-    contextPrices = `PREZZI MERCATO USATO MODA LUSSO/STREETWEAR (€, Vestiaire Collective/StockX 2024-2025):
-- LV Skate Sneaker DS: 650-1100€ | Usate: 400-700€
-- LV Trainer DS: 750-1400€ | Usate: 500-900€
-- LV Archlight DS: 850-1600€
-- Gucci Ace DS: 350-700€ | Gucci Rhyton: 400-800€
-- Balenciaga Triple S DS: 300-600€ | Speed Trainer: 200-450€
-- Dior B23 DS: 600-900€
-- Supreme Box Logo Tee DS: 200-600€ (colore/size dipendente)
-- Supreme Box Logo Hoodie DS: 500-1500€
-- Moncler Maya Jacket: 800-1400€ usata | 1200-2000€ DS
-- Stone Island Shadow Project Jacket: 600-1200€`;
+    contextPrices = `PREZZI MERCATO SCARPE/ABBIGLIAMENTO LUSSO (€, Vestiaire Collective/StockX/Chrono24 2024-2025):
+LOUIS VUITTON SNEAKER:
+- LV Skate Sneaker DS: 650-1100€ | Usate buone: 400-700€
+- LV Runner Tatic DS: 700-1200€ | Usate: 450-800€
+- LV Trainer #54 DS: 750-1400€ | Usate: 500-950€
+- LV Archlight 2.0 DS: 900-1600€
+- LV Time Out DS: 600-1000€
+- LV Frontrow DS: 500-900€
+GUCCI SNEAKER:
+- Gucci Ace (semplice) DS: 350-600€ | Gucci Ace (patch raro) DS: 500-900€
+- Gucci Rhyton DS: 400-800€ | Usate: 250-500€
+- Gucci Tennis 1977 DS: 500-800€
+- Gucci Run DS: 600-900€
+BALENCIAGA:
+- Balenciaga Triple S DS: 300-550€ | Usate: 180-350€
+- Balenciaga Speed Trainer DS: 250-450€
+- Balenciaga Track DS: 350-600€
+- Balenciaga 3XL DS: 400-700€
+DIOR:
+- Dior B23 High DS: 700-1000€ | Low DS: 600-900€
+- Dior B27 DS: 700-1100€
+COMMON PROJECTS:
+- Achilles Low (white) DS: 350-500€ | Usate: 200-350€
+- Achilles colori rari DS: 450-700€
+GOLDEN GOOSE:
+- GGDB Superstar DS: 400-600€ | Usate: 250-400€
+ALTRI LUSSO:
+- Alexander McQueen Oversole DS: 300-500€
+- Maison Margiela Replica DS: 350-600€
+- Valentino Garavani Rockstud DS: 500-800€
+- Lanvin Curb DS: 600-900€
+- Loro Piana LP BB DS: 500-800€
+- Rick Owens Ramones DS: 500-900€
+ABBIGLIAMENTO:
+- Supreme Box Logo Tee DS: 200-600€ | Supreme Box Logo Hoodie DS: 500-1500€
+- Stone Island Jacket: 400-900€ usata
+- Moncler Maya Jacket DS: 1200-2000€ | Usata: 800-1400€
+- Canada Goose Expedition DS: 700-1200€`;
   } else if (isSneaker) {
     contextPrices = `PREZZI MERCATO SNEAKER (€, StockX/GOAT/Klekt 2024-2025):
 JORDAN:
@@ -557,45 +716,90 @@ Se non conosci abbastanza il prodotto, metti confidence "LOW" e prezzi a 0.`;
 // LEGIT CHECK PROMPTS
 // ==========================================
 const LEGIT_CHECK_PROMPTS: Record<string, string> = {
-  Scarpe: `Sei un autenticatore di scarpe certificato (livello CheckCheck/Legit App/StockX Verification). Analizza OGNI dettaglio visibile per determinare autenticità.
+  Scarpe: `Sei il massimo autenticatore di calzature al mondo (certificato CheckCheck, Legit App, StockX Verification, con esperienza in case d'asta di lusso). Analizza OGNI dettaglio visibile per determinare autenticità con precisione assoluta.
 
-SNEAKER (Nike/Jordan/Adidas/New Balance):
-Nike/Jordan:
-- Swoosh: curvatura naturale, spessore uniforme, non troppo grande/piccolo
-- Air Jordan Wings logo: proporzioni ali precise, "NIKE AIR" sul tallone corretto
-- Jumpman: silhouette precisa, proporzionata, non deformata
-- Suola: pattern incisioni profonde e uniformi, materiale consistente
-- Tag interno: font preciso, codice articolo formato corretto (XXXXXX-XXX), paese origine corretto
-- Adidas: tre strisce parallele equidistanti, trifoglio/trefoil proporzionato
-- Yeezy 350: Primeknit pattern uniforme e denso, scritta SPLY-350 (se presente) font corretto, suola Boost capsule uniformi e dense
-- New Balance: "N" proporzionata e precisa, Made in USA tag se applicabile
+━━━ SNEAKER STREETWEAR ━━━
 
-SCARPE DI LUSSO:
-Louis Vuitton:
-- Monogramma LV: pattern perfettamente simmetrico, LV mai tagliato storto alle cuciture, dimensioni uniformi
-- Hardware: logo LV inciso IN RILIEVO (mai stampato piatto), colore oro/argento uniforme
-- Stamp interno: "LOUIS VUITTON PARIS MADE IN FRANCE/ITALY" — font preciso, spaziatura corretta
-- Suola: LV molded/stampato sulla suola, qualità materiale
+NIKE / AIR JORDAN:
+- Swoosh: curvatura naturale e fluida, spessore uniforme dal tallone alla punta — fake hanno Swoosh troppo grande, storto o con angolo sbagliato
+- Air Jordan 1 Wings logo: proporzioni ali esatte, "NIKE AIR" sul tallone in font corretto
+- Jumpman: silhouette Jordan precisa — fake hanno testa troppo grande o gambe storte
+- Tag interno: font Nike preciso, codice articolo formato XXXXXX-XXX (6+3), "Made in Vietnam/Indonesia/China" — caratteri uniformi
+- Suola: pattern incisioni PROFONDE e uniformi, non superficiali — fake hanno pattern appiattito
+- Cuciture: regolari, distanza uniforme, filo non sfrangiato
+- Air bubble (se visibile): trasparente, uniforme
 
-Gucci:
-- Doppia G: specchiata e precisa, mai storta, dimensioni uniformi
-- Canvas GG: pattern uniforme senza variazioni di colore
-- Strisce Web: rosse/verdi precise e parallele
-- Cuciture a contrasto: regolari e uniformi
+ADIDAS / YEEZY:
+- Yeezy 350 V2 Primeknit: trama densa e uniforme, pattern geometrico preciso — fake hanno trama rada o irregolare
+- SPLY-350 (modelli con scritta): font e spaziatura precisi, color contrasto corretto
+- Boost: capsule (bolle) uniformi, dense, elastiche visivamente — fake hanno capsule irregolari o piatte
+- Yeezy 700: mesh strutturato con layer precisi — fake hanno mesh irregolare
+- Tre strisce Adidas: equidistanti e parallele PERFETTAMENTE
 
-Balenciaga Triple S:
-- Logo "BALENCIAGA" sul tallone: font corretto, non pixelato
-- Tre strati suola: distinti e ben definiti, qualità materiale
-- Upper: materiali distinti e di qualità per ogni sezione
+NEW BALANCE:
+- "N" embroidered: ricamo uniforme, proporzioni corrette per il modello
+- Made in USA tag: specifico formato, font corretto
+- Suola: durometer corretto, flessibilità visiva
+
+━━━ SCARPE DI LUSSO — VERIFICA PROFESSIONALE ━━━
+
+LOUIS VUITTON (verifica più importante):
+- Monogramma Canvas: pattern LV SIMMETRICO — il motivo non deve mai essere tagliato storto alle cuciture, le LV devono essere IDENTICHE tra loro come dimensioni
+- Hardware (fibbie, zip, occhielli): logo LV inciso IN RILIEVO con profondità — sui fake il logo è STAMPATO piatto o superficiale. Hardware deve avere colore uniforme senza macchie o sbavature
+- Stamp interno: "LOUIS VUITTON PARIS MADE IN FRANCE" o "MADE IN ITALY" — font helvetica condensato PRECISO, spaziatura uniforme. Sui fake le lettere sono troppo sottili/spesse o storte
+- Suola: LV molded in gomma — lettere in rilievo uniformi, non sbavate
+- Cuciture: filo colore preciso (beige/marrone per canvas), distanza uniformissima — i fake hanno cuciture irregolari
+- Qualità materiale canvas: texture uniforme, colore profondo — i fake usano canvas più sottile/lucido
+
+GUCCI:
+- Doppia G: SPECULARE e perfettamente simmetrica — una G è il riflesso dell'altra. Su fake una G è più grande o le proporzioni sono diverse
+- Canvas GG: pattern uniforme senza variazioni di tono o dimensione — fake hanno GG di dimensioni diverse
+- Strisce Web (rosse/verdi): PARALLELE e larghezza uniforme — fake hanno strisce storte o di larghezza variabile
+- Cuciture: filo a contrasto regolare, mai sfrangiato
+- Insole: font GUCCI preciso, logo Horsebit se presente
+
+BALENCIAGA:
+- Triple S — Logo "BALENCIAGA" sul tallone: font Balenciaga SANS-SERIF specifico, lettere equidistanti e perfettamente allineate — fake hanno font sbagliato o pixel visibili
+- Tre strati suola: DISTINTI con linee di separazione nette, materiali diversi visibili — fake fondono i layer
+- Upper: ogni sezione ha materiale e texture distinti — mesh, suede, pelle ben separati
+- 3XL — logo: font minuscolo preciso sul tallone
+- Speed Trainer: elastan uniforme, nessuna grinza irregolare
+
+DIOR:
+- Canvas Oblique: CD obliquo UNIFORME — dimensioni identiche in tutto il canvas, mai sbavato
+- "DIOR" sul tallone o laterale: font serif elegante preciso
+- B23: costruzione pulita, cuciture impeccabili
+
+COMMON PROJECTS:
+- Numero dorato sul tallone: CODICE IN ORO REALE — formato preciso [colore]-[UK size]-[anno] (4 cifre + 2 + 2), stampigliatura profonda uniforme — fake hanno stampa sbiadita o formato sbagliato
+- Pelle: qualità pieno fiore liscia, nessuna irregolarità
+- Suola Margom: bianca uniforme, no altri loghi
+
+GOLDEN GOOSE:
+- Stella: applicata (non stampata), cucita o incollata con qualità — sui fake la stella è piatta o stampata
+- Invecchiamento: naturale e artistico — non eccessivo o regolare (paradossalmente i fake TROPPO consumati sono fake)
+- Suola: vulcanizzata di qualità
+
+MAISON MARGIELA REPLICA:
+- Strisce court sulla suola: precisione e uniformità colore
+- Insole: numero di linea MM (es: MM6) in font Maison Margiela preciso
+
+VALENTINO ROCKSTUD:
+- Borchie piramidali: metallo SOLIDO, base quadrata uniforme, non traballanti — su fake le borchie sono cave e leggere
+- Pelle: qualità vitello morbida e uniforme
+
+LANVIN CURB:
+- Suola ondulata: flessibile e di qualità, ondulazioni regolari
+- Logo LANVIN: font preciso sul tallone
 
 Rispondi SOLO in JSON valido (senza markdown):
 {
-  "score": numero 0-100 (100=autentico certo, 50=non verificabile, 0=fake evidente),
+  "score": numero 0-100 (100=autentico certo, 50=non verificabile da foto, 0=fake evidente),
   "verdict": "LIKELY_AUTHENTIC" | "SUSPICIOUS" | "NEEDS_VERIFICATION",
-  "redFlags": ["lista di problemi specifici rilevati con dettagli precisi"],
-  "greenFlags": ["lista di segnali positivi di autenticità con dettagli precisi"]
+  "redFlags": ["problemi SPECIFICI e DETTAGLIATI rilevati — es: 'Logo LV sul hardware piatto invece che in rilievo', 'Font BALENCIAGA con spaziatura irregolare'"],
+  "greenFlags": ["segnali SPECIFICI e DETTAGLIATI di autenticità — es: 'Pattern monogramma LV simmetrico e uniforme', 'Numero dorato Common Projects in formato corretto'"]
 }
-Foto scarsa qualità o dettagli non visibili → score 50, verdict "NEEDS_VERIFICATION".`,
+Foto di bassa qualità o dettagli non visibili → score 50, verdict "NEEDS_VERIFICATION". Sii SPECIFICO nei flag, non generico.`,
 
   Vestiti: `Sei un autenticatore esperto di streetwear e lusso (livello professionista). Analizza questa foto per autenticità.
 
