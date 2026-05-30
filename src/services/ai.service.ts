@@ -6,7 +6,7 @@ import { logger } from '../utils/logger';
 const prisma = new PrismaClient();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
+const VISION_MODEL = 'meta-llama/llama-4-maverick-17b-128e-instruct';
 const TEXT_MODEL = 'llama-3.3-70b-versatile';
 
 export interface ScanResult {
@@ -245,6 +245,38 @@ Rispondi SOLO in JSON valido (senza markdown):
   "priceRange": "fascia prezzo stimata (es: 200-400€, 600-1200€, 12000-16000€) basata sul brand/modello",
   "notes": "qualsiasi altro dettaglio utile per identificazione e valutazione"
 }
+━━━ DATABASE COLORWAY UFFICIALI (usa per identificazione precisa) ━━━
+
+AIR JORDAN 1 HIGH OG (ref 555088-XXX):
+Chicago (100/601), Bred Banned (101), Bred Toe (149), Royal Blue (002), Shadow (013), Mocha (200), Lost & Found (FD4580-461 = marrone/ossidiana/arancio), Dark Mocha (BQ6472-200), Satin Snake (CD0461-006 nero satin), Midnight Navy (554724-174), University Blue (555088-134), Hyper Royal (555088-400), Trophy Room (CW7294-100 argento), Spider-Man (DD1453-016), Palomino (FD1028-801 marrone/arancio), Skyline (DX0054-005 grigio/bianco), Black Toe (136766-062), Pine Green (CD0461-301), Bred Patent (555088-063), Shadow 2.0 (CT0979-003), Yellow Ochre (FN6038-701), Satin Red (DD9335-006), Rebellionaire (BQ4422-500 viola/arancio), Bio Hack (555088-800 arancio/verde), Volt Gold (CW2414-700), Hand Crafted (DH3097-001 pelle artigianale), Seafoam (CZ0790-311), Turbo Green (555088-311), Bordeaux (555088-611), Dark Beetroot (554724-215)
+
+AIR JORDAN 1 MID (ref 554724-XXX): White/Shadow (554724-073), Banned (554724-074), Chicago (554724-173), True Blue (554724-412), Gym Red (554724-121)
+
+AIR JORDAN 3 (ref CT8532/136064-XXX): White Cement (136064-101/CT8532-130 reimaginato 2023), Fire Red (136064-160/DN3707-160), True Blue (136064-104/CT8532-104 reimaginato), Black Cement (854262-001), A Ma Maniéré (DH7139-105 tessuto jacquard)
+
+AIR JORDAN 4 (ref FQ8138/XXX): Military Black (FQ8138-001 2023), Bred Reimagined (FQ8138-006 2023 velluto/suede), Red Cement (DH6927-161), Canyon Purple (AQ9129-500 donna), Midnight Navy (AQ9129-416), University Blue (CT8527-400), Taupe Haze (DB0549-200), Neon (CW7567-800 volt/black), White Cement (840606-192/FZ4810-102), Infrared (308497-062), DMP (GP4 Raptors)
+
+NIKE DUNK LOW (ref DD1391-XXX / DX2953-XXX):
+Panda (DD1391-100 bianco/nero), Cacao Wow (DX2953-001), Paisley (DH4401-600 viola florale), Mystic Red (DV0831-601), Fog/Light Smoke Grey (DD1391-103), Rose Whisper (DD1503-118 rosa pallido), Setsubun (DD1391-502 arancio/verde), Olive (DD1391-200), Dark Driftwood (DD1391-103), Neutral Olive (DD1391-200), Chicago (DD1391-602 rosso/bianco/nero), Bee (DD1391-702 giallo/nero), Thunder (DH0601-001 bianco/nero/oro), Halloween (DD1391-004 nero/arancio), Samba (DD1391-004), Georgetown (DD1391-003 grigio/blu), Tropical Twist (DD1503-711 verde/fiorato), Black White (DD1391-100 all black/all white)
+
+NIKE SB DUNK (prefix DH/FB/BQ/BV):
+Travis Scott (CT5053-001 reverse Swoosh brown), Ben & Jerry's Chunky Dunky (CU3244-100 mucca), Tiffany & Co (DZ4397-335 verde Tiffany), Parra (AT2022-002 multicolor), Concepts Purple Lobster, Civilist (CN4504-001 verde), Medicom (BV0833-114), ACG Terra (CU4565-300)
+
+YEEZY BOOST 350 V2 (codici: FU9006/EH5361/ecc.):
+Zebra (CP9654 bianco/nero), Bred (CP9652 nero), Static Non-Reflective (EF2905), Static Reflective (EF2367), Clay (EG7490 terracotta/rosa), Beluga 2.0 (BB6041 grigio/arancio), Sesame (F99710 nocciola), Butter (F36980 giallo chiaro), Blue Tint (B37571 azzurro), Peanut Butter (EE6203 marrone caldo), Oreo (CP9652 bianco/nero simile Zebra ma diverso), Carbon (FZ5000 grigio scuro), Ash Pearl (GY7658 grigio madre perla), Ash Stone (GW0089 pietra), MX Rock (GW3774 mimetico pietra), Natural (FZ5246 beige naturale), Sand Taupe (FX9028 sabbia), Onyx (HQ4540 nero totale), Sulfur (FY5346 giallo senape), Mx Oat (HQ4426 avena), Bone (HQ6316 bianco osseo), Carbon Beluga (HQ7045 grigio/arancio), Granite (HQ4540 grigio granito), Light (3BF 3M reflective all white), Lundmark (FU9161 chiaro rosa), Citrin (FW3042 giallo ocra), Yecheil (FW5190 multicolor pastello), Israfil (FZ5421 verde/grigio), Cinder (FY2903 grigio scuro), Jade Ash (HQ2790 verde oliva), Bone White versioni varie
+
+YEEZY 700: Wave Runner (B75571 multicolor iconica), Mauve (EE9614 rosa/grigio), Salt (EG7487 bianco sporco), Inertia (EG7597 grigio/beige), Analog (EG7596 beige total), Teal Blue (FW2499), Bright Blue (FV9922 blu elettrico), Sun (FW2499 giallo limone), Vanta (AC1731 total black premium), Solid Grey (FW4440), V2 Cream (HQ6979)
+
+NEW BALANCE colorways specifici:
+2002R Protection Pack: Sea Salt (ML2002RA beige/crema), Rain Cloud (ML2002RB grigio cielo), Phantom (ML2002RC grigio scuro/foglia), Quartz Grey (M2002RDK grigio quarzo)
+2002R collab: Joe Freshgoods "Conversations Among Us" (U2002RJF arancio/crema), ALD (Aime Leon Dore U2002RAL grigio/navy)
+550: White Red (BB550WT1 bianco/rosso classico), White Navy (BB550WT2), ALD Blacktop (BB550LA1 grigio/nero), ALD Dusty Rose (BB550LA2 rosa), ALD Sea Salt (BB550LB3 verde/crema), White Green (BB550WT3)
+990v5: Grey (ML990WT5), Navy (ML990WT2), Steel Blue (ML990LI5), Brown (ML990BR5), Made in USA
+
+ASICS colorways:
+Gel-Kayano 14: Cream (1201A019-100), White/Black (1201A019-101), collab Kith (1201A019-200 rosso), Ronnie Fieg
+
+━━━ ISTRUZIONI FINALI ━━━
 NON inventare brand o modelli. Se non riconosci con certezza metti null. Per lusso: descrivi SEMPRE i marker visibili nel campo luxuryMarkers. Rispondi SOLO JSON.`,
 
   Vestiti: `Sei il massimo esperto mondiale di abbigliamento: conosci ogni brand dal fast fashion al lusso estremo, ogni collaborazione mai esistita, ogni drop limitato. Analizza questo capo con attenzione MANIACALE a logo, grafica, costruzione, etichette, hardware, materiali, colori, font, silhouette, dettagli nascosti.
@@ -538,6 +570,29 @@ Rispondi SOLO in JSON valido (senza markdown):
   "limited": "edizione limitata o collab se identificabile (es: MoonSwatch Mission to Mars, Omega x Swatch, James Bond) o null",
   "notes": "QUALSIASI dettaglio visibile aggiuntivo — indici (bastoncini/arabi/romani), colore lancette, logo corona, texture quadrante, etc."
 }
+━━━ IDENTIFICAZIONE CALIBRO/MOVIMENTO DAL QUADRANTE ━━━
+Se sul quadrante è scritto il calibro o il tipo di movimento, riportalo nel campo "movement":
+- "Automatic" o "Automatique" o "Swiss Made" (senza quarzo) = automatico
+- "Quartz" o "Quartz Crystal" = quarzo
+- "Co-Axial" o "Co-Axial Master Chronometer" = Omega automatico (cal. 8500/8800/3861 ecc.)
+- "Superlative Chronometer" = Rolex automatico certificato COSC+
+- "Chronometer" o "Officially Certified" = certificato COSC
+- "Spring Drive" = Grand Seiko meccanismo ibrido
+- "Kinetic" = Seiko ibrido quarzo/automatico
+- "Eco-Drive" = Citizen solare
+- "Solar" = orologio solare
+- "Radio Controlled" o "Multiband" = Casio/Citizen con segnale radio orario
+- Calibro visibile (es: "Cal. 3135", "Calibre 321", "Calibre de Manufacture") = meccanismo specifico
+
+CALIBRI ICONICI DA RICONOSCERE:
+- Rolex Cal. 3135 (Sub/DJ), 3186 (GMT), 4130 (Daytona), 3255 (nuovi), 3235 (nuovi DJ/Explorer) — visibili sul fondello trasparente se presente
+- Omega Cal. 3861 (Speedmaster moonwatch Hesalite/Sapphire), 8800 (Seamaster 300M), 8900 (Aqua Terra)
+- AP Cal. 3120 (Royal Oak automatico), 2385 (Royal Oak Offshore chrono)
+- Patek Cal. 240 (ultra-thin PP), 324 SC (Nautilus)
+- ETA 2824/2892 (movimento svizzero comune in orologi mid-range)
+- Miyota 9015 (movimento giapponese comune in micro-brand/mid-range)
+- Sellita SW200/SW300 (alternativo ETA, comune)
+
 NON inventare reference number non visibili. TRASCRIVI FEDELMENTE il testo sul quadrante. Rispondi SOLO JSON.`,
 };
 
@@ -568,23 +623,51 @@ export async function scanProduct(imageBase64: string, category: string): Promis
   const prompt = SCAN_PROMPTS[category];
   if (!prompt) throw new Error(`Categoria non supportata dall'IA: ${category}`);
 
+  // Chain-of-thought: prima analisi visiva, poi JSON strutturato
+  const chainPrompt = `STEP 1 — ANALISI VISIVA (3-5 righe max):
+Descrivi brevemente e con precisione cosa vedi nell'immagine: brand visibile, elementi distintivi, colori dominanti, dettagli logo/hardware/suola/quadrante. Sii specifico.
+
+STEP 2 — IDENTIFICAZIONE JSON:
+${prompt}`;
+
   let completion;
   try {
     completion = await groq.chat.completions.create({
       messages: [{
         role: 'user',
         content: [
-          { type: 'text', text: prompt },
+          { type: 'text', text: chainPrompt },
           { type: 'image_url', image_url: { url: imageBase64 } },
         ],
       }],
       model: VISION_MODEL,
       temperature: 0.05,
-      max_tokens: category === 'Orologi' ? 1200 : category === 'Vestiti' ? 1000 : 900,
+      max_tokens: category === 'Orologi' ? 1400 : category === 'Vestiti' ? 1200 : category === 'Scarpe' ? 1300 : 900,
     });
-  } catch (err) {
-    logger.error('Errore Groq vision API', { err, category });
-    throw new Error('Servizio IA temporaneamente non disponibile.');
+  } catch (err: any) {
+    // Fallback a Scout se Maverick non disponibile
+    if (err?.status === 400 || err?.status === 404) {
+      try {
+        completion = await groq.chat.completions.create({
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: imageBase64 } },
+            ],
+          }],
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+          temperature: 0.05,
+          max_tokens: 900,
+        });
+      } catch (fallbackErr) {
+        logger.error('Errore anche su modello fallback', { fallbackErr, category });
+        throw new Error('Servizio IA temporaneamente non disponibile.');
+      }
+    } else {
+      logger.error('Errore Groq vision API', { err, category });
+      throw new Error('Servizio IA temporaneamente non disponibile.');
+    }
   }
 
   const rawText = completion.choices[0]?.message?.content?.trim() || '';
