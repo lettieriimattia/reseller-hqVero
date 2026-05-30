@@ -1,0 +1,219 @@
+// Prisma Schema - Reseller HQ v2.0
+// Aggiornato con: 2FA, RefreshToken, AuditLog, Notification, MarketPrice
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER")
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// UTENTE
+// ==========================================
+model User {
+  id                String         @id @default(cuid())
+  email             String         @unique
+  password          String
+  name              String
+  
+  // 2FA - autenticazione a due fattori (TOTP - Google Authenticator)
+  twoFactorEnabled  Boolean        @default(false)
+  twoFactorSecret   String?        // Cifrato a riposo (vedi utils/security.ts)
+  twoFactorBackup   String?        // Codici di backup (JSON cifrato)
+  
+  // Sicurezza
+  failedLoginCount  Int            @default(0)
+  lockedUntil       DateTime?      // Account temporaneamente bloccato dopo X tentativi
+  lastLoginAt       DateTime?
+  lastLoginIp       String?
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  memberships       Membership[]
+  products          Product[]
+  refreshTokens     RefreshToken[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  
+  @@index([email])
+}
+
+// ==========================================
+// WAREHOUSE (Magazzino/Reparto)
+// ==========================================
+model Warehouse {
+  id          String       @id @default(cuid())
+  name        String
+  inviteCode  String       @unique
+  inviteCodeExpiresAt DateTime?  // I codici invito scadono dopo 30 giorni
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  members     Membership[]
+  
+  @@index([inviteCode])
+}
+
+// ==========================================
+// MEMBERSHIP (relazione User <-> Warehouse)
+// ==========================================
+model Membership {
+  id          String     @id @default(cuid())
+  role        String     // "OWNER" | "MEMBER"
+  percentage  Float      @default(0)
+  
+  userId      String
+  warehouseId String
+  
+  createdAt   DateTime   @default(now())
+  
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  warehouse   Warehouse  @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, warehouseId])
+  @@index([userId])
+  @@index([warehouseId])
+}
+
+// ==========================================
+// PRODOTTO
+// ==========================================
+model Product {
+  id             String     @id @default(cuid())
+  category       String
+  brand          String
+  name           String
+  size           String
+  condition      String
+  
+  purchasePrice  Float
+  salePrice      Float?
+  platform       String?
+  fees           Float?
+  
+  status         String     @default("IN STOCK") // "IN STOCK" | "VENDUTO"
+  customShares   String?    // JSON string con quote dei soci
+  
+  // Foto prodotto (JSON array di base64 compressi, max 5)
+  photos         String?
+
+  // Stima mercato IA (calcolata in fase di scan/aggiunta)
+  marketPriceMin Float?
+  marketPriceMax Float?
+  marketPriceAvg Float?
+  authenticityScore Int?    // 0-100, valutazione legit check IA
+  
+  // Tracking spedizione
+  trackingCode      String?
+  trackingCarrier   String?
+  trackingStatus    String?   // "PENDING"|"IN_TRANSIT"|"OUT_FOR_DELIVERY"|"DELIVERED"|"EXCEPTION"|"RETURNED"
+  trackingHistory   String?   // JSON array di eventi tracking
+  trackingUpdatedAt DateTime?
+
+  // Audit
+  userId         String     // Chi l'ha inserito
+  warehouseId    String?    // A quale warehouse appartiene (per autorizzazione)
+  
+  createdAt      DateTime   @default(now())
+  soldAt         DateTime?
+  updatedAt      DateTime   @updatedAt
+  
+  user           User       @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([category])
+  @@index([status])
+  @@index([warehouseId])
+}
+
+// ==========================================
+// REFRESH TOKEN (per gestire le sessioni)
+// ==========================================
+model RefreshToken {
+  id          String   @id @default(cuid())
+  token       String   @unique // Hashato
+  userId      String
+  
+  userAgent   String?
+  ipAddress   String?
+  
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([token])
+}
+
+// ==========================================
+// AUDIT LOG (tracciamento azioni sensibili)
+// ==========================================
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String   // "LOGIN", "LOGIN_FAIL", "PRODUCT_CREATE", "PRODUCT_EDIT", "PRODUCT_SELL", "TEAM_JOIN", "2FA_ENABLE", ecc.
+  resource    String?  // Es. productId, warehouseId
+  metadata    String?  // JSON con dettagli aggiuntivi
+  
+  ipAddress   String?
+  userAgent   String?
+  success     Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ==========================================
+// NOTIFICATION (notifiche in-app)
+// ==========================================
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // "SALE", "NEW_MEMBER", "PRICE_ALERT", "AI_INSIGHT", "SECURITY"
+  title       String
+  message     String
+  link        String?  // Link interno (es. /products/123)
+  read        Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+// ==========================================
+// MARKET PRICE CACHE (cache stime prezzi)
+// ==========================================
+model MarketPrice {
+  id          String   @id @default(cuid())
+  category    String
+  brand       String
+  modelName   String
+  size        String?
+  
+  minPrice    Float
+  maxPrice    Float
+  avgPrice    Float
+  sampleSize  Int      // Numero di vendite analizzate
+  source      String   // "GROQ_AI" | "MANUAL"
+  
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime // Le stime scadono dopo 7 giorni
+  
+  @@unique([category, brand, modelName, size])
+  @@index([category, brand])
+}

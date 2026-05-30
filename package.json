@@ -1,0 +1,49 @@
+{
+  "name": "reseller-hq-backend",
+  "version": "2.0.0",
+  "description": "Reseller HQ — Gestionale aziendale per resellers con IA e gestione team",
+  "main": "server.ts",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "build": "npm install --prefix frontend && npm run build --prefix frontend && tsc",
+    "start": "node dist/server.js",
+    "generate-cert": "node scripts/generate-cert.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.20.0",
+    "bcrypt": "^5.1.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "csurf": "^1.11.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0",
+    "groq-sdk": "^0.7.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^1.16.0",
+    "otplib": "^12.0.1",
+    "qrcode": "^1.5.4",
+    "recharts": "^3.8.1",
+    "winston": "^3.14.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/csurf": "^1.11.5",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/qrcode": "^1.5.5",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.15",
+    "prisma": "^5.20.0",
+    "selfsigned": "^5.5.0",
+    "tailwindcss": "^3.4.19",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  }
+}

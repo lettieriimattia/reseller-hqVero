@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- viewport-fit=cover per il notch iPhone, user-scalable=no previene zoom accidentale -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <!-- PWA / Add to Home Screen su iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ResellerHQ" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>ResellerHQ</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Blocca pinch-to-zoom su iOS Safari (ignora user-scalable=no)
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) e.preventDefault();
+      }, { passive: false });
+      document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 1) e.preventDefault();
+      }, { passive: false });
+      // Blocca double-tap zoom
+      var lastTap = 0;
+      document.addEventListener('touchend', function(e) {
+        var now = Date.now();
+        if (now - lastTap < 300) e.preventDefault();
+        lastTap = now;
+      }, { passive: false });
+    </script>
+  </body>
+</html>

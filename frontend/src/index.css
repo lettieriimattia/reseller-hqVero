@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  background-color: #080808;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* Custom scrollbar — invisible until hover */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 100px; }
+
+/* Accent color */
+:root { --accent: #ff4d00; }
+
+/* Slide-in animation for panels */
+@keyframes slide-up {
+  from { transform: translateY(2rem); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes slide-right {
+  from { transform: translateX(2rem); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.animate-slide-up    { animation: slide-up   0.28s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-slide-right { animation: slide-right 0.28s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* Mono number: tabular figures */
+.num { font-variant-numeric: tabular-nums; }
+
+/* Previene lo zoom automatico di iOS Safari sugli input (richiede font-size >= 16px) */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Scrolling fluido su iOS */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tutti i bottoni: nessun double-tap zoom */
+button, a {
+  touch-action: manipulation;
+}
+
+/* Utility per safe area (notch iPhone / home bar) */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
