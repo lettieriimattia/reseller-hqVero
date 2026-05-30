@@ -292,11 +292,55 @@ DOLCE & GABBANA: DG logo, Sicilian embroidery, collab Kim Kardashian
 MOSCHINO: Teddy Bear, logo Moschino borsa, collab H&M/Sims
 BURBERRY: tartan check (beige/nero/rosso/bianco), TB monogramma, Knights logo check
 
-━━━ PARIGI LUSSO ━━━
-LOUIS VUITTON: monogramma LV, Damier, Epi. Abbigliamento: giacche/felpe con logo LV, collab Nigo (Duck Tshirt, LV² collab), Virgil Abloh (Off-White x LV), Tyler the Creator (LV Spring 2023)
-DIOR: cannage pattern (rombi quilted), CD oblique, Dior Oblique suit/jacket. Collab Travis Scott (Cactus Jack x Dior), ERL, Kenny Scharf, Sacai
-BALENCIAGA: logo large, oversized silhouette, Demna aesthetic, collab Adidas/Gucci/Fortnite/Simpsons/Kim Kardashian. Track jacket/Hoodie/Political Campaign tee
-GIVENCHY: logo G, Antigona, BdC logo, collab Chito
+━━━ ALTA MODA / LUSSO STORICO (pezzi di archivio e nuove collezioni) ━━━
+CHANEL: logo CC intrecciato (doppia C specchiata), giacca Chanel tweed (bouclé con bordi sfrangiati colorati), catena dorata, Camellia fiore, logo CHANEL in font preciso. RTW: tailleur, cardigan, dress. Accessori: cintura CC, borsa 2.55/Classic Flap/Boy. Collab: Pharrell (direttore creativo 2023-), Karl Lagerfeld era vs Virginie Viard
+HERMÈS: font Hermès in corsivo, sciarpa Carrée (90x90cm seta, stampe tematiche), cintura H Constance (fibbia H grande), Birkin/Kelly logo debossed. Abbigliamento: polo, t-shirt, giacche equestri con logo H
+YVES SAINT LAURENT / SAINT LAURENT (YSL): logo YSL intrecciato (Anthony Vaccarello) vs vecchio logo (Hedi Slimane 2012-2016 = "Saint Laurent Paris" senza YSL). Pezzi iconici: Teddy jacket (bluson motard), Le Smoking (tuxedo donna), caban, Chelsea boots. Collab: collabEd Curtis
+VALENTINO: logo VLogo (V con rombo), VLTN testo grande, Rockstud (borchie piramidali), Pink PP (rosa shocking Pantone 219) collezione 2022. Pezzi: Rockstud tee/hoodie, Pink PP total look, Valentino Garavani RTW
+VERSACE: Medusa logo dorato, Barocco print (oro/nero), Greek key/meandro (bordo caratteristico), pattern Baroque 90s (vintage ricercatissimo). Pezzi: camicia Hawaii Barocco, Versus Versace (linea secondaria), Gianni Versace archivio, collab H&M/Dua Lipa/"La Vacanza"
+PRADA: triangolo smaltato Prada (nero/bianco), Re-Nylon (tessuto tecnico riciclato — logo ricamato), Linea Rossa (sportswear), gabardine, nylon nero. Pezzi iconici: Re-Nylon bomber/cappello, gabardine trench, collab Adidas (SS23/FW23), Prada America's Cup in tessuto
+GUCCI: GG monogramma/canvas, Aria collection (2021, Tom Ford revival), Alessandro Michele era (2015-2022: floreale, gatti, serpenti, eclectic), Sabato De Sarno era (2023+, Ancora red, minimalismo). Pezzi: GG canvas jacket, Horsebit belt, Web stripe polo, Doraemon/Mickey Mouse collab
+BOTTEGA VENETA: Intrecciato (intreccio cuoio — pattern fisico non stampato), The Pouch (borsa sgualcita), Daniel Lee era (2018-2021: verde Bottega, viola, giallo) vs Matthieu Blazy era (2022+: classico/wearable). Abbigliamento: Intrecciato knitwear
+FENDI: FF monogramma (doppia F Fendi), Zucca canvas (F piccole ripetute), baguette, Peekaboo. Pezzi: FF logo hoodie/tee, collab SKIMS (Kim Kardashian), Versace x Fendi (Fendace 2021 — doppio logo)
+LORO PIANA: cashmere/vicuña di altissima qualità, logo LP minimal, materiali naturali premium. Pezzi: Storm System jacket, baby cashmere pullover, Ipad case, Wishing Hill
+
+━━━ MAISON STORICHE PARIGINE ━━━
+GIVENCHY: BdC logo (fondato da Hubert de Givenchy), Antigona bag, logo G. Matthew Williams era: pezzi tecnici, TK-360 sneaker. Collab Chito (pittura)
+DIOR: Oblique pattern (CD obliquo), Monsieur Dior, Bar jacket (tailoring). Kim Jones era (menswear): tecnico+sartoriale. SS23-SS24: ERL, Travis Scott, Sacai. Iconici: Dior Homme slim, CD Icon polo
+LOEWE: Anagram logo (L intrecciate in quadrato), Jonathan Anderson era (2013-): Puzzle bag, Gate bag, Balloon. Abbigliamento: lavorazioni cuoio, craftsmanship, collab Studio Ghibli (Howl's Moving Castle), Suna Fujita (Spirited Away), William De Morgan
+MARNI: pattern florale multicolore (Consuelo Castiglioni era 2000-2016 vs Francesco Risso 2016+), patchwork colorato, bordi sfilacciati intenzionali, Trapeze bag. Collab: Carhartt WIP (molto ricercata), No Vacancy Inn
+BALENCIAGA: Cristóbal Balenciaga archivio (anni 50-60: volumi puri), Nicolas Ghesquière era (1997-2012: fantascienza), Demna era (2015+: oversize politico). Pezzi: Track jacket, Hoodie oversize con logo, Campaign tee, Trash Bag (borsa busta rifiuti), collab Adidas/Gucci/Fortnite/Simpsons
+RICK OWENS: volumi drappeggiati, palette neutri (milk/pearl/dust/black/oyster), silhouette asimmetrica. Linee: mainline, DRKSHDW (streetwear), Lilies, Gethsemane, Bela. Collab: Converse, Adidas, Veja, Champion, Birkenstock, Moncler
+JUNYA WATANABE: pattern tecnici, collab su collab (Levi's, Comme, Carhartt), decostruzione sartoriale
+COMME DES GARÇONS: cuore con occhi (Play line — la più commerciale), CDG Homme Plus (avant-garde), Noir, Shirt, Wallet. Dover Street Market. COLLAB: Nike, Converse, New Balance, Supreme, Levi's, The North Face
+ISSEY MIYAKE: Pleats Please (tessuto plissettato permanente = non si stira), Bao Bao bag (geometrie metalliche), A-POC (pezzo unico tagliato da tubo), Homme Plissé
+KENZO: tigre ricamata (era Nigo 2021+), occhio (era Humberto/Carol), rose. Pezzi: tiger hoodie, flower eye tee
+CÉLINE (OLD): era Phoebe Philo (2008-2017 — MOLTO ricercata nel vintage): minimalismo francese, borse Luggage/Trapeze/Belt, colori camel/bianco/nero. Font CÉLINE con accent
+CÉLINE (NEW): era Hedi Slimane (2018+): sans-serif CELINE senza accent, rock'n'roll estetica, skinny, CT-07, Paris Texas boots
+
+━━━ ARCHIVE / VINTAGE DESIGNER (mercato premium) ━━━
+RAF SIMONS ARCHIVIO: collezioni 2001-2005 (Riot Riot Riot, Redux, Radioactivity, Closer) — felpe/jeans/bomber con stampe grafiche, cinture Raf, patch. MOLTO ricercato. "RAF SIMONS" in font preciso. Anche Raf x Sterling Ruby collab
+HELMUT LANG ARCHIVIO: 1993-2005 — minimalismo austero, pvc/nylon/pelle, tank top iconica. "Helmut Lang" font minimalista. Post-2005 (senza Helmut) meno ricercato
+MARTIN MARGIELA (MAISON MARTIN MARGIELA): tab bianco cucito sul retro colletto (4 punti angolari) = firma identitaria. Tabi boots (punta biforcata). Pezzi: Number line (0-23 linee diverse), Artisanal pieces (pezzi riciclati). Galliano era post-2014 = Maison Margiela
+WALTER VAN BEIRENDONCK: stampe pop psichedeliche, loghi W&LT/WVB
+CAROL CHRISTIAN POELL: costruzione sartoriale estrema, cucitura artigianale, nessun logo visibile
+EARLY 2000s STREETWEAR: Fubu, Rocawear, Sean John, Ecko Unltd — vintage oggi ricercato
+
+━━━ SPORTSWEAR / COLLAB STORICHE ━━━
+NIKE ARCHIVIO: ACG anni 90, Acronym x Nike, Nike Tn/TN Air Max Plus anni 2000, Nike Shox, HTM collab (Hiroshi Fujiwara x Mark Parker), Undercover x Nike, Pigalle x Nike
+ADIDAS ARCHIVIO: Run-DMC era, 80s tracksuit (colori vividi), Franz Beckenbauer, Pharrell HU series (tutti i colori Human Race), Jeremy Scott (ali, orsetto, wings 2.0)
+COLLAB FOOD/BRAND ICONICHE: Travis Scott x McDonald's (2020), Supreme x Louis Vuitton (2017 — SS17, prima vera collab luxury-streetwear), Gucci x The North Face (FW21), Balenciaga x Adidas (SS22/FW22), Fendi x Versace Fendace (FW21), Prada x Adidas (SS23), Dior x Air Jordan 1 (2020), Palace x McDonald's (2023, UK), Crocs x Balenciaga/KFC/Justin Bieber, Birkenstock x Dior/Valentino/Stüssy
+
+━━━ BASIC/CONTEMPORANEO (riconoscimento per collezionismo e vintage) ━━━
+ZARA: etichetta Zara, font sans-serif, linee TRF/MAN/Woman/Kids/Basic. Collab: Stefano Pilati (YSL ex-direttore), Steven Meisel per campagne
+H&M: etichetta H&M, collab designer storiche (Karl Lagerfeld 2004, Stella McCartney 2005, Viktor&Rolf 2006, Roberto Cavalli 2007, Matthew Williamson 2009, Versace 2011, Marni 2012, Isabel Marant 2013, Alexander Wang 2014, Balmain 2015, Kenzo 2016, Erdem 2017, Moschino 2018, Giambattista Valli 2019, Simone Rocha 2021, Rabanne 2022, Mugler 2023, Off-White 2024 — TUTTE molto ricercate)
+UNIQLO x COLLAB: KAWS (UT series), Billie Eilish, JW Anderson, Marimekzo, Jujutsu Kaisen, Dragon Ball, One Piece, Studio Ghibli, Keith Haring, Andy Warhol (UT)
+MASSIMO DUTTI: qualità mid-range, logo MD, Zara Group
+MANGO: etichetta Mango, font préciso, collab recenti
+COS: minimal, parte di H&M Group, etichetta COS, tessuti tecnici
+
+━━━ SE NON RICONOSCI IL BRAND ━━━
+Trascrivi LETTERALMENTE tutto il testo visibile. Descrivi ogni simbolo, colore della grafica, font, posizione sul capo. Indica stagione dall'etichetta se visibile.
 RICK OWENS: DRKSHDW line, silhouette drappeggiata, colori palette neutri (milk/black/pearl/dust), collab Converse/Adidas/Veja
 MARNI: colori patchwork, pattern florale, logo Marni in font preciso, collab Carhartt/No Vacancy Inn
 ACNE STUDIOS: logo Acne face, font preciso "Acne Studios", colori pastello minimalisti, collab New Balance
@@ -440,12 +484,42 @@ KURONO TOKYO: Mori/Seikatsu (estetica giapponese moderna, quadranti maki-e)
 FEARS: Bristol-made, elegante
 DOXA: Sub 300 (arancione iconico)
 
+━━━ BASSA FASCIA / FASHION WATCHES (comuni nel resell) ━━━
+TIMEX: Weekender (TW2T35000 — cassa rotonda piccola, cinturino NATO, icona anni 80), Expedition Scout (outdoors, cinturino nylon), Q Timex reissue (design anni 70, quadrante colorato), Marlin (automatico vintage), Standard (quarzo classico), Metropolitan (elegante urbano). Logo Timex in font preciso, "INDIGLO" sul quadrante
+FOSSIL: Grant (subdial 3 ore, pelle), Neutra Chronograph, Machine (automatico), minimalist me (minimal). Logo FOSSIL in font corsivo
+MICHAEL KORS: Lexington (cronografo oversize, oro/acciaio), Runway (minimalista), Brady. Logo MK su quadrante e fibbia
+ARMANI EXCHANGE: Hampton, Leonardo. Logo AX
+EMPORIO ARMANI: orologi eleganti, logo EA
+DIESEL: Mr. Daddy 2.0 (oversize 57mm, doppio display), Crusher (sportivo), Mr. Chief. Font Diesel industriale
+POLICE: quadranti sportivi, logo Police
+VERSUS VERSACE: (linea entry-level Versace) logo Versace Lion, colori vividi. Distinguilo dal mainline Versace
+HUGO BOSS: Ocean, Pioneer, Signature. Logo BOSS
+TOMMY HILFIGER: 1791 series, sport. Logo TH/bandiera
+DANIEL WELLINGTON: Classic (cassa sottile, cinturino pelle/NATO, no seconds dial), Petite, Iconic Link. Logo DW sul quadrante, "DANIEL WELLINGTON" in font sans-serif sottile — MOLTO popolare nel lifestyle
+MVMT (Movement): minimalist, Watch + Sunglasses brand. Quadrante pulito, pochi indici, "MVMT" sul quadrante
+CLUSE: La Bohème (cassa 38mm, minimal francese), Vigoureux. Logo CLUSE
+ICE-WATCH: colori vividi, "ICE" sul quadrante, plastica colorata, Sili/Forever/City
+SWATCH: Sistem51 (automatico, visibile attraverso fondello), Big Bold (49mm, plastica colorata), Irony (acciaio), Originals (classici). "SWISS MADE" obbligatorio, "swatch" lowercase. Collaborazioni: MoonSwatch (Omega x Swatch — ceramica bioceramic, colori pianeti, MOLTO ricercato), Keith Haring, BAPE
+INVICTA: Pro Diver (8926OB — 40mm, stile Sub economico), Lupah, Force. Logo INVICTA, costruzione spesso massiccia
+SEIKO 5 SPORTS (fascia bassa): SNK807/SNK809 (militare khaki automatico, molto popolare), SNKL23 (militare), SRPD (Turtle/Samurai più recente)
+CASIO STANDARD: Casio MTP/LTP (quarzo classici economici), Baby-G (donna, colorati), AE-1500/1200 (digitale sport), Vintage A158/A168 (retrò oro/acciaio, ambiti)
+CITIZEN AFFORDABLE: Eco-Drive BM7455 (solare, indici bastoncini), AT2430 (cronografo), BI5050/5055
+ORIENT AFFORDABLE: Bambino (automatico elegante, 42mm — ottimo rapporto qualità/prezzo), Mako/Ray (diver economico)
+LORUS: (brand Seiko economy) logo Lorus, costruzione Seiko economica
+SEKONDA: brand UK economy, logo Sekonda
+ACCURIST: brand UK, logo Accurist
+FESTINA: cronografi colorati, logo Festina, Tour de France edition
+CERTINA DS ACTION/PODIUM: (già citato, ma fascia media accessibile)
+ROTARY: British brand, eleganti economici. "Rotary" font corsivo
+BULOVA: Precisionist (movimento a 262kHz), Accutron II, Lunar Pilot (indossato sulla Luna). Logo Bulova font corsivo
+
 ━━━ NOVITÀ 2024-2025 ━━━
-Rolex Baseworld/Watches & Wonders 2024: nuovi Datejust quadranti, Oyster Perpetual nuovi colori, aggiornamenti vari
-Omega MoonSwatch collab: nuove serie pianeti, colori speciali
-AP Royal Oak nuove colorazioni 2024: nuovi quadranti fumé
-Tudor Black Bay 54 2023: ispirazione Submariner anni 50, 37mm
-Breguet nuove uscite, Zenith nuovi Defy
+Rolex Watches & Wonders 2024: nuovi Oyster Perpetual "Celebration" (quadranti con decorazioni), Datejust nuovi colori
+Omega: nuovi Seamaster 300M colori speciali, Speedmaster Anniversary editions
+AP Royal Oak: nuovi quadranti fumé e texture, RO Perpetual Calendar nuove versioni
+Tudor Black Bay 54 (2023): ispirazione Submariner originale anni 50, 37mm, cassa piccola
+Swatch MoonSwatch nuove uscite: Mission to Moonshine Gold, Mission to the Moonphase
+Seiko nuovi Presage Sharp Edged, nuovi Grand Seiko quadranti stagionali
 
 Rispondi SOLO in JSON valido (senza markdown):
 {

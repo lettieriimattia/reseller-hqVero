@@ -115,6 +115,9 @@ model Product {
   trackingHistory   String?   // JSON array di eventi tracking
   trackingUpdatedAt DateTime?
 
+  // Note libere
+  notes          String?    // Note operative (es: cinturino usurato, scatola mancante)
+
   // Audit
   userId         String     // Chi l'ha inserito
   warehouseId    String?    // A quale warehouse appartiene (per autorizzazione)

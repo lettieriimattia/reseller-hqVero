@@ -4,7 +4,7 @@ import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
-  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck
+  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote
 } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
@@ -56,6 +56,7 @@ interface Product {
   marketPriceMin?: number; marketPriceMax?: number; marketPriceAvg?: number; authenticityScore?: number;
   trackingCode?: string; trackingCarrier?: string; trackingStatus?: string;
   trackingHistory?: string; trackingUpdatedAt?: string;
+  notes?: string;
 }
 
 interface AppUser {
@@ -324,6 +325,11 @@ export default function App() {
 
   // ----- TEAM PANEL -----
   const [teamPanelOpen, setTeamPanelOpen] = useState(false);
+
+  // ----- NOTE PRODOTTO -----
+  const [notesModalProduct, setNotesModalProduct] = useState<Product | null>(null);
+  const [notesInput, setNotesInput] = useState('');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
 
   // ----- TRACKING -----
   const [trackingModalOpen, setTrackingModalOpen] = useState(false);
@@ -843,6 +849,24 @@ export default function App() {
   };
 
   
+  // ==========================================
+  // ==========================================
+  // SALVA NOTE
+  // ==========================================
+  const saveNotes = async () => {
+    if (!notesModalProduct) return;
+    setIsSavingNotes(true);
+    const { ok } = await apiCall(`/products/${notesModalProduct.id}/notes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notes: notesInput }),
+    });
+    if (ok) {
+      setProducts(prev => prev.map(p => p.id === notesModalProduct.id ? { ...p, notes: notesInput || undefined } : p));
+      setNotesModalProduct(null);
+    }
+    setIsSavingNotes(false);
+  };
+
   // ==========================================
   // SALVA / MODIFICA / VENDI
   // ==========================================
@@ -2046,23 +2070,37 @@ export default function App() {
                           })()}
                         </div>
                       </div>
+                      {/* Note veloci — se presenti, mostrale */}
+                      {g.notes && (
+                        <div className="mx-4 mb-3 px-3 py-2 bg-white/[0.03] border border-white/[0.05] rounded-xl flex items-start gap-2">
+                          <StickyNote size={11} className="text-gray-500 shrink-0 mt-0.5" />
+                          <p className="text-[11px] text-gray-500 leading-relaxed">{g.notes}</p>
+                        </div>
+                      )}
                       {/* Action row - nascosta in bulk mode */}
                       {!bulkMode && (
                         <div className="flex border-t border-white/[0.07]">
                           <button onClick={() => openEditModal(g)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
                             <Edit size={15} /> Modifica
                           </button>
                           <div className="w-px bg-white/5" />
+                          <button onClick={() => { setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors ${
+                              g.notes ? 'text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'
+                            }`}>
+                            <StickyNote size={15} /> Note
+                          </button>
+                          <div className="w-px bg-white/5" />
                           <button onClick={() => openTrackingModal(g)}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-colors ${
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors ${
                               g.trackingCode ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20' : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'
                             }`}>
                             <Truck size={15} /> Track
                           </button>
                           <div className="w-px bg-white/5" />
                           <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold text-green-400 hover:text-green-300 hover:bg-green-900/20 transition-colors">
+                            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold text-green-400 hover:text-green-300 hover:bg-green-900/20 transition-colors">
                             <DollarSign size={15} /> Vendi
                           </button>
                         </div>
@@ -3706,6 +3744,48 @@ export default function App() {
                   {isImporting
                     ? <><Loader2 className="animate-spin" size={16} /> Importazione...</>
                     : `Importa ${importRows.filter(r => r.brand && r.name && r.price > 0).length} prodotti`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== MODALE: NOTE PRODOTTO ========== */}
+      {notesModalProduct && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
+          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-md">
+            <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <StickyNote size={16} className="text-gray-400" />
+                  <div>
+                    <h3 className="font-semibold text-sm">{notesModalProduct.brand} {notesModalProduct.name}</h3>
+                    <p className="text-[11px] text-gray-600">{notesModalProduct.size} · Note operative</p>
+                  </div>
+                </div>
+                <button onClick={() => setNotesModalProduct(null)} className="p-1.5 hover:bg-white/[0.05] rounded-lg transition-colors">
+                  <X size={16} className="text-gray-400" />
+                </button>
+              </div>
+              <textarea
+                value={notesInput}
+                onChange={e => setNotesInput(e.target.value)}
+                placeholder="Es: cinturino usurato, scatola mancante, graffio sul fondello, acquistato da privato..."
+                className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3.5 text-sm text-white placeholder-gray-600 focus:border-white/[0.15] outline-none resize-none"
+                rows={4}
+                autoFocus
+              />
+              <p className="text-[10px] text-gray-600 mt-1.5 mb-4">{notesInput.length}/500 caratteri</p>
+              <div className="flex gap-2">
+                <button onClick={() => setNotesModalProduct(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-white/[0.07] text-sm text-gray-400 hover:text-white transition-colors">
+                  Annulla
+                </button>
+                <button onClick={saveNotes} disabled={isSavingNotes}
+                  className="flex-1 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50">
+                  {isSavingNotes ? 'Salvo...' : 'Salva Note'}
                 </button>
               </div>
             </div>

@@ -65,7 +65,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { category, brand, name, size, condition, price, customShares, photos,
-      marketPriceMin, marketPriceMax, marketPriceAvg, authenticityScore } = req.body;
+      marketPriceMin, marketPriceMax, marketPriceAvg, authenticityScore, notes } = req.body;
 
     // Trova il warehouse corretto per la categoria di cui l'utente è membro
     const myMembership = await prisma.membership.findFirst({
@@ -100,6 +100,7 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
         customShares: parsedShares,
         photos: parsedPhotos,
         marketPriceMin, marketPriceMax, marketPriceAvg, authenticityScore,
+        notes: notes || null,
       },
     });
     
@@ -185,7 +186,7 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
       return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
     }
     
-    const { category, brand, name, size, condition, purchasePrice, customShares, photos } = req.body;
+    const { category, brand, name, size, condition, purchasePrice, customShares, photos, notes } = req.body;
 
     const parsedShares = customShares && Array.isArray(customShares) && customShares.length > 0
       ? JSON.stringify(customShares.map((s: any) => ({ ...s, percentage: Number(s.percentage) || 0 })))
@@ -197,7 +198,7 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
 
     const p = await prisma.product.update({
       where: { id: req.params.id },
-      data: { category, brand, name, size, condition, purchasePrice, customShares: parsedShares, photos: parsedPhotos },
+      data: { category, brand, name, size, condition, purchasePrice, customShares: parsedShares, photos: parsedPhotos, notes: notes !== undefined ? (notes || null) : undefined },
     });
     
     await audit({
@@ -209,6 +210,25 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
   } catch (err: any) {
     logger.error('Errore PUT /products/:id/edit', { err: err.message });
     res.status(500).json({ error: 'Errore modifica' });
+  }
+});
+
+// ==========================================
+// PATCH /products/:id/notes - aggiorna solo le note
+// ==========================================
+router.patch('/:id/notes', async (req: AuthRequest, res: Response) => {
+  try {
+    const { allowed } = await canAccessProduct(req.user!.userId, req.params.id);
+    if (!allowed) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
+    const { notes } = req.body;
+    const p = await prisma.product.update({
+      where: { id: req.params.id },
+      data: { notes: notes || null },
+    });
+    res.json({ notes: p.notes });
+  } catch (err: any) {
+    logger.error('Errore PATCH /products/:id/notes', { err: err.message });
+    res.status(500).json({ error: 'Errore salvataggio note' });
   }
 });
 
