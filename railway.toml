@@ -1,6 +1,6 @@
 [build]
-builder = "nixpacks"
-buildCommand = "npm ci && npm run build && npx prisma generate"
+builder = "RAILPACK"
+buildCommand = "npm run build && npx prisma generate"
 
 [deploy]
 startCommand = "npx prisma migrate deploy && npm start"
