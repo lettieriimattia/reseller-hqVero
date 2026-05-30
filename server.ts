@@ -138,6 +138,14 @@ if (!isProduction) {
 }
 
 // ==========================================
+// FRONTEND STATICO (prima delle route, solo in produzione)
+// ==========================================
+if (isProduction) {
+  const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+  app.use(express.static(frontendDist));
+}
+
+// ==========================================
 // HEALTH CHECK
 // ==========================================
 app.get('/health', (req, res) => {
@@ -156,16 +164,15 @@ app.use('/notifications', notificationRoutes);
 app.use('/tracking', trackingRoutes);
 
 // ==========================================
-// FRONTEND STATICO (solo in produzione)
+// SPA FALLBACK + 404
 // ==========================================
 if (isProduction) {
   const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
-  app.use(express.static(frontendDist));
   app.get('*', (_req, res) => {
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
 } else {
-  app.use((req, res) => {
+  app.use((_req, res) => {
     res.status(404).json({ error: 'Endpoint non trovato' });
   });
 }
