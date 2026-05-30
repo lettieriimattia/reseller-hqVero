@@ -101,8 +101,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,ht
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin && !isProduction) return callback(null, true);
-    if (!origin) return callback(new Error('Origin non consentita'));
+    if (!origin) return callback(null, true);
 
     // In sviluppo, accetta qualsiasi IP della rete locale (es. telefono su Wi-Fi)
     if (!isProduction && /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3})(:\d+)?$/.test(origin)) {
