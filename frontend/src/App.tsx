@@ -164,6 +164,8 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<AppUser | null>(null);
   const [bootLoading, setBootLoading] = useState(true);
+  const [cookieConsent, setCookieConsent] = useState<boolean>(() => !!localStorage.getItem('hq_cookie_consent'));
+  const [privacyOpen, setPrivacyOpen] = useState(false);
   
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [regType, setRegType] = useState<'new_team' | 'join_team'>('new_team');
@@ -1493,9 +1495,22 @@ export default function App() {
               </div>
             )}
             
+            {authMode === 'register' && (
+              <label className="flex items-start gap-3 cursor-pointer mt-4">
+                <input type="checkbox" required className="mt-0.5 shrink-0 accent-white w-4 h-4 rounded" />
+                <span className="text-[12px] text-gray-500 leading-relaxed">
+                  Ho letto e accetto la{' '}
+                  <button type="button" onClick={() => setPrivacyOpen(true)} className="text-white underline underline-offset-2 hover:no-underline">
+                    Privacy Policy
+                  </button>
+                  {' '}e il trattamento dei miei dati personali ai sensi del GDPR.
+                </span>
+              </label>
+            )}
+
             <button type="submit" disabled={authLoading}
               className="w-full bg-[#ff4d00] hover:bg-[#ff6a2a] py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50 mt-4 flex items-center justify-center">
-              {authLoading ? <Loader2 className="animate-spin" size={20} /> : 
+              {authLoading ? <Loader2 className="animate-spin" size={20} /> :
                 require2FA ? 'Verifica 2FA' : (authMode === 'login' ? 'Entra' : 'Registrati')}
             </button>
           </form>
@@ -3746,6 +3761,150 @@ export default function App() {
                     : `Importa ${importRows.filter(r => r.brand && r.name && r.price > 0).length} prodotti`}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== COOKIE BANNER ========== */}
+      {!cookieConsent && (
+        <div className="fixed bottom-0 left-0 right-0 z-[100] lg:bottom-6 lg:left-6 lg:right-auto lg:max-w-sm">
+          <div className="bg-[#0f0f0f] border border-white/[0.08] lg:rounded-2xl p-5 shadow-2xl border-t lg:border">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="text-lg shrink-0">🍪</div>
+              <div>
+                <p className="text-sm font-semibold text-white mb-1">Informativa Cookie</p>
+                <p className="text-[12px] text-gray-500 leading-relaxed">
+                  Usiamo solo cookie <span className="text-gray-300">strettamente necessari</span> per l'autenticazione e il funzionamento dell'app. Nessun cookie di marketing o profilazione.{' '}
+                  <button onClick={() => setPrivacyOpen(true)} className="text-white underline underline-offset-2 hover:no-underline">
+                    Privacy Policy
+                  </button>
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setPrivacyOpen(true)}
+                className="flex-1 py-2 rounded-xl border border-white/[0.07] text-xs text-gray-400 hover:text-white transition-colors">
+                Leggi tutto
+              </button>
+              <button onClick={() => { localStorage.setItem('hq_cookie_consent', '1'); setCookieConsent(true); }}
+                className="flex-1 py-2 rounded-xl bg-white text-black text-xs font-semibold hover:bg-gray-200 transition-colors">
+                Accetta e Continua
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== MODALE: PRIVACY POLICY ========== */}
+      {privacyOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4">
+          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-white/[0.05] shrink-0">
+              <div>
+                <h2 className="font-semibold text-base">Privacy Policy & Cookie</h2>
+                <p className="text-[11px] text-gray-500 mt-0.5">Ultimo aggiornamento: {new Date().toLocaleDateString('it-IT', { year: 'numeric', month: 'long' })}</p>
+              </div>
+              <button onClick={() => setPrivacyOpen(false)} className="p-2 hover:bg-white/[0.05] rounded-xl transition-colors">
+                <X size={18} className="text-gray-400" />
+              </button>
+            </div>
+            <div className="overflow-y-auto p-5 space-y-5 text-[13px] text-gray-400 leading-relaxed">
+
+              <section>
+                <h3 className="text-white font-semibold text-sm mb-2">1. Titolare del Trattamento</h3>
+                <p>Il titolare del trattamento dei dati personali è l'operatore dell'account ResellerHQ. Per qualsiasi richiesta relativa ai dati personali, contatta il responsabile della piattaforma.</p>
+              </section>
+
+              <section>
+                <h3 className="text-white font-semibold text-sm mb-2">2. Dati Raccolti</h3>
+                <p className="mb-2">ResellerHQ raccoglie i seguenti dati personali:</p>
+                <ul className="space-y-1 list-none">
+                  {[
+                    'Indirizzo email e nome (account)',
+                    'Dati prodotti inseriti (brand, prezzi, foto)',
+                    'Dati di vendita e acquisto',
+                    'Indirizzo IP e User Agent (sicurezza)',
+                    'Log di accesso e azioni (audit)',
+                  ].map(item => (
+                    <li key={item} className="flex items-start gap-2">
+                      <span className="text-gray-600 mt-0.5">—</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="text-white font-semibold text-sm mb-2">3. Finalità del Trattamento</h3>
+                <p>I dati sono trattati esclusivamente per:</p>
+                <ul className="space-y-1 mt-2 list-none">
+                  {[
+                    'Fornitura del servizio di gestione magazzino',
+                    'Autenticazione e sicurezza dell\'account',
+                    'Funzionalità team e condivisione dati tra soci',
+                    'Prevenzione di accessi non autorizzati',
+                  ].map(item => (
+                    <li key={item} className="flex items-start gap-2">
+                      <span className="text-gray-600 mt-0.5">—</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="text-white font-semibold text-sm mb-2">4. Cookie Utilizzati</h3>
+                <p className="mb-3">ResellerHQ utilizza <span className="text-white">esclusivamente cookie tecnici strettamente necessari</span>, non richiesti dal consenso ai sensi dell'art. 122 D.Lgs. 196/2003 e delle Linee Guida Garante.</p>
+                <div className="bg-white/[0.03] border border-white/[0.05] rounded-xl overflow-hidden">
+                  <div className="grid grid-cols-3 text-[11px] font-semibold text-gray-500 p-3 border-b border-white/[0.05] uppercase tracking-wider">
+                    <span>Nome</span><span>Durata</span><span>Scopo</span>
+                  </div>
+                  {[
+                    ['access_token', '15 minuti', 'Autenticazione sessione'],
+                    ['refresh_token', '7 giorni', 'Rinnovo sessione automatico'],
+                  ].map(([name, duration, purpose]) => (
+                    <div key={name} className="grid grid-cols-3 text-[12px] p-3 border-b border-white/[0.03] last:border-0">
+                      <span className="text-white font-mono">{name}</span>
+                      <span>{duration}</span>
+                      <span>{purpose}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-[12px]">Nessun cookie di profilazione, marketing, analisi o terze parti è utilizzato.</p>
+              </section>
+
+              <section>
+                <h3 className="text-white font-semibold text-sm mb-2">5. Base Giuridica</h3>
+                <p>Il trattamento si basa sull'esecuzione del contratto di servizio (art. 6.1.b GDPR) e sul legittimo interesse alla sicurezza della piattaforma (art. 6.1.f GDPR).</p>
+              </section>
+
+              <section>
+                <h3 className="text-white font-semibold text-sm mb-2">6. Conservazione dei Dati</h3>
+                <p>I dati dell'account sono conservati per tutta la durata del rapporto contrattuale. I log di sicurezza sono conservati per 90 giorni. Dopo la cancellazione dell'account, i dati vengono eliminati entro 30 giorni.</p>
+              </section>
+
+              <section>
+                <h3 className="text-white font-semibold text-sm mb-2">7. Diritti dell'Interessato</h3>
+                <p>Ai sensi del GDPR (artt. 15-22) hai il diritto di: accedere ai tuoi dati, rettificarli, richiederne la cancellazione, opporti al trattamento, richiedere la portabilità. Per esercitare i tuoi diritti, contatta il titolare del trattamento.</p>
+              </section>
+
+              <section>
+                <h3 className="text-white font-semibold text-sm mb-2">8. Sicurezza</h3>
+                <p>I dati sono protetti con crittografia AES-256, password hashate con bcrypt, autenticazione a due fattori (2FA), comunicazioni cifrate HTTPS, e token JWT con rotazione automatica.</p>
+              </section>
+
+              <section>
+                <h3 className="text-white font-semibold text-sm mb-2">9. Modifiche alla Privacy Policy</h3>
+                <p>Questa policy può essere aggiornata. Le modifiche sostanziali saranno comunicate tramite notifica in-app.</p>
+              </section>
+
+            </div>
+            <div className="p-5 border-t border-white/[0.05] shrink-0">
+              <button onClick={() => { localStorage.setItem('hq_cookie_consent', '1'); setCookieConsent(true); setPrivacyOpen(false); }}
+                className="w-full py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-gray-200 transition-colors">
+                Ho letto e accetto
+              </button>
             </div>
           </div>
         </div>
