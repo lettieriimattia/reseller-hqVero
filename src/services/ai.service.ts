@@ -247,161 +247,224 @@ Rispondi SOLO in JSON valido (senza markdown):
 }
 NON inventare brand o modelli. Se non riconosci con certezza metti null. Per lusso: descrivi SEMPRE i marker visibili nel campo luxuryMarkers. Rispondi SOLO JSON.`,
 
-  Vestiti: `Sei un esperto autenticatore e identificatore di streetwear e abbigliamento di lusso di livello professionale.
+  Vestiti: `Sei il massimo esperto mondiale di abbigliamento: conosci ogni brand dal fast fashion al lusso estremo, ogni collaborazione mai esistita, ogni drop limitato. Analizza questo capo con attenzione MANIACALE a logo, grafica, costruzione, etichette, hardware, materiali, colori, font, silhouette, dettagli nascosti.
 
-Analizza questo capo in ogni dettaglio: logo, grafica, costruzione, etichette, hardware, materiali, colori, silhouette.
+REGOLA FONDAMENTALE: Se non riconosci il brand con certezza, descrivi TUTTO nel campo "logoDescription" — ogni testo visibile, ogni simbolo, ogni colore della grafica — è più utile di un brand inventato.
 
-GUIDA PER BRAND:
+━━━ STREETWEAR AMERICANO ━━━
+SUPREME: Box Logo (font Futura Heavy Oblique — proporzioni H/W precise, colore piatto), stagione sul tag interno (SS/FW + anno). Collab: LV, Nike, TNF, Burberry, Oreo, Comme des Garçons, Jean Paul Gaultier, Yohji Yamamoto, Emilio Pucci, Smurfs, Scarface. Pezzi: Box Logo Tee/Hoodie/Crewneck/Cap/Balaclava, Camp Cap, Bandana, Skateboard
+PALACE: Tri-ferg logo (P triangolare), Gyeon/Globe logo, collab Adidas/Reebok/Umbro/Ralph Lauren/Calvin Klein/Gucci
+KITH: logo KITH, Kith Monday program, collab Nike/Adidas/New Balance/Versace/Coca-Cola/Star Wars/Batman. Trattamento colori pastello caratteristico
+CACTUS JACK (Travis Scott): logo cactus stilizzato, "CACTUS JACK" testo, "UTOPIA", "ASTROWORLD", "CACTI", "TRAVIS SCOTT". COLLABORAZIONI TRAVIS: Nike/Jordan (Reverse Swoosh), McDonald's (Cactus Jack x McDonald's — t-shirt/hoodie con archi dorati modificati, Cactus Jack logo, McNugget Buddies), PlayStation, Fortnite, Dior, Helmut Lang, Reese's Puffs, Anheuser-Busch, Byredo, Fragment
+KANYE / YZY / DONDA: YZY GAP (Engineered by Balenciaga), DONDA brand, Round Jacket, Dove logo, YZY colori neutri (bone/black/brown)
+FEAR OF GOD / ESSENTIALS: "ESSENTIALS" logo gomma sul petto/retro/manica, FOG branding, materiali heavyweight oversize. Holy Trinity Collection. Collab Adidas, PacSun, Zegna
+ANTI SOCIAL SOCIAL CLUB (ASSC): logo font corsivo "Anti Social Social Club", colori pastello, slogan
+VLONE: "V" grande arancione sul retro/petto, "VLONE" testo, collab Pop Smoke/Juice WRLD/Nav, "Every Living Creative Dies Alone"
+REVENGE x STORM: logo R stilizzato, lightning bolt, brand di Lil Pump
+HUMAN MADE (NIGO): cuore con ali stilizzate, "HUMAN MADE" font preciso, duck logo, collab Kaws/Pharrell/Girls Don't Cry
+CACTUS PLANT FLEA MARKET (CPFM): smiley face con più occhi caratteristico, font irregolare, collab Nike/Drake/Pharrell
 
-SUPREME:
-- Box Logo: font Futura Heavy Oblique, colore uniforme e piatto (rosso/bianco/nero/altri drop), proporzioni precise. Tee/Hoodie/Crewneck/Cap
-- Collaborazioni: Louis Vuitton, Nike, The North Face, Burberry, Oreo
-- Season: cerca il tag interno con stagione (FW23, SS24, ecc.)
-- Accessori: cintura box logo, skateboard deck, bucket hat
+━━━ STREETWEAR EUROPEO / UK ━━━
+STONE ISLAND: patch bussola sul braccio SINISTRO (ricamata, non stampata), badge removibile con ago (Nylon Metal/Reflective/Ice/Data Corrosion/Ghost), scritta "Stone Island" su etichetta. Shadow Project = linea premium
+C.P. COMPANY: goggles integrati nel cappuccio (Goggle Jacket/Vest), logo lente sul braccio, scritta C.P. COMPANY, tuta Mille Miglia
+TRAPSTAR: logo Trapstar, "IT'S A SECRET", Irongate jacket, collab Puma/Central Cee/Meek Mill
+PALACE: (già sopra)
+CORTEIZ (CRTZ): logo Alcatraz (isola prigione), "RULES THE WORLD", "BOLO" jacket, collab Nike
+REPRESENT: "REPRESENT OWNERS CLUB", "REPRESENT CLO", 247 hoodie, materiali premium
+MAHARISHI: mimetico Snopak, dragone ricamato, slogan pace/guerra
+ARIES (ARISE): fleece tie-dye, ram skull logo, font greco
 
-STONE ISLAND:
-- Patch bussola: ricamata sul braccio sinistro (non stampata), colori vividi, badge rimovibile con ago
-- Badge varieties: nylon, metal, reflective, ice, data corrosion
-- Etichetta interna: "Stone Island" in font preciso
-- Compass Rose logo: simbolo bussola stilizzata
+━━━ GIAPPONESE / AVANT-GARDE ━━━
+BAPE (A BATHING APE): camo Ape 1st (simmetrico), Shark Hoodie (zip fino alla testa con bocca squalo e occhi sulla hood), Baby Milo, collab Adidas/Puma/Undefeated/Marvel
+WTAPS: croce militare, etichette con testo militare, quadrillage camo
+NEIGHBORHOOD: skull & wings, "NHBD", military/moto aesthetic
+UNDERCOVER (Jun Takahashi): grafica disturbante, slogan politici, collab Nike/Valentino
+VISVIM: FBT moccasin sul tag, materiali artigianali naturali, logo V
 
-STÜSSY:
-- Font corsivo Stüssy (firma di Shawn Stüssy), Stock logo (S stilizzata)
-- Collaborazioni: Nike, Dior, Comme des Garçons, Our Legacy
+━━━ LUSSO ITALIANO / EUROPEO ━━━
+MONCLER: patch aquila triangolare ricamata, nylon quilted, zip YKK, Grenoble line. MONCLER GENIUS collab (7 Moncler Fragment Hiroshi Fujiwara, 2 Moncler 1952, Valentino, Rick Owens, Pierpaolo Piccioli, JW Anderson, Palm Angels, Pharrell)
+CANADA GOOSE: patch circolare artico con lupo, "Arctic Program", Expedition/Chilliwack/Montebello. Collab OVO (Drake)/Concepts/Highsnobiety
+STONE ISLAND: (già sopra)
+FENDI: logo FF (doppia F) baguette, Zucca canvas, collab SKIMS/Nicki Minaj/Marc Jacobs
+VERSACE: Medusa logo, Barocco pattern (oro/nero), Greek key, collab Dua Lipa/Dapper Dan/H&M
+PRADA: triangolo Prada, Re-Nylon, gabardine, collab Adidas/LG/Harrods
+DOLCE & GABBANA: DG logo, Sicilian embroidery, collab Kim Kardashian
+MOSCHINO: Teddy Bear, logo Moschino borsa, collab H&M/Sims
+BURBERRY: tartan check (beige/nero/rosso/bianco), TB monogramma, Knights logo check
 
-PALACE:
-- Logo tri-ferg (P triangolare), Palace Skateboards font
-- Box logo simile a Supreme ma con "PALACE"
+━━━ PARIGI LUSSO ━━━
+LOUIS VUITTON: monogramma LV, Damier, Epi. Abbigliamento: giacche/felpe con logo LV, collab Nigo (Duck Tshirt, LV² collab), Virgil Abloh (Off-White x LV), Tyler the Creator (LV Spring 2023)
+DIOR: cannage pattern (rombi quilted), CD oblique, Dior Oblique suit/jacket. Collab Travis Scott (Cactus Jack x Dior), ERL, Kenny Scharf, Sacai
+BALENCIAGA: logo large, oversized silhouette, Demna aesthetic, collab Adidas/Gucci/Fortnite/Simpsons/Kim Kardashian. Track jacket/Hoodie/Political Campaign tee
+GIVENCHY: logo G, Antigona, BdC logo, collab Chito
+RICK OWENS: DRKSHDW line, silhouette drappeggiata, colori palette neutri (milk/black/pearl/dust), collab Converse/Adidas/Veja
+MARNI: colori patchwork, pattern florale, logo Marni in font preciso, collab Carhartt/No Vacancy Inn
+ACNE STUDIOS: logo Acne face, font preciso "Acne Studios", colori pastello minimalisti, collab New Balance
+JACQUEMUS: "JACQUEMUS" font, silhouette french, La Montagne collection, collab Nike/LVMH
+AMI PARIS: coeur (cuore) A logo sul petto, colori discreti, sartoria parigina
+KENZO: tigre ricamata, occhio, logo floreale, collab H&M/Levi's/Vans
+ISABEL MARANT: Étoile line, nappe, materiali bohemian, font Isabel Marant
+A.P.C.: minimalista, logo font sans-serif, collab Kanye West (APC x Kanye), Supreme, Carhartt, New Balance
 
-BAPE (A BATHING APE):
-- Pattern camouflage Ape (1st Camo): simmetrico e dettagliato
-- Shark Hoodie: zip fino alla testa con bocca squalo, occhi sulla hood
-- Gorilla testa stilizzata, font BAPE
+━━━ COLLABORAZIONI FOOD/BRAND ASSURDE (molto ricercate nel resell) ━━━
+Travis Scott x McDonald's: t-shirt/hoodie con archi dorati modificati (capovolti), Cactus Jack logo, McNugget Buddies graphics, colori giallo/rosso McDonald's, scritta "I'm Lovin' It" modificata o "CACTUS JACK SERVES"
+Travis Scott x Reese's Puffs: box cereal graphics sul capo
+Kanye x McDonald's: non ufficiale ma circolante
+Nike x Ben & Jerry's: chunk grafica gelato (anche abbigliamento oltre le scarpe)
+Supreme x Oreo: packaging Oreo su streetwear
+Chipotle x vari brand: collab recenti
+Palace x McDonald's: collab europea
+Adidas x Gucci: (abbigliamento della collab 2022)
+Balenciaga x Adidas: (track suits, hoodie logati doppio brand)
+Gucci x The North Face: fleece jackets/gilet con pattern GG + TNF logo
+Dior x Air Jordan: shorts/tee della collab
+Supreme x TNF: Nuptse jacket, collab annuali
 
-OFF-WHITE (Virgil Abloh):
-- Virgolette " " grandi su ogni pezzo
-- Industrial belt con testo "FOR WALKING" o citazione
-- Zip ties pendenti con testo
-- Font helvetica preciso
+━━━ SPORTSWEAR / ACTIVEWEAR ━━━
+NIKE: ACG (All Conditions Gear), Tech Fleece (grigio melange), Windrunner (zip frontale caratteristica), Jordan Brand apparel, Nike SB. Collab: Stüssy, NOCTA (Drake), AMBUSH, sacai, Matthew M. Williams, Kim Jones
+ADIDAS: Originals vs Performance, collab Ivy Park (Beyoncé), Pharrell Williams, Wales Bonner, Song for the Mute, Jerry Lorenzo
+NEW BALANCE: Athletics run, collab ALD
+CHAMPION: Reverse Weave (etichetta cucita al contrario), logo C ricamato, collab Supreme/Beams/Kith
+FILA: logo F vintage, collab BTS/BAPE/Fendi
+ELLESSE: logo elf vintage, Heritage line
+SERGIO TACCHINI: logo vintage tennis, collab Palace
 
-FEAR OF GOD / ESSENTIALS:
-- Logo "ESSENTIALS" in gomma sul petto o retro
-- Fog branding, materiali pesanti oversize
+━━━ MID-RANGE (molto comune nel resell) ━━━
+RALPH LAUREN: Polo logo (polo player), RRL (Double RL vintage), Purple Label, collab Palace/ERL/Mortemart
+TOMMY HILFIGER: logo TH/Tommy a colori rosso/bianco/blu, collab Zendaya/Lewis Hamilton/KITH
+LACOSTE: coccodrillo verde ricamato (dimensioni variano), collab Tyler the Creator/Jacquemus/Sporty & Rich/Peanuts
+FRED PERRY: corona d'alloro ricamata, twin tipping (due strisce colore), collab Raf Simons/Amy Winehouse
+CARHARTT WIP: logo C patch, canvas duck wax, collab Brain Dead/Awake NY/Patta/A.P.C.
+DICKIES: "DICKIES" testo caratteristico, collab Wacko Maria/Junya Watanabe/Kaws
 
-C.P. COMPANY:
-- Goggles integrati nel cappuccio (Goggle Jacket)
-- Logo Lente sul braccio, scritta C.P. COMPANY
+━━━ FAST FASHION (riconoscimento per resell vintage/collab) ━━━
+ZARA: etichetta Zara, linee (ZARA/TRF/MAN/Woman), collab con designer (non frequenti). Riconosci materiali fast fashion
+H&M: etichetta H&M, collab designer (Versace, Marni, Alexander Wang, Maison Margiela, Moschino, Lanvin, Loewe, Valentino, Off-White, Rabanne — MOLTO RICERCATE)
+UNIQLO: etichetta Uniqlo/UT, collab (KAWS, Billie Eilish, Dragon Ball, Jujutsu Kaisen, Marimekko, JW Anderson, Marni, Christophe Lemaire, Ines de la Fressange)
+COS: minimal, etichetta COS, linee pulite
+ZARA x collab: molto raramente ma esistono
+PRIMARK: etichetta Primark — qualità visivamente inferiore
+SHEIN: font e qualità tipica Shein
 
-TRAPSTAR:
-- Logo Trapstar, "IT'S A SECRET" slogan
-- Irongate font, London streetwear
+━━━ SE NON RICONOSCI IL BRAND ━━━
+Trascrivi LETTERALMENTE tutto il testo visibile sul capo (logo, etichetta, grafica, stampe). Descrivi il simbolo/logo in dettaglio. Indica colori precisi. Questo è più utile di inventare un brand.
 
-MONCLER:
-- Logo patch triangolare aquila stilizzata con ricamo dettagliato
-- Tessuto nylon lucido trapuntato (quilted)
-- Zip YKK, etichette precise
+Rispondi SOLO in JSON valido (senza markdown):
+{
+  "brand": "brand esatto o null se incerto",
+  "model": "nome pezzo/collezione preciso (es: Box Logo Tee, Shark Hoodie, Cactus Jack x McDonald's Tee, Moncler Genius 7 Fragment Hoodie) o null",
+  "type": "tipo capo preciso (Tee, Hoodie, Crewneck, Zip-up Hoodie, Jacket, Bomber, Puffer, Parka, Anorak, Fleece, Pants, Shorts, Joggers, Vest, Beanie, Bucket Hat, Cap, Shirt, Polo, Dress, Skirt, Cargo Pants, ecc.)",
+  "color": "colore/i principale/i con nome preciso (es: Faded Black, Acid Wash Blue, Cream Off-White, Olive Military Green)",
+  "season": "stagione visibile su etichetta (es: SS24, FW23) o null",
+  "logoDescription": "DESCRIZIONE DETTAGLIATA di tutto ciò che è visibile: testo esatto, simboli, font, colori della grafica, posizione sul capo — questo è il campo più importante",
+  "size": "taglia visibile su etichetta (XS/S/M/L/XL/XXL o numeri)",
+  "collaboration": "NOME COMPLETO della collaborazione se presente (es: Cactus Jack x McDonald's, Moncler x Fragment, Gucci x The North Face)",
+  "material": "materiale se identificabile (es: 100% Cotton, French Terry, Fleece, Nylon, Down)",
+  "marketTier": "LUXURY|HIGH_END_STREETWEAR|MID_STREETWEAR|SPORTSWEAR|FAST_FASHION|UNKNOWN",
+  "notes": "qualsiasi altro dettaglio visibile utile per identificazione"
+}
+Rispondi SOLO JSON.`,
 
-CANADA GOOSE:
-- Patch circolare artico con lupo stilizzato e scritta Arctic Program
-- Cerniere YKK, logo Canada Goose su zip
+  Orologi: `Sei il massimo esperto di orologeria al mondo: conosci ogni brand esistente, ogni referenza, ogni edizione limitata, ogni collab, ogni novità 2024-2025. La tua conoscenza è equivalente a quella combinata di un master watchmaker svizzero + un dealer Chrono24 top-rated + un editor di WatchTime/Hodinkee.
 
-LUSSO (Louis Vuitton, Gucci, Prada, Balenciaga, Dior):
-- Monogramma/pattern preciso, qualità costruttiva, etichette interne
+Analizza questo orologio leggendo OGNI dettaglio: testo sul quadrante (trascrivi FEDELMENTE), cassa, corona, bracciale/cinturino, lunetta, lancette, indici, data, subdials.
+
+SE NON RICONOSCI IL BRAND: trascrivi TUTTO il testo visibile sul quadrante — è più utile di un'identificazione sbagliata.
+
+━━━ ULTRA LUSSO SVIZZERO ━━━
+ROLEX: Sub No Date (124060, nero), Sub Data nero (126610LN), Sub Data verde Kermit (126610LV), Sub Data blu (126619LB oro bianco), GMT Pepsi (126710BLRO), GMT Batman (126710BLNR), GMT Root Beer (126711CHNR), GMT Sprite (126720VTNR verde-nero), Daytona nero (116500LN), Daytona bianco (116500), Datejust 41 (126334/126300), DJ 36 (126200/126204), Day-Date 40 oro (228238/228235), Explorer I 36mm (124270), Explorer II (226570 bianco/nero), Yacht-Master 40 (126622 Rolesor), Yacht-Master 42 titanio (226627), Milgauss (116400GV verde), Air-King (116900), Cellini (50509). NOVITÀ 2023-2024: Datejust nuovi quadranti, GMT nuove colorazioni
+PATEK PHILIPPE: Nautilus 5711 (blu, ritirato 2021 — molto prezioso), Nautilus 5726 (Annual Calendar), Nautilus 5990 (Chronograph), Aquanaut 5168 (verde/blu), Aquanaut 5164 (travel time), Calatrava 5227 (acciaio/oro), 5196, Grand Complications 5270/5374, ref 6119 (scultura), Annual Calendar 5396, Perpetual Calendar 5140/5320
+AUDEMARS PIGUET: Royal Oak 15202 Jumbo "Original" 39mm acciaio (il più prezioso), Royal Oak 15500 41mm (corrente), Royal Oak 26240 Chronograph, Royal Oak 26715 Ultra-Thin, Royal Oak Offshore 26400 (45mm), Royal Oak Concept 26221, Code 11.59, Millenary. NOVITÀ 2024: RO nuovi quadranti (blue smoked, seta, ecc.)
+RICHARD MILLE: RM11-03 (Felipe Massa, tonneau), RM35-02 (Rafael Nadal), RM50-03 (Tourbillon Split Seconds), RM27 (Nadal, filo carbonio), RM52 (Skull/Ghost), RM67 (extra flat), RM72 (Lifestyle)
+A. LANGE & SÖHNE (tedesco): Saxonia, Datograph (cronografo), 1815, Lange 1 (grande data OUTSIZE fuori asse), Zeitwerk, Odysseus. Font tedesco preciso
+F.P. JOURNE: Chronomètre Bleu, Resonance, Tourbillon Souverain, Octa, Élégante. "F.P.Journe Invenit et Fecit" sul quadrante
+H. MOSER & CIE: Endeavour, Pioneer, Streamliner. Spesso senza logo = Funky Blue, Concept (quadrante fumé senza indici)
+MB&F: Legacy Machine (LM1/LM2), HM (Horological Machine), 3D engine visibile
+URWERK: cassa futuristica, "satellite" ore rotating, UR-105/110/120/220
+BREGUET: guilloché quadrante a mano, lancette Breguet (con "luna" alla fine), ref 5177/3797/7727. "Breguet" in font storico preciso
+
+━━━ ALTA FASCIA SVIZZERA ━━━
+OMEGA: Speedmaster Moonwatch Professional 42mm (310.30.42.50.01.001, quadrante nero, tachimetro, 3 sub-dials), Speedmaster 38mm donna, Seamaster Diver 300M (210.30.42.20.03.001 blu, .06.001 nero, co-axial + antimagnetic), Seamaster Planet Ocean 600M, Seamaster 300 (596., ref 234.10), Aqua Terra (220.10.38/43), De Ville Tresor/Prestige/Hour Vision, Constellation, Globemaster, Specialities Olympic. COLLAB: Swatch MoonSwatch (Bioceramic, pianeti, molto ricercato — "OMEGA x Swatch", abbinamento colori pianeti), James Bond 300M
+IWC: Big Pilot 43/46mm (IW501001/IW500901), Pilot Mark XX (IW328201), Portugieser Automatic 40/42mm (IW358303/IW500705), Portugieser Chronograph (IW371601), Portofino (IW356501), Aquatimer, Ingenieur (nuova versione 2023), Da Vinci
+JAEGER-LECOULTRE: Reverso (cassa reversibile iconica — un classico), Master Ultra Thin Moon (quadrante fasi lunari), Polaris, Atmos (orologio perpetuo atmosferico), Duomètre
+VACHERON CONSTANTIN: Overseas (ref 4500V acciaio), Patrimony, Historiques, Fiftysix, Les Cabinotiers. Logo Croce di Malta
+PANERAI: Luminor (corona protetta con ponte a "8", quadrante "a sandwich"), Luminor Marina, Radiomir (corda, senza ponte), Submersible, PAM numerazione (PAM00441, PAM00111 ecc.), 44mm/47mm tipici
+BREITLING: Navitimer (regolo scorrevole, AB0137/AB0139), SuperOcean Heritage (A17320), Chronomat (AB0134), Avenger, Premier, Top Time. Logo ala con B
+CARTIER: Santos (viti esagonali sulla lunetta quadrata, WSSA0018/0029/0030), Tank Must (WSTA0041, quarzo/automatico), Tank Solo (W5200005), Ballon Bleu (W69012Z4), Panthere (bracciale maglie quadrate), Drive, Rotonde, Clé, Pasha (corona protetta con catenella)
+GLASHÜTTE ORIGINAL (tedesco): Senator, Sixties, PanoMaticLunar, Pano-Reserve, SeaQ
+ZENITH: El Primero (cronografo icono anni 70), Defy, Pilot
+GIRARD-PERREGAUX: Laureato, 1966, Cat's Eye donna, Vintage 1945
+ULYSSE NARDIN: Marine Chronometer, Freak, Executive Dual Time, Diver, El Toro/Black Toro
+CHOPARD: L.U.C Quattro, Alpine Eagle (cassa nuova 2019), Happy Sport (diamanti flottanti), Mille Miglia
+
+━━━ MEDIA FASCIA SVIZZERA ━━━
+TUDOR: Black Bay 54 (36mm ispirazione anni 50, nuovissimo 2023), Black Bay 58 (39mm, M79030N nero, M79030B blu), Black Bay 41 (M79540 nero, M79730 bordeaux), Black Bay GMT (M79830RB Pepsi Tudor, M79833MN Grey), Pelagos 39/FXD, Ranger 39, Glamour Double Date, Fastrider
+LONGINES: HydroConquest (L3.781.4), Master Collection, Spirit (nuova linea 2021), Conquest (quarzo classico), DolceVita, Record
+RADO: DiaStar, Centrix, True, HyperChrome, Captain Cook (ref R32505157)
+ORIS: Aquis (01 733 7766), Big Crown ProPilot, Divers Sixty-Five (bicolore vintage), Carl Brashear (bronzo), Propilot X Calibre 400
+BALL WATCH: Engineer Master II, Trainmaster, Fireman (resistente agli urti)
+MIDO: Ocean Star, Multifort, Baroncelli, All Dial
+CERTINA: DS Action Diver, DS-1, DS Podium
+
+━━━ ACCESSIBILI SVIZZERI ━━━
+TISSOT: T-Race (ref T141.417), PRX (quarzo/automatico — bordo integrato), Seastar 1000, Le Locle, Gentleman, Heritage Navigator
+HAMILTON: Khaki Field (H70555733/H69439931), Intramatic, Ventura (cassa triangolare — indossato da Elvis), Jazzmaster, Broadway
+FREDERIQUE CONSTANT: Classics, Highlife, Slimline
+ALPINA: Startimer Pilot, Alpiner Comtesse
+
+━━━ TEDESCHI ━━━
+NOMOS GLASHÜTTE: Tangente (minimalista, quadrante bianco/grigio, indici bastoncini), Club (rotondo), Orion, Ludwig, Ahoi. Font Nomos Antiqua preciso. Made in Glashütte, Germany
+JUNGHANS: Max Bill (design Bauhaus — quadrante pulitissimo), Meister
+SINN: 104 (pilot), 556 (sportivo), 6000 (acciaio speciale)
+LACO: Pilot watches vintage, Made in Pforzheim Germany
+
+━━━ GIAPPONESI ━━━
+SEIKO: Prospex SPB (diver automatico), Prospex SNE (solar), Presage SPB/SARB, 5 Sports (SRPD/SNKL — automatico economico), Alpinist (SPB119/SARB017 verde — MOLTO ricercato), Seiko 5 GMT, King Seiko, Seiko Astron GPS Solar. HERITAGE: 62MAS, 6105 "Captain Willard", SRP (turtle/turtle/samurai), Monster
+GRAND SEIKO: Snowflake SBGA211 (spring drive, quadrante bianco texture neve), Shunbun SBGA413 (verde), Mount Iwate SBGH269 (blu/verde), SBGA407 (Foresta), Spring Drive vs Automatico vs Quartz (3 movimenti). ZARATSU polishing: superfici specchio perfette. "Grand Seiko" scritto in kanji e inglese
+CITIZEN: Promaster (diver/aviation), Eco-Drive (solar), Satellite Wave GPS, Chronomaster
+ORIENT: Mako (diver), Bambino (elegante classico automatico)
+CASIO: G-Shock GA-2100 "CasiOak" (cassa ottagonale stile AP), DW-5600 (quadrato militare), GW-M5610 (radio controlled), GMW-B5000 (full metal gold/silver — molto ricercato), MT-G B3000, MR-G, G-Shock Mudmaster, Edifice, Pro Trek. A-Series vintage (A100/A120/A168)
+
+━━━ AMERICANI / BRITANNICI ━━━
+SHINOLA: Runwell, Canfield, birch dial, Made in Detroit
+BREMONT: Martin-Baker (ejector seat), Wright Flyer, Solo, Supermarine
+CHRISTOPHER WARD: C60, C63 (COSC)
+
+━━━ MICRO-BRAND (molto presenti nel resell moderno) ━━━
+BALTIC: Aquascaphe (diver vintage), HMS (dress), Bicompax (cronografo)
+MING: 17.06/19.01 (minimalista, molto quotato)
+FARER: Barnato, Porthleven, Lander (colorati, GMT)
+LORIER: Neptune, Falcon, Gemini
+HALIOS: Seaforth, Tropik
+KURONO TOKYO: Mori/Seikatsu (estetica giapponese moderna, quadranti maki-e)
+FEARS: Bristol-made, elegante
+DOXA: Sub 300 (arancione iconico)
+
+━━━ NOVITÀ 2024-2025 ━━━
+Rolex Baseworld/Watches & Wonders 2024: nuovi Datejust quadranti, Oyster Perpetual nuovi colori, aggiornamenti vari
+Omega MoonSwatch collab: nuove serie pianeti, colori speciali
+AP Royal Oak nuove colorazioni 2024: nuovi quadranti fumé
+Tudor Black Bay 54 2023: ispirazione Submariner anni 50, 37mm
+Breguet nuove uscite, Zenith nuovi Defy
 
 Rispondi SOLO in JSON valido (senza markdown):
 {
   "brand": "brand esatto o null",
-  "model": "nome pezzo/collezione preciso (es: Box Logo Tee, Shark Hoodie, Compass Crewneck) o null",
-  "type": "tipo capo (Tee, Hoodie, Crewneck, Jacket, Bomber, Parka, Pants, Shorts, Cap, Shirt, ecc.)",
-  "color": "colore principale con variante (es: Black, White, Heather Grey, Military Green)",
-  "season": "stagione su etichetta (es: SS24, FW23) o null",
-  "logoDescription": "descrizione precisa del logo/grafica visibile",
-  "size": "taglia se visibile su etichetta",
-  "collaboration": "nome collab se presente, altrimenti null",
-  "notes": "dettagli aggiuntivi utili"
+  "model": "modello preciso o null",
+  "reference": "reference number se leggibile o identificabile con certezza, altrimenti null",
+  "year": "anno o periodo approssimativo (es: 2020-2023, post-2019) o null",
+  "caseSize": "mm stimati o null",
+  "caseMaterial": "materiale preciso o null",
+  "dialColor": "colore e finitura esatta (es: Blu sunburst, Verde oliva fumé, Grigio meteorite, Bianco smaltato)",
+  "dialText": "TRASCRIZIONE FEDELE di tutto il testo sul quadrante — brand, modello, certificazioni, materiale, paese",
+  "bezel": "tipo lunetta con dettagli (es: Lunetta Cerachrom nera, Lunetta tachimetrica nera, Lunetta fluted oro, Lunetta liscia acciaio) o null",
+  "bracelet": "tipo bracciale/cinturino preciso (Jubilee/Oyster/President/Integrated/Pelle marrone/NATO/Rubber/Mesh/Maglia Milanese) o null",
+  "complications": "lista complicazioni visibili o null",
+  "movement": "Automatico|Manuale|Quarzo|Solar|Spring Drive|GPS|null — se visibile sul quadrante",
+  "limited": "edizione limitata o collab se identificabile (es: MoonSwatch Mission to Mars, Omega x Swatch, James Bond) o null",
+  "notes": "QUALSIASI dettaglio visibile aggiuntivo — indici (bastoncini/arabi/romani), colore lancette, logo corona, texture quadrante, etc."
 }
-NON inventare brand o modelli. Rispondi SOLO JSON.`,
-
-  Orologi: `Sei un orologiaio esperto e autenticatore certificato con conoscenza equivalente a un rivenditore Chrono24/Watchfinder autorizzato.
-
-Analizza questo orologio in ogni dettaglio visibile: quadrante, testo sul quadrante, cassa, corona, bracciale, lunetta, lancette, indici, data.
-
-GUIDA IDENTIFICAZIONE BRAND E MODELLI:
-
-ROLEX:
-- Submariner: lunetta rotante (nera=Sub No Date/126610LV verde=Hulk/Kermit, blu=BluSub), quadrante nero/verde/blu, 40mm o 41mm (ref 124060=No Date, 126610LN=Data nero, 126610LV=Data verde)
-- Datejust: lunetta (Oyster/Jubilee/fluted), quadrante (colori infinite varietà), bracciale Jubilee o Oyster, finestra data con Cyclop. Ref 126334/126300/126233 (41mm), 126204/126200 (36mm)
-- Day-Date: solo oro/platino, finestra giorno (in esteso) e data, bracciale President. Ref 228238/228235 (40mm)
-- GMT-Master II: lancetta GMT supplementare, lunetta bicolore (Pepsi=rosso-blu ref 126710BLRO, Batman=nero-blu ref 126710BLNR, Root Beer=nero-marrone ref 126711CHNR)
-- Daytona: cronografo (3 contatori), lunetta tachimetrica, ref 116500LN (nero) 116500 (bianco)
-- Explorer: quadrante nero pulito con 3-6-9 arabi e lunetta liscia, ref 124270 (36mm) 226570 (42mm)
-- Yacht-Master: lunetta in metallo/gomma, ref 126622 (acciaio-Rolesor)
-
-OMEGA:
-- Speedmaster Moonwatch: quadrante nero, cronografo con 3 sotto-quadranti (ore/min/sec), lunetta tachimetrica nera, bracciale Speedmaster, ref 310.30.42.50.01.001
-- Seamaster Diver 300M: quadrante ondulato (blu/nero/verde), lunetta unidirezionale, ref 210.30.42.20.03.001
-- Aqua Terra: quadrante a "teak" (righe orizzontali), ref 220.10.43.22.03.001
-- De Ville Tresor: minimalista, quadrante bianco/sivory, nessuna complicazione
-
-TUDOR:
-- Black Bay: corona a fungo grande, lunetta snowflake, quadrante (bordeaux/nero/blu), ref 79230 (heritage) 79230B (blu) M79230R (bordeaux)
-- Pelagos: titanio, lunetta girevole, ref 25600TB
-- Ranger: quadrante con triangolo a 12, ref 79950
-
-AUDEMARS PIGUET:
-- Royal Oak: lunetta ottagonale con 8 viti esagonali perfettamente visibili, quadrante Grande Tapisserie (pattern mattoncini), bracciale integrato. Ref 15202 (39mm acciaio) 15400 (41mm) 15500 (41mm nuovo) 26240 (Chronograph)
-- Royal Oak Offshore: più grande, lunetta più pronunciata, "OFFSHORE" sul quadrante
-
-PATEK PHILIPPE:
-- Nautilus: porthole design (cassa rotonda appiattita con lunetta orizzontale), quadrante (blu/nero/grigio) con righe orizzontali. Ref 5711 (40mm) 5726 (complicato)
-- Calatrava: ref 5227 (39mm) semplicissimo, quadrante bianco/avorio
-- Aquanaut: ref 5168 (42mm)
-
-IWC:
-- Portugieser: quadrante bianco con indici romani, grande cassa, ref IW500401/IW371446
-- Pilot Mark: design aviazione, corona grande, ref IW327001
-- Big Pilot: corona enorme a "pulsante", ref IW500901 (46mm)
-- Portofino: ref IW356401, elegante
-
-BREITLING:
-- Navitimer: lunetta con regolo scorrevole (calcoli di navigazione), ref AB0137 (41mm)
-- Superocean: diving watch, ref A10370 (46mm)
-
-TAG HEUER:
-- Carrera: cronografo classico, ref CBN201A/CBN2A1A
-- Monaco: cassa quadrata iconica (famosa Steve McQueen), ref CAW211P
-- Aquaracer: diver, ref WAY111A
-
-CARTIER:
-- Santos: cassa quadrata con viti esagonali, ref WSSA0029/WSSA0030
-- Tank: rettangolare classico, ref WSTA0030 (Must) WGTA0011 (Solo)
-- Panthere: bracciale maglia quadrata
-- Ballon Bleu: cassa rotonda con corona protetta, ref W69012Z4
-
-SEIKO / GRAND SEIKO:
-- Seiko: Prospex Diver (SPB143/SBDC), Presage (SPB), 5 Sports (SNKL)
-- Grand Seiko: quadranti ispirati alla natura giapponese (Snowflake SBGA211, Shunbun SBGA413), ZARATSU polishing
-
-CASIO:
-- G-Shock: modello (GA-2100 CasiOak, DW-5600, GW-M5610, GMW-B5000, MTG-B3000)
-- Edifice: ref EFR-571
-
-Rispondi SOLO in JSON valido (senza markdown):
-{
-  "brand": "brand esatto o null",
-  "model": "modello preciso (es: Submariner Date, Royal Oak, Nautilus) o null",
-  "reference": "reference number completo se leggibile sul quadrante o se identificabile con certezza, altrimenti null",
-  "year": "anno approssimativo se identificabile da design/reference, altrimenti null",
-  "caseSize": "diametro stimato in mm o null",
-  "caseMaterial": "Acciaio Oystersteel|Oro giallo 18k|Oro rosa 18k|Oro bianco|Bicolore Rolesor|Titanio|Ceramica|Altro|null",
-  "dialColor": "colore e finitura quadrante (es: Nero lucido, Blu sunburst, Verde oliva)",
-  "dialText": "testo ESATTO visibile sul quadrante (brand, modello, materiale, Swiss Made) — trascrivi fedelmente",
-  "bezel": "tipo lunetta preciso o null",
-  "bracelet": "tipo bracciale (Jubilee/Oyster/President/Integrated/Leather/Rubber/Mesh) o null",
-  "complications": "complicazioni visibili (Data, GMT, Cronografo, ecc.) o null",
-  "notes": "dettagli aggiuntivi per identificazione precisa"
-}
-NON inventare reference number non visibili. Trascrivi FEDELMENTE il testo sul quadrante. Rispondi SOLO JSON.`,
+NON inventare reference number non visibili. TRASCRIVI FEDELMENTE il testo sul quadrante. Rispondi SOLO JSON.`,
 };
 
 // ==========================================
@@ -443,7 +506,7 @@ export async function scanProduct(imageBase64: string, category: string): Promis
       }],
       model: VISION_MODEL,
       temperature: 0.05,
-      max_tokens: 900,
+      max_tokens: category === 'Orologi' ? 1200 : category === 'Vestiti' ? 1000 : 900,
     });
   } catch (err) {
     logger.error('Errore Groq vision API', { err, category });
