@@ -3,5 +3,5 @@ builder = "RAILPACK"
 buildCommand = "npm run build && npx prisma generate"
 
 [deploy]
-startCommand = "npx prisma migrate deploy && npm start"
+startCommand = "npx prisma db push --accept-data-loss && npm start"
 restartPolicyType = "on_failure"
