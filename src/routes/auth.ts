@@ -37,7 +37,7 @@ async function issueTokens(res: Response, user: { id: string; email: string }, r
   const accessToken = jwt.sign(
     { userId: user.id, email: user.email },
     accessSecret,
-    { expiresIn: process.env.JWT_ACCESS_EXPIRES || '15m' }
+    { expiresIn: (process.env.JWT_ACCESS_EXPIRES || '15m') } as any
   );
   
   const refreshPlain = generateRefreshToken();

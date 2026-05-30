@@ -78,8 +78,8 @@ router.post('/full-scan', validate(aiScanSchema), async (req: AuthRequest, res: 
     const scan = await scanProduct(imageBase64, category);
     
     // Step 2 e 3: stima prezzo + legit check in parallelo
-    let price = null;
-    let authenticity = null;
+    let price: any = null;
+    let authenticity: any = null;
     
     if (scan.brand && scan.model && scan.confidence !== 'LOW') {
       const [priceResult, authResult] = await Promise.allSettled([
