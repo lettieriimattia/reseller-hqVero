@@ -60,6 +60,66 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 });
 
 // ==========================================
+// POST /products/lot - crea lotto (N prodotti da prezzo totale)
+// ==========================================
+router.post('/lot', async (req: AuthRequest, res: Response) => {
+  try {
+    const { category, lotName, totalPrice, quantity, brand, size, condition, notes } = req.body;
+
+    if (!category || !lotName || !totalPrice || !quantity || quantity < 2 || quantity > 200) {
+      return res.status(400).json({ error: 'Dati lotto non validi.' });
+    }
+
+    const myMembership = await prisma.membership.findFirst({
+      where: { userId: req.user!.userId, warehouse: { name: `Magazzino ${category}` } },
+      include: { warehouse: true },
+    });
+    if (!myMembership) return res.status(403).json({ error: 'Non sei membro di questo reparto.' });
+
+    const pricePerUnit = Math.round((totalPrice / quantity) * 100) / 100;
+    const lotNote = `Lotto: "${lotName}" — ${quantity} pezzi × ${pricePerUnit.toFixed(2)}€`;
+
+    const created = await prisma.$transaction(
+      Array.from({ length: quantity }, (_, i) =>
+        prisma.product.create({
+          data: {
+            category,
+            brand: brand || lotName,
+            name: `${lotName} #${i + 1}`,
+            size: size || '-',
+            condition: condition || 'N/D',
+            purchasePrice: pricePerUnit,
+            status: 'IN STOCK',
+            userId: req.user!.userId,
+            warehouseId: myMembership.warehouseId,
+            notes: notes ? `${lotNote} — ${notes}` : lotNote,
+          },
+        })
+      )
+    );
+
+    await audit({
+      action: 'PRODUCT_CREATE', userId: req.user!.userId, req,
+      resource: created[0].id,
+      metadata: { lot: lotName, quantity, totalPrice, pricePerUnit },
+    });
+
+    await notifyWarehouseMembers({
+      warehouseId: myMembership.warehouseId,
+      excludeUserId: req.user!.userId,
+      type: 'PRODUCT_ADDED',
+      title: `Lotto aggiunto: ${lotName}`,
+      message: `${quantity} pezzi da ${pricePerUnit.toFixed(2)}€ cad. (tot. ${totalPrice}€)`,
+    });
+
+    res.json({ created: created.length, pricePerUnit, products: created });
+  } catch (err: any) {
+    logger.error('Errore POST /products/lot', { err: err.message });
+    res.status(500).json({ error: 'Errore creazione lotto' });
+  }
+});
+
+// ==========================================
 // POST /products - crea prodotto
 // ==========================================
 router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Response) => {

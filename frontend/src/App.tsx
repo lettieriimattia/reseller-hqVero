@@ -328,6 +328,16 @@ export default function App() {
   // ----- TEAM PANEL -----
   const [teamPanelOpen, setTeamPanelOpen] = useState(false);
 
+  // ----- LOTTO -----
+  const [lotOpen, setLotOpen] = useState(false);
+  const [lotName, setLotName] = useState('');
+  const [lotCategory, setLotCategory] = useState('');
+  const [lotTotal, setLotTotal] = useState('');
+  const [lotQty, setLotQty] = useState('');
+  const [lotBrand, setLotBrand] = useState('');
+  const [lotNotes, setLotNotes] = useState('');
+  const [isCreatingLot, setIsCreatingLot] = useState(false);
+
   // ----- NOTE PRODOTTO -----
   const [notesModalProduct, setNotesModalProduct] = useState<Product | null>(null);
   const [notesInput, setNotesInput] = useState('');
@@ -852,6 +862,35 @@ export default function App() {
 
   
   // ==========================================
+  // ==========================================
+  // CREA LOTTO
+  // ==========================================
+  const handleCreateLot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const total = parseFloat(lotTotal);
+    const qty = parseInt(lotQty);
+    if (!lotName || !lotCategory || isNaN(total) || total <= 0 || isNaN(qty) || qty < 2) return;
+    setIsCreatingLot(true);
+    const { ok, data } = await apiCall('/products/lot', {
+      method: 'POST',
+      body: JSON.stringify({
+        category: lotCategory,
+        lotName: lotName.trim(),
+        totalPrice: total,
+        quantity: qty,
+        brand: lotBrand.trim() || null,
+        notes: lotNotes.trim() || null,
+      }),
+    });
+    if (ok) {
+      await fetchProducts();
+      setLotOpen(false);
+      setLotName(''); setLotCategory(''); setLotTotal(''); setLotQty(''); setLotBrand(''); setLotNotes('');
+      addToast(`✓ Lotto creato: ${data.created} prodotti a ${data.pricePerUnit.toFixed(2)}€ cad.`);
+    }
+    setIsCreatingLot(false);
+  };
+
   // ==========================================
   // SALVA NOTE
   // ==========================================
@@ -1895,6 +1934,10 @@ export default function App() {
               <div className="flex flex-wrap items-center gap-2">
                 {magazzinoView === 'instock' && (
                   <>
+                    <button onClick={() => { setLotCategory(userCategories[0] || ''); setLotOpen(true); }}
+                      className="px-3 py-2 text-xs font-semibold rounded-xl border border-white/[0.07] bg-[#0f0f0f] text-gray-400 hover:text-white transition-colors flex items-center gap-1.5">
+                      <Layers size={13} /> Lotto
+                    </button>
                     <button onClick={toggleBulkMode}
                       className={`px-3 py-2 text-xs font-bold rounded-xl border transition-colors ${
                         bulkMode ? 'bg-[#ff4d00] border-[#ff4d00] text-white' : 'bg-[#0f0f0f] border-white/[0.07] text-gray-400 hover:text-white'
@@ -3762,6 +3805,104 @@ export default function App() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== MODALE: CREA LOTTO ========== */}
+      {lotOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-md">
+            <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+            <div className="p-5 border-b border-white/[0.05] flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-base flex items-center gap-2">
+                  <Layers size={16} className="text-gray-400" /> Crea Lotto
+                </h2>
+                <p className="text-[11px] text-gray-600 mt-0.5">Divide il costo totale tra tutti gli articoli</p>
+              </div>
+              <button onClick={() => setLotOpen(false)} className="p-2 hover:bg-white/[0.05] rounded-xl transition-colors">
+                <X size={18} className="text-gray-400" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateLot} className="p-5 space-y-4">
+
+              {/* Reparto */}
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em] block mb-2">Reparto</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {userCategories.map(cat => (
+                    <button key={cat} type="button" onClick={() => setLotCategory(cat)}
+                      className={`p-2.5 rounded-xl border text-sm font-semibold transition-colors flex items-center gap-2 ${
+                        lotCategory === cat ? 'bg-white/[0.06] border-white/[0.15] text-white' : 'bg-[#0a0a0a] border-white/[0.06] text-gray-500'
+                      }`}>
+                      <span>{getCategoryIcon(cat)}</span> {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Nome lotto */}
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em] block mb-2">Nome Lotto</label>
+                <input required value={lotName} onChange={e => setLotName(e.target.value)}
+                  placeholder="Es: Bundle Pokemon Giugno, Lotto Scarpe Verano..."
+                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:border-white/[0.2] outline-none" />
+              </div>
+
+              {/* Prezzo totale + numero pezzi */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em] block mb-2">Prezzo Totale €</label>
+                  <input required type="number" min="0.01" step="0.01" value={lotTotal} onChange={e => setLotTotal(e.target.value)}
+                    placeholder="300"
+                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:border-white/[0.2] outline-none" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em] block mb-2">N° Articoli</label>
+                  <input required type="number" min="2" max="200" step="1" value={lotQty} onChange={e => setLotQty(e.target.value)}
+                    placeholder="10"
+                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:border-white/[0.2] outline-none" />
+                </div>
+              </div>
+
+              {/* Preview costo per articolo */}
+              {lotTotal && lotQty && parseFloat(lotTotal) > 0 && parseInt(lotQty) >= 2 && (
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 flex items-center justify-between">
+                  <span className="text-[12px] text-gray-500">Costo per articolo</span>
+                  <span className="font-semibold text-white text-sm">
+                    {(parseFloat(lotTotal) / parseInt(lotQty)).toFixed(2)}€
+                  </span>
+                </div>
+              )}
+
+              {/* Brand (opzionale) */}
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em] block mb-2">Brand <span className="text-gray-700 normal-case font-normal">(opzionale)</span></label>
+                <input value={lotBrand} onChange={e => setLotBrand(e.target.value)}
+                  placeholder="Es: Pokémon, Nike, Rolex..."
+                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:border-white/[0.2] outline-none" />
+              </div>
+
+              {/* Note */}
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em] block mb-2">Note <span className="text-gray-700 normal-case font-normal">(opzionale)</span></label>
+                <input value={lotNotes} onChange={e => setLotNotes(e.target.value)}
+                  placeholder="Es: acquistato da privato, condizioni miste..."
+                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:border-white/[0.2] outline-none" />
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setLotOpen(false)}
+                  className="flex-1 py-3 rounded-xl border border-white/[0.07] text-sm text-gray-400 hover:text-white transition-colors">
+                  Annulla
+                </button>
+                <button type="submit" disabled={isCreatingLot || !lotCategory || !lotName || !lotTotal || !lotQty}
+                  className="flex-1 py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-40">
+                  {isCreatingLot ? 'Creazione...' : `Crea ${lotQty || 0} Articoli`}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
