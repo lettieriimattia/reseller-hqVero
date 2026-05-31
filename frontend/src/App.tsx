@@ -1595,13 +1595,14 @@ export default function App() {
     <div className="min-h-screen bg-[#080808] text-white font-sans" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
 
       {/* ========== HEADER ========== */}
-      <header className="sticky top-0 z-40 bg-[#080808]/95 backdrop-blur-xl border-b border-white/[0.05]">
+      <header className="sticky top-0 z-40 bg-[#080808]/95 backdrop-blur-xl border-b border-white/[0.05]"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="w-full px-4 lg:px-8 py-3.5 flex justify-between items-center">
           <div className="flex items-center">
             {/* Staggered HQ logo */}
-            <div className="relative w-6 h-7 shrink-0 mr-2">
-              <span className="absolute top-0 left-0 text-[1.25rem] font-black leading-none text-white">H</span>
-              <span className="absolute bottom-0 right-0 text-[1.25rem] font-black leading-none text-white/80">Q</span>
+            <div className="relative w-[1.6rem] h-[1.7rem] shrink-0 mr-2">
+              <span className="absolute top-0 left-0 text-[1.15rem] font-black leading-none text-white">H</span>
+              <span className="absolute bottom-0 right-[-2px] text-[1.15rem] font-black leading-none text-white/50">Q</span>
             </div>
           </div>
 

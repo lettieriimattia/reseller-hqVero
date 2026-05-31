@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
   <rect width="180" height="180" fill="#111111"/>
-  <text x="16" y="111"
+  <text x="11" y="107"
     font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
-    font-weight="900" font-size="98" fill="white">H</text>
-  <text x="90" y="166"
+    font-weight="900" font-size="103" fill="white">H</text>
+  <text x="80" y="167"
     font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
-    font-weight="900" font-size="98" fill="rgba(255,255,255,0.4)">Q</text>
+    font-weight="900" font-size="103" fill="rgba(255,255,255,0.42)">Q</text>
 </svg>
