@@ -607,9 +607,43 @@ CERTINA: DS Action Diver, DS-1, DS Podium
 
 ━━━ ACCESSIBILI SVIZZERI ━━━
 TISSOT: T-Race (ref T141.417), PRX (quarzo/automatico — bordo integrato), Seastar 1000, Le Locle, Gentleman, Heritage Navigator
-HAMILTON: Khaki Field (H70555733/H69439931), Intramatic, Ventura (cassa triangolare — indossato da Elvis), Jazzmaster, Broadway
-FREDERIQUE CONSTANT: Classics, Highlife, Slimline
-ALPINA: Startimer Pilot, Alpiner Comtesse
+HAMILTON: Made in USA (ora Swatch Group, stabilimento Lancaster PA). Logo "H" ornamentale sul quadrante.
+- Khaki Field Mechanical (H69439931 — movimento manuale, 38mm, indici triangolari, ref H6940) vs Automatic (H70555733, H70605731)
+- Khaki Field Murph (H70605731 — ispirato Interstellar, vetro aperto sul movimento)
+- Khaki Aviation Converter (H76726550 — pilot case, bezel girante, 42mm)
+- Khaki Navy Pioneer (H78505335 — diver style, 43mm, nero)
+- Ventura (H24411732 — cassa triangolare iconica 1957, indossato da Elvis Presley, cuore asimmetrico)
+- Ventura Elvis80 (versioni speciali 80° anniversario)
+- Jazzmaster Thinline (H38511515 — dress watch ultra-slim, quadrante bianco/sabbia)
+- Jazzmaster Viewmatic (H32515135 — movimento visibile, open heart)
+- Jazzmaster Maestro (H32576515 — scheletrato)
+- American Classic Railroad (H40515551 — quadrante bianco, tachimetro, storico)
+- American Classic Boulton (H13431553 — art déco)
+- Khaki King (H64455133 — tre lancette)
+- Khaki BeLOWZERO (H78606333 — volare subacqueo, resiste 100m)
+- Broadway (H43311135 — quadrante verde/blu)
+- Timken Limited Edition collaborazioni
+FREDERIQUE CONSTANT: Classics (FC-303), Highlife (FC-401 automatico, porthole design), Slimline (FC-251 manuale ultra-slim), Manufacture automatico calibro FC-315/FC-710
+ALPINA: Startimer Pilot Big Date (AL-860), Startimer Pilot Heritage, Alpiner Extreme (titanio), Seastrong Diver
+MIDO: Ocean Star (M026.430 diver), Multifort (M005 automatico), Baroncelli (M011 dress), Commander (M021 GMT), Belluna II (M024 elegante)
+ORIS: Aquis (01 733 7766 diver automatico), Big Crown ProPilot (01 752 7698 pilot), Divers Sixty-Five (01 733 7720 vintage diver, bronzo/acciaio), Carl Brashear (bronzo, molto ricercato), Propilot X (calibre 400, 5 giorni riserva), BC3 (quadrante militare)
+BALL WATCH: Engineer Master II (luminosa interna a gas tritio), Trainmaster (ferroviario), Fireman (resistenza urti 5000G), Roadmaster (GPS)
+CERTINA: DS Action Diver (C032.407 automatico 300m), DS-1 (C029.807), DS Podium (cronografo GMT)
+RADO: DiaStar Original (anni 60, icona design industriale), True Thinline (ceramica ultra-slim), Captain Cook (R32505157 diver vintage reissue — molto ricercato), HyperChrome (ceramica colorata), True (ceramica nera)
+MOVADO: Museum Watch (quadrante nero, singolo punto oro/argento alle 12 — iconico), Bold, Connect smartwatch
+BAUME & MERCIER: Clifton (10052), Riviera (10618 automatico), Capeland (10219 GMT), Milleis (dress ultrasottile)
+LONGINES: HydroConquest (L3.781.4 diver 300m), Spirit (L3.810.4 — pilot vintage ispirazione), Conquest Heritage (VHP quarzo), DolceVita (L5.512 rettangolare), Record (L2.321 COSC), Heritage Central Power Reserve, Master Collection (triple calendar)
+EBEL: Wave (quadrante cannage), 1911 (rettangolare curvo), Sport Classic
+CORUM: Admiral (cassa pentagono), Bubble (quadrante spesso curvo), Bridge (movimento bridge visibile), Romvlvs
+TAG HEUER: Monaco (CAW211P — quadrante blu, cassa quadrata, lancetta piccoli secondi in basso destra, ICONA Steve McQueen), Carrera (CBN2A1A automatico/cronografo), Aquaracer (WAY211A diver 300m), Formula 1 (quarzo entry), Link (WAT2110 curvo), Autavia (reissue 2017, ref CBE2111), Connected (smartwatch)
+BREMONT: Martin-Baker (MBI/MBIIt — ejector seat collab RAF), Wright Flyer (tributo volo Kitty Hawk), Solo, Supermarine, ALT1-C Chronograph
+ZENITH: El Primero (cronografo meccanico 1969 — calibre El Primero 3600 bat/ora, ref 03.2040.400), Defy Classic (36000 v/h), Defy Extreme (titanio sport), Pilot Big Date Special (vintage riissue), Chronomaster Original (A384 reissue icona anni 70)
+GIRARD-PERREGAUX: Laureato (cassa ottagonale anni 70 revival — ref 81010 acciaio), Cat's Eye (donna), Vintage 1945 (cassa rettangolare curva), Free Bridge (movimento skeletonizzato)
+CHOPARD: Alpine Eagle (ref 298600-3002 — nuovo modello 2019, quadrante blu/verde), L.U.C Quattro (4 bariletti manuale), Happy Sport (diamanti galleggianti icona anni 90), Mille Miglia (cronografo corsa)
+ULYSSE NARDIN: Marine Chronometer (ref 1183-126 — quadrante bianco porcellana), Freak (turbillon rotante come lancette), Executive Dual Time, Diver (1183-170 diver automatico), El Toro/Black Toro (data eterna perpetua)
+ROGER DUBUIS: Excalibur (cassa tonda con doppi ponti visibili), Velvet (donna), Aventador S (collab Lamborghini)
+HUBLOT: Big Bang (cassa ceramica/titanio con 6 viti esagonali — ref 441.NM, 411.NX), Classic Fusion (ref 542.NX), Spirit of Big Bang (cassa tonneau), Ferrari collab, Sang Bleu collab, MP-09 Tourbillon Bi-Axis
+PANERAI: Luminor Marina (PAM00111 — ponte corona iconico a "8", custodia personalizzata Officine Panerai), Luminor Base (PAM00000 senza data), Radiomir (PAM00210 — corona a vite, no ponte), Submersible (PAM00683 diver), Luminor GMT (PAM01535), Carbotech (materiale carbonico opaco), Goldtech (lega oro speciale). Scala 44mm/47mm tipica
 
 ━━━ TEDESCHI ━━━
 NOMOS GLASHÜTTE: Tangente (minimalista, quadrante bianco/grigio, indici bastoncini), Club (rotondo), Orion, Ludwig, Ahoi. Font Nomos Antiqua preciso. Made in Glashütte, Germany
@@ -1291,11 +1325,62 @@ OMEGA:
 - Quadrante sunburst: riflessi radiali UNIFORMI (falsi hanno riflessi irregolari)
 - Co-Axial escapement text sul quadrante: font preciso
 
-VERIFICA GENERALE:
-- Testo sul quadrante: NO sbavature, NO font irregolari, NO allineamenti storti
-- Indici/indici: ben fissati, luminova uniforme
-- Corona di carica: incisione logo precisa, nessun gioco eccessivo
-- Lancette secondi automatico: sweep fluido continuo (quarzo = ticchettio = attenzione su orologi dichiarati automatici)
+HAMILTON:
+- Logo "H" ornamentale in alto sul quadrante: font preciso, simmetrico — sui fake è pixelato o storto
+- Khaki Field: indici triangolari alle 12, ore applicate precise, quadrante matte di qualità
+- Ventura: cassa triangolare asimmetrica — linee geometriche PRECISE, nessun angolo irregolare
+- "HAMILTON" in basso sul quadrante: font Swiss precisissimo
+- Caseback: "HAMILTON" inciso + "ETA" o "H-10" o ref movement
+- Swatch Group Made in Switzerland: "SWISS MADE" in basso obbligatorio sui modelli automatici
+
+TAG HEUER:
+- Monaco: cassa quadrata con angoli precisi e smussature regolari, subdial piccoli secondi in basso destra
+- Carrera: indici applicati precisi, font cronografo su subdial uniformi
+- Logo TAG Heuer: carattere sans-serif specifico, non pixelato
+- Cinturino: qualità acciaio o pelle impeccabile, fibbia con logo inciso
+
+BREITLING:
+- Logo ala con B: simmetria delle ali perfetta
+- Navitimer: regolo scorrevole con scala PRECISA — i fake hanno scale stampate male
+- Quadrante: testo piccolo leggibile, numero marchio certificazione COSC visibile
+
+TISSOT / LONGINES / MIDO (Swatch Group):
+- "SWISS MADE" obbligatorio
+- Logo preciso (croce svizzera Tissot, L calligrafico Longines, M stilizzato Mido)
+- Longines: font "Longines" in corsivo storico preciso — molto imitato sui marketplace
+
+TUDOR:
+- Corona fungo: caratteristica — deve essere prominente e precisa
+- Logo scudo Tudor: forme geometriche precise
+- Bracciale: maglie rifinite con qualità Rolex-adjacent
+- "TUDOR" sul quadrante: font identico Rolex ma con nome diverso
+
+ZENITH:
+- El Primero: lancetta cronografo fa 5 giri al minuto (non 6 come altri). Quadrante tri-colore (nero/argento/grigio) con 3 subdial colorati
+
+PANERAI:
+- Ponte corona: deve avere la chiusura a "8" PRECISA — è il marker più identificativo
+- "OFFICINE PANERAI" in rilievo sul fondello in acciaio
+- "LUMINOR MARINA" o modello inciso sul fondello
+- Quadrante a sandwich: due layer visibili ai bordi (backlight + superficie)
+
+CASIO G-SHOCK:
+- CasiOak (GA-2100): cassa ottagonale con angoli smussati precisi
+- "G-SHOCK" in rilievo sulla lunetta in resina
+- Pulsanti laterali funzionanti, non decorativi
+- Retroilluminazione interna visibile
+
+GENERAL WATCHES — CRITERI UNIVERSALI (applicabili a QUALSIASI orologio):
+- TESTO QUADRANTE: font uniformi, nessuna sbavatura o pixel visibile, allineamento centrato
+- LANCETTE: finitura uniforme, luminova (se presente) applicata con precisione senza sbordature
+- INDICI: tutti allo stesso livello, fissati solidamente, stessa dimensione
+- CORONA: logo del brand inciso con profondità (non stampato superficialmente), resistenza regolare
+- CASEBACK: incisioni profonde e nette (seriale, modello, movimento)
+- CINTURINO/BRACCIALE: qualità materiale congruente con fascia prezzo, fibbia con logo
+- SWEEP SECONDI: automatico = fluido continuo; quarzo = ticchettio regolare
+- Se dichiarato automatico ma fa ticchettio = SOSPETTO
+- Peso: un orologio di qualità si sente pesante in mano — i fake sono spesso troppo leggeri
+- Per orologi NON nell'elenco sopra: valuta in base ai criteri universali e assegna NEEDS_VERIFICATION se non puoi verificare specificamente
 
 Rispondi SOLO in JSON valido (senza markdown):
 {
