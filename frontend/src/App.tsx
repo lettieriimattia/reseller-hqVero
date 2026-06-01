@@ -886,7 +886,7 @@ export default function App() {
       await fetchProducts();
       setLotOpen(false);
       setLotName(''); setLotCategory(''); setLotTotal(''); setLotQty(''); setLotBrand(''); setLotNotes('');
-      addToast(`✓ Lotto creato: ${data.created} prodotti a ${data.pricePerUnit.toFixed(2)}€ cad.`);
+      showToast(`✓ Lotto creato: ${data.created} prodotti a ${data.pricePerUnit.toFixed(2)}€ cad.`);
     }
     setIsCreatingLot(false);
   };
