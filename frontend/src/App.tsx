@@ -359,7 +359,7 @@ export default function App() {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Utenti');
-    XLSX.writeFile(wb, `ResellerHQ_Utenti_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(wb, `HQ_Utenti_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
   const deleteAdminUser = async (userId: string, userName: string) => {
@@ -1431,7 +1431,7 @@ export default function App() {
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `resellerhq-${new Date().toISOString().slice(0,10)}.csv`;
+    a.href = url; a.download = `hq-${new Date().toISOString().slice(0,10)}.csv`;
     a.click(); URL.revokeObjectURL(url);
     showToast(`Esportati ${products.length} prodotti`);
   };
@@ -1453,12 +1453,16 @@ export default function App() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 font-sans">
-        <div className="bg-[#0f0f0f] border border-white/[0.05] p-8 rounded-3xl w-full max-w-md shadow-2xl">
-          <h1 className="text-3xl font-bold text-white tracking-tighter text-center mb-2">
-            RESELLER<span className="text-white">HQ</span>
-          </h1>
+        <div className="bg-[#0f0f0f] border border-white/[0.05] p-8 rounded-3xl w-full max-w-md">
+          {/* Logo HQ centrato */}
+          <div className="flex justify-center mb-6">
+            <div className="relative w-14 h-16">
+              <span className="absolute top-0 left-0 text-[3rem] font-black leading-none text-white">H</span>
+              <span className="absolute bottom-0 right-0 text-[3rem] font-black leading-none text-white/40">Q</span>
+            </div>
+          </div>
           <p className="text-center text-gray-500 text-sm mb-8">
-            {authMode === 'login' ? 'Accedi all\'Azienda' : 'Inizia a Lavorare'}
+            {authMode === 'login' ? 'Accedi al tuo account' : 'Crea il tuo account'}
           </p>
           
           <form onSubmit={handleAuth} className="space-y-4">
@@ -1639,7 +1643,7 @@ export default function App() {
   };
   
   return (
-    <div className="min-h-screen bg-[#080808] text-white font-sans" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
+    <div className="min-h-screen bg-[#080808] text-white" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
 
       {/* ========== HEADER ========== */}
       <header className="sticky top-0 z-40 bg-[#080808]/95 backdrop-blur-xl border-b border-white/[0.05]"
@@ -3008,18 +3012,23 @@ export default function App() {
         </div>
       )}
 
-      {/* ========== MOBILE BOTTOM NAV ========== */}
+      {/* ========== MOBILE BOTTOM NAV — minimal iOS style ========== */}
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#080808]/95 backdrop-blur-xl border-t border-white/[0.05] z-30"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-30"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="grid grid-cols-5">
+        {/* Sfondo quasi invisibile — frosted glass leggero */}
+        <div className="absolute inset-0 bg-[#080808]/70 backdrop-blur-2xl" />
+        {/* Separatore appena percettibile */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-white/[0.04]" />
+
+        <div className="relative grid grid-cols-5 px-2">
           {[
-            { id: 'dashboard', icon: LayoutDashboard, label: 'Home' },
-            { id: 'magazzino', icon: Package, label: 'Magazzino' },
-            { id: 'analytics', icon: BarChart3, label: 'Stats' },
-            { id: 'tracking', icon: Truck, label: 'Tracking' },
-            { id: 'settings', icon: Settings, label: 'Settings' },
+            { id: 'dashboard',  icon: LayoutDashboard },
+            { id: 'magazzino',  icon: Package },
+            { id: 'analytics',  icon: BarChart3 },
+            { id: 'tracking',   icon: Truck },
+            { id: 'settings',   icon: Settings },
           ].map(tab => {
             const Icon = tab.icon;
             const active = currentView === tab.id;
@@ -3028,21 +3037,19 @@ export default function App() {
               : 0;
             return (
               <button key={tab.id} onClick={() => navigateTo(tab.id as any)}
-                className={`flex flex-col items-center gap-1 py-3 transition-colors relative active:opacity-70 ${
-                  active ? 'text-white' : 'text-gray-600'
+                className={`flex flex-col items-center justify-center py-2.5 relative active:scale-90 transition-all duration-150 ${
+                  active ? 'text-white' : 'text-white/25'
                 }`}>
-                {active && (
-                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-[#ff4d00]" />
-                )}
-                <div className="relative p-1.5">
-                  <Icon size={19} className={active ? 'text-white' : ''} />
+                <div className="relative">
+                  <Icon size={22} strokeWidth={active ? 2 : 1.5} />
                   {badge > 0 && (
-                    <span className="absolute -top-0.5 -right-1 w-3.5 h-3.5 bg-blue-500 text-white rounded-full text-[8px] font-semibold flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 bg-[#ff4d00] text-white rounded-full text-[8px] font-bold flex items-center justify-center">
                       {badge}
                     </span>
                   )}
                 </div>
-                <span className={`text-[9px] font-semibold ${active ? 'text-white' : 'text-gray-600'}`}>{tab.label}</span>
+                {/* Dot attivo sottile */}
+                {active && <span className="w-1 h-1 rounded-full bg-white mt-1 opacity-60" />}
               </button>
             );
           })}
@@ -4122,12 +4129,12 @@ export default function App() {
 
               <section>
                 <h3 className="text-white font-semibold text-sm mb-2">1. Titolare del Trattamento</h3>
-                <p>Il titolare del trattamento dei dati personali è l'operatore dell'account ResellerHQ. Per qualsiasi richiesta relativa ai dati personali, contatta il responsabile della piattaforma.</p>
+                <p>Il titolare del trattamento dei dati personali è l'operatore dell'account HQ. Per qualsiasi richiesta relativa ai dati personali, contatta il responsabile della piattaforma.</p>
               </section>
 
               <section>
                 <h3 className="text-white font-semibold text-sm mb-2">2. Dati Raccolti</h3>
-                <p className="mb-2">ResellerHQ raccoglie i seguenti dati personali:</p>
+                <p className="mb-2">HQ raccoglie i seguenti dati personali:</p>
                 <ul className="space-y-1 list-none">
                   {[
                     'Indirizzo email e nome (account)',
@@ -4164,7 +4171,7 @@ export default function App() {
 
               <section>
                 <h3 className="text-white font-semibold text-sm mb-2">4. Cookie Utilizzati</h3>
-                <p className="mb-3">ResellerHQ utilizza <span className="text-white">esclusivamente cookie tecnici strettamente necessari</span>, non richiesti dal consenso ai sensi dell'art. 122 D.Lgs. 196/2003 e delle Linee Guida Garante.</p>
+                <p className="mb-3">HQ utilizza <span className="text-white">esclusivamente cookie tecnici strettamente necessari</span>, non richiesti dal consenso ai sensi dell'art. 122 D.Lgs. 196/2003 e delle Linee Guida Garante.</p>
                 <div className="bg-white/[0.03] border border-white/[0.05] rounded-xl overflow-hidden">
                   <div className="grid grid-cols-3 text-[11px] font-semibold text-gray-500 p-3 border-b border-white/[0.05] uppercase tracking-wider">
                     <span>Nome</span><span>Durata</span><span>Scopo</span>

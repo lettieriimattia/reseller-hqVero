@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.svg', 'icon-192.svg', 'icon-512.svg'],
       manifest: {
-        name: 'ResellerHQ',
+        name: 'HQ',
         short_name: 'HQ',
-        description: 'Gestionale professionale per reseller',
+        description: 'HQ — Il tuo gestionale',
         theme_color: '#111111',
         background_color: '#080808',
         display: 'standalone',
