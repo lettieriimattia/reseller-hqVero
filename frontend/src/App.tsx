@@ -328,6 +328,9 @@ export default function App() {
   // ----- TEAM PANEL -----
   const [teamPanelOpen, setTeamPanelOpen] = useState(false);
 
+  // ----- ADD TYPE PICKER -----
+  const [addPickerOpen, setAddPickerOpen] = useState(false);
+
   // ----- LOTTO -----
   const [lotOpen, setLotOpen] = useState(false);
   const [lotName, setLotName] = useState('');
@@ -927,17 +930,20 @@ export default function App() {
     const unitPrice = parseFloat(price);
     
     let finalBrand = brand, finalName = name, finalSize = size, finalCondition = condition;
+    if (!category) { showToast('Seleziona un reparto', 'err'); setIsSaving(false); return; }
+    if (isNaN(unitPrice) || unitPrice <= 0) { showToast('Inserisci un prezzo valido', 'err'); setIsSaving(false); return; }
+
     if (category === 'Pokemon') {
-      if (!pokeName) { alert('Inserisci nome carta'); setIsSaving(false); return; }
+      if (!pokeName) { showToast('Inserisci il nome della carta', 'err'); setIsSaving(false); return; }
       finalBrand = 'Pokémon'; finalName = pokeName; finalSize = 'Unisize';
       finalCondition = pokeGraded === 'Si' ? `Gradata ${pokeGrade}` : 'Raw (Non Gradata)';
     } else if (category === 'Orologi') {
-      if (!watchBrand || !watchModel) { alert('Compila brand e modello'); setIsSaving(false); return; }
+      if (!watchBrand || !watchModel) { showToast('Compila brand e modello orologio', 'err'); setIsSaving(false); return; }
       finalBrand = watchBrand; finalName = watchModel;
-      finalSize = `${watchCase}mm, ${watchStrap}`;
+      finalSize = watchCase ? `${watchCase}mm${watchStrap ? ', ' + watchStrap : ''}` : (watchStrap || '-');
       finalCondition = watchMaterial ? `${condition} (${watchMaterial})` : condition;
     } else {
-      if (!brand || !name) { alert('Compila brand e modello'); setIsSaving(false); return; }
+      if (!brand || !name) { showToast('Compila brand e nome prodotto', 'err'); setIsSaving(false); return; }
     }
     
     // Snapshot delle percentuali attuali del team: rende ogni prodotto indipendente
@@ -1608,7 +1614,7 @@ export default function App() {
 
           <div className="flex items-center gap-1.5">
             {/* Pulsante Aggiungi (solo desktop) */}
-            <button onClick={() => setIsFormOpen(true)}
+            <button onClick={() => setAddPickerOpen(true)}
               className="hidden lg:flex items-center gap-2 bg-[#ff4d00] hover:bg-[#e84400] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
               <Plus size={15} /> Aggiungi
             </button>
@@ -1935,10 +1941,6 @@ export default function App() {
               <div className="flex flex-wrap items-center gap-2">
                 {magazzinoView === 'instock' && (
                   <>
-                    <button onClick={() => { setLotCategory(userCategories[0] || ''); setLotOpen(true); }}
-                      className="px-3 py-2 text-xs font-semibold rounded-xl border border-white/[0.07] bg-[#0f0f0f] text-gray-400 hover:text-white transition-colors flex items-center gap-1.5">
-                      <Layers size={13} /> Lotto
-                    </button>
                     <button onClick={toggleBulkMode}
                       className={`px-3 py-2 text-xs font-bold rounded-xl border transition-colors ${
                         bulkMode ? 'bg-[#ff4d00] border-[#ff4d00] text-white' : 'bg-[#0f0f0f] border-white/[0.07] text-gray-400 hover:text-white'
@@ -2310,20 +2312,26 @@ export default function App() {
             </div>
 
             {/* KPI row 2: metriche operative */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4 text-center">
-                <p className={`text-2xl font-bold num ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-purple-400' : 'text-red-400'}`}>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-3 text-center">
+                <p className={`text-xl font-bold num ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-purple-400' : 'text-red-400'}`}>
                   {avgMarginPct >= 0 ? '+' : ''}{avgMarginPct.toFixed(1)}%
                 </p>
-                <p className="text-[9px] text-gray-600 font-semibold uppercase tracking-[0.1em] mt-1.5">Margine Medio</p>
+                <p className="text-[9px] text-gray-600 font-semibold mt-1.5 leading-tight">
+                  <span className="sm:hidden">Margine</span>
+                  <span className="hidden sm:inline">Margine Medio</span>
+                </p>
               </div>
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4 text-center">
-                <p className="text-2xl font-bold text-purple-400 num">{Math.round(avgDaysToSell)}</p>
-                <p className="text-[9px] text-gray-600 font-semibold uppercase tracking-[0.1em] mt-1.5">Giorni medi vendita</p>
+              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-3 text-center">
+                <p className="text-xl font-bold text-purple-400 num">{Math.round(avgDaysToSell)}</p>
+                <p className="text-[9px] text-gray-600 font-semibold mt-1.5 leading-tight">
+                  <span className="sm:hidden">Gg/vendita</span>
+                  <span className="hidden sm:inline">Giorni medi vendita</span>
+                </p>
               </div>
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4 text-center">
-                <p className="text-2xl font-bold text-white num">{sellThroughRate}%</p>
-                <p className="text-[9px] text-gray-600 font-semibold uppercase tracking-[0.1em] mt-1.5">Sell-through</p>
+              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-3 text-center">
+                <p className="text-xl font-bold text-white num">{sellThroughRate}%</p>
+                <p className="text-[9px] text-gray-600 font-semibold mt-1.5 leading-tight">Sell-through</p>
               </div>
             </div>
 
@@ -2834,12 +2842,44 @@ export default function App() {
       
       {/* ========== FAB MOBILE ========== */}
       <button
-        onClick={() => setIsFormOpen(true)}
-        className="lg:hidden fixed z-40 bg-gradient-to-br from-[#ff4d00] to-[#ff6a2a] rounded-full shadow-2xl shadow-[#ff4d00]/40 flex items-center justify-center active:scale-90 transition-all hover:shadow-[#ff4d00]/50"
+        onClick={() => setAddPickerOpen(true)}
+        className="lg:hidden fixed z-40 bg-[#ff4d00] rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-all"
         style={{ width: 54, height: 54, bottom: 'calc(5.5rem + env(safe-area-inset-bottom))', right: 16 }}
       >
         <Plus size={24} />
       </button>
+
+      {/* ========== ADD TYPE PICKER ========== */}
+      {addPickerOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end" onClick={() => setAddPickerOpen(false)}>
+          <div className="w-full bg-[#0f0f0f] border-t border-white/[0.07] rounded-t-3xl p-5 pb-safe" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-center mb-4"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+            <p className="text-[10px] font-semibold text-gray-500 tracking-[0.12em] uppercase mb-3">Cosa vuoi aggiungere?</p>
+            <div className="space-y-2">
+              <button onClick={() => { setAddPickerOpen(false); setIsFormOpen(true); }}
+                className="w-full flex items-center gap-4 p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] rounded-2xl transition-colors text-left">
+                <div className="w-10 h-10 rounded-xl bg-[#ff4d00]/15 flex items-center justify-center shrink-0">
+                  <Plus size={20} className="text-[#ff4d00]" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Prodotto Singolo</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">Aggiungi un articolo con prezzo, foto e IA scan</p>
+                </div>
+              </button>
+              <button onClick={() => { setAddPickerOpen(false); setLotCategory(userCategories[0] || ''); setLotOpen(true); }}
+                className="w-full flex items-center gap-4 p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] rounded-2xl transition-colors text-left">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center shrink-0">
+                  <Layers size={20} className="text-gray-300" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Lotto</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">Acquisto multiplo — divide il costo su N articoli</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========== MOBILE BOTTOM NAV ========== */}
       <nav

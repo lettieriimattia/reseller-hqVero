@@ -645,8 +645,9 @@ ${prompt}`;
       max_tokens: category === 'Orologi' ? 1400 : category === 'Vestiti' ? 1200 : category === 'Scarpe' ? 1300 : 900,
     });
   } catch (err: any) {
-    // Fallback a Scout se Maverick non disponibile
-    if (err?.status === 400 || err?.status === 404) {
+    // Fallback a Scout se Maverick non disponibile o rate limited (429)
+    if (err?.status === 400 || err?.status === 404 || err?.status === 429 || err?.status === 503) {
+      logger.warn(`Maverick non disponibile (${err?.status}), fallback su Scout`, { category });
       try {
         completion = await groq.chat.completions.create({
           messages: [{
@@ -660,7 +661,10 @@ ${prompt}`;
           temperature: 0.05,
           max_tokens: 900,
         });
-      } catch (fallbackErr) {
+      } catch (fallbackErr: any) {
+        if (fallbackErr?.status === 429) {
+          throw new Error('Limite richieste IA raggiunto. Attendi qualche minuto e riprova.');
+        }
         logger.error('Errore anche su modello fallback', { fallbackErr, category });
         throw new Error('Servizio IA temporaneamente non disponibile.');
       }
@@ -1119,7 +1123,40 @@ export async function checkAuthenticity(imageBase64: string, category: string): 
       temperature: 0.1,
       max_tokens: 900,
     });
-  } catch (err) {
+  } catch (err: any) {
+    // Fallback Scout su rate limit o modello non disponibile
+    if (err?.status === 429 || err?.status === 400 || err?.status === 404 || err?.status === 503) {
+      try {
+        const fallback = await groq.chat.completions.create({
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: imageBase64 } },
+            ],
+          }],
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+          temperature: 0.1,
+          max_tokens: 900,
+        });
+        const raw2 = fallback.choices[0]?.message?.content?.trim() || '';
+        const p2 = safeParseJSON(raw2);
+        const d = '⚠️ Valutazione automatica basata sull\'immagine. NON sostituisce un autenticatore professionista.';
+        if (!p2) return { score: 50, verdict: 'NEEDS_VERIFICATION', redFlags: [], greenFlags: [], disclaimer: d };
+        return {
+          score: Math.max(0, Math.min(100, p2.score || 50)),
+          verdict: p2.verdict || 'NEEDS_VERIFICATION',
+          redFlags: Array.isArray(p2.redFlags) ? p2.redFlags.slice(0, 10) : [],
+          greenFlags: Array.isArray(p2.greenFlags) ? p2.greenFlags.slice(0, 10) : [],
+          disclaimer: d,
+        };
+      } catch {
+        /* fall through */
+      }
+    }
+    if (err?.status === 429) {
+      return { score: 50, verdict: 'NEEDS_VERIFICATION', redFlags: [], greenFlags: [], disclaimer: 'Limite richieste IA raggiunto. Attendi qualche minuto e riprova.' };
+    }
     logger.error('Errore Groq legit check', { err });
     return { score: 50, verdict: 'NEEDS_VERIFICATION', redFlags: [], greenFlags: [], disclaimer: 'Servizio legit check non disponibile.' };
   }
