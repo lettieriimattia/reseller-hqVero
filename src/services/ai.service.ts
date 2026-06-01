@@ -4,7 +4,77 @@ import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+// ==========================================
+// MULTI-KEY GROQ ROTATION
+// Supporta più chiavi API separate da virgola:
+// GROQ_API_KEY=key1,key2,key3
+// Ogni chiave ha il suo limite gratuito — su 429 ruota automaticamente
+// ==========================================
+const GROQ_KEYS: string[] = (process.env.GROQ_API_KEY || '')
+  .split(',')
+  .map(k => k.trim())
+  .filter(Boolean);
+
+if (GROQ_KEYS.length === 0) {
+  logger.error('Nessuna chiave GROQ_API_KEY configurata');
+}
+
+// Indice corrente — ruota round-robin
+let currentKeyIndex = 0;
+
+// Client per ogni chiave
+const groqClients = GROQ_KEYS.map(key => new Groq({ apiKey: key }));
+
+// Ottieni il prossimo client disponibile
+function getGroqClient(): Groq {
+  if (groqClients.length === 0) throw new Error('Nessuna chiave Groq configurata');
+  const client = groqClients[currentKeyIndex % groqClients.length];
+  return client;
+}
+
+// Ruota alla chiave successiva dopo un 429
+function rotateKey(): boolean {
+  const next = (currentKeyIndex + 1) % groqClients.length;
+  if (next === currentKeyIndex % groqClients.length && groqClients.length === 1) return false;
+  currentKeyIndex = next;
+  logger.warn(`Rotazione chiave Groq → key #${currentKeyIndex + 1}/${groqClients.length}`);
+  return true;
+}
+
+// Wrapper con retry automatico su 429
+async function groqCallWithRetry<T>(
+  fn: (client: Groq) => Promise<T>,
+  maxAttempts = Math.max(groqClients.length * 2, 3)
+): Promise<T> {
+  let lastErr: any;
+  const tried = new Set<number>();
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const keyIdx = currentKeyIndex % groqClients.length;
+    if (tried.has(keyIdx) && tried.size === groqClients.length) break;
+    tried.add(keyIdx);
+
+    try {
+      return await fn(groqClients[keyIdx]);
+    } catch (err: any) {
+      lastErr = err;
+      if (err?.status === 429 || err?.status === 503) {
+        const rotated = rotateKey();
+        if (!rotated) {
+          // Una sola chiave — aspetta 2s e riprova
+          await new Promise(r => setTimeout(r, 2000));
+        }
+        continue;
+      }
+      throw err; // altri errori: rilancia subito
+    }
+  }
+  throw lastErr || new Error('Limite richieste IA raggiunto. Attendi qualche minuto o aggiungi chiavi Groq.');
+}
+
+// Mantieni compatibilità con codice esistente
+const groq = groqClients[0] || new Groq({ apiKey: '' });
 
 const VISION_MODEL = 'meta-llama/llama-4-maverick-17b-128e-instruct';
 const TEXT_MODEL = 'llama-3.3-70b-versatile';
@@ -630,47 +700,49 @@ Descrivi brevemente e con precisione cosa vedi nell'immagine: brand visibile, el
 STEP 2 — IDENTIFICAZIONE JSON:
 ${prompt}`;
 
+  const maxTok = category === 'Orologi' ? 1400 : category === 'Vestiti' ? 1200 : category === 'Scarpe' ? 1300 : 900;
+
   let completion;
   try {
-    completion = await groq.chat.completions.create({
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'text', text: chainPrompt },
-          { type: 'image_url', image_url: { url: imageBase64 } },
-        ],
-      }],
-      model: VISION_MODEL,
-      temperature: 0.05,
-      max_tokens: category === 'Orologi' ? 1400 : category === 'Vestiti' ? 1200 : category === 'Scarpe' ? 1300 : 900,
-    });
+    completion = await groqCallWithRetry(client =>
+      client.chat.completions.create({
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: chainPrompt },
+            { type: 'image_url', image_url: { url: imageBase64 } },
+          ],
+        }],
+        model: VISION_MODEL,
+        temperature: 0.05,
+        max_tokens: maxTok,
+      })
+    );
   } catch (err: any) {
-    // Fallback a Scout se Maverick non disponibile o rate limited (429)
-    if (err?.status === 400 || err?.status === 404 || err?.status === 429 || err?.status === 503) {
-      logger.warn(`Maverick non disponibile (${err?.status}), fallback su Scout`, { category });
+    // Fallback a Scout se Maverick non disponibile
+    if (err?.status === 400 || err?.status === 404) {
       try {
-        completion = await groq.chat.completions.create({
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: imageBase64 } },
-            ],
-          }],
-          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-          temperature: 0.05,
-          max_tokens: 900,
-        });
+        completion = await groqCallWithRetry(client =>
+          client.chat.completions.create({
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'text', text: prompt },
+                { type: 'image_url', image_url: { url: imageBase64 } },
+              ],
+            }],
+            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+            temperature: 0.05,
+            max_tokens: maxTok,
+          })
+        );
       } catch (fallbackErr: any) {
-        if (fallbackErr?.status === 429) {
-          throw new Error('Limite richieste IA raggiunto. Attendi qualche minuto e riprova.');
-        }
-        logger.error('Errore anche su modello fallback', { fallbackErr, category });
-        throw new Error('Servizio IA temporaneamente non disponibile.');
+        logger.error('Errore modello fallback vision', { fallbackErr, category });
+        throw new Error('Servizio IA non disponibile. Riprova tra poco.');
       }
     } else {
       logger.error('Errore Groq vision API', { err, category });
-      throw new Error('Servizio IA temporaneamente non disponibile.');
+      throw new Error(err?.message || 'Servizio IA non disponibile. Riprova tra poco.');
     }
   }
 
@@ -896,15 +968,17 @@ Se non conosci abbastanza il prodotto, metti confidence "LOW" e prezzi a 0.`;
 
   let completion;
   try {
-    completion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: TEXT_MODEL,
-      temperature: 0.1,
-      max_tokens: 400,
-    });
+    completion = await groqCallWithRetry(client =>
+      client.chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: TEXT_MODEL,
+        temperature: 0.1,
+        max_tokens: 400,
+      })
+    );
   } catch (err) {
     logger.error('Errore Groq text API prezzi', { err });
-    return { minPrice: 0, maxPrice: 0, avgPrice: 0, confidence: 'LOW', reasoning: 'Servizio non disponibile.', cached: false };
+    return { minPrice: 0, maxPrice: 0, avgPrice: 0, confidence: 'LOW', reasoning: 'Stima non disponibile, riprova tra poco.', cached: false };
   }
 
   const raw = completion.choices[0]?.message?.content?.trim() || '';
