@@ -3,11 +3,14 @@
 @tailwind utilities;
 
 /* ========================================
-   FONT: Sistema iOS/macOS (San Francisco)
+   FONT: Inter — minimal, aesthetic, moderno
+   Usato da Linear, Vercel, Notion, Figma
    ======================================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
 :root {
   --accent: #ff4d00;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display',
     'Helvetica Neue', system-ui, sans-serif;
 }
 
