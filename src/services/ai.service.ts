@@ -110,15 +110,68 @@ export interface AuthenticityCheck {
 // SCAN PROMPTS
 // ==========================================
 const SCAN_PROMPTS: Record<string, string> = {
-  Pokemon: `Sei un esperto di carte Pokémon TCG. Analizza questa carta e rispondi SOLO in JSON valido (senza markdown, senza testo extra):
+  Pokemon: `Sei un esperto assoluto di Pokémon TCG con la conoscenza combinata di Bulbapedia + PriceCharting + TCGPlayer + CardMarket. Conosci ogni carta, ogni set, ogni edizione dalla Base Set del 1999 all'era Scarlatto e Violetto 2024-2025.
+
+ANALIZZA QUESTA CARTA CON PRECISIONE MANIACALE — leggi ogni testo visibile.
+
+COSA LEGGERE:
+1. NOME POKÉMON — testo grande in alto a sinistra (es: Charizard, Pikachu, Mewtwo)
+2. NUMERO CARTA — in basso a sinistra/centro, formato "NNN/NNN" (es: 4/102, 025/198, 200/198)
+   - Se il numero è MAGGIORE del totale → Secret Rare (es: 200/193)
+   - Se c'è solo un numero senza "/" → carta Promo (es: SWSH076, 001)
+   - Trainer Gallery: formato "TGxx/TGxx" (es: TG01/TG30)
+3. HP — numero in alto a destra con "HP" prima (es: HP 330, HP 200)
+4. TIPO ELEMENTO — icona colorata: 🔥Fuoco 💧Acqua 🌿Erba ⚡Fulmine 🔮Psico 👊Lotta 🌑Buio ⚙️Acciaio 🐉Drago 🧚Fata ⭐Incolore/Normale
+5. VARIANTE — leggi il testo nel nome o su banner:
+   - "EX" MAIUSCOLO = Pokémon-EX (era XY 2013-2016, era BW 2011-2012)
+   - "GX" = Pokémon-GX (era Sole e Luna SM 2017-2019)
+   - "V" solo = Pokémon V (era Spada e Scudo SWSH 2020-2022)
+   - "VMAX" = Pokémon VMAX
+   - "VSTAR" = Pokémon VSTAR
+   - "ex" MINUSCOLO = Pokémon ex (era Scarlatto e Violetto SV 2023-2025)
+   - "Radiant" = Radiant Pokémon (carta rara speciale SWSH)
+   - "tera" o cristallo = Tera Type (era SV)
+   - Nessuna variante = carta base
+6. RARITÀ — guarda simbolo vicino al numero carta:
+   - ⚪ cerchio = Common
+   - 💎 rombo = Uncommon
+   - ⭐ stella piena = Rare
+   - ⭐ stella + texture olografica sul campo di battaglia = Holo Rare
+   - doppia stella ⭐⭐ = Ultra Rare / Full Art / Special Illustration Rare
+   - Numero carta > totale = Secret Rare / Rainbow Rare / Gold
+7. FULL ART / ILLUSTRAZIONE COMPLETA — l'illustrazione copre tutto il bordo della carta (no cornice nera)
+8. LINGUA — EN/IT/JP/FR/DE/PT/KO/ZH (guarda il testo o il set symbol)
+9. SET — dal logo/simbolo in basso a destra O dal nome:
+   ERA BASE (1999-2002): Base Set, Jungle, Fossil, Team Rocket, Gym Heroes/Challenge, Neo Genesis/Discovery/Destiny/Revelation, Legendary Collection
+   ERA E (2003-2004): Expedition, Aquapolis, Skyridge
+   ERA EX (2003-2007): EX Ruby&Sapphire, EX Sandstorm, EX Dragon, EX Team Magma/Aqua, EX Hidden Legends, EX FireRed/LeafGreen, EX Team Rocket Returns, EX Deoxys, EX Emerald, EX Unseen Forces, EX Delta Species, EX Legend Maker, EX Holon Phantoms, EX Crystal Guardians, EX Dragon Frontiers, EX Power Keepers
+   ERA DP (2007-2009): Diamond & Pearl, Mysterious Treasures, Secret Wonders, Great Encounters, Majestic Dawn, Legends Awakened, Stormfront
+   ERA HGSS (2010-2011): HeartGold SoulSilver, Unleashed, Undaunted, Triumphant, Call of Legends
+   ERA BW (2011-2013): Black&White, Emerging Powers, Noble Victories, Next Destinies, Dark Explorers, Dragons Exalted, Dragon Vault, Boundaries Crossed, Plasma Storm, Plasma Freeze, Plasma Blast, Legendary Treasures
+   ERA XY (2014-2016): XY, Flashfire, Furious Fists, Phantom Forces, Primal Clash, Double Crisis, Roaring Skies, Ancient Origins, BREAKthrough, BREAKpoint, Fates Collide, Steam Siege, Evolutions
+   ERA SM (2017-2019): Sun&Moon, Guardians Rising, Burning Shadows, Shining Legends, Crimson Invasion, Ultra Prism, Forbidden Light, Celestial Storm, Dragon Majesty, Lost Thunder, Team Up, Detective Pikachu, Unbroken Bonds, Unified Minds, Hidden Fates, Cosmic Eclipse
+   ERA SWSH (2020-2022): Sword&Shield, Rebel Clash, Darkness Ablaze, Champions Path, Vivid Voltage, Shining Fates, Battle Styles, Chilling Reign, Evolving Skies, Celebrations, Fusion Strike, Brilliant Stars, Astral Radiance, Pokémon GO, Lost Origin, Silver Tempest, Crown Zenith
+   ERA SV (2023-2025): Scarlet&Violet base, Paldea Evolved, Obsidian Flames, 151, Paradox Rift, Paldean Fates, Temporal Forces, Twilight Masquerade, Shrouded Fable, Stellar Crown, Surging Sparks, Prismatic Evolutions, Journey Together
+   GIAPPONESE: spesso diverso dall'inglese — identifica dalla lingua del testo
+10. CONDIZIONI — Mint (perfetta), Near Mint (quasi perfetta, leggeri segni bordi), Lightly Played (lievi graffi), Played (visibili segni usura), Heavily Played (molto rovinata), Damaged (piegata/rotta)
+
+Rispondi SOLO in JSON valido (senza markdown, senza testo extra):
 {
-  "name": "nome esatto del Pokémon",
-  "cardNumber": "numero della carta (es: 4/102)",
-  "setName": "set se riconoscibile, altrimenti null",
-  "rarity": "Common|Uncommon|Rare|Holo|Ultra Rare|Secret Rare|null",
-  "condition": "Mint|Near Mint|Played|Damaged|null"
+  "name": "nome ESATTO del Pokémon come scritto sulla carta",
+  "variant": "base|EX|GX|V|VMAX|VSTAR|ex|Radiant|Tera|null",
+  "cardNumber": "numero ESATTO come scritto sulla carta (es: 4/102, TG01/TG30, SWSH076)",
+  "setName": "nome set identificato o null",
+  "setCode": "codice set se identificabile (es: base1, swsh12, sv3) o null",
+  "hp": "valore HP come scritto (es: 330) o null",
+  "type": "tipo elemento principale o null",
+  "rarity": "Common|Uncommon|Rare|Holo Rare|Double Rare|Ultra Rare|Full Art|Special Illustration Rare|Secret Rare|Rainbow Rare|Gold|Promo|null",
+  "isFullArt": true o false,
+  "language": "EN|IT|JP|FR|DE|PT|KO|ZH|unknown",
+  "condition": "Mint|Near Mint|Lightly Played|Played|Heavily Played|Damaged|null",
+  "isHolo": true o false,
+  "notes": "qualsiasi testo visibile sulla carta che aiuti l'identificazione — numero carta, HP, testo set, ecc."
 }
-Se non riesci a leggere un campo metti null. NON inventare dati. Rispondi SOLO con il JSON.`,
+NON inventare dati — se non riesci a leggere un campo metti null. Trascrivi FEDELMENTE i numeri visibili. Rispondi SOLO JSON.`,
 
   Scarpe: `Sei il massimo esperto mondiale di calzature: conosci ogni sneaker streetwear E ogni scarpa di lusso come un autenticatore StockX + un personal shopper dei migliori department store di Parigi e Milano. Analizza questa scarpa con attenzione assoluta a OGNI dettaglio visibile: logo, suola, tomaia, cuciture, etichette, colori, texture, hardware, pattern, silhouette.
 
@@ -760,24 +813,111 @@ ${prompt}`;
 
   switch (category) {
     case 'Pokemon': {
-      if (parsed.name && parsed.cardNumber) {
-        result.brand = 'Pokémon';
-        result.model = `${parsed.name} - ${parsed.cardNumber}${parsed.setName ? ` (${parsed.setName})` : ''}`;
-        result.confidence = parsed.setName ? 'HIGH' : 'MEDIUM';
+      result.brand = 'Pokémon';
+
+      const pokeVariant = parsed.variant && parsed.variant !== 'base' ? ` ${parsed.variant}` : '';
+      const pokeLang = parsed.language && parsed.language !== 'EN' ? ` [${parsed.language}]` : '';
+      const pokeRarity = parsed.rarity ? ` — ${parsed.rarity}` : '';
+
+      if (parsed.name) {
+        result.model = `${parsed.name}${pokeVariant}${parsed.cardNumber ? ` ${parsed.cardNumber}` : ''}${parsed.setName ? ` (${parsed.setName})` : ''}${pokeLang}${pokeRarity}`;
+        result.confidence = parsed.cardNumber ? 'MEDIUM' : 'LOW';
+
+        // Arricchimento via API pokemontcg.io con 3 strategie di ricerca
         try {
-          const num = parsed.cardNumber.split('/')[0].replace(/^0+/, '');
-          const query = encodeURIComponent(`name:"${parsed.name}" number:"${num}"`);
-          const tcgRes = await fetch(`https://api.pokemontcg.io/v2/cards?q=${query}`);
-          const tcgData = await tcgRes.json() as any;
-          if (tcgData.data?.length > 0) {
-            const card = tcgData.data[0];
-            result.model = `${card.name} - ${card.set.name} (${card.number}/${card.set.printedTotal})`;
-            result.confidence = 'HIGH';
-            result.details = { ...parsed, tcgData: { setId: card.set.id, image: card.images?.small } };
+          let found = false;
+
+          // STRATEGIA 1: nome + numero esatto
+          if (parsed.cardNumber && parsed.name) {
+            const numRaw = parsed.cardNumber.split('/')[0].trim();
+            const numNoZero = numRaw.replace(/^0+/, '') || numRaw;
+            const q1 = encodeURIComponent(`name:"${parsed.name}" number:"${numNoZero}"`);
+            const r1 = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q1}&pageSize=5`);
+            const d1 = await r1.json() as any;
+            if (d1.data?.length > 0) {
+              const card = d1.data[0];
+              const variantName = card.name.includes(parsed.name) ? card.name : `${parsed.name}${pokeVariant}`;
+              result.model = `${variantName} — ${card.set.name} ${card.number}/${card.set.printedTotal}${pokeLang}`;
+              result.confidence = 'HIGH';
+              result.details = {
+                ...parsed,
+                tcgId: card.id,
+                tcgImage: card.images?.large || card.images?.small,
+                tcgSet: card.set.name,
+                tcgSetId: card.set.id,
+                tcgRarity: card.rarity,
+                tcgNumber: card.number,
+                tcgPrintedTotal: card.set.printedTotal,
+                marketPrice: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market,
+              };
+              found = true;
+            }
           }
-        } catch { /* fallback */ }
+
+          // STRATEGIA 2: solo numero (se nome non trovato)
+          if (!found && parsed.cardNumber) {
+            const numRaw = parsed.cardNumber.split('/')[0].trim().replace(/^0+/, '');
+            const totalRaw = parsed.cardNumber.split('/')[1]?.trim();
+            const q2 = totalRaw
+              ? encodeURIComponent(`number:"${numRaw}" set.printedTotal:"${totalRaw}"`)
+              : encodeURIComponent(`number:"${numRaw}"`);
+            const r2 = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q2}&pageSize=10`);
+            const d2 = await r2.json() as any;
+            if (d2.data?.length > 0) {
+              // Prendi la carta il cui nome corrisponde meglio
+              const best = d2.data.find((c: any) => c.name.toLowerCase().includes((parsed.name || '').toLowerCase())) || d2.data[0];
+              result.model = `${best.name} — ${best.set.name} ${best.number}/${best.set.printedTotal}${pokeLang}`;
+              result.confidence = 'HIGH';
+              result.details = {
+                ...parsed,
+                tcgId: best.id,
+                tcgImage: best.images?.large || best.images?.small,
+                tcgSet: best.set.name,
+                tcgSetId: best.set.id,
+                tcgRarity: best.rarity,
+                tcgNumber: best.number,
+                tcgPrintedTotal: best.set.printedTotal,
+                marketPrice: best.cardmarket?.prices?.averageSellPrice || best.tcgplayer?.prices?.holofoil?.market,
+              };
+              found = true;
+            }
+          }
+
+          // STRATEGIA 3: solo nome, prendi tutte e filtra per variante
+          if (!found && parsed.name) {
+            const q3 = encodeURIComponent(`name:"${parsed.name}"`);
+            const r3 = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q3}&pageSize=20`);
+            const d3 = await r3.json() as any;
+            if (d3.data?.length > 0) {
+              // Prendi la più recente
+              const card = d3.data[0];
+              result.model = `${card.name} — ${card.set.name} ${card.number}/${card.set.printedTotal}${pokeLang} (da nome)`;
+              result.confidence = 'MEDIUM';
+              result.details = {
+                ...parsed,
+                tcgId: card.id,
+                tcgImage: card.images?.small,
+                tcgSet: card.set.name,
+                tcgRarity: card.rarity,
+                marketPrice: card.cardmarket?.prices?.averageSellPrice,
+                allVersions: d3.data.length,
+              };
+            }
+          }
+        } catch (tcgErr) {
+          logger.warn('TCG API non raggiungibile', { tcgErr });
+          // Usa dati IA puri
+        }
       } else {
-        result.confidence = 'LOW';
+        // Nessun nome trovato — prova comunque per numero
+        if (parsed.cardNumber) {
+          result.model = `Carta #${parsed.cardNumber}${parsed.setName ? ` (${parsed.setName})` : ''}`;
+          result.confidence = 'LOW';
+          result.warnings = ['Nome Pokémon non leggibile. Modifica manualmente.'];
+        } else {
+          result.confidence = 'LOW';
+          result.warnings = ['Carta non identificata. Assicurati che sia ben illuminata e a fuoco.'];
+        }
       }
       break;
     }
