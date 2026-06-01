@@ -328,6 +328,47 @@ export default function App() {
   // ----- TEAM PANEL -----
   const [teamPanelOpen, setTeamPanelOpen] = useState(false);
 
+  // ----- ADMIN -----
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminLoaded, setAdminLoaded] = useState(false);
+  const ADMIN_EMAIL = 'lettieriimattia@gmail.com';
+
+  const fetchAdminUsers = async () => {
+    setAdminLoading(true);
+    const { ok, data } = await apiCall('/admin/users');
+    if (ok) { setAdminUsers(data.users || []); setAdminLoaded(true); }
+    setAdminLoading(false);
+  };
+
+  const exportAdminExcel = () => {
+    if (!adminUsers.length) return;
+    const rows = adminUsers.map(u => ({
+      'Nome': u.name,
+      'Email': u.email,
+      'Registrato il': new Date(u.createdAt).toLocaleDateString('it-IT'),
+      'Ultimo accesso': u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString('it-IT') : '—',
+      '2FA': u.twoFactorEnabled ? 'Sì' : 'No',
+      'Reparti': u.warehouses.map((w: any) => `${w.name}(${w.role})`).join(', '),
+      'Prodotti Totali': u.stats.totalProducts,
+      'In Stock': u.stats.inStock,
+      'Venduti': u.stats.sold,
+      'Profitto €': u.stats.profit,
+      'Valore Stock €': u.stats.stockValue,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Utenti');
+    XLSX.writeFile(wb, `ResellerHQ_Utenti_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  const deleteAdminUser = async (userId: string, userName: string) => {
+    if (!confirm(`Eliminare definitivamente l'utente "${userName}" e tutti i suoi dati?`)) return;
+    const { ok } = await apiCall(`/admin/users/${userId}`, { method: 'DELETE' });
+    if (ok) { setAdminUsers(prev => prev.filter(u => u.id !== userId)); showToast(`Utente ${userName} eliminato`); }
+    else showToast('Errore eliminazione', 'err');
+  };
+
   // ----- ADD TYPE PICKER -----
   const [addPickerOpen, setAddPickerOpen] = useState(false);
 
@@ -2652,6 +2693,92 @@ export default function App() {
         {currentView === 'settings' && (
           <div className="space-y-5">
             <h2 className="text-3xl font-semibold">Impostazioni</h2>
+
+            {/* ===== PANNELLO ADMIN ===== */}
+            {user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+              <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl overflow-hidden">
+                <div className="p-5 border-b border-white/[0.05] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Shield size={16} className="text-white" />
+                    <div>
+                      <h3 className="font-semibold text-sm">Pannello Admin</h3>
+                      <p className="text-[11px] text-gray-600 mt-0.5">Utenti registrati — solo tu puoi vedere questo</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {adminLoaded && (
+                      <button onClick={exportAdminExcel}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-white/[0.05] hover:bg-white/[0.08] rounded-xl text-xs font-semibold transition-colors">
+                        <Download size={13} /> Excel
+                      </button>
+                    )}
+                    <button onClick={fetchAdminUsers} disabled={adminLoading}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-white text-black rounded-xl text-xs font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50">
+                      {adminLoading ? <Loader2 size={13} className="animate-spin" /> : <Users size={13} />}
+                      {adminLoaded ? 'Aggiorna' : 'Carica Utenti'}
+                    </button>
+                  </div>
+                </div>
+
+                {adminLoaded && (
+                  <div>
+                    {/* Riepilogo */}
+                    <div className="grid grid-cols-3 gap-0 border-b border-white/[0.05]">
+                      {[
+                        { label: 'Utenti', value: adminUsers.length },
+                        { label: 'Prodotti totali', value: adminUsers.reduce((a, u) => a + u.stats.totalProducts, 0) },
+                        { label: 'Profitto totale', value: adminUsers.reduce((a, u) => a + u.stats.profit, 0).toFixed(0) + '€' },
+                      ].map(s => (
+                        <div key={s.label} className="p-4 text-center border-r border-white/[0.05] last:border-0">
+                          <p className="text-lg font-bold num">{s.value}</p>
+                          <p className="text-[10px] text-gray-600 mt-0.5">{s.label}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Lista utenti */}
+                    <div className="divide-y divide-white/[0.04]">
+                      {adminUsers.map(u => (
+                        <div key={u.id} className="p-4 flex items-start gap-3 hover:bg-white/[0.02] transition-colors">
+                          <div className="w-8 h-8 rounded-full bg-white/[0.06] flex items-center justify-center text-xs font-semibold shrink-0">
+                            {u.name?.[0]?.toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-sm">{u.name}</span>
+                              {u.twoFactorEnabled && <span className="text-[9px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded-full">2FA</span>}
+                              {u.warehouses.map((w: any) => (
+                                <span key={w.name} className={`text-[9px] px-1.5 py-0.5 rounded-full ${w.role === 'OWNER' ? 'bg-white/[0.08] text-gray-300' : 'bg-white/[0.04] text-gray-500'}`}>
+                                  {w.name} {w.role === 'OWNER' ? '👑' : ''}
+                                </span>
+                              ))}
+                            </div>
+                            <p className="text-[11px] text-gray-500 mt-0.5">{u.email}</p>
+                            <div className="flex gap-3 mt-1.5 flex-wrap">
+                              <span className="text-[10px] text-gray-600">📦 {u.stats.inStock} stock · ✓ {u.stats.sold} venduti</span>
+                              {u.stats.profit > 0 && <span className="text-[10px] text-emerald-500">+{u.stats.profit.toFixed(0)}€ profitto</span>}
+                              <span className="text-[10px] text-gray-700">dal {new Date(u.createdAt).toLocaleDateString('it-IT')}</span>
+                            </div>
+                          </div>
+                          {u.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase() && (
+                            <button onClick={() => deleteAdminUser(u.id, u.name)}
+                              className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors shrink-0">
+                              <Trash2 size={14} className="text-red-500/50 hover:text-red-400" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!adminLoaded && !adminLoading && (
+                  <div className="p-8 text-center text-gray-600 text-sm">
+                    Clicca "Carica Utenti" per vedere chi si è registrato
+                  </div>
+                )}
+              </section>
+            )}
 
             {/* SEZIONE: Prodotti Fermi */}
             <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-6">

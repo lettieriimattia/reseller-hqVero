@@ -21,6 +21,7 @@ import teamRoutes from './src/routes/team';
 import aiRoutes from './src/routes/ai';
 import notificationRoutes from './src/routes/notifications';
 import trackingRoutes from './src/routes/tracking';
+import adminRoutes from './src/routes/admin';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
 
 import { logger } from './src/utils/logger';
@@ -162,6 +163,7 @@ app.use('/', teamRoutes);          // monta /warehouses/join e /warehouses (mant
 app.use('/api/ai', aiRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/tracking', trackingRoutes);
+app.use('/admin', adminRoutes);
 
 // ==========================================
 // SPA FALLBACK + 404
