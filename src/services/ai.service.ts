@@ -746,14 +746,21 @@ export async function scanProduct(imageBase64: string, category: string): Promis
   const prompt = SCAN_PROMPTS[category];
   if (!prompt) throw new Error(`Categoria non supportata dall'IA: ${category}`);
 
-  // Chain-of-thought: prima analisi visiva, poi JSON strutturato
-  const chainPrompt = `STEP 1 — ANALISI VISIVA (3-5 righe max):
-Descrivi brevemente e con precisione cosa vedi nell'immagine: brand visibile, elementi distintivi, colori dominanti, dettagli logo/hardware/suola/quadrante. Sii specifico.
+  // Pokemon usa Scout diretto (più veloce, sufficiente per leggere testo da carta)
+  // Scarpe/Vestiti/Orologi usano Maverick con chain-of-thought (più preciso per identificazione visiva)
+  const isPokemon = category === 'Pokemon';
+
+  const finalPrompt = isPokemon ? prompt : `STEP 1 — ANALISI VISIVA (3-5 righe max):
+Descrivi brevemente cosa vedi: brand visibile, elementi distintivi, colori, logo/hardware/suola/quadrante.
 
 STEP 2 — IDENTIFICAZIONE JSON:
 ${prompt}`;
 
-  const maxTok = category === 'Orologi' ? 1400 : category === 'Vestiti' ? 1200 : category === 'Scarpe' ? 1300 : 900;
+  const finalModel = isPokemon
+    ? 'meta-llama/llama-4-scout-17b-16e-instruct'  // Scout: più veloce per OCR carta
+    : VISION_MODEL;                                  // Maverick: più preciso per oggetti
+
+  const maxTok = isPokemon ? 700 : category === 'Orologi' ? 1400 : category === 'Vestiti' ? 1200 : 1300;
 
   let completion;
   try {
@@ -762,12 +769,12 @@ ${prompt}`;
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: chainPrompt },
+            { type: 'text', text: finalPrompt },
             { type: 'image_url', image_url: { url: imageBase64 } },
           ],
         }],
-        model: VISION_MODEL,
-        temperature: 0.05,
+        model: finalModel,
+        temperature: 0.02,
         max_tokens: maxTok,
       })
     );
@@ -823,90 +830,75 @@ ${prompt}`;
         result.model = `${parsed.name}${pokeVariant}${parsed.cardNumber ? ` ${parsed.cardNumber}` : ''}${parsed.setName ? ` (${parsed.setName})` : ''}${pokeLang}${pokeRarity}`;
         result.confidence = parsed.cardNumber ? 'MEDIUM' : 'LOW';
 
-        // Arricchimento via API pokemontcg.io con 3 strategie di ricerca
+        // Arricchimento via pokemontcg.io — tutte le query IN PARALLELO per velocità
         try {
-          let found = false;
+          const numRaw = parsed.cardNumber?.split('/')[0].trim() || '';
+          const numNoZero = numRaw.replace(/^0+/, '') || numRaw;
+          const totalRaw = parsed.cardNumber?.split('/')[1]?.trim() || '';
 
-          // STRATEGIA 1: nome + numero esatto
-          if (parsed.cardNumber && parsed.name) {
-            const numRaw = parsed.cardNumber.split('/')[0].trim();
-            const numNoZero = numRaw.replace(/^0+/, '') || numRaw;
-            const q1 = encodeURIComponent(`name:"${parsed.name}" number:"${numNoZero}"`);
-            const r1 = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q1}&pageSize=5`);
-            const d1 = await r1.json() as any;
-            if (d1.data?.length > 0) {
-              const card = d1.data[0];
-              const variantName = card.name.includes(parsed.name) ? card.name : `${parsed.name}${pokeVariant}`;
-              result.model = `${variantName} — ${card.set.name} ${card.number}/${card.set.printedTotal}${pokeLang}`;
-              result.confidence = 'HIGH';
-              result.details = {
-                ...parsed,
-                tcgId: card.id,
-                tcgImage: card.images?.large || card.images?.small,
-                tcgSet: card.set.name,
-                tcgSetId: card.set.id,
-                tcgRarity: card.rarity,
-                tcgNumber: card.number,
-                tcgPrintedTotal: card.set.printedTotal,
-                marketPrice: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market,
-              };
-              found = true;
-            }
-          }
+          // Costruisci le query da eseguire in parallelo
+          const queries: Promise<any>[] = [];
 
-          // STRATEGIA 2: solo numero (se nome non trovato)
-          if (!found && parsed.cardNumber) {
-            const numRaw = parsed.cardNumber.split('/')[0].trim().replace(/^0+/, '');
-            const totalRaw = parsed.cardNumber.split('/')[1]?.trim();
+          // Q1: nome + numero (più precisa)
+          if (parsed.name && numNoZero) {
+            queries.push(
+              fetch(`https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(`name:"${parsed.name}" number:"${numNoZero}"`)}&pageSize=5`)
+                .then(r => r.json()).catch(() => null)
+            );
+          } else queries.push(Promise.resolve(null));
+
+          // Q2: numero + totale (fallback se nome sbagliato)
+          if (numNoZero) {
             const q2 = totalRaw
-              ? encodeURIComponent(`number:"${numRaw}" set.printedTotal:"${totalRaw}"`)
-              : encodeURIComponent(`number:"${numRaw}"`);
-            const r2 = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q2}&pageSize=10`);
-            const d2 = await r2.json() as any;
-            if (d2.data?.length > 0) {
-              // Prendi la carta il cui nome corrisponde meglio
-              const best = d2.data.find((c: any) => c.name.toLowerCase().includes((parsed.name || '').toLowerCase())) || d2.data[0];
-              result.model = `${best.name} — ${best.set.name} ${best.number}/${best.set.printedTotal}${pokeLang}`;
-              result.confidence = 'HIGH';
-              result.details = {
-                ...parsed,
-                tcgId: best.id,
-                tcgImage: best.images?.large || best.images?.small,
-                tcgSet: best.set.name,
-                tcgSetId: best.set.id,
-                tcgRarity: best.rarity,
-                tcgNumber: best.number,
-                tcgPrintedTotal: best.set.printedTotal,
-                marketPrice: best.cardmarket?.prices?.averageSellPrice || best.tcgplayer?.prices?.holofoil?.market,
-              };
-              found = true;
-            }
-          }
+              ? `number:"${numNoZero}" set.printedTotal:"${totalRaw}"`
+              : `number:"${numNoZero}"`;
+            queries.push(
+              fetch(`https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(q2)}&pageSize=10`)
+                .then(r => r.json()).catch(() => null)
+            );
+          } else queries.push(Promise.resolve(null));
 
-          // STRATEGIA 3: solo nome, prendi tutte e filtra per variante
-          if (!found && parsed.name) {
-            const q3 = encodeURIComponent(`name:"${parsed.name}"`);
-            const r3 = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q3}&pageSize=20`);
-            const d3 = await r3.json() as any;
-            if (d3.data?.length > 0) {
-              // Prendi la più recente
-              const card = d3.data[0];
-              result.model = `${card.name} — ${card.set.name} ${card.number}/${card.set.printedTotal}${pokeLang} (da nome)`;
-              result.confidence = 'MEDIUM';
-              result.details = {
-                ...parsed,
-                tcgId: card.id,
-                tcgImage: card.images?.small,
-                tcgSet: card.set.name,
-                tcgRarity: card.rarity,
-                marketPrice: card.cardmarket?.prices?.averageSellPrice,
-                allVersions: d3.data.length,
-              };
-            }
+          // Q3: solo nome (ultimo fallback)
+          if (parsed.name) {
+            queries.push(
+              fetch(`https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(`name:"${parsed.name}"`)}&pageSize=10`)
+                .then(r => r.json()).catch(() => null)
+            );
+          } else queries.push(Promise.resolve(null));
+
+          // Esegui tutte in parallelo
+          const [d1, d2, d3] = await Promise.all(queries);
+
+          const buildDetails = (card: any) => ({
+            ...parsed,
+            tcgId: card.id,
+            tcgImage: card.images?.large || card.images?.small,
+            tcgSet: card.set.name,
+            tcgSetId: card.set.id,
+            tcgRarity: card.rarity,
+            tcgNumber: card.number,
+            tcgPrintedTotal: card.set.printedTotal,
+            marketPrice: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
+          });
+
+          if (d1?.data?.length > 0) {
+            const card = d1.data[0];
+            result.model = `${card.name} — ${card.set.name} ${card.number}/${card.set.printedTotal}${pokeLang}`;
+            result.confidence = 'HIGH';
+            result.details = buildDetails(card);
+          } else if (d2?.data?.length > 0) {
+            const best = d2.data.find((c: any) => c.name.toLowerCase().includes((parsed.name || '').toLowerCase())) || d2.data[0];
+            result.model = `${best.name} — ${best.set.name} ${best.number}/${best.set.printedTotal}${pokeLang}`;
+            result.confidence = 'HIGH';
+            result.details = buildDetails(best);
+          } else if (d3?.data?.length > 0) {
+            const card = d3.data[0];
+            result.model = `${card.name} — ${card.set.name} ${card.number}/${card.set.printedTotal}${pokeLang} (da nome)`;
+            result.confidence = 'MEDIUM';
+            result.details = buildDetails(card);
           }
         } catch (tcgErr) {
           logger.warn('TCG API non raggiungibile', { tcgErr });
-          // Usa dati IA puri
         }
       } else {
         // Nessun nome trovato — prova comunque per numero
