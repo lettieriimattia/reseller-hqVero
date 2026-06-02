@@ -3049,26 +3049,26 @@ export default function App() {
                 <h3 className="font-semibold text-sm">Entra in un Magazzino</h3>
               </div>
               <p className="text-[11px] text-gray-600 mb-4">Hai ricevuto un codice invito? Inseriscilo qui per unirti al team.</p>
-              <form onSubmit={handleJoinWarehouse} className="flex gap-2">
+              <form onSubmit={handleJoinWarehouse} className="flex flex-col gap-2">
                 <input
                   value={joinCodeInput}
                   onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
                   placeholder="Codice invito (es: ABC123XY)"
                   maxLength={20}
-                  className="flex-1 bg-[#0a0a0a] border border-white/[0.07] rounded-xl px-4 py-2.5 text-sm font-mono tracking-widest focus:border-white/[0.2] outline-none uppercase"
+                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl px-4 py-3 text-sm font-mono tracking-widest focus:border-white/[0.2] outline-none uppercase"
                 />
                 <button type="submit" disabled={isJoining || !joinCodeInput.trim()}
-                  className="px-4 py-2.5 bg-white text-black rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-40 whitespace-nowrap">
-                  {isJoining ? <Loader2 size={16} className="animate-spin" /> : 'Entra'}
+                  className="w-full py-3 bg-white text-black rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-40">
+                  {isJoining ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Entra nel Magazzino'}
                 </button>
               </form>
             </section>
 
-            {/* ===== ZONA PERICOLOSA — ELIMINA ACCOUNT ===== */}
+            {/* ===== ELIMINAZIONE ACCOUNT ===== */}
             <section className="bg-[#0f0f0f] border border-red-500/[0.12] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle size={15} className="text-red-500/60" />
-                <h3 className="font-semibold text-sm text-red-400/80">Zona Pericolosa</h3>
+                <h3 className="font-semibold text-sm text-red-400/80">Eliminazione Account</h3>
               </div>
               <p className="text-[11px] text-gray-600 mb-4">
                 L'eliminazione dell'account è permanente e irreversibile. Tutti i tuoi prodotti, dati e accessi verranno cancellati definitivamente.
