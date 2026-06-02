@@ -7,13 +7,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.svg', 'icon-192.svg', 'icon-512.svg'],
+      includeAssets: ['logo.png'],
       manifest: {
         name: 'HQ',
         short_name: 'HQ',
         description: 'HQ — Il tuo gestionale',
         theme_color: '#111111',
-        background_color: '#080808',
+        background_color: '#111111',
         display: 'standalone',
         orientation: 'portrait-primary',
         start_url: '/',
@@ -22,20 +22,20 @@ export default defineConfig({
         categories: ['business', 'finance', 'productivity'],
         icons: [
           {
-            src: '/icon-192.svg',
+            src: '/logo.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
           },
           {
-            src: '/icon-512.svg',
+            src: '/logo.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/icon-512.svg',
+            src: '/logo.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'maskable',
           },
         ],
