@@ -26,7 +26,8 @@ export type AuditAction =
   | 'TEAM_PERCENTAGE_UPDATE'
   | 'AI_SCAN'
   | 'SECURITY_LOCK'
-  | 'UNAUTHORIZED_ACCESS';
+  | 'UNAUTHORIZED_ACCESS'
+  | 'ACCOUNT_DELETE';
 
 export async function audit(params: {
   action: AuditAction;

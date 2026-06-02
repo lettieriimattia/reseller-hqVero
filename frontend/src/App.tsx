@@ -328,6 +328,17 @@ export default function App() {
   // ----- TEAM PANEL -----
   const [teamPanelOpen, setTeamPanelOpen] = useState(false);
 
+  // ----- ENTRA IN MAGAZZINO -----
+  const [joinCodeInput, setJoinCodeInput] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
+
+  // ----- ELIMINA ACCOUNT -----
+  const [deleteAccountStep, setDeleteAccountStep] = useState(0); // 0=chiuso, 1=warning, 2=email, 3=password, 4=finale
+  const [deleteEmailConfirm, setDeleteEmailConfirm] = useState('');
+  const [deletePasswordConfirm, setDeletePasswordConfirm] = useState('');
+  const [deleteCheckbox, setDeleteCheckbox] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
   // ----- ADMIN -----
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [adminLoading, setAdminLoading] = useState(false);
@@ -341,6 +352,40 @@ export default function App() {
     const { ok, data } = await apiCall('/admin/users');
     if (ok) { setAdminUsers(data.users || []); setAdminLoaded(true); }
     setAdminLoading(false);
+  };
+
+  const handleJoinWarehouse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!joinCodeInput.trim()) return;
+    setIsJoining(true);
+    const { ok, data } = await apiCall('/warehouses/join', {
+      method: 'POST',
+      body: JSON.stringify({ inviteCode: joinCodeInput.trim() }),
+    });
+    if (ok) {
+      setUser(data.user);
+      setJoinCodeInput('');
+      showToast(`Sei entrato nel team!`);
+      await fetchTeam();
+    } else {
+      showToast(data.error || 'Codice non valido', 'err');
+    }
+    setIsJoining(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    const { ok, data } = await apiCall('/auth/delete-account', {
+      method: 'DELETE',
+      body: JSON.stringify({ password: deletePasswordConfirm }),
+    });
+    if (ok) {
+      setIsAuthenticated(false);
+      setUser(null);
+    } else {
+      showToast(data.error || 'Errore eliminazione account', 'err');
+    }
+    setIsDeletingAccount(false);
   };
 
   const toggleAdminPanel = async () => {
@@ -2996,6 +3041,44 @@ export default function App() {
                 </button>
               </section>
             ))}
+
+            {/* ===== ENTRA IN UN MAGAZZINO ===== */}
+            <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <UserPlus size={15} className="text-gray-400" />
+                <h3 className="font-semibold text-sm">Entra in un Magazzino</h3>
+              </div>
+              <p className="text-[11px] text-gray-600 mb-4">Hai ricevuto un codice invito? Inseriscilo qui per unirti al team.</p>
+              <form onSubmit={handleJoinWarehouse} className="flex gap-2">
+                <input
+                  value={joinCodeInput}
+                  onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
+                  placeholder="Codice invito (es: ABC123XY)"
+                  maxLength={20}
+                  className="flex-1 bg-[#0a0a0a] border border-white/[0.07] rounded-xl px-4 py-2.5 text-sm font-mono tracking-widest focus:border-white/[0.2] outline-none uppercase"
+                />
+                <button type="submit" disabled={isJoining || !joinCodeInput.trim()}
+                  className="px-4 py-2.5 bg-white text-black rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-40 whitespace-nowrap">
+                  {isJoining ? <Loader2 size={16} className="animate-spin" /> : 'Entra'}
+                </button>
+              </form>
+            </section>
+
+            {/* ===== ZONA PERICOLOSA — ELIMINA ACCOUNT ===== */}
+            <section className="bg-[#0f0f0f] border border-red-500/[0.12] rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle size={15} className="text-red-500/60" />
+                <h3 className="font-semibold text-sm text-red-400/80">Zona Pericolosa</h3>
+              </div>
+              <p className="text-[11px] text-gray-600 mb-4">
+                L'eliminazione dell'account è permanente e irreversibile. Tutti i tuoi prodotti, dati e accessi verranno cancellati definitivamente.
+              </p>
+              <button onClick={() => setDeleteAccountStep(1)}
+                className="px-4 py-2 rounded-xl border border-red-500/30 text-red-400/70 text-xs font-semibold hover:bg-red-500/10 hover:text-red-400 transition-colors">
+                Elimina il mio account
+              </button>
+            </section>
+
           </div>
         )}
       </main>
@@ -4107,6 +4190,140 @@ export default function App() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========== MODALE: ELIMINA ACCOUNT (multi-step) ========== */}
+      {deleteAccountStep > 0 && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[80] p-0 sm:p-4">
+          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-md">
+            <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+
+            {/* STEP 1: Warning */}
+            {deleteAccountStep === 1 && (
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+                    <AlertTriangle size={20} className="text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Eliminare l'account?</h3>
+                    <p className="text-[11px] text-gray-500">Questa azione è permanente e irreversibile</p>
+                  </div>
+                </div>
+                <div className="bg-red-500/[0.06] border border-red-500/[0.15] rounded-xl p-4 mb-5 space-y-1.5">
+                  {['Tutti i tuoi prodotti e dati di vendita', 'Le foto dei prodotti', 'La tua cronologia e audit log', 'L\'accesso a tutti i magazzini', 'Il tuo account e le credenziali'].map(item => (
+                    <div key={item} className="flex items-start gap-2 text-[12px] text-red-300/70">
+                      <span className="text-red-500 mt-0.5 shrink-0">×</span> {item}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-gray-600 mb-5">I tuoi soci non verranno eliminati. I prodotti condivisi resteranno visibili al team.</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setDeleteAccountStep(0)}
+                    className="flex-1 py-3 rounded-xl border border-white/[0.07] text-sm text-gray-400 hover:text-white transition-colors">
+                    Annulla
+                  </button>
+                  <button onClick={() => setDeleteAccountStep(2)}
+                    className="flex-1 py-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-sm font-semibold hover:bg-red-500/25 transition-colors">
+                    Continua
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: Conferma email */}
+            {deleteAccountStep === 2 && (
+              <div className="p-6">
+                <h3 className="font-semibold mb-1">Conferma la tua email</h3>
+                <p className="text-[12px] text-gray-500 mb-4">Scrivi la tua email per confermare l'eliminazione</p>
+                <p className="text-xs text-gray-600 bg-white/[0.03] border border-white/[0.05] rounded-xl p-3 mb-4 font-mono">{user?.email}</p>
+                <input
+                  value={deleteEmailConfirm}
+                  onChange={e => setDeleteEmailConfirm(e.target.value)}
+                  placeholder="Scrivi qui la tua email"
+                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-red-500/40 outline-none mb-4"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => setDeleteAccountStep(1)}
+                    className="flex-1 py-3 rounded-xl border border-white/[0.07] text-sm text-gray-400 transition-colors">
+                    Indietro
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (deleteEmailConfirm.toLowerCase() !== user?.email?.toLowerCase()) {
+                        showToast('Email non corrisponde', 'err'); return;
+                      }
+                      setDeleteAccountStep(3);
+                    }}
+                    disabled={!deleteEmailConfirm}
+                    className="flex-1 py-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-sm font-semibold disabled:opacity-40 transition-colors">
+                    Continua
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: Inserisci password */}
+            {deleteAccountStep === 3 && (
+              <div className="p-6">
+                <h3 className="font-semibold mb-1">Inserisci la tua password</h3>
+                <p className="text-[12px] text-gray-500 mb-4">Per sicurezza conferma la tua password attuale</p>
+                <input
+                  type="password"
+                  value={deletePasswordConfirm}
+                  onChange={e => setDeletePasswordConfirm(e.target.value)}
+                  placeholder="Password attuale"
+                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-red-500/40 outline-none mb-4"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => setDeleteAccountStep(2)}
+                    className="flex-1 py-3 rounded-xl border border-white/[0.07] text-sm text-gray-400 transition-colors">
+                    Indietro
+                  </button>
+                  <button
+                    onClick={() => { if (deletePasswordConfirm.length >= 6) setDeleteAccountStep(4); }}
+                    disabled={deletePasswordConfirm.length < 6}
+                    className="flex-1 py-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-sm font-semibold disabled:opacity-40 transition-colors">
+                    Continua
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: Conferma finale */}
+            {deleteAccountStep === 4 && (
+              <div className="p-6">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center">
+                    <Trash2 size={24} className="text-red-400" />
+                  </div>
+                </div>
+                <h3 className="font-semibold text-center mb-1">Ultima conferma</h3>
+                <p className="text-[12px] text-gray-500 text-center mb-5">Una volta eliminato non potrai recuperare nulla</p>
+                <label className="flex items-start gap-3 cursor-pointer mb-5 p-3 bg-red-500/[0.05] border border-red-500/[0.12] rounded-xl">
+                  <input type="checkbox" checked={deleteCheckbox} onChange={e => setDeleteCheckbox(e.target.checked)}
+                    className="mt-0.5 shrink-0 w-4 h-4 accent-red-500" />
+                  <span className="text-[12px] text-gray-400 leading-relaxed">
+                    Capisco che questa azione è permanente e che perderò tutti i miei dati, prodotti e accessi senza possibilità di recupero.
+                  </span>
+                </label>
+                <div className="flex gap-2">
+                  <button onClick={() => { setDeleteAccountStep(0); setDeleteEmailConfirm(''); setDeletePasswordConfirm(''); setDeleteCheckbox(false); }}
+                    className="flex-1 py-3 rounded-xl border border-white/[0.07] text-sm text-gray-400 transition-colors">
+                    Annulla
+                  </button>
+                  <button onClick={handleDeleteAccount}
+                    disabled={!deleteCheckbox || isDeletingAccount}
+                    className="flex-1 py-3 rounded-xl bg-red-600 text-white text-sm font-semibold disabled:opacity-40 hover:bg-red-700 transition-colors">
+                    {isDeletingAccount ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Elimina Account'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

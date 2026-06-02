@@ -522,4 +522,33 @@ router.put('/password', authenticate, sensitiveLimiter, async (req: AuthRequest,
   }
 });
 
+// ==========================================
+// DELETE /auth/delete-account — elimina account con verifica password
+// ==========================================
+router.delete('/delete-account', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: 'Password richiesta.' });
+
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    if (!user) return res.status(404).json({ error: 'Utente non trovato.' });
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(401).json({ error: 'Password errata.' });
+
+    // Elimina tutto in cascata (Prisma gestisce le relazioni)
+    await prisma.user.delete({ where: { id: user.id } });
+
+    await audit({ action: 'ACCOUNT_DELETE', userId: user.id, req, metadata: { email: user.email } });
+
+    // Pulisci i cookies
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token', { path: '/auth/refresh' });
+    res.json({ success: true });
+  } catch (err: any) {
+    logger.error('Errore eliminazione account', { err: err.message });
+    res.status(500).json({ error: 'Errore eliminazione account.' });
+  }
+});
+
 export default router;
