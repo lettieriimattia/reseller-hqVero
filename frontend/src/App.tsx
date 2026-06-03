@@ -950,8 +950,11 @@ export default function App() {
       setEditPhotos(prev => [...prev, ...newPhotos]);
     } else {
       setProductPhotos(prev => [...prev, ...newPhotos]);
-      // Auto-scan prima foto se non c'è già un risultato
-      if (!scanResult && newPhotos.length > 0) {
+      // Sempre re-scan con la nuova foto (reset risultati precedenti)
+      if (newPhotos.length > 0 && category) {
+        setScanResult(null);
+        setPriceEstimate(null);
+        setAuthResult(null);
         runAIScan(newPhotos[0], category);
       }
     }
@@ -959,8 +962,15 @@ export default function App() {
   };
 
   const removePhoto = (index: number, isEdit = false) => {
-    if (isEdit) setEditPhotos(prev => prev.filter((_, i) => i !== index));
-    else setProductPhotos(prev => prev.filter((_, i) => i !== index));
+    if (isEdit) {
+      setEditPhotos(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setProductPhotos(prev => prev.filter((_, i) => i !== index));
+      // Reset risultati IA quando si rimuove una foto
+      setScanResult(null);
+      setPriceEstimate(null);
+      setAuthResult(null);
+    }
   };
 
   
@@ -1044,6 +1054,11 @@ export default function App() {
       finalCondition = watchMaterial ? `${condition} (${watchMaterial})` : condition;
     } else {
       if (!brand || !name) { showToast('Compila brand e nome prodotto', 'err'); setIsSaving(false); return; }
+      // Per categorie custom, arricchisci il nome con materiale/colore se compilati
+      if (category !== 'Scarpe' && category !== 'Vestiti') {
+        const extras = [watchMaterial, watchStrap].filter(Boolean);
+        if (extras.length > 0) finalName = `${name} — ${extras.join(', ')}`;
+      }
     }
     
     // Snapshot delle percentuali attuali del team: rende ogni prodotto indipendente
@@ -1239,11 +1254,11 @@ export default function App() {
   const handleBulkDelete = async () => {
     setIsBulkProcessing(true);
     const ids = getBulkSelectedIds();
-    let errors = 0;
-    for (const id of ids) {
-      const { ok } = await apiCall(`/products/${id}`, { method: 'DELETE' });
-      if (!ok) errors++;
-    }
+    // Chiamate in parallelo per velocità
+    const results = await Promise.allSettled(
+      ids.map(id => apiCall(`/products/${id}`, { method: 'DELETE' }))
+    );
+    const errors = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok)).length;
     setIsBulkProcessing(false);
     setBulkDeleteConfirmOpen(false);
     setSelectedGroupKeys(new Set());
@@ -1353,17 +1368,21 @@ export default function App() {
   // ==========================================
   const handleDeleteProduct = async () => {
     if (!productToDelete) return;
-    let hasError = false;
-    for (const id of productToDelete.ids) {
-      const { ok } = await apiCall(`/products/${id}`, { method: 'DELETE' });
-      if (!ok) hasError = true;
-    }
-    if (hasError) showToast('Errore eliminazione', 'err');
-    else {
-      await fetchProducts();
-      setDeleteConfirmOpen(false);
-      setProductToDelete(null);
-      setEditModalOpen(false);
+    // Ottimisticamente rimuovi dalla UI prima della chiamata API
+    setProducts(prev => prev.filter(p => !productToDelete.ids.includes(p.id)));
+    setDeleteConfirmOpen(false);
+    setProductToDelete(null);
+    setEditModalOpen(false);
+
+    const results = await Promise.allSettled(
+      productToDelete.ids.map(id => apiCall(`/products/${id}`, { method: 'DELETE' }))
+    );
+    const errors = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok)).length;
+
+    if (errors > 0) {
+      showToast('Errore eliminazione — ricarico la lista', 'err');
+      await fetchProducts(); // Re-sync se ci sono stati errori
+    } else {
       showToast('Prodotto eliminato');
     }
   };
@@ -3384,37 +3403,70 @@ export default function App() {
                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Brand</label>
                       <input type="text" required value={brand}
                         onChange={(e: any) => setBrand(e.target.value)}
-                        placeholder={category === 'Scarpe' ? 'Nike' : 'Supreme'}
+                        placeholder={category === 'Scarpe' ? 'Nike' : category === 'Vestiti' ? 'Supreme' : 'Louis Vuitton'}
                         className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Modello</label>
                       <input type="text" required value={name}
                         onChange={(e: any) => setName(e.target.value)}
-                        placeholder={category === 'Scarpe' ? 'Air Jordan 1' : 'Box Logo Hoodie'}
+                        placeholder={category === 'Scarpe' ? 'Air Jordan 1 Chicago' : category === 'Vestiti' ? 'Box Logo Hoodie' : 'Neverfull MM'}
                         className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Taglia</label>
-                      <select value={size} onChange={(e: any) => setSize(e.target.value)}
-                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
-                        {(category === 'Scarpe' ? shoeSizes : clothingSizes).map((s: string) => 
-                          <option key={s} value={s}>{s}</option>
-                        )}
-                      </select>
+                      {/* Taglia — sempre input libero con suggerimenti datalist */}
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">
+                        {category === 'Scarpe' ? 'Taglia (EU)' : category === 'Vestiti' ? 'Taglia' : 'Dimensione / Taglia'}
+                      </label>
+                      <input
+                        list={`size-suggestions-${category}`}
+                        value={size}
+                        onChange={(e: any) => setSize(e.target.value)}
+                        placeholder={category === 'Scarpe' ? 'es. 42, 42.5, US 9' : category === 'Vestiti' ? 'es. M, L, XL' : 'es. MM, 30cm, Small'}
+                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none"
+                      />
+                      <datalist id={`size-suggestions-${category}`}>
+                        {category === 'Scarpe'
+                          ? ['36','37','38','38.5','39','40','40.5','41','42','42.5','43','44','44.5','45','46','US 7','US 8','US 9','US 10','US 11','US 12']
+                            .map(s => <option key={s} value={s} />)
+                          : category === 'Vestiti'
+                          ? ['XS','S','M','L','XL','XXL','One Size']
+                            .map(s => <option key={s} value={s} />)
+                          : ['XS','S','M','L','XL','Mini','Small','Medium','Large','20cm','25cm','30cm','35cm','Unisize']
+                            .map(s => <option key={s} value={s} />)
+                        }
+                      </datalist>
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Condizione</label>
                       <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
                         className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
-                        <option value="DS">DS (Deadstock)</option>
-                        <option value="VNDS">VNDS</option>
-                        <option value="Used">Used</option>
+                        <option value="DS">DS (Nuovo)</option>
+                        <option value="VNDS">VNDS (Quasi nuovo)</option>
+                        <option value="Used">Used (Usato)</option>
+                        <option value="Worn">Worn (Molto usato)</option>
                       </select>
                     </div>
                   </div>
+                  {/* Campi extra per categorie personalizzate */}
+                  {category !== 'Scarpe' && category !== 'Vestiti' && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Materiale <span className="text-gray-700 normal-case font-normal">(opz.)</span></label>
+                        <input type="text" value={watchMaterial} onChange={(e: any) => setWatchMaterial(e.target.value)}
+                          placeholder="es. Pelle, Canvas, Nylon"
+                          className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Colore <span className="text-gray-700 normal-case font-normal">(opz.)</span></label>
+                        <input type="text" value={watchStrap} onChange={(e: any) => setWatchStrap(e.target.value)}
+                          placeholder="es. Nero, Marrone, Monogram"
+                          className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
               

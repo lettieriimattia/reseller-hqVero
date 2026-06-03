@@ -776,9 +776,33 @@ function safeParseJSON(text: string): any | null {
 // ==========================================
 // SCAN PRODOTTO
 // ==========================================
+// Prompt generico per categorie personalizzate (Borse, Gioielli, Elettronica, ecc.)
+function buildGenericPrompt(category: string): string {
+  return `Sei un esperto rivenditore e autenticatore di ${category}. Analizza questo oggetto con attenzione maniacale a OGNI dettaglio visibile: logo, materiale, texture, hardware, etichette, colori, dimensioni, condizioni.
+
+Identifica con precisione:
+- Brand: cerca loghi, testi, simboli identificativi
+- Modello: nome specifico del prodotto se visibile
+- Materiale: pelle, canvas, nylon, metallo, plastica, ecc.
+- Dimensione/Taglia: misure visibili, tag, etichette
+- Colore: colore principale e secondario
+- Condizione: stato di usura visibile
+
+Rispondi SOLO in JSON valido (senza markdown):
+{
+  "brand": "brand esatto o null",
+  "model": "modello o nome prodotto preciso o null",
+  "material": "materiale principale o null",
+  "size": "dimensione/taglia se visibile (es: MM, 30cm, 42, Small) o null",
+  "color": "colore principale o null",
+  "condition": "DS|VNDS|Used|Worn|null",
+  "notes": "qualsiasi dettaglio identificativo visibile — testi, logo, hardware, ecc."
+}
+NON inventare dati. Se non riconosci metti null. Rispondi SOLO JSON.`;
+}
+
 export async function scanProduct(imageBase64: string, category: string): Promise<ScanResult> {
-  const prompt = SCAN_PROMPTS[category];
-  if (!prompt) throw new Error(`Categoria non supportata dall'IA: ${category}`);
+  const prompt = SCAN_PROMPTS[category] || buildGenericPrompt(category);
 
   // Pokemon usa Scout diretto (più veloce, sufficiente per leggere testo da carta)
   // Scarpe/Vestiti/Orologi usano Maverick con chain-of-thought (più preciso per identificazione visiva)
@@ -975,6 +999,20 @@ ${prompt}`;
         result.confidence = parsed.reference ? 'HIGH' : parsed.dialText ? 'MEDIUM' : 'LOW';
       } else {
         result.confidence = 'LOW';
+      }
+      break;
+    }
+    default: {
+      // Categoria personalizzata (Borse, Gioielli, ecc.)
+      if (parsed.brand || parsed.model) {
+        result.brand = parsed.brand || category;
+        const parts = [parsed.model, parsed.material, parsed.size, parsed.color].filter(Boolean);
+        result.model = parts.join(' — ') || parsed.notes || 'N/D';
+        result.confidence = (parsed.brand && parsed.model) ? 'HIGH' : parsed.brand || parsed.model ? 'MEDIUM' : 'LOW';
+        if (parsed.size) result.details = { ...parsed };
+      } else {
+        result.confidence = 'LOW';
+        result.warnings = [`Oggetto non identificato nella categoria "${category}". Compila i campi manualmente.`];
       }
       break;
     }
