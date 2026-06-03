@@ -61,7 +61,7 @@ interface Product {
 
 interface AppUser {
   id: string; name: string; email: string; twoFactorEnabled?: boolean;
-  warehouses: Array<{ id: string; name: string; role: string; inviteCode: string | null; percentage: number }>;
+  warehouses: Array<{ id: string; name: string; role: string; inviteCode: string | null; percentage: number; aiConfig: string | null }>;
 }
 
 interface AINotification {
@@ -428,6 +428,17 @@ export default function App() {
     else showToast('Errore eliminazione', 'err');
   };
 
+  // ----- CAMPI DINAMICI CATEGORIA AI -----
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
+
+  const getCategoryConfig = (cat: string) => {
+    const w = user?.warehouses?.find(wh => wh.name.replace('Magazzino ', '') === cat);
+    if (!w?.aiConfig) return null;
+    try { return JSON.parse(w.aiConfig); } catch { return null; }
+  };
+
+  const isBuiltinCategory = (cat: string) => ['Scarpe', 'Vestiti', 'Pokemon', 'Orologi'].includes(cat);
+
   // ----- ADD TYPE PICKER -----
   const [addPickerOpen, setAddPickerOpen] = useState(false);
 
@@ -558,7 +569,12 @@ export default function App() {
       case 'vestiti': return '👕';
       case 'orologi': return '⌚';
       case 'pokemon': return '🃏';
-      default: return '📦';
+      default: {
+        // Cerca emoji dal config AI del warehouse
+        const config = getCategoryConfig(cat);
+        if (config?.emoji) return config.emoji;
+        return '📦';
+      }
     }
   };
   
@@ -3396,7 +3412,64 @@ export default function App() {
                     </select>
                   </div>
                 </>
-              ) : (
+              ) : (() => {
+                const catConfig = !isBuiltinCategory(category) ? getCategoryConfig(category) : null;
+                if (catConfig?.fields?.length > 0) {
+                  // Form DINAMICO generato dall'IA
+                  return (
+                    <>
+                      {catConfig.expertDescription && (
+                        <div className="text-[10px] text-gray-600 bg-white/[0.02] rounded-xl px-3 py-2 flex items-center gap-1.5">
+                          <Sparkles size={10} className="text-gray-500 shrink-0" />
+                          {catConfig.expertDescription}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-3">
+                        {catConfig.fields.map((f: any) => {
+                          const val = f.name === 'brand' ? brand : f.name === 'model' ? name : customFieldValues[f.name] || '';
+                          const setVal = (v: string) => {
+                            if (f.name === 'brand') setBrand(v);
+                            else if (f.name === 'model') setName(v);
+                            else setCustomFieldValues(prev => ({ ...prev, [f.name]: v }));
+                          };
+                          return (
+                            <div key={f.name} className={f.name === 'model' || f.type === 'text' && f.placeholder?.length > 20 ? 'col-span-2' : ''}>
+                              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">
+                                {f.label}{!f.required && <span className="text-gray-700 normal-case font-normal ml-1">(opz.)</span>}
+                              </label>
+                              {f.type === 'select' ? (
+                                <select value={val} onChange={(e: any) => setVal(e.target.value)}
+                                  required={f.required}
+                                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                                  <option value="">Seleziona...</option>
+                                  {(f.options || []).map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                              ) : (
+                                <input type={f.type === 'number' ? 'number' : 'text'}
+                                  value={val} onChange={(e: any) => setVal(e.target.value)}
+                                  required={f.required}
+                                  placeholder={f.placeholder || ''}
+                                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                              )}
+                            </div>
+                          );
+                        })}
+                        {/* Condizione dal config AI */}
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Condizione</label>
+                          <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
+                            className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                            {(catConfig.conditionOptions || ['Nuovo','Ottimo','Buono','Usato']).map((opt: string) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </>
+                  );
+                }
+                // Form GENERICO fallback (nessun config AI ancora)
+                return (
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -3468,8 +3541,8 @@ export default function App() {
                     </div>
                   )}
                 </>
-              )}
-              
+              );})()}
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Prezzo Acquisto €</label>

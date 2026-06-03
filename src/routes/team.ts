@@ -1,4 +1,4 @@
-// src/routes/team.ts
+﻿// src/routes/team.ts
 // Gestione team, quote, warehouse.
 
 import { Router, Response } from 'express';
@@ -8,6 +8,7 @@ import { authenticate, AuthRequest, authorizeWarehouseAccess, authorizeWarehouse
 import { apiLimiter } from '../middleware/rateLimit';
 import { validate, teamPercentageSchema, joinWarehouseSchema, createWarehouseSchema } from '../middleware/validate';
 import { generateInviteCode } from '../utils/security';
+import { generateCategoryConfig } from '../services/ai.service';
 import { audit } from '../services/audit.service';
 import { notifyWarehouseMembers, notifyTeam } from '../services/notification.service';
 import { logger } from '../utils/logger';
@@ -183,6 +184,7 @@ router.post('/warehouses/join', validate(joinWarehouseSchema), async (req: AuthR
           id: m.warehouse.id, name: m.warehouse.name,
           role: m.role,
           inviteCode: m.role === 'OWNER' ? m.warehouse.inviteCode : null,
+            aiConfig: m.warehouse.aiConfig || null,
           percentage: m.percentage,
         })),
       },
@@ -225,7 +227,20 @@ router.post('/warehouses', validate(createWarehouseSchema), async (req: AuthRequ
     
     await audit({ action: 'WAREHOUSE_CREATE', userId: req.user!.userId, req,
       resource: newWarehouse.id, metadata: { name } });
-    
+
+    // Genera config IA per categorie personalizzate (non le 4 built-in)
+    const builtinCategories = ['Scarpe', 'Vestiti', 'Pokemon', 'Orologi'];
+    if (!builtinCategories.includes(name)) {
+      generateCategoryConfig(name).then(config => {
+        if (config) {
+          prisma.warehouse.update({
+            where: { id: newWarehouse.id },
+            data: { aiConfig: JSON.stringify(config) },
+          }).catch(err => logger.warn('Errore salvataggio aiConfig', { err }));
+        }
+      }).catch(err => logger.warn('Errore generazione aiConfig', { err }));
+    }
+
     await notifyTeam({
       fromUserId: req.user!.userId,
       type: 'PRODUCT_ADDED',
@@ -246,6 +261,7 @@ router.post('/warehouses', validate(createWarehouseSchema), async (req: AuthRequ
         warehouses: updated!.memberships.map((m: any) => ({
           id: m.warehouse.id, name: m.warehouse.name, role: m.role,
           inviteCode: m.role === 'OWNER' ? m.warehouse.inviteCode : null,
+            aiConfig: m.warehouse.aiConfig || null,
           percentage: m.percentage,
         })),
       },

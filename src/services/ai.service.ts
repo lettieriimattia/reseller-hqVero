@@ -1506,3 +1506,84 @@ export async function checkAuthenticity(imageBase64: string, category: string): 
     disclaimer,
   };
 }
+
+// ==========================================
+// GENERA CONFIG CATEGORIA (per reparti personalizzati)
+// ==========================================
+export interface CategoryConfig {
+  categoryType: string;
+  emoji: string;
+  expertDescription: string;
+  fields: Array<{
+    name: string;
+    label: string;
+    type: 'text' | 'select' | 'number';
+    placeholder?: string;
+    options?: string[];
+    required: boolean;
+  }>;
+  scanPrompt: string;
+  conditionOptions: string[];
+  legitPrompt?: string;
+}
+
+export async function generateCategoryConfig(categoryName: string): Promise<CategoryConfig | null> {
+  const prompt = `Sei un architetto di sistemi per app di reselling professionale. È stata creata una nuova categoria chiamata "${categoryName}".
+
+Genera una configurazione completa e ultra-specifica per questa categoria. Analizza il nome e crea tutto su misura.
+
+ESEMPI DI RIFERIMENTO:
+- "Elettronica" → fields: brand, model, storage (select: 64GB/128GB/256GB/512GB/1TB/2TB), ram (select: 4GB/6GB/8GB/12GB/16GB), color, batteryHealth (es: 100%, 87%), condition (select: Nuovo/Come Nuovo/Ottimo/Buono/Discreto/Da Riparare), imei/serial (opzionale)
+- "Gioielli" → fields: brand (es: Cartier/Bulgari/Tiffany/No Brand), type (select: Anello/Collana/Bracciale/Orecchini/Orologio/Altro), material (select: Oro 18k/Oro 14k/Oro 9k/Argento 925/Platino/Acciaio/Altro), caratage, weight (es: 5.2g), size (es: 14 per anelli, 40cm per collane), gemstone (Diamante/Rubino/Smeraldo/Nessuna), condition
+- "Fumetti/Manga" → fields: title, volume/issue, publisher, year, language (select: IT/JP/EN/FR), edition (Prima/Ristampa/Variant), condition (select: Mint/Near Mint/Very Fine/Fine/Good/Fair/Poor)
+- "Vinili/Musica" → fields: artist, album, year, label, format (select: LP 33/EP 45/Single 45/Single 78), condition (select: Mint/Near Mint/VG+/VG/G), coverCondition
+- "Arte" → fields: artist, title, technique (select: Olio/Acrilico/Acquerello/Stampa/Fotografia/Scultura/Altro), dimensions (es: 50x70cm), year, signed (select: Sì/No), certificateOfAuthenticity (select: Sì/No), condition
+- "Sneakers Vintage" → come scarpe ma con campi anno/modello storico in più
+- "Trading Cards" → come Pokemon ma generico: cardName, setName, cardNumber, rarity, language, condition, graded, grade
+
+ISTRUZIONI:
+1. I fields devono essere SPECIFICI per la categoria — niente "Taglia" per Elettronica, niente "Storage" per Gioielli
+2. Il scanPrompt deve essere un prompt completo per fare AI-scan di un prodotto di quella categoria — includi: come riconoscere il brand, come leggere il modello, come valutare condizioni, specifiche tecniche da estrarre. Deve essere lungo e dettagliato (almeno 300 parole)
+3. Includi SEMPRE brand come primo campo required
+4. Le conditionOptions devono essere specifiche per la categoria
+5. Il legitPrompt deve spiegare come verificare autenticità per quella categoria
+
+Rispondi SOLO in JSON valido (senza markdown, nessun testo extra):
+{
+  "categoryType": "tipo categoria",
+  "emoji": "UN SOLO emoji che rappresenta perfettamente questa categoria (es: 📱 per Elettronica, 💍 per Gioielli, 👜 per Borse, 📚 per Libri, 🎮 per Videogiochi, 🎸 per Strumenti musicali, 🚗 per Auto, 🎨 per Arte, 🍷 per Vino, 💎 per Lusso generico)",
+  "expertDescription": "Sei un esperto di [categoria] con [specificità]. Conosci [cosa conosce l'esperto]",
+  "fields": [
+    {"name": "brand", "label": "Brand", "type": "text", "placeholder": "es. Apple, Samsung", "required": true},
+    {"name": "model", "label": "Modello", "type": "text", "placeholder": "es. iPhone 13 Pro", "required": true}
+    // ... altri campi specifici
+  ],
+  "scanPrompt": "prompt completo per scan IA di questa categoria...",
+  "conditionOptions": ["Opzione1", "Opzione2", "Opzione3", "Opzione4", "Opzione5"],
+  "legitPrompt": "come verificare autenticità per questa categoria..."
+}`;
+
+  try {
+    const completion = await groqCallWithRetry(client =>
+      client.chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: TEXT_MODEL,
+        temperature: 0.3,
+        max_tokens: 2000,
+      })
+    );
+
+    const raw = completion.choices[0]?.message?.content?.trim() || '';
+    const config = safeParseJSON(raw) as CategoryConfig | null;
+
+    if (!config || !config.fields || !config.scanPrompt) {
+      logger.warn('Config categoria non valida per', { categoryName });
+      return null;
+    }
+
+    return config;
+  } catch (err: any) {
+    logger.error('Errore generazione config categoria', { err: err.message, categoryName });
+    return null;
+  }
+}

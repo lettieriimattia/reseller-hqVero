@@ -50,6 +50,7 @@ model Warehouse {
   name        String
   inviteCode  String       @unique
   inviteCodeExpiresAt DateTime?  // I codici invito scadono dopo 30 giorni
+  aiConfig    String?            // JSON con fields, scanPrompt, conditionOptions generati da IA
   
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
