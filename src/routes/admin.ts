@@ -11,9 +11,8 @@ const prisma = new PrismaClient();
 
 // Middleware: solo admin
 function requireAdmin(req: AuthRequest, res: Response, next: any) {
-  const adminEmail = process.env.ADMIN_EMAIL || '';
-  if (!adminEmail) return res.status(403).json({ error: 'Admin non configurato.' });
-  if (req.user?.email?.toLowerCase() !== adminEmail.toLowerCase()) {
+  const adminEmail = (process.env.ADMIN_EMAIL || 'noreply.hq.app@gmail.com').toLowerCase();
+  if (req.user?.email?.toLowerCase() !== adminEmail) {
     return res.status(403).json({ error: 'Accesso riservato.' });
   }
   next();
