@@ -359,8 +359,15 @@ export default function App() {
   const sendTestEmail = async () => {
     showToast('Invio email di test...');
     try {
-      const { data } = await apiCall('/api/test-email', { method: 'POST' });
-      if (data?.ok) showToast('Email inviata a lettieriimattia@gmail.com');
+      const { data } = await apiCall('/api/test-email', {
+        method: 'POST',
+        body: JSON.stringify({
+          to: ['lettieriimattia@gmail.com', 'francescofera45@gmail.com', 'beaglelarry0@gmail.com'],
+          subject: 'Email Test',
+          text: 'Email Test',
+        }),
+      });
+      if (data?.ok) showToast('Email inviata a 3 destinatari');
       else showToast(data?.error || 'Errore configurazione email', 'err');
     } catch (e: any) {
       showToast('Errore di rete: ' + (e?.message || 'sconosciuto'), 'err');
