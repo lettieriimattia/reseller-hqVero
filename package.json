@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
+    "@types/nodemailer": "^8.0.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -24,6 +25,7 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^1.16.0",
+    "nodemailer": "^8.0.10",
     "otplib": "^12.0.1",
     "qrcode": "^1.5.4",
     "recharts": "^3.8.1",

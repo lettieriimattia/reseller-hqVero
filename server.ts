@@ -22,6 +22,7 @@ import aiRoutes from './src/routes/ai';
 import notificationRoutes from './src/routes/notifications';
 import trackingRoutes from './src/routes/tracking';
 import adminRoutes from './src/routes/admin';
+import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
 
 import { logger } from './src/utils/logger';
@@ -151,6 +152,22 @@ if (isProduction) {
 // ==========================================
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Test email (solo in dev o per admin)
+app.post('/api/test-email', async (req, res) => {
+  const result = await sendEmail({
+    to: 'lettieriimattia@gmail.com',
+    subject: 'HQ — Test Email',
+    html: `<div style="font-family:sans-serif;background:#111;color:#fff;padding:32px;border-radius:16px;">
+      <h1 style="font-size:32px;margin:0 0 8px;">H<span style="opacity:0.4">Q</span></h1>
+      <p style="color:#aaa;margin:0 0 24px;">Test di invio email</p>
+      <p style="font-size:18px;margin:0;">Ciao 👋</p>
+      <p style="color:#888;margin:8px 0 0;">Email partita da lettieriimattia@gmail.com — funziona!</p>
+    </div>`,
+    text: 'Ciao! Email di test da HQ.',
+  });
+  res.json(result);
 });
 
 // ==========================================
