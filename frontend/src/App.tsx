@@ -358,9 +358,13 @@ export default function App() {
 
   const sendTestEmail = async () => {
     showToast('Invio email di test...');
-    const { data } = await apiCall('/api/test-email', { method: 'POST' });
-    if (data?.ok) showToast('Email inviata a lettieriimattia@gmail.com');
-    else showToast(data?.error || 'Errore invio email', 'err');
+    try {
+      const { data } = await apiCall('/api/test-email', { method: 'POST' });
+      if (data?.ok) showToast('Email inviata a lettieriimattia@gmail.com');
+      else showToast(data?.error || 'Errore configurazione email', 'err');
+    } catch (e: any) {
+      showToast('Errore di rete: ' + (e?.message || 'sconosciuto'), 'err');
+    }
   };
 
   const handleJoinWarehouse = async (e: React.FormEvent) => {
