@@ -1,23 +1,16 @@
 // src/services/email.service.ts
-// Invio email via Gmail SMTP con Nodemailer
+// Invio email via Resend (HTTP API — funziona su Railway)
 
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { logger } from '../utils/logger';
 
-function createTransporter() {
-  const user = process.env.GMAIL_USER;
-  const pass = process.env.GMAIL_APP_PASSWORD;
-  if (!user || !pass) return null;
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: { user, pass },
-    connectionTimeout: 15000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-  });
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  return new Resend(key);
 }
+
+const FROM = process.env.EMAIL_FROM || 'noreply@resend.dev';
 
 export async function sendEmail(opts: {
   to: string;
@@ -25,18 +18,22 @@ export async function sendEmail(opts: {
   text?: string;
   html?: string;
 }): Promise<{ ok: boolean; error?: string }> {
-  const transporter = createTransporter();
-  if (!transporter) {
-    return { ok: false, error: 'Email non configurata (GMAIL_USER / GMAIL_APP_PASSWORD mancanti).' };
+  const resend = getResend();
+  if (!resend) {
+    return { ok: false, error: 'Email non configurata (RESEND_API_KEY mancante).' };
   }
   try {
-    await transporter.sendMail({
-      from: `"noreply • HQ" <${process.env.GMAIL_USER}>`,
+    const { error } = await resend.emails.send({
+      from: `noreply • HQ <${FROM}>`,
       to: opts.to,
       subject: opts.subject,
       text: opts.text,
       html: opts.html,
     });
+    if (error) {
+      logger.error('Errore invio email Resend', { error });
+      return { ok: false, error: error.message };
+    }
     logger.info('Email inviata', { to: opts.to, subject: opts.subject });
     return { ok: true };
   } catch (err: any) {
