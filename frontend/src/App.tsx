@@ -352,6 +352,7 @@ export default function App() {
     setAdminLoading(true);
     const { ok, data } = await apiCall('/admin/users');
     if (ok) { setAdminUsers(data.users || []); setAdminLoaded(true); }
+    else showToast(data?.error || 'Errore caricamento utenti admin', 'err');
     setAdminLoading(false);
   };
 
