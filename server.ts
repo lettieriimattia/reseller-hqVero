@@ -89,7 +89,7 @@ if (isProduction) {
 // HELMET - Security headers rafforzati
 // ==========================================
 app.use(helmet({
-  contentSecurityPolicy: isProduction ? undefined : false,
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
   // HSTS: forza HTTPS per 1 anno su tutti i sotto-domini
   hsts: useHTTPS ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
