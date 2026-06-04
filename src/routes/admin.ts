@@ -37,8 +37,6 @@ router.get('/users', async (req: AuthRequest, res: Response) => {
     const result = users.map(u => {
       const sold = u.products.filter(p => p.status === 'VENDUTO');
       const inStock = u.products.filter(p => p.status === 'IN STOCK');
-      const profit = sold.reduce((acc, p) => acc + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)), 0);
-      const stockValue = inStock.reduce((acc, p) => acc + p.purchasePrice, 0);
       return {
         id: u.id,
         name: u.name,
@@ -49,14 +47,11 @@ router.get('/users', async (req: AuthRequest, res: Response) => {
         warehouses: u.memberships.map(m => ({
           name: m.warehouse.name.replace('Magazzino ', ''),
           role: m.role,
-          percentage: m.percentage,
         })),
         stats: {
           totalProducts: u._count.products,
           inStock: inStock.length,
           sold: sold.length,
-          profit: Math.round(profit * 100) / 100,
-          stockValue: Math.round(stockValue * 100) / 100,
         },
       };
     });

@@ -412,7 +412,7 @@ export default function App() {
       'Prodotti Totali': u.stats.totalProducts,
       'In Stock': u.stats.inStock,
       'Venduti': u.stats.sold,
-      'Profitto €': u.stats.profit,
+      'In Stock': u.stats.inStock,
       'Valore Stock €': u.stats.stockValue,
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -2848,11 +2848,10 @@ export default function App() {
                     {adminLoaded && (
                       <>
                         {/* KPI */}
-                        <div className="grid grid-cols-3 border-b border-white/[0.04]">
+                        <div className="grid grid-cols-2 border-b border-white/[0.04]">
                           {[
                             { label: 'Utenti', value: adminUsers.length },
-                            { label: 'Prodotti', value: adminUsers.reduce((a, u) => a + u.stats.totalProducts, 0) },
-                            { label: 'Profitto tot.', value: adminUsers.reduce((a, u) => a + u.stats.profit, 0).toFixed(0) + '€' },
+                            { label: 'Prodotti totali', value: adminUsers.reduce((a, u) => a + u.stats.totalProducts, 0) },
                           ].map(s => (
                             <div key={s.label} className="p-3 text-center border-r border-white/[0.04] last:border-0">
                               <p className="text-base font-bold num">{s.value}</p>
@@ -2875,8 +2874,7 @@ export default function App() {
                                 </div>
                                 <p className="text-[10px] text-gray-500">{u.email}</p>
                                 <p className="text-[10px] text-gray-700 mt-0.5">
-                                  {u.stats.inStock} stock · {u.stats.sold} venduti
-                                  {u.stats.profit > 0 && ` · +${u.stats.profit.toFixed(0)}€`}
+                                  {u.stats.inStock} in stock · {u.stats.sold} venduti · {u.stats.totalProducts} totali
                                 </p>
                               </div>
                               {u.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase() && (
