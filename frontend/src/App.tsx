@@ -4,7 +4,7 @@ import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
-  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown
+  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail
 } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
@@ -354,6 +354,13 @@ export default function App() {
     if (ok) { setAdminUsers(data.users || []); setAdminLoaded(true); }
     else showToast(data?.error || 'Errore caricamento utenti admin', 'err');
     setAdminLoading(false);
+  };
+
+  const sendTestEmail = async () => {
+    showToast('Invio email di test...');
+    const { ok, data } = await apiCall('/api/test-email', { method: 'POST' });
+    if (ok) showToast('Email inviata a lettieriimattia@gmail.com');
+    else showToast(data?.error || 'Errore invio email', 'err');
   };
 
   const handleJoinWarehouse = async (e: React.FormEvent) => {
@@ -2850,6 +2857,10 @@ export default function App() {
                     <div className="px-5 py-3 flex items-center justify-between border-b border-white/[0.04]">
                       <p className="text-[10px] text-gray-600">Auto-aggiornamento ogni 5 min</p>
                       <div className="flex gap-2">
+                        <button onClick={sendTestEmail}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] rounded-xl text-xs font-semibold transition-colors">
+                          <Mail size={12} /> Test Email
+                        </button>
                         {adminLoaded && (
                           <button onClick={exportAdminExcel}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] rounded-xl text-xs font-semibold transition-colors">

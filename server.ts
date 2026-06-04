@@ -159,13 +159,15 @@ app.post('/api/test-email', async (req, res) => {
   const result = await sendEmail({
     to: 'lettieriimattia@gmail.com',
     subject: 'HQ — Test Email',
-    html: `<div style="font-family:sans-serif;background:#111;color:#fff;padding:32px;border-radius:16px;">
-      <h1 style="font-size:32px;margin:0 0 8px;">H<span style="opacity:0.4">Q</span></h1>
-      <p style="color:#aaa;margin:0 0 24px;">Test di invio email</p>
-      <p style="font-size:18px;margin:0;">Ciao 👋</p>
-      <p style="color:#888;margin:8px 0 0;">Email partita da lettieriimattia@gmail.com — funziona!</p>
+    html: `<div style="font-family:sans-serif;background:#111;color:#fff;padding:32px;border-radius:16px;max-width:480px;">
+      <h1 style="font-size:32px;margin:0 0 4px;letter-spacing:-1px;">H<span style="opacity:0.35">Q</span></h1>
+      <p style="color:#666;font-size:12px;margin:0 0 28px;text-transform:uppercase;letter-spacing:1px;">Sistema Email</p>
+      <p style="font-size:16px;margin:0 0 8px;color:#fff;">Il servizio email di HQ funziona correttamente.</p>
+      <p style="color:#888;font-size:13px;margin:0;">Questo è un messaggio di test automatico. Nessuna azione richiesta.</p>
+      <hr style="border:none;border-top:1px solid #222;margin:28px 0;" />
+      <p style="color:#555;font-size:11px;margin:0;">noreply • HQ — ${new Date().toLocaleString('it-IT')}</p>
     </div>`,
-    text: 'Ciao! Email di test da HQ.',
+    text: 'Il servizio email di HQ funziona correttamente. Questo è un messaggio di test automatico.',
   });
   res.json(result);
 });
