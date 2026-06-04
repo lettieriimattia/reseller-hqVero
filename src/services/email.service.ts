@@ -9,8 +9,13 @@ function createTransporter() {
   const pass = process.env.GMAIL_APP_PASSWORD;
   if (!user || !pass) return null;
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: { user, pass },
+    connectionTimeout: 15000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
 }
 
