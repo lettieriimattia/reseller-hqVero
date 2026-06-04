@@ -346,7 +346,7 @@ export default function App() {
   const [adminLoaded, setAdminLoaded] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const adminRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const ADMIN_EMAIL = 'lettieriimattia@gmail.com';
+  const ADMIN_EMAIL = 'noreply.hq.app@gmail.com';
 
   const fetchAdminUsers = async () => {
     setAdminLoading(true);
