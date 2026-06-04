@@ -400,7 +400,7 @@ ASICS colorways:
 Gel-Kayano 14: Cream (1201A019-100), White/Black (1201A019-101), collab Kith (1201A019-200 rosso), Ronnie Fieg
 
 ━━━ ISTRUZIONI FINALI ━━━
-NON inventare brand o modelli. Se non riconosci con certezza metti null. Per lusso: descrivi SEMPRE i marker visibili nel campo luxuryMarkers. Rispondi SOLO JSON.`,
+NON inventare brand o modelli. Se non riconosci con certezza metti null NEL CAMPO MODEL, ma metti SEMPRE il brand se il logo è visibile anche parzialmente. Per lusso: descrivi SEMPRE i marker visibili nel campo luxuryMarkers — è il campo più importante. Se brand e model sono entrambi incerti, usa notes per descrivere tutto ciò che vedi (colore, suola, silhouette, testi). Rispondi SOLO JSON.`,
 
   Vestiti: `Sei il massimo esperto mondiale di abbigliamento: conosci ogni brand dal fast fashion al lusso estremo, ogni collaborazione mai esistita, ogni drop limitato. Analizza questo capo con attenzione MANIACALE a logo, grafica, costruzione, etichette, hardware, materiali, colori, font, silhouette, dettagli nascosti.
 
@@ -547,6 +547,9 @@ SHEIN: font e qualità tipica Shein
 
 ━━━ SE NON RICONOSCI IL BRAND ━━━
 Trascrivi LETTERALMENTE tutto il testo visibile sul capo (logo, etichetta, grafica, stampe). Descrivi il simbolo/logo in dettaglio. Indica colori precisi. Questo è più utile di inventare un brand.
+
+━━━ ISTRUZIONI FINALI ━━━
+REGOLA: se il brand è leggibile sul logo/etichetta, mettilo SEMPRE nel campo brand — anche se hai dubbi sul modello specifico. Il campo logoDescription è OBBLIGATORIO se c'è qualsiasi testo o simbolo visibile. Non lasciare tutti i campi null se hai informazioni parziali.
 
 Rispondi SOLO in JSON valido (senza markdown):
 {
@@ -808,17 +811,16 @@ export async function scanProduct(imageBase64: string, category: string): Promis
   // Scarpe/Vestiti/Orologi usano Maverick con chain-of-thought (più preciso per identificazione visiva)
   const isPokemon = category === 'Pokemon';
 
-  const finalPrompt = isPokemon ? prompt : `STEP 1 — ANALISI VISIVA (3-5 righe max):
-Descrivi brevemente cosa vedi: brand visibile, elementi distintivi, colori, logo/hardware/suola/quadrante.
+  const finalPrompt = isPokemon ? prompt : `ANALISI RAPIDA (max 2 righe): logo/brand visibile, colore principale, elemento più distintivo.
 
-STEP 2 — IDENTIFICAZIONE JSON:
+IDENTIFICAZIONE JSON:
 ${prompt}`;
 
   const finalModel = isPokemon
     ? 'meta-llama/llama-4-scout-17b-16e-instruct'  // Scout: più veloce per OCR carta
     : VISION_MODEL;                                  // Maverick: più preciso per oggetti
 
-  const maxTok = isPokemon ? 700 : category === 'Orologi' ? 1400 : category === 'Vestiti' ? 1200 : 1300;
+  const maxTok = isPokemon ? 700 : category === 'Orologi' ? 1500 : category === 'Vestiti' ? 1500 : 1600;
 
   let completion;
   try {
@@ -832,7 +834,7 @@ ${prompt}`;
           ],
         }],
         model: finalModel,
-        temperature: 0.02,
+        temperature: isPokemon ? 0.02 : 0.07,
         max_tokens: maxTok,
       })
     );
@@ -977,8 +979,19 @@ ${prompt}`;
         const parts = [parsed.model, parsed.colorway, parsed.collaboration].filter(Boolean);
         result.model = parts.join(' – ');
         result.confidence = (parsed.styleCode || parsed.collaboration) ? 'HIGH' : parsed.colorway ? 'MEDIUM' : 'LOW';
+      } else if (parsed.brand && (parsed.colorway || parsed.notes || parsed.luxuryMarkers)) {
+        result.brand = parsed.brand;
+        result.model = [parsed.colorway, parsed.luxuryMarkers, parsed.notes].filter(Boolean)[0] || 'Modello da verificare';
+        result.confidence = 'LOW';
+        result.warnings = ['Modello non identificato con certezza — verifica manualmente.'];
+      } else if (parsed.notes || parsed.luxuryMarkers) {
+        result.brand = parsed.brand || 'Sconosciuto';
+        result.model = parsed.luxuryMarkers || parsed.notes || 'N/D';
+        result.confidence = 'LOW';
+        result.warnings = ['Brand e modello non identificati — controlla i dettagli visivi rilevati.'];
       } else {
         result.confidence = 'LOW';
+        result.warnings = ['Scarpa non identificata. Assicurati che logo e suola siano visibili.'];
       }
       break;
     }
@@ -987,8 +1000,19 @@ ${prompt}`;
         result.brand = parsed.brand;
         result.model = [parsed.model || parsed.type, parsed.season, parsed.collaboration].filter(Boolean).join(' – ');
         result.confidence = parsed.model ? 'MEDIUM' : 'LOW';
+      } else if (parsed.brand && parsed.logoDescription) {
+        result.brand = parsed.brand;
+        result.model = [parsed.type, parsed.color, parsed.season].filter(Boolean).join(' – ') || 'Da verificare';
+        result.confidence = 'LOW';
+        result.warnings = ['Modello specifico non identificato.'];
+      } else if (parsed.logoDescription && parsed.logoDescription.length > 10) {
+        result.brand = parsed.brand || 'Brand da identificare';
+        result.model = parsed.logoDescription;
+        result.confidence = 'LOW';
+        result.warnings = ['Brand non riconosciuto — testo/logo rilevato: ' + parsed.logoDescription.substring(0, 80)];
       } else {
         result.confidence = 'LOW';
+        result.warnings = ['Capo non identificato. Prova una foto più vicina al logo/etichetta.'];
       }
       break;
     }
