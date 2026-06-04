@@ -29,6 +29,7 @@ export const registerSchema = z.object({
     .regex(/^[\p{L}\s'\-\.]+$/u, 'Nome contiene caratteri non validi'),
   categories: z.array(z.enum(['Scarpe', 'Vestiti', 'Pokemon', 'Orologi'])).optional(),
   joinCode: z.string().regex(/^INV-[A-Z0-9]{8,16}$/, 'Codice invito malformato').optional(),
+  marketingConsent: z.boolean().optional(),
 }).refine(
   (data) => data.categories?.length || data.joinCode,
   { message: 'Specifica almeno categorie o un codice invito' }

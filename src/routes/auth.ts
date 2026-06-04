@@ -82,7 +82,7 @@ async function issueTokens(res: Response, user: { id: string; email: string }, r
 // POST /auth/register
 // ==========================================
 router.post('/register', authLimiter, validate(registerSchema), async (req, res) => {
-  const { email, password, name, categories, joinCode } = req.body;
+  const { email, password, name, categories, joinCode, marketingConsent } = req.body;
   
   try {
     // Password policy
@@ -123,6 +123,7 @@ router.post('/register', authLimiter, validate(registerSchema), async (req, res)
         await tx.user.create({
           data: {
             email, password: hashedPassword, name,
+            marketingConsent: marketingConsent === true,
             memberships: {
               create: allOwnerWarehouses.map(m => ({
                 role: 'MEMBER', percentage: 0,
@@ -145,6 +146,7 @@ router.post('/register', authLimiter, validate(registerSchema), async (req, res)
     await prisma.user.create({
       data: {
         email, password: hashedPassword, name,
+        marketingConsent: marketingConsent === true,
         memberships: {
           create: categories.map((cat: string) => ({
             role: 'OWNER', percentage: 100,

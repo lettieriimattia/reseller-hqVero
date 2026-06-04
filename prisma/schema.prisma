@@ -24,6 +24,9 @@ model User {
   twoFactorSecret   String?        // Cifrato a riposo (vedi utils/security.ts)
   twoFactorBackup   String?        // Codici di backup (JSON cifrato)
   
+  // Consenso comunicazioni email (opzionale, revocabile)
+  marketingConsent  Boolean        @default(false)
+
   // Sicurezza
   failedLoginCount  Int            @default(0)
   lockedUntil       DateTime?      // Account temporaneamente bloccato dopo X tentativi

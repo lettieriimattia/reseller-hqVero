@@ -166,6 +166,7 @@ export default function App() {
   const [bootLoading, setBootLoading] = useState(true);
   const [cookieConsent, setCookieConsent] = useState<boolean>(() => !!localStorage.getItem('hq_cookie_consent'));
   const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [regType, setRegType] = useState<'new_team' | 'join_team'>('new_team');
@@ -768,10 +769,11 @@ export default function App() {
       const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
       const body: any = authMode === 'login'
         ? { email: authEmail, password: authPassword, twoFactorCode: require2FA ? twoFactorCode : undefined }
-        : { 
+        : {
             email: authEmail, password: authPassword, name: authName,
             categories: regType === 'new_team' ? regCategories : undefined,
             joinCode: regType === 'join_team' ? joinCode : undefined,
+            marketingConsent,
           };
       
       const { ok, data } = await apiCall(endpoint, { method: 'POST', body: JSON.stringify(body) });
@@ -1689,16 +1691,31 @@ export default function App() {
             )}
             
             {authMode === 'register' && (
-              <label className="flex items-start gap-3 cursor-pointer mt-4">
-                <input type="checkbox" required className="mt-0.5 shrink-0 accent-white w-4 h-4 rounded" />
-                <span className="text-[12px] text-gray-500 leading-relaxed">
-                  Ho letto e accetto la{' '}
-                  <button type="button" onClick={() => setPrivacyOpen(true)} className="text-white underline underline-offset-2 hover:no-underline">
-                    Privacy Policy
-                  </button>
-                  {' '}e il trattamento dei miei dati personali ai sensi del GDPR.
-                </span>
-              </label>
+              <div className="space-y-3 mt-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" required className="mt-0.5 shrink-0 accent-white w-4 h-4 rounded" />
+                  <span className="text-[12px] text-gray-500 leading-relaxed">
+                    Ho letto e accetto la{' '}
+                    <button type="button" onClick={() => setPrivacyOpen(true)} className="text-white underline underline-offset-2 hover:no-underline">
+                      Privacy Policy
+                    </button>
+                    {' '}e il trattamento dei dati personali ai sensi del Regolamento UE 2016/679 (GDPR).{' '}
+                    <span className="text-gray-600">Obbligatorio</span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={marketingConsent}
+                    onChange={e => setMarketingConsent(e.target.checked)}
+                    className="mt-0.5 shrink-0 accent-white w-4 h-4 rounded"
+                  />
+                  <span className="text-[12px] text-gray-500 leading-relaxed">
+                    Acconsento a ricevere comunicazioni via email relative ad aggiornamenti del servizio, nuove funzionalità e novità di HQ. Il consenso è revocabile in qualsiasi momento dalle impostazioni del profilo.{' '}
+                    <span className="text-gray-600">Facoltativo</span>
+                  </span>
+                </label>
+              </div>
             )}
 
             <button type="submit" disabled={authLoading}
@@ -4606,7 +4623,12 @@ export default function App() {
               </section>
 
               <section>
-                <h3 className="text-white font-semibold text-sm mb-2">9. Modifiche alla Privacy Policy</h3>
+                <h3 className="text-white font-semibold text-sm mb-2">9. Comunicazioni Email</h3>
+                <p>Previo consenso facoltativo espresso in fase di registrazione, HQ potrà inviare all'indirizzo email fornito comunicazioni relative ad aggiornamenti del servizio, nuove funzionalità e novità della piattaforma. Il consenso è revocabile in qualsiasi momento accedendo alle <span className="text-white">Impostazioni → Profilo</span> dell'app, senza pregiudizio per la liceità dei trattamenti effettuati prima della revoca. Il mancato consenso non pregiudica l'accesso al servizio.</p>
+              </section>
+
+              <section>
+                <h3 className="text-white font-semibold text-sm mb-2">10. Modifiche alla Privacy Policy</h3>
                 <p>Questa policy può essere aggiornata. Le modifiche sostanziali saranno comunicate tramite notifica in-app.</p>
               </section>
 
