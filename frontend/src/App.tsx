@@ -358,8 +358,8 @@ export default function App() {
 
   const sendTestEmail = async () => {
     showToast('Invio email di test...');
-    const { ok, data } = await apiCall('/api/test-email', { method: 'POST' });
-    if (ok) showToast('Email inviata a lettieriimattia@gmail.com');
+    const { data } = await apiCall('/api/test-email', { method: 'POST' });
+    if (data?.ok) showToast('Email inviata a lettieriimattia@gmail.com');
     else showToast(data?.error || 'Errore invio email', 'err');
   };
 
