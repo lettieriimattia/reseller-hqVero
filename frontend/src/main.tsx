@@ -22,11 +22,15 @@ const updateSW = registerSW({
   },
 });
 
-// Safari PWA: controlla aggiornamenti al focus della finestra
-window.addEventListener('focus', () => {
+// Safari PWA: controlla aggiornamenti al focus/visibilità della finestra
+const checkForUpdates = () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistration().then(r => r?.update());
   }
+};
+window.addEventListener('focus', checkForUpdates);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') checkForUpdates();
 });
 
 // Safari PWA: rileva cambio controller (nuovo SW attivo) e ricarica

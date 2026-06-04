@@ -866,15 +866,18 @@ export default function App() {
     e.preventDefault();
     if (!newCatName) return;
     setIsAddingCat(true);
-    const { ok, data } = await apiCall('/warehouses', { 
-      method: 'POST', body: JSON.stringify({ name: newCatName }) 
+    showToast('Creo il reparto e genero icona con IA…', 'ok');
+    const { ok, data } = await apiCall('/warehouses', {
+      method: 'POST', body: JSON.stringify({ name: newCatName })
     });
     setIsAddingCat(false);
     if (ok) {
-      showToast(data.message || 'Reparto aggiunto!');
-      setUser(data.user);
+      setUser(data.user);  // contiene già aiConfig con emoji
       setNewCatName('');
       fetchTeam();
+      const config = data.user?.warehouses?.find((w: any) => w.name.includes(newCatName));
+      const emoji = config?.aiConfig ? (() => { try { return JSON.parse(config.aiConfig).emoji; } catch { return ''; } })() : '';
+      showToast(`${emoji} Reparto "${newCatName}" aggiunto!`);
     } else showToast(data.error || 'Errore', 'err');
   };
   

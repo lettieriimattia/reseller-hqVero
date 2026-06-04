@@ -228,17 +228,20 @@ router.post('/warehouses', validate(createWarehouseSchema), async (req: AuthRequ
     await audit({ action: 'WAREHOUSE_CREATE', userId: req.user!.userId, req,
       resource: newWarehouse.id, metadata: { name } });
 
-    // Genera config IA per categorie personalizzate (non le 4 built-in)
+    // Genera config IA per categorie personalizzate — sincrono così l'icona appare subito
     const builtinCategories = ['Scarpe', 'Vestiti', 'Pokemon', 'Orologi'];
     if (!builtinCategories.includes(name)) {
-      generateCategoryConfig(name).then(config => {
+      try {
+        const config = await generateCategoryConfig(name);
         if (config) {
-          prisma.warehouse.update({
+          await prisma.warehouse.update({
             where: { id: newWarehouse.id },
             data: { aiConfig: JSON.stringify(config) },
-          }).catch(err => logger.warn('Errore salvataggio aiConfig', { err }));
+          });
         }
-      }).catch(err => logger.warn('Errore generazione aiConfig', { err }));
+      } catch (err) {
+        logger.warn('Errore generazione aiConfig (non bloccante)', { err });
+      }
     }
 
     await notifyTeam({

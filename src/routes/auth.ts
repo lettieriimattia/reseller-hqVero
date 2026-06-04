@@ -1,4 +1,4 @@
-// src/routes/auth.ts
+﻿// src/routes/auth.ts
 // Rotte autenticazione: register, login, refresh, logout, 2FA.
 
 import { Router, Request, Response } from 'express';
@@ -284,6 +284,7 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
           name: m.warehouse.name,
           role: m.role,
           inviteCode: m.role === 'OWNER' ? m.warehouse.inviteCode : null,
+          aiConfig: m.warehouse.aiConfig || null,
           percentage: m.percentage,
         })),
       },
@@ -378,6 +379,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
           name: m.warehouse.name,
           role: m.role,
           inviteCode: m.role === 'OWNER' ? m.warehouse.inviteCode : null,
+          aiConfig: m.warehouse.aiConfig || null,
           percentage: m.percentage,
         })),
       },
