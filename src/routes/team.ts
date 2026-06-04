@@ -296,4 +296,51 @@ router.post('/warehouses/:id/regenerate-invite', async (req: AuthRequest, res: R
   }
 });
 
+// ==========================================
+// DELETE /warehouses/:id — elimina reparto (solo OWNER, non l'ultimo)
+// ==========================================
+router.delete('/warehouses/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const isOwner = await authorizeWarehouseOwner(req.user!.userId, req.params.id);
+    if (!isOwner) return res.status(403).json({ error: 'Solo il fondatore può eliminare il reparto.' });
+
+    // Non permettere di eliminare l'unico warehouse
+    const userWarehouses = await prisma.membership.findMany({
+      where: { userId: req.user!.userId, role: 'OWNER' },
+    });
+    if (userWarehouses.length <= 1) {
+      return res.status(400).json({ error: 'Non puoi eliminare l\'unico reparto. Crea prima un altro reparto.' });
+    }
+
+    // Elimina in cascata (membership, products del warehouse via warehouseId)
+    await prisma.warehouse.delete({ where: { id: req.params.id } });
+
+    await audit({ action: 'WAREHOUSE_CREATE', userId: req.user!.userId, req,
+      resource: req.params.id, metadata: { action: 'delete' } });
+
+    // Ritorna la lista aggiornata
+    const updated = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      include: { memberships: { include: { warehouse: true } } },
+    });
+
+    res.json({
+      success: true,
+      user: {
+        id: updated!.id, name: updated!.name, email: updated!.email,
+        twoFactorEnabled: updated!.twoFactorEnabled,
+        warehouses: updated!.memberships.map((m: any) => ({
+          id: m.warehouse.id, name: m.warehouse.name, role: m.role,
+          inviteCode: m.role === 'OWNER' ? m.warehouse.inviteCode : null,
+          aiConfig: m.warehouse.aiConfig || null,
+          percentage: m.percentage,
+        })),
+      },
+    });
+  } catch (err: any) {
+    logger.error('Errore DELETE /warehouses/:id', { err: err.message });
+    res.status(500).json({ error: 'Errore eliminazione reparto' });
+  }
+});
+
 export default router;

@@ -4,23 +4,37 @@ import './index.css'
 import App from './App.tsx'
 import { registerSW } from 'virtual:pwa-register'
 
-// Registra il Service Worker con ricarica automatica quando disponibile un aggiornamento
-registerSW({
+// Registra il Service Worker con ricarica automatica
+const updateSW = registerSW({
   immediate: true,
   onRegistered(r: ServiceWorkerRegistration | undefined) {
-    // Controlla aggiornamenti ogni 60 minuti
     if (r) {
-      setInterval(() => r.update(), 60 * 60 * 1000);
+      // Controlla aggiornamenti ogni 30 minuti
+      setInterval(() => r.update(), 30 * 60 * 1000);
     }
   },
   onNeedRefresh() {
-    // Nuovo SW disponibile — ricarica silenziosamente la pagina
-    window.location.reload();
+    // Nuovo SW disponibile — ricarica la pagina
+    updateSW(true);
   },
   onOfflineReady() {
-    console.log('HQ: app pronta offline');
+    // App pronta per uso offline
   },
 });
+
+// Safari PWA: controlla aggiornamenti al focus della finestra
+window.addEventListener('focus', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(r => r?.update());
+  }
+});
+
+// Safari PWA: rileva cambio controller (nuovo SW attivo) e ricarica
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

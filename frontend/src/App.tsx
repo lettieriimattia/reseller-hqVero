@@ -1237,6 +1237,8 @@ export default function App() {
   const navigateTo = (view: typeof currentView) => {
     setCurrentView(view);
     if (view === 'magazzino' || view === 'analytics') setSearchTerm('');
+    // Scroll to top smoothly on navigation
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // ==========================================
@@ -1535,8 +1537,14 @@ export default function App() {
   // ==========================================
   if (bootLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-6">
         <HQLoader />
+        {/* Skeleton cards */}
+        <div className="w-full max-w-sm px-6 space-y-3 mt-4">
+          {[1,2,3].map(i => (
+            <div key={i} className="skeleton h-14 w-full" style={{ opacity: 1 - i * 0.2 }} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -1859,7 +1867,7 @@ export default function App() {
         </nav>
       </header>
       
-      <main className="w-full px-4 lg:px-6 py-5 lg:py-8 pb-28 lg:pb-8">
+      <main key={currentView} className="w-full px-4 lg:px-6 py-5 lg:py-8 pb-28 lg:pb-8 animate-fade-in">
 
         {/* ========== DASHBOARD ========== */}
         {currentView === 'dashboard' && (
@@ -3074,6 +3082,23 @@ export default function App() {
                   className="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2">
                   {isSavingTeam ? <Loader2 className="animate-spin" size={16} /> : 'Salva Quote'}
                 </button>
+
+                {/* Elimina reparto — solo OWNER, piccolo e discreto */}
+                {team.myRole === 'OWNER' && user.warehouses.length > 1 && (
+                  <div className="mt-4 pt-4 border-t border-white/[0.04] flex justify-end">
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Eliminare il reparto "${team.warehouseName.replace('Magazzino ', '')}"? Tutti i prodotti associati verranno rimossi.`)) return;
+                        const { ok, data } = await apiCall(`/warehouses/${team.warehouseId}`, { method: 'DELETE' });
+                        if (ok) { setUser(data.user); await fetchTeam(); showToast('Reparto eliminato'); }
+                        else showToast(data.error || 'Errore', 'err');
+                      }}
+                      className="text-[11px] text-red-500/40 hover:text-red-400/70 transition-colors flex items-center gap-1"
+                    >
+                      <Trash2 size={11} /> Elimina reparto
+                    </button>
+                  </div>
+                )}
               </section>
             ))}
 
@@ -4957,17 +4982,33 @@ export default function App() {
       {toast && (
         <div
           onClick={() => setToast(null)}
-          className={`fixed z-[100] left-4 right-4 lg:left-auto lg:right-6 lg:w-80 flex items-center gap-3 px-4 py-3.5 rounded-2xl shadow-2xl cursor-pointer ${
-            toast.type === 'ok' ? 'bg-green-600' :
-            toast.type === 'err' ? 'bg-red-600' : 'bg-yellow-500'
-          }`}
-          style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
+          className="fixed z-[100] left-4 right-4 lg:left-auto lg:right-6 lg:w-auto lg:max-w-sm flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer animate-slide-up"
+          style={{
+            bottom: 'calc(5.5rem + env(safe-area-inset-bottom))',
+            background: toast.type === 'ok'
+              ? 'rgba(16,185,129,0.15)'
+              : toast.type === 'err'
+              ? 'rgba(239,68,68,0.15)'
+              : 'rgba(234,179,8,0.15)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: `1px solid ${
+              toast.type === 'ok' ? 'rgba(16,185,129,0.3)'
+              : toast.type === 'err' ? 'rgba(239,68,68,0.3)'
+              : 'rgba(234,179,8,0.3)'}`,
+          }}
         >
-          {toast.type === 'ok'
-            ? <CheckCircle size={18} className="shrink-0" />
-            : <AlertTriangle size={18} className="shrink-0" />}
-          <span className="text-sm font-bold text-white flex-1">{toast.msg}</span>
-          <X size={14} className="shrink-0 opacity-70" />
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+            toast.type === 'ok' ? 'bg-emerald-500/20 text-emerald-400'
+            : toast.type === 'err' ? 'bg-red-500/20 text-red-400'
+            : 'bg-yellow-500/20 text-yellow-400'
+          }`}>
+            {toast.type === 'ok' ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
+          </div>
+          <span className={`text-sm font-semibold flex-1 ${
+            toast.type === 'ok' ? 'text-emerald-300' : toast.type === 'err' ? 'text-red-300' : 'text-yellow-300'
+          }`}>{toast.msg}</span>
+          <X size={13} className="shrink-0 text-white/30" />
         </div>
       )}
     </div>
