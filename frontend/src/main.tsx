@@ -2,42 +2,35 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { registerSW } from 'virtual:pwa-register'
 
-// Registra il Service Worker con ricarica automatica
-const updateSW = registerSW({
-  immediate: true,
-  onRegistered(r: ServiceWorkerRegistration | undefined) {
-    if (r) {
-      // Controlla aggiornamenti ogni 30 minuti
-      setInterval(() => r.update(), 30 * 60 * 1000);
-    }
-  },
-  onNeedRefresh() {
-    // Nuovo SW disponibile — ricarica la pagina
-    updateSW(true);
-  },
-  onOfflineReady() {
-    // App pronta per uso offline
-  },
-});
-
-// Safari PWA: controlla aggiornamenti al focus/visibilità della finestra
-const checkForUpdates = () => {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistration().then(r => r?.update());
-  }
-};
-window.addEventListener('focus', checkForUpdates);
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') checkForUpdates();
-});
-
-// Safari PWA: rileva cambio controller (nuovo SW attivo) e ricarica
+// PWA: aggiornamento automatico del service worker
 if ('serviceWorker' in navigator) {
+  let refreshing = false;
+
+  // Quando il nuovo SW prende controllo, ricarica la pagina (una sola volta)
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    window.location.reload();
+    if (!refreshing) {
+      refreshing = true;
+      // href = href è più affidabile di reload() su Safari standalone
+      window.location.href = window.location.href;
+    }
   });
+
+  const checkForUpdates = () => {
+    navigator.serviceWorker.getRegistration().then(r => r?.update());
+  };
+
+  // Controlla 2 secondi dopo l'avvio (SW già registrato a quel punto)
+  setTimeout(checkForUpdates, 2000);
+
+  // Controlla ogni 5 minuti
+  setInterval(checkForUpdates, 5 * 60 * 1000);
+
+  // Controlla quando l'app torna visibile (chiave per Safari PWA)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkForUpdates();
+  });
+  window.addEventListener('focus', checkForUpdates);
 }
 
 createRoot(document.getElementById('root')!).render(
