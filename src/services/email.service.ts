@@ -26,7 +26,7 @@ export async function sendEmail(opts: {
   }
   try {
     await transporter.sendMail({
-      from: `"HQ" <${process.env.GMAIL_USER}>`,
+      from: `"noreply • HQ" <${process.env.GMAIL_USER}>`,
       to: opts.to,
       subject: opts.subject,
       text: opts.text,
