@@ -6,6 +6,7 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
 import { notifyWarehouseMembers } from './notification.service';
+import { sendDeliveredEmail } from './email-jobs.service';
 
 const prisma = new PrismaClient();
 
@@ -185,6 +186,9 @@ export async function refreshTracking(productId: string): Promise<TrackingInfo |
           message: `${product.brand} ${product.name} è stato consegnato. Completa la vendita con prezzo e piattaforma.`,
         });
       }
+
+      // Email notifica consegna (non bloccante)
+      sendDeliveredEmail(productId).catch(() => {});
 
       logger.info('Prodotto auto-segnato come venduto dopo consegna', { productId });
     }

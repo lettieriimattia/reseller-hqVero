@@ -24,6 +24,7 @@ import trackingRoutes from './src/routes/tracking';
 import adminRoutes from './src/routes/admin';
 import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
+import { startEmailJobs } from './src/services/email-jobs.service';
 
 import { logger } from './src/utils/logger';
 
@@ -249,6 +250,9 @@ serverInstance.listen(PORT, () => {
   logger.info(`🚀 Reseller HQ Backend attivo su ${protocol}://localhost:${PORT} (${isProduction ? 'PROD' : 'DEV'})`);
   if (tlsOptions) logger.info('🔒 HTTPS attivo con certificato locale');
   logger.info(`   CORS permesso da: ${allowedOrigins.join(', ')} + rete locale 192.168.x.x`);
+
+  // Job email automatiche (prodotti fermi ogni 2 settimane + consegna)
+  startEmailJobs();
 
   // Polling tracking ogni 2 ore (solo se API key configurata)
   if (process.env.TRACKING_17TRACK_KEY) {
