@@ -412,8 +412,6 @@ export default function App() {
       'Prodotti Totali': u.stats.totalProducts,
       'In Stock': u.stats.inStock,
       'Venduti': u.stats.sold,
-      'In Stock': u.stats.inStock,
-      'Valore Stock €': u.stats.stockValue,
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
