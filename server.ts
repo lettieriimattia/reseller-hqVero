@@ -22,6 +22,8 @@ import aiRoutes from './src/routes/ai';
 import notificationRoutes from './src/routes/notifications';
 import trackingRoutes from './src/routes/tracking';
 import adminRoutes from './src/routes/admin';
+import templateRoutes from './src/routes/templates';
+import analyticsRoutes from './src/routes/analytics';
 import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
 import { startEmailJobs } from './src/services/email-jobs.service';
@@ -192,6 +194,8 @@ app.use('/api/ai', aiRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/tracking', trackingRoutes);
 app.use('/admin', adminRoutes);
+app.use('/templates', templateRoutes);
+app.use('/analytics', analyticsRoutes);
 
 // ==========================================
 // SPA FALLBACK + 404
@@ -261,6 +265,26 @@ serverInstance.listen(PORT, () => {
 
   // Job email automatiche (prodotti fermi ogni 2 settimane + consegna)
   startEmailJobs();
+
+  // Pilastro 2: Cleanup reservation scadute ogni minuto.
+  // Se una reservation non viene completata entro 15 min, il prodotto torna IN STOCK.
+  const RESERVATION_TTL = 15 * 60 * 1000;
+  setInterval(async () => {
+    try {
+      const expired = await prisma.product.updateMany({
+        where: {
+          status: 'RESERVED',
+          reservedAt: { lt: new Date(Date.now() - RESERVATION_TTL) },
+        },
+        data: { status: 'IN STOCK', reservedBy: null, reservedAt: null },
+      });
+      if (expired.count > 0) {
+        logger.info(`Reservation scadute rilasciate: ${expired.count} prodotti → IN STOCK`);
+      }
+    } catch (err) {
+      logger.error('Errore cleanup reservation', { err });
+    }
+  }, 60_000);
 
   // Polling tracking ogni 2 ore (solo se API key configurata)
   if (process.env.TRACKING_17TRACK_KEY) {

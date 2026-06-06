@@ -79,7 +79,8 @@ export const canAccessProduct = async (
   userId: string,
   productId: string
 ): Promise<{ allowed: boolean; product: any | null }> => {
-  const product = await prisma.product.findUnique({
+  // findFirst invece di findUnique per poter filtrare su deletedAt
+  const product = await prisma.product.findFirst({
     where: { id: productId },
   });
   if (!product) return { allowed: false, product: null };

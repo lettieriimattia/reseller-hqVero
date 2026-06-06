@@ -41,6 +41,7 @@ model User {
   refreshTokens     RefreshToken[]
   notifications     Notification[]
   auditLogs         AuditLog[]
+  inventoryLogs     InventoryLog[]
   
   @@index([email])
 }
@@ -122,20 +123,32 @@ model Product {
   // Note libere
   notes          String?    // Note operative (es: cinturino usurato, scatola mancante)
 
+  // Pilastro 1: Campi dinamici dalla CategoryTemplate (JSONB)
+  attributes     Json?      // Record<string, any> — popolato dal DynamicForm
+
+  // Pilastro 1: Soft delete — mai DELETE fisico dal DB
+  deletedAt      DateTime?  // Non null = cancellato logicamente
+
+  // Pilastro 2: Stato RESERVED (checkout in corso)
+  reservedBy     String?    // userId che ha la reservation attiva
+  reservedAt     DateTime?  // Scade dopo 15 minuti se non completata
+
   // Audit
   userId         String     // Chi l'ha inserito
   warehouseId    String?    // A quale warehouse appartiene (per autorizzazione)
-  
+
   createdAt      DateTime   @default(now())
   soldAt         DateTime?
   updatedAt      DateTime   @updatedAt
-  
+
   user           User       @relation(fields: [userId], references: [id])
-  
+  inventoryLogs  InventoryLog[]
+
   @@index([userId])
   @@index([category])
   @@index([status])
   @@index([warehouseId])
+  @@index([deletedAt])
 }
 
 // ==========================================
@@ -211,16 +224,57 @@ model MarketPrice {
   brand       String
   modelName   String
   size        String?
-  
+
   minPrice    Float
   maxPrice    Float
   avgPrice    Float
   sampleSize  Int      // Numero di vendite analizzate
   source      String   // "GROQ_AI" | "MANUAL"
-  
+
   createdAt   DateTime @default(now())
   expiresAt   DateTime // Le stime scadono dopo 7 giorni
-  
+
   @@unique([category, brand, modelName, size])
   @@index([category, brand])
+}
+
+// ==========================================
+// CATEGORY TEMPLATE (schema campi dinamici per categoria)
+// Pilastro 1: Template Engine — niente categorie hardcoded.
+// Ogni categoria può avere un set arbitrario di campi JSONB.
+// ==========================================
+model CategoryTemplate {
+  id        String   @id @default(cuid())
+  name      String   @unique   // Deve corrispondere a Product.category
+  icon      String?
+  fields    Json               // FieldDef[] — vedi types/template.ts
+  isSystem  Boolean  @default(false) // I template di sistema non sono eliminabili
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+// ==========================================
+// INVENTORY LOG (tracciamento mutazioni — mai DELETE, sempre append)
+// Pilastro 1: Audit granulare per ogni campo modificato.
+// Pilastro 2: Registro della macchina a stati.
+// ==========================================
+model InventoryLog {
+  id        String   @id @default(cuid())
+  productId String
+  userId    String
+  action    String   // "STATUS_CHANGE" | "PRICE_CHANGE" | "ATTR_CHANGE" | "RESERVE" | "RELEASE" | "SOFT_DELETE"
+  field     String?  // Campo modificato (es. "purchasePrice", "status")
+  oldValue  String?
+  newValue  String?
+  note      String?
+  createdAt DateTime @default(now())
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([productId])
+  @@index([userId])
+  @@index([createdAt])
 }
