@@ -3592,12 +3592,6 @@ export default function App() {
                   // Form DINAMICO generato dall'IA
                   return (
                     <>
-                      {catConfig.expertDescription && (
-                        <div className="text-[10px] text-gray-600 bg-white/[0.02] rounded-xl px-3 py-2 flex items-center gap-1.5">
-                          <Sparkles size={10} className="text-gray-500 shrink-0" />
-                          {catConfig.expertDescription}
-                        </div>
-                      )}
                       <div className="grid grid-cols-2 gap-3">
                         {catConfig.fields.map((f: any) => {
                           const val = f.name === 'brand' ? brand : f.name === 'model' ? name : customFieldValues[f.name] || '';
