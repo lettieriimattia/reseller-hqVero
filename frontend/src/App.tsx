@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import * as XLSX from 'xlsx';
+import { DynamicForm } from './components/DynamicForm';
 import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
@@ -475,6 +476,10 @@ export default function App() {
   const [notesInput, setNotesInput] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
 
+  // ----- TEMPLATE DINAMICO (campi JSONB per categoria) -----
+  const [activeTemplate, setActiveTemplate] = useState<{ fields: any[] } | null>(null);
+  const [dynamicAttrs, setDynamicAttrs] = useState<Record<string, any>>({});
+
   // ----- TRACKING -----
   const [trackingModalOpen, setTrackingModalOpen] = useState(false);
   const [trackingProduct, setTrackingProduct] = useState<any>(null);
@@ -558,6 +563,15 @@ export default function App() {
     if (category === 'Scarpe') setSize('42');
     else if (category === 'Vestiti') setSize('M');
   }, [category, userCategories]);
+
+  // Carica il template dinamico dal backend quando la categoria cambia nel form
+  useEffect(() => {
+    if (!category || !isFormOpen) { setActiveTemplate(null); return; }
+    setDynamicAttrs({});
+    apiCall(`/templates/${encodeURIComponent(category)}`).then(({ ok, data }) => {
+      setActiveTemplate(ok && data?.fields?.length ? data : null);
+    }).catch(() => setActiveTemplate(null));
+  }, [category, isFormOpen]);
   
   // Init quote per acquisto condiviso (usa percentuali salvate del team, non divisione uguale)
   useEffect(() => {
@@ -1121,6 +1135,7 @@ export default function App() {
             marketPriceMax: priceEstimate?.maxPrice,
             marketPriceAvg: priceEstimate?.avgPrice,
             authenticityScore: authResult?.score,
+            attributes: Object.keys(dynamicAttrs).length > 0 ? dynamicAttrs : undefined,
           }),
         });
         if (!ok) hasError = true;
@@ -1140,6 +1155,7 @@ export default function App() {
       setIsSharedPurchase(false); setProductShares([]);
       setScanResult(null); setPriceEstimate(null); setAuthResult(null);
       setProductPhotos([]);
+      setDynamicAttrs({});
     } catch (err) {
       showToast('Errore di connessione', 'err');
     } finally { setIsSaving(false); }
@@ -2676,9 +2692,103 @@ export default function App() {
                 </section>
               );
             })()}
+
+            {/* ---- Tabella Sell-Through per Categoria ---- */}
+            {userCategories.length > 0 && (() => {
+              const rows = userCategories.map(cat => {
+                const catP = products.filter(p => p.category === cat);
+                const catSold = catP.filter(p => p.status === 'VENDUTO');
+                const catStock = catP.filter(p => p.status === 'IN STOCK');
+                const profit = catSold.reduce((s, p) => s + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)), 0);
+                const capital = catStock.reduce((s, p) => s + p.purchasePrice, 0);
+                const daysArr = catSold.filter(p => p.soldAt && p.createdAt)
+                  .map(p => Math.floor((new Date(p.soldAt!).getTime() - new Date(p.createdAt!).getTime()) / 86400000));
+                const avgDays = daysArr.length ? Math.round(daysArr.reduce((a, b) => a + b, 0) / daysArr.length) : null;
+                const st = catP.length > 0 ? Math.round((catSold.length / catP.length) * 100) : 0;
+                return { cat, total: catP.length, sold: catSold.length, inStock: catStock.length, profit, capital, avgDays, st };
+              }).filter(r => r.total > 0);
+              if (rows.length === 0) return null;
+              return (
+                <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <PieChartIcon className="text-white" size={15} />
+                    <h3 className="font-semibold">Reparti</h3>
+                  </div>
+                  <div className="overflow-x-auto -mx-1">
+                    <table className="w-full text-[11px]">
+                      <thead>
+                        <tr className="border-b border-white/[0.07]">
+                          {['Reparto', 'Totale', 'Venduti', 'Stock', 'Sell-through', 'Capitale', 'Profitto', 'Gg/vendita'].map(h => (
+                            <th key={h} className="text-left text-gray-600 font-semibold uppercase tracking-wider py-2 pr-4 last:pr-0">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/[0.04]">
+                        {rows.map(r => (
+                          <tr key={r.cat} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="py-2.5 pr-4 font-bold text-white">{getCategoryIcon(r.cat)} {r.cat}</td>
+                            <td className="py-2.5 pr-4 text-gray-400 num">{r.total}</td>
+                            <td className="py-2.5 pr-4 text-purple-400 num">{r.sold}</td>
+                            <td className="py-2.5 pr-4 text-gray-400 num">{r.inStock}</td>
+                            <td className="py-2.5 pr-4">
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                                  <div className="h-full bg-[#ff4d00] rounded-full" style={{ width: `${r.st}%` }} />
+                                </div>
+                                <span className={`num font-semibold ${r.st >= 60 ? 'text-emerald-400' : r.st >= 30 ? 'text-yellow-400' : 'text-red-400'}`}>{r.st}%</span>
+                              </div>
+                            </td>
+                            <td className="py-2.5 pr-4 text-gray-400 num">{r.capital.toFixed(0)}€</td>
+                            <td className={`py-2.5 pr-4 num font-semibold ${r.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{r.profit >= 0 ? '+' : ''}{r.profit.toFixed(0)}€</td>
+                            <td className="py-2.5 text-gray-500 num">{r.avgDays ?? '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              );
+            })()}
+
+            {/* ---- Dead-Stock Alert ---- */}
+            {staleProducts.length > 0 && (
+              <section className="bg-[#0f0f0f] border border-yellow-500/20 rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="text-yellow-500" size={15} />
+                    <h3 className="font-semibold">Dead Stock Alert</h3>
+                    <span className="bg-yellow-500/10 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded-full">{staleProducts.length} prodotti</span>
+                  </div>
+                  <span className="text-[10px] text-gray-600">fermi da +{staleThreshold} giorni · {staleProducts.reduce((s: number, p: any) => s + (p.purchasePrice || 0), 0).toFixed(0)}€ immobilizzati</span>
+                </div>
+                <div className="space-y-2">
+                  {staleProducts.slice(0, 5).map((p: any) => {
+                    const days = p.createdAt ? Math.floor((Date.now() - new Date(p.createdAt).getTime()) / 86400000) : 0;
+                    return (
+                      <div key={p.id} className="flex items-center gap-3 p-3 bg-[#0a0a0a] rounded-xl">
+                        <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center flex-shrink-0">
+                          <span className="text-base">{getCategoryIcon(p.category)}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold truncate">{p.brand} {p.name}</p>
+                          <p className="text-[10px] text-gray-500">{p.size} · {p.condition}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-semibold text-white">{(p.purchasePrice || 0).toFixed(0)}€</p>
+                          <p className="text-[10px] text-yellow-600">{days} giorni</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {staleProducts.length > 5 && (
+                    <p className="text-[11px] text-gray-600 text-center pt-1">+{staleProducts.length - 5} altri prodotti fermi</p>
+                  )}
+                </div>
+              </section>
+            )}
           </div>
         )}
-        
+
         {/* ========== TRACKING PAGE ========== */}
         {currentView === 'tracking' && (() => {
           const allTracked = products.filter(p => p.trackingCode);
@@ -3587,21 +3697,16 @@ export default function App() {
                       </select>
                     </div>
                   </div>
-                  {/* Campi extra per categorie personalizzate */}
-                  {category !== 'Scarpe' && category !== 'Vestiti' && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Materiale <span className="text-gray-700 normal-case font-normal">(opz.)</span></label>
-                        <input type="text" value={watchMaterial} onChange={(e: any) => setWatchMaterial(e.target.value)}
-                          placeholder="es. Pelle, Canvas, Nylon"
-                          className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Colore <span className="text-gray-700 normal-case font-normal">(opz.)</span></label>
-                        <input type="text" value={watchStrap} onChange={(e: any) => setWatchStrap(e.target.value)}
-                          placeholder="es. Nero, Marrone, Monogram"
-                          className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
-                      </div>
+                  {/* Campi dinamici dalla CategoryTemplate (JSONB) */}
+                  {activeTemplate && activeTemplate.fields?.length > 0 && (
+                    <div className="border-t border-white/[0.07] pt-4">
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Dettagli Categoria</p>
+                      <DynamicForm
+                        fields={activeTemplate.fields}
+                        values={dynamicAttrs}
+                        onChange={(key, value) => setDynamicAttrs(prev => ({ ...prev, [key]: value }))}
+                        disabled={isSaving}
+                      />
                     </div>
                   )}
                 </>
