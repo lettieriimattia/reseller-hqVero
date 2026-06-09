@@ -229,7 +229,7 @@ export default function App() {
   // IA scan state
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
-  const [priceEstimate, setPriceEstimate] = useState<any>(null);
+  const [priceEstimate, setPriceEstimate] = useState<any>(null); // rimasto per compatibilità reset, non più usato in UI
   const [authResult, setAuthResult] = useState<any>(null);
   
   // ----- FOTO PRODOTTO -----
@@ -877,12 +877,7 @@ export default function App() {
       let av: any, bv: any;
       if (sortField === 'price') { av = a.purchasePrice; bv = b.purchasePrice; }
       else if (sortField === 'name') { av = `${a.brand} ${a.name}`; bv = `${b.brand} ${b.name}`; }
-      else if (sortField === 'margin') {
-        av = a.marketPriceAvg ? (a.marketPriceAvg - a.purchasePrice) / a.purchasePrice : -999;
-        bv = b.marketPriceAvg ? (b.marketPriceAvg - b.purchasePrice) / b.purchasePrice : -999;
-      } else {
-        av = a.oldestDate || a.createdAt || ''; bv = b.oldestDate || b.createdAt || '';
-      }
+      else { av = a.oldestDate || a.createdAt || ''; bv = b.oldestDate || b.createdAt || ''; }
       if (sortDir === 'asc') return av > bv ? 1 : -1;
       return av < bv ? 1 : -1;
     });
@@ -1248,9 +1243,6 @@ export default function App() {
             size: finalSize, condition: finalCondition, price: unitPrice,
             customShares: finalShares,
             photos: productPhotos.length > 0 ? productPhotos : undefined,
-            marketPriceMin: priceEstimate?.minPrice,
-            marketPriceMax: priceEstimate?.maxPrice,
-            marketPriceAvg: priceEstimate?.avgPrice,
             authenticityScore: authResult?.score,
             attributes: Object.keys(dynamicAttrs).length > 0 ? dynamicAttrs : undefined,
           }),
@@ -1285,7 +1277,7 @@ export default function App() {
       purchasePrice: p.purchasePrice,
     });
     setSellQuantity(ids.length.toString());
-    setSellPrice(p.marketPriceAvg ? p.marketPriceAvg.toString() : '');
+    setSellPrice('');
     setSellModalOpen(true);
   };
   
@@ -2378,9 +2370,7 @@ export default function App() {
                             const daysInStock = g.oldestDate || g.createdAt
                               ? Math.floor((Date.now() - new Date(g.oldestDate || g.createdAt).getTime()) / 86400000)
                               : null;
-                            const margin = g.marketPriceAvg && g.purchasePrice
-                              ? ((g.marketPriceAvg - g.purchasePrice) / g.purchasePrice * 100)
-                              : null;
+                            const margin = null; // stima prezzo AI rimossa
                             return (
                               <div className="flex items-center gap-2 flex-wrap">
                                 <p className="font-bold">{g.brand} {g.name}</p>
@@ -2429,11 +2419,6 @@ export default function App() {
                           <p className="text-xs text-gray-500 mt-1">
                             {g.size} • {g.condition} • <span className="text-gray-400 font-bold">{g.purchasePrice.toFixed(0)}€</span>
                           </p>
-                          {g.marketPriceAvg > 0 && (
-                            <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
-                              <Sparkles size={10} /> {g.marketPriceMin?.toFixed(0)}€–{g.marketPriceMax?.toFixed(0)}€ <span className="text-gray-500">(media {g.marketPriceAvg.toFixed(0)}€)</span>
-                            </p>
-                          )}
                           {(() => {
                             const shares = getShares(g);
                             if (shares && shares.length > 0) {
@@ -3603,14 +3588,6 @@ export default function App() {
                       {scanResult.brand && <p>{scanResult.brand} {scanResult.model}</p>}
                       {scanResult.warnings?.map((w: any, i: number) => <p key={i}>⚠️ {w}</p>)}
                     </div>
-                    {priceEstimate && priceEstimate.avgPrice > 0 && (
-                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-                        <p className="font-bold text-blue-400 flex items-center gap-1">
-                          <TrendingUp size={12} /> Stima: {priceEstimate.minPrice.toFixed(0)}€–{priceEstimate.maxPrice.toFixed(0)}€
-                        </p>
-                        <p className="text-gray-400 mt-1">Media: <span className="text-white font-bold">{priceEstimate.avgPrice.toFixed(0)}€</span></p>
-                      </div>
-                    )}
                     {authResult && (
                       <>
                         {verdictBadge(authResult.verdict, authResult.score)}

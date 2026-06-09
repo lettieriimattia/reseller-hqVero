@@ -79,30 +79,20 @@ router.post('/full-scan', validate(aiScanSchema), async (req: AuthRequest, res: 
     // Step 1: riconoscimento
     const scan = await scanProduct(imageBase64, category);
     
-    // Step 2 e 3: stima prezzo + legit check in parallelo
-    let price: any = null;
+    // Step 2: solo legit check (stima prezzo rimossa — inaccurata)
     let authenticity: any = null;
-    
-    if (scan.brand && scan.model && scan.confidence !== 'LOW') {
-      const [priceResult, authResult] = await Promise.allSettled([
-        estimateMarketPrice({
-          category, brand: scan.brand, modelName: scan.model,
-        }),
-        category !== 'Pokemon' 
-          ? checkAuthenticity(imageBase64, category)
-          : Promise.resolve(null),
-      ]);
-      
-      if (priceResult.status === 'fulfilled') price = priceResult.value;
-      if (authResult.status === 'fulfilled') authenticity = authResult.value;
+
+    if (scan.brand && scan.model && scan.confidence !== 'LOW' && category !== 'Pokemon') {
+      const authResult = await checkAuthenticity(imageBase64, category).catch(() => null);
+      authenticity = authResult;
     }
-    
-    await audit({ 
+
+    await audit({
       action: 'AI_SCAN', userId: req.user!.userId, req,
       metadata: { type: 'full_scan', category, confidence: scan.confidence }
     });
-    
-    res.json({ scan, price, authenticity });
+
+    res.json({ scan, price: null, authenticity });
   } catch (err: any) {
     logger.error('Errore /ai/full-scan', { err: err.message });
     res.status(500).json({ error: err.message || 'Errore scansione completa' });
