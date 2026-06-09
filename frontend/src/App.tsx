@@ -5006,120 +5006,351 @@ export default function App() {
       )}
 
       {/* ========== TEAM PANEL ========== */}
-      {teamPanelOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[70] flex items-end lg:justify-end"
-          onClick={() => setTeamPanelOpen(false)}>
-          <div
-            className="bg-[#0e0e0e] border-t lg:border-t-0 lg:border-l border-white/[0.07] w-full lg:w-[460px] max-h-[92vh] lg:h-full overflow-y-auto rounded-t-3xl lg:rounded-none animate-slide-up lg:animate-slide-right"
-            onClick={e => e.stopPropagation()}>
+      {teamPanelOpen && (() => {
+        // Stato locale al panel
+        const [editQuoteWarehouse, setEditQuoteWarehouse] = React.useState<string | null>(null);
+        const [editQuoteValues, setEditQuoteValues] = React.useState<Record<string, string>>({});
+        const [kickConfirm, setKickConfirm] = React.useState<string | null>(null);
+        const [isRegenerating, setIsRegenerating] = React.useState<string | null>(null);
 
-            {/* Header */}
-            <div className="sticky top-0 bg-[#0e0e0e]/95 backdrop-blur-xl border-b border-white/[0.05] p-5 flex items-center justify-between z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center">
-                  <Users className="text-purple-400" size={18} />
+        const totalSoci = new Set(teamData.flatMap((t: any) => t.members.map((m: any) => m.userId))).size;
+        const totalStock = products.filter(p => p.status === 'IN STOCK').length;
+        const totalSoldCount = products.filter(p => p.status === 'VENDUTO').length;
+        const totalProfit = products.filter(p => p.status === 'VENDUTO')
+          .reduce((s, p) => s + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)), 0);
+
+        const regenerateInvite = async (warehouseId: string) => {
+          setIsRegenerating(warehouseId);
+          const { ok, data } = await apiCall(`/warehouses/${warehouseId}/regenerate-invite`, { method: 'POST' });
+          setIsRegenerating(null);
+          if (ok) { await apiCall('/auth/me').then(r => r.ok && setUser(r.data.user)); showToast('Codice invito rigenerato'); }
+          else showToast(data.error || 'Errore rigenerazione', 'err');
+        };
+
+        const kickMember = async (membershipId: string) => {
+          const { ok, data } = await apiCall(`/team/members/${membershipId}`, { method: 'DELETE' });
+          if (ok) { await fetchTeam(); setKickConfirm(null); showToast('Membro rimosso dal team'); }
+          else showToast(data.error || 'Errore', 'err');
+        };
+
+        const saveEditedQuotes = async (team: any) => {
+          const updates = team.members.map((m: any) => ({
+            userId: m.userId, membershipId: m.membershipId,
+            percentage: Number(editQuoteValues[m.membershipId] ?? m.percentage),
+          }));
+          const total = updates.reduce((s: number, u: any) => s + u.percentage, 0);
+          if (Math.round(total) !== 100) { showToast('La somma deve essere 100%', 'err'); return; }
+          setIsSavingTeam(true);
+          const { ok, data } = await apiCall('/team/percentage', {
+            method: 'PUT', body: JSON.stringify({ warehouseId: team.warehouseId, updates }),
+          });
+          setIsSavingTeam(false);
+          if (ok) { fetchTeam(); setEditQuoteWarehouse(null); showToast('Quote aggiornate'); }
+          else showToast(data.error || 'Errore', 'err');
+        };
+
+        return (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[70] flex items-end lg:justify-end"
+            onClick={() => setTeamPanelOpen(false)}>
+            <div
+              className="bg-[#0e0e0e] border-t lg:border-t-0 lg:border-l border-white/[0.07] w-full lg:w-[460px] max-h-[92vh] lg:h-full overflow-y-auto rounded-t-3xl lg:rounded-none animate-slide-up lg:animate-slide-right"
+              onClick={e => e.stopPropagation()}>
+
+              {/* Header sticky */}
+              <div className="sticky top-0 bg-[#0e0e0e]/95 backdrop-blur-xl border-b border-white/[0.05] p-5 flex items-center justify-between z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center">
+                    <Users className="text-purple-400" size={18} />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-base leading-none">Il Tuo Team</h2>
+                    <p className="text-[10px] text-gray-600 mt-0.5">{totalSoci} {totalSoci === 1 ? 'socio' : 'soci'} · {teamData.length} {teamData.length === 1 ? 'reparto' : 'reparti'}</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="font-semibold text-base leading-none">Il Tuo Team</h2>
-                  <p className="text-[10px] text-gray-600 mt-0.5">
-                    {teamData.reduce((a: number, t: any) => a + t.members.length, 0)} soci · {teamData.length} {teamData.length === 1 ? 'reparto' : 'reparti'}
-                  </p>
-                </div>
+                <button onClick={() => setTeamPanelOpen(false)} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
+                  <X size={19} className="text-gray-400" />
+                </button>
               </div>
-              <button onClick={() => setTeamPanelOpen(false)}
-                className="p-2 hover:bg-white/5 rounded-xl transition-colors">
-                <X size={19} className="text-gray-400" />
-              </button>
-            </div>
 
-            <div className="p-5 space-y-4">
+              {/* Stats rapide globali */}
+              <div className="grid grid-cols-4 gap-2 p-4 border-b border-white/[0.05]">
+                {[
+                  { label: 'Soci', value: totalSoci, color: 'text-purple-400' },
+                  { label: 'In Stock', value: totalStock, color: 'text-white' },
+                  { label: 'Venduti', value: totalSoldCount, color: 'text-blue-400' },
+                  { label: 'Profitto', value: (totalProfit >= 0 ? '+' : '') + totalProfit.toFixed(0) + '€', color: totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' },
+                ].map(s => (
+                  <div key={s.label} className="bg-[#0a0a0a] rounded-xl p-2.5 text-center">
+                    <p className={`text-sm font-bold num ${s.color}`}>{s.value}</p>
+                    <p className="text-[9px] text-gray-600 mt-0.5 uppercase tracking-wider">{s.label}</p>
+                  </div>
+                ))}
+              </div>
 
-              {/* Per-team breakdown */}
-              {teamData.map((team: any) => {
-                const cat = team.warehouseName.replace('Magazzino ', '');
-                const teamProds = products.filter(p => p.category === cat);
-                const teamSold = teamProds.filter(p => p.status === 'VENDUTO' && (p.salePrice || 0) > 0);
-                const teamRevenue = teamSold.reduce((a, p) => a + (p.salePrice || 0), 0);
-                const teamProfit = teamSold.reduce((a, p) => a + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)), 0);
-                const teamStock = teamProds.filter(p => p.status === 'IN STOCK');
+              <div className="p-4 space-y-5">
 
-                const memberProfits = team.members.map((m: any) => {
-                  const profit = teamSold.reduce((a: number, p: Product) => {
-                    const itemProfit = (p.salePrice || 0) - p.purchasePrice - (p.fees || 0);
-                    const shares = getShares(p);
-                    if (shares && shares.length > 0) {
-                      const myShare = shares.find((s: any) => s.userId === m.userId);
-                      return a + (itemProfit * ((myShare?.percentage || 0) / 100));
-                    }
-                    return a + (itemProfit * (m.percentage / 100));
-                  }, 0);
-                  return { ...m, profit };
-                });
+                {/* Per ogni reparto */}
+                {teamData.map((team: any) => {
+                  const cat = team.warehouseName.replace('Magazzino ', '');
+                  const teamProds = products.filter(p => p.category === cat);
+                  const teamSold = teamProds.filter(p => p.status === 'VENDUTO' && (p.salePrice || 0) > 0);
+                  const teamRevenue = teamSold.reduce((a, p) => a + (p.salePrice || 0), 0);
+                  const teamCosts = teamSold.reduce((a, p) => a + p.purchasePrice, 0);
+                  const teamFees = teamSold.reduce((a, p) => a + (p.fees || 0), 0);
+                  const teamProfit = teamRevenue - teamCosts - teamFees;
+                  const teamStock = teamProds.filter(p => p.status === 'IN STOCK');
+                  const isEditing = editQuoteWarehouse === team.warehouseId;
+                  const isOwnerHere = team.myRole === 'OWNER';
+                  const sellThrough = teamProds.length > 0 ? Math.round((teamSold.length / teamProds.length) * 100) : 0;
 
-                return (
-                  <section key={team.warehouseId} className="bg-[#080808] rounded-2xl border border-white/[0.05] overflow-hidden">
-                    {/* Team header */}
-                    <div className="p-4 border-b border-white/[0.05] flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#0f0f0f] border border-white/[0.05] flex items-center justify-center text-xl">
-                          {getCategoryIcon(cat)}
-                        </div>
-                        <div>
-                          <p className="font-semibold">{cat}</p>
-                          <p className="text-[10px] text-gray-600">{team.members.length} soci · {teamStock.length} stock · {teamSold.length} vendite</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={`font-semibold text-base leading-none ${teamProfit > 0 ? 'text-emerald-400' : teamProfit < 0 ? 'text-red-400' : 'text-gray-600'}`}>
-                          {teamProfit > 0 ? '+' : ''}{teamProfit.toFixed(0)}€
-                        </p>
-                        <p className="text-[10px] text-gray-700 mt-0.5">{teamRevenue.toFixed(0)}€ ricavi</p>
-                      </div>
-                    </div>
+                  // Calcolo profitto per membro (rispettando le customShares sui singoli prodotti)
+                  const memberProfits = team.members.map((m: any) => {
+                    const profit = teamSold.reduce((a: number, p: Product) => {
+                      const itemProfit = (p.salePrice || 0) - p.purchasePrice - (p.fees || 0);
+                      const shares = getShares(p);
+                      if (shares?.length > 0) {
+                        const myShare = shares.find((s: any) => s.userId === m.userId);
+                        return a + (itemProfit * ((myShare?.percentage || 0) / 100));
+                      }
+                      return a + (itemProfit * (m.percentage / 100));
+                    }, 0);
+                    return { ...m, profit };
+                  }).sort((a: any, b: any) => b.profit - a.profit);
 
-                    {/* Membri */}
-                    <div className="divide-y divide-white/3">
-                      {memberProfits
-                        .sort((a: any, b: any) => b.profit - a.profit)
-                        .map((m: any) => (
-                          <div key={m.membershipId} className={`flex items-center gap-3 p-3.5 transition-colors ${
-                            m.name === user.name ? 'bg-[#ff4d00]/5' : 'hover:bg-white/2'
-                          }`}>
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
-                              {m.name[0]?.toUpperCase()}
+                  // Pareggio conti: quanto spetta ad ogni membro sul profitto totale
+                  const settleAmounts = memberProfits.map((m: any) => ({
+                    ...m,
+                    spettante: teamProfit * (m.percentage / 100),
+                  }));
+
+                  return (
+                    <section key={team.warehouseId} className="bg-[#080808] rounded-2xl border border-white/[0.05] overflow-hidden">
+
+                      {/* Reparto header */}
+                      <div className="p-4 border-b border-white/[0.05]">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-[#111] border border-white/[0.05] flex items-center justify-center text-xl shrink-0">
+                              {getCategoryIcon(cat)}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-bold text-sm">{m.name}</span>
-                                {m.name === user.name && (
-                                  <span className="text-[8px] bg-[#ff4d00]/20 text-white px-1.5 py-0.5 rounded-full font-semibold shrink-0">TU</span>
-                                )}
-                                <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${
-                                  m.role === 'OWNER' ? 'bg-[#ff4d00]/15 text-white' : 'bg-white/5 text-gray-500'
-                                }`}>
-                                  {m.role === 'OWNER' ? 'Owner' : 'Socio'}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2.5 shrink-0">
-                              <span className="text-[10px] text-gray-500 font-semibold bg-white/[0.04] px-2 py-1 rounded-lg">{m.percentage}%</span>
-                              <span className={`font-semibold text-sm w-16 text-right ${m.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                {m.profit >= 0 ? '+' : ''}{m.profit.toFixed(0)}€
-                              </span>
+                            <div>
+                              <p className="font-bold">{cat}</p>
+                              <p className="text-[10px] text-gray-600">{team.members.length} soci · {teamStock.length} stock · {teamSold.length} vendite</p>
                             </div>
                           </div>
-                        ))}
-                    </div>
-                  </section>
-                );
-              })}
+                          <div className="text-right">
+                            <p className={`font-semibold num ${teamProfit > 0 ? 'text-emerald-400' : teamProfit < 0 ? 'text-red-400' : 'text-gray-600'}`}>
+                              {teamProfit > 0 ? '+' : ''}{teamProfit.toFixed(0)}€
+                            </p>
+                            <p className="text-[10px] text-gray-600 mt-0.5">{teamRevenue.toFixed(0)}€ ricavi · {sellThrough}% sell-through</p>
+                          </div>
+                        </div>
 
-              {/* Footer spacer for mobile */}
-              <div className="h-2 lg:hidden" />
+                        {/* Mini progress sell-through */}
+                        <div className="h-1 bg-white/[0.04] rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-[#ff4d00] to-orange-400 rounded-full transition-all" style={{ width: `${sellThrough}%` }} />
+                        </div>
+                      </div>
+
+                      {/* Membri */}
+                      <div className="divide-y divide-white/[0.04]">
+                        {memberProfits.map((m: any, idx: number) => {
+                          const medals = ['🥇', '🥈', '🥉'];
+                          const isMe = m.userId === user!.id;
+                          const canKick = isOwnerHere && !isMe && m.role !== 'OWNER';
+                          return (
+                            <div key={m.membershipId}>
+                              <div className={`flex items-center gap-3 p-3.5 transition-colors ${isMe ? 'bg-[#ff4d00]/[0.04]' : 'hover:bg-white/[0.02]'}`}>
+                                {/* Rank medal o avatar */}
+                                <div className="relative shrink-0">
+                                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center font-black text-xs shadow-sm">
+                                    {m.name[0]?.toUpperCase()}
+                                  </div>
+                                  {idx < 3 && teamSold.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 text-[10px] leading-none">{medals[idx]}</span>
+                                  )}
+                                </div>
+
+                                {/* Info membro */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-bold text-sm">{m.name}</span>
+                                    {isMe && <span className="text-[8px] bg-[#ff4d00]/20 text-white px-1.5 py-0.5 rounded-full font-semibold">TU</span>}
+                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${m.role === 'OWNER' ? 'bg-[#ff4d00]/15 text-white/80' : 'bg-white/5 text-gray-500'}`}>
+                                      {m.role === 'OWNER' ? 'Owner' : 'Socio'}
+                                    </span>
+                                  </div>
+                                  {/* Contribuzione */}
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[10px] text-gray-600">{m.productsAdded ?? 0} aggiunti · {m.productsSold ?? 0} venduti</span>
+                                  </div>
+                                </div>
+
+                                {/* Destra: % e profitto */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {isEditing ? (
+                                    <input
+                                      type="number" min="0" max="100" step="1"
+                                      value={editQuoteValues[m.membershipId] ?? m.percentage}
+                                      onChange={e => setEditQuoteValues(prev => ({ ...prev, [m.membershipId]: e.target.value }))}
+                                      className="w-14 bg-[#0a0a0a] border border-white/[0.1] rounded-lg px-2 py-1 text-xs text-center text-white outline-none focus:border-[#ff4d00]"
+                                    />
+                                  ) : (
+                                    <span className="text-[10px] text-gray-500 font-semibold bg-white/[0.04] px-2 py-1 rounded-lg">{m.percentage}%</span>
+                                  )}
+                                  <span className={`font-semibold text-sm w-16 text-right num ${m.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    {m.profit >= 0 ? '+' : ''}{m.profit.toFixed(0)}€
+                                  </span>
+                                  {canKick && !isEditing && (
+                                    <button
+                                      onClick={() => setKickConfirm(m.membershipId)}
+                                      className="w-6 h-6 flex items-center justify-center hover:bg-red-500/10 rounded-lg transition-colors text-gray-700 hover:text-red-400 ml-0.5"
+                                      title="Rimuovi dal team">
+                                      <X size={12} />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Conferma kick */}
+                              {kickConfirm === m.membershipId && (
+                                <div className="mx-3.5 mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between gap-3">
+                                  <p className="text-xs text-red-300">Rimuovere <strong>{m.name}</strong>?</p>
+                                  <div className="flex gap-2">
+                                    <button onClick={() => setKickConfirm(null)} className="text-[11px] text-gray-500 hover:text-white px-2 py-1 rounded-lg hover:bg-white/5">Annulla</button>
+                                    <button onClick={() => kickMember(m.membershipId)} className="text-[11px] text-red-300 hover:text-red-200 bg-red-500/20 hover:bg-red-500/30 px-3 py-1 rounded-lg font-bold">Rimuovi</button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Footer reparto */}
+                      <div className="p-4 border-t border-white/[0.05] space-y-3">
+
+                        {/* Pareggio conti */}
+                        {teamProfit !== 0 && (
+                          <div className="bg-[#0a0a0a] rounded-xl p-3">
+                            <div className="flex items-center gap-1.5 mb-2.5">
+                              <DollarSign size={11} className="text-emerald-500" />
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pareggio conti</p>
+                              <span className="ml-auto text-[10px] text-gray-600 num">{teamProfit >= 0 ? '+' : ''}{teamProfit.toFixed(0)}€ totali</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              {settleAmounts.map((m: any) => (
+                                <div key={m.membershipId} className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center font-black text-[7px]">
+                                      {m.name[0]?.toUpperCase()}
+                                    </div>
+                                    <span className="text-xs text-gray-400">{m.name}</span>
+                                    <span className="text-[10px] text-gray-700">{m.percentage}%</span>
+                                  </div>
+                                  <span className={`text-sm font-bold num ${m.spettante >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                    {m.spettante >= 0 ? '+' : ''}{m.spettante.toFixed(2)}€
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Modifica Quote (OWNER only) */}
+                        {isOwnerHere && (
+                          isEditing ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-[10px]">
+                                <span className="text-gray-600">
+                                  Totale: {team.members.reduce((s: number, m: any) => s + (Number(editQuoteValues[m.membershipId] ?? m.percentage) || 0), 0)}%
+                                  {Math.round(team.members.reduce((s: number, m: any) => s + (Number(editQuoteValues[m.membershipId] ?? m.percentage) || 0), 0)) !== 100 && (
+                                    <span className="text-red-400 ml-1">· deve essere 100%</span>
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex gap-2">
+                                <button onClick={() => { setEditQuoteWarehouse(null); setEditQuoteValues({}); }}
+                                  className="flex-1 py-2 text-xs font-bold text-gray-500 hover:text-white bg-white/[0.04] hover:bg-white/[0.07] rounded-xl transition-colors">
+                                  Annulla
+                                </button>
+                                <button onClick={() => saveEditedQuotes(team)} disabled={isSavingTeam}
+                                  className="flex-1 py-2 text-xs font-bold text-white bg-[#ff4d00]/80 hover:bg-[#ff4d00] rounded-xl transition-colors disabled:opacity-40">
+                                  {isSavingTeam ? 'Salvo...' : 'Salva Quote'}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button onClick={() => {
+                              setEditQuoteWarehouse(team.warehouseId);
+                              const init: Record<string, string> = {};
+                              team.members.forEach((m: any) => { init[m.membershipId] = String(m.percentage); });
+                              setEditQuoteValues(init);
+                            }}
+                              className="w-full py-2 text-[11px] font-bold text-gray-500 hover:text-white bg-white/[0.03] hover:bg-white/[0.06] rounded-xl border border-white/[0.05] hover:border-white/[0.1] transition-colors flex items-center justify-center gap-1.5">
+                              <Edit size={11} /> Modifica Quote
+                            </button>
+                          )
+                        )}
+
+                        {/* Sezione invito */}
+                        {isOwnerHere && team.inviteCode && (
+                          <div className="bg-[#0a0a0a] rounded-xl p-3 border border-white/[0.04]">
+                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                              <UserPlus size={10} /> Invita un socio
+                            </p>
+                            <div className="flex gap-2">
+                              <div className="flex-1 bg-[#111] border border-white/[0.07] rounded-xl px-3 py-2 flex items-center gap-2 overflow-hidden">
+                                <KeyRound size={11} className="text-gray-600 shrink-0" />
+                                <span className="font-mono text-xs text-gray-300 truncate">{team.inviteCode}</span>
+                              </div>
+                              <button
+                                onClick={() => { navigator.clipboard.writeText(team.inviteCode); showToast('Codice copiato!'); }}
+                                className="px-3 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.07] rounded-xl text-gray-400 hover:text-white transition-colors active:scale-95">
+                                <Copy size={14} />
+                              </button>
+                              <button
+                                onClick={() => regenerateInvite(team.warehouseId)}
+                                disabled={isRegenerating === team.warehouseId}
+                                className="px-3 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.07] rounded-xl text-gray-400 hover:text-white transition-colors disabled:opacity-40 active:scale-95"
+                                title="Rigenera codice">
+                                {isRegenerating === team.warehouseId
+                                  ? <Loader2 size={14} className="animate-spin" />
+                                  : <ArrowUpDown size={14} />}
+                              </button>
+                            </div>
+                            <p className="text-[10px] text-gray-700 mt-1.5">Condividi questo codice — il tuo socio lo userà durante la registrazione</p>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  );
+                })}
+
+                {/* Entra in un team esistente */}
+                <section className="bg-[#080808] rounded-2xl border border-white/[0.05] p-4">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <UserPlus size={10} className="text-blue-400" /> Entra in un Team
+                  </p>
+                  <form onSubmit={handleJoinWarehouse} className="flex gap-2">
+                    <input
+                      type="text" value={joinCodeInput} onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
+                      placeholder="Inserisci codice invito"
+                      className="flex-1 bg-[#0a0a0a] border border-white/[0.07] rounded-xl px-3 py-2 text-sm text-white placeholder-gray-700 outline-none focus:border-blue-500/50 font-mono"
+                    />
+                    <button type="submit" disabled={isJoining || !joinCodeInput.trim()}
+                      className="px-4 py-2 bg-blue-600/80 hover:bg-blue-600 rounded-xl text-xs font-bold text-white transition-colors disabled:opacity-40 active:scale-95">
+                      {isJoining ? <Loader2 size={14} className="animate-spin" /> : 'Entra'}
+                    </button>
+                  </form>
+                </section>
+
+                <div className="h-2 lg:hidden" />
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ========== TOAST ========== */}
       {toast && (

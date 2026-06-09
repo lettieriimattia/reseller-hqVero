@@ -37,19 +37,42 @@ router.get('/', async (req: AuthRequest, res: Response) => {
       },
     });
     
+    // Per ogni membro: conta prodotti aggiunti e venduti (contribuzione)
+    const allWarehouseIds = user?.memberships?.map((m: any) => m.warehouse.id) || [];
+    const productCounts = await prisma.product.groupBy({
+      by: ['userId', 'warehouseId', 'status'],
+      where: { warehouseId: { in: allWarehouseIds }, deletedAt: null },
+      _count: { id: true },
+    });
+
+    const countMap: Record<string, { added: number; sold: number }> = {};
+    for (const row of productCounts) {
+      const key = `${row.userId}__${row.warehouseId}`;
+      if (!countMap[key]) countMap[key] = { added: 0, sold: 0 };
+      countMap[key].added += row._count.id;
+      if (row.status === 'VENDUTO') countMap[key].sold += row._count.id;
+    }
+
     const teamData = user?.memberships?.map((m: any) => ({
       warehouseName: m.warehouse.name,
       warehouseId: m.warehouse.id,
+      inviteCode: m.role === 'OWNER' ? m.warehouse.inviteCode : null,
+      inviteCodeExpiresAt: m.role === 'OWNER' ? m.warehouse.inviteCodeExpiresAt : null,
       myRole: m.role,
-      members: m.warehouse.members.map((wm: any) => ({
-        membershipId: wm.id,
-        userId: wm.user.id,
-        name: wm.user.name,
-        role: wm.role,
-        percentage: wm.percentage,
-      })),
+      members: m.warehouse.members.map((wm: any) => {
+        const key = `${wm.user.id}__${m.warehouse.id}`;
+        return {
+          membershipId: wm.id,
+          userId: wm.user.id,
+          name: wm.user.name,
+          role: wm.role,
+          percentage: wm.percentage,
+          productsAdded: countMap[key]?.added || 0,
+          productsSold: countMap[key]?.sold || 0,
+        };
+      }),
     })) || [];
-    
+
     res.json(teamData);
   } catch (err: any) {
     logger.error('Errore GET /team', { err: err.message });
@@ -272,6 +295,41 @@ router.post('/warehouses', validate(createWarehouseSchema), async (req: AuthRequ
   } catch (err: any) {
     logger.error('Errore POST /warehouses', { err: err.message });
     res.status(500).json({ error: 'Errore creazione reparto' });
+  }
+});
+
+// ==========================================
+// DELETE /team/members/:membershipId — rimuovi un membro dal team (solo OWNER)
+// ==========================================
+router.delete('/members/:membershipId', async (req: AuthRequest, res: Response) => {
+  try {
+    const membership = await prisma.membership.findUnique({
+      where: { id: req.params.membershipId },
+    });
+    if (!membership) return res.status(404).json({ error: 'Membro non trovato' });
+
+    const isOwner = await authorizeWarehouseOwner(req.user!.userId, membership.warehouseId);
+    if (!isOwner) return res.status(403).json({ error: 'Solo il fondatore può rimuovere membri.' });
+
+    if (membership.userId === req.user!.userId) {
+      return res.status(400).json({ error: 'Non puoi rimuovere te stesso. Usa "Elimina Account" nelle impostazioni.' });
+    }
+    if (membership.role === 'OWNER') {
+      return res.status(400).json({ error: 'Non puoi rimuovere un altro Owner.' });
+    }
+
+    await prisma.membership.delete({ where: { id: req.params.membershipId } });
+
+    await audit({
+      action: 'UNAUTHORIZED_ACCESS', userId: req.user!.userId, req,
+      resource: req.params.membershipId,
+      metadata: { action: 'kick_member', warehouseId: membership.warehouseId },
+    });
+
+    res.json({ success: true });
+  } catch (err: any) {
+    logger.error('Errore DELETE /team/members/:membershipId', { err: err.message });
+    res.status(500).json({ error: 'Errore rimozione membro' });
   }
 });
 
