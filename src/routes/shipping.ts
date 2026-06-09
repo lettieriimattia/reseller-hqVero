@@ -30,21 +30,21 @@ router.get('/ping', async (req: AuthRequest, res: Response) => {
   if (!key) return res.json({ ok: false, error: 'PACKLINK_API_KEY non configurata' });
 
   const baseParams = 'from[country]=IT&from[zip]=20100&to[country]=IT&to[zip]=00100&packages[0][weight]=1&packages[0][width]=30&packages[0][height]=20&packages[0][length]=20';
+  const auth = `Apikey ${key}`;
+  const headers = { 'Authorization': auth, 'Content-Type': 'application/json' };
 
   const tests = [
-    { label: 'Apikey + source=PRO',  url: `${PACKLINK_BASE}/v1/services?${baseParams}&source=PRO`, auth: `Apikey ${key}` },
-    { label: 'Apikey senza source',  url: `${PACKLINK_BASE}/v1/services?${baseParams}`,             auth: `Apikey ${key}` },
-    { label: 'Bearer',               url: `${PACKLINK_BASE}/v1/services?${baseParams}`,             auth: `Bearer ${key}` },
-    { label: 'Raw key',              url: `${PACKLINK_BASE}/v1/services?${baseParams}`,             auth: key },
+    { label: 'api.packlink.com v1',       url: `https://api.packlink.com/v1/services?${baseParams}&source=PRO` },
+    { label: 'api.packlink.com v1 no src', url: `https://api.packlink.com/v1/services?${baseParams}` },
+    { label: 'api.packlink.com v2',        url: `https://api.packlink.com/v2/services?${baseParams}` },
+    { label: 'pro.packlink.it api v1',     url: `https://pro.packlink.it/api/v1/services?${baseParams}` },
   ];
 
   const results = await Promise.all(tests.map(async t => {
-    const r = await fetch(t.url, {
-      headers: { 'Authorization': t.auth, 'Content-Type': 'application/json' },
-    }).catch(() => null);
-    if (!r) return { label: t.label, status: 0, ok: false };
+    const r = await fetch(t.url, { headers }).catch(() => null);
+    if (!r) return { label: t.label, status: 0, ok: false, snippet: 'network error' };
     const body = await r.text();
-    return { label: t.label, status: r.status, ok: r.ok, snippet: body.slice(0, 120) };
+    return { label: t.label, status: r.status, ok: r.ok, snippet: body.slice(0, 150) };
   }));
 
   res.json({ keyLength: key.length, keyPreview: `${key.slice(0,8)}…${key.slice(-4)}`, results });
