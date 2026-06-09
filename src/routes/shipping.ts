@@ -29,22 +29,33 @@ router.get('/ping', async (req: AuthRequest, res: Response) => {
   const key = (process.env.PACKLINK_API_KEY || '').trim();
   if (!key) return res.json({ ok: false, error: 'PACKLINK_API_KEY non configurata' });
 
-  try {
-    // Chiama l'endpoint più semplice di Packlink per verificare l'auth
-    const r = await fetch(`${PACKLINK_BASE}/v1/users/me`, {
-      headers: packlinkHeaders(),
-    });
-    const body = await r.text();
-    res.json({
-      ok: r.ok,
-      status: r.status,
-      keyLength: key.length,
-      keyPreview: `${key.slice(0, 6)}…${key.slice(-4)}`,
-      body: body.slice(0, 300),
-    });
-  } catch (err: any) {
-    res.json({ ok: false, error: err.message });
+  const results: any[] = [];
+
+  // Prova 3 formati di autenticazione diversi sullo stesso endpoint
+  const tests = [
+    { label: 'Apikey header (PRO)',    headers: { 'Authorization': `Apikey ${key}`, 'Content-Type': 'application/json' } },
+    { label: 'Bearer header',          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' } },
+    { label: 'X-Api-Key header',       headers: { 'X-Api-Key': key, 'Content-Type': 'application/json' } },
+  ];
+
+  // Testa su due endpoint diversi
+  const endpoints = [
+    `${PACKLINK_BASE}/v1/users/me`,
+    `${PACKLINK_BASE}/v1/services?from[country]=IT&from[zip]=20100&to[country]=IT&to[zip]=00100&packages[0][weight]=1&packages[0][width]=30&packages[0][height]=20&packages[0][length]=20&source=PRO`,
+  ];
+
+  for (const test of tests) {
+    const r = await fetch(endpoints[0], { headers: test.headers as any }).catch((e: any) => ({ ok: false, status: 0, text: () => e.message }));
+    const body = await (r as any).text().catch(() => '');
+    results.push({ label: test.label, status: (r as any).status, ok: (r as any).ok, snippet: body.slice(0, 150) });
+    if ((r as any).ok) break; // se uno funziona, fermati
   }
+
+  res.json({
+    keyLength: key.length,
+    keyPreview: `${key.slice(0, 8)}…${key.slice(-4)}`,
+    tests: results,
+  });
 });
 
 // ==========================================
