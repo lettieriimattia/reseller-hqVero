@@ -1,6 +1,7 @@
 // src/routes/shipping.ts
-// Integrazione Packlink Pro per etichette spedizione reali.
-// Richiede PACKLINK_API_KEY in env (da packlink.it → Impostazioni → API).
+// Integrazione Sendcloud per etichette spedizione.
+// Piano gratuito: 400 spedizioni/mese, API inclusa, BRT + GLS + Poste + DHL.
+// Richiede SENDCLOUD_API_KEY e SENDCLOUD_API_SECRET in env (da app.sendcloud.com → Settings → API).
 
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
@@ -10,118 +11,123 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 const prisma = new PrismaClient();
-const PACKLINK_BASE = 'https://api.packlink.com';
+const SENDCLOUD_BASE = 'https://panel.sendcloud.sc/api/v2';
 
 router.use(authenticate, apiLimiter);
 
-function packlinkHeaders() {
-  const key = (process.env.PACKLINK_API_KEY || '').trim();
+function sendcloudHeaders() {
+  const key    = (process.env.SENDCLOUD_API_KEY    || '').trim();
+  const secret = (process.env.SENDCLOUD_API_SECRET || '').trim();
+  const b64    = Buffer.from(`${key}:${secret}`).toString('base64');
   return {
-    'Authorization': `Apikey ${key}`,
+    'Authorization': `Basic ${b64}`,
     'Content-Type': 'application/json',
   };
 }
 
+function isConfigured() {
+  return !!(process.env.SENDCLOUD_API_KEY && process.env.SENDCLOUD_API_SECRET);
+}
+
 // ==========================================
-// GET /shipping/ping — verifica chiave API Packlink (solo debug admin)
+// GET /shipping/ping — verifica connessione Sendcloud
 // ==========================================
 router.get('/ping', async (req: AuthRequest, res: Response) => {
-  const key = (process.env.PACKLINK_API_KEY || '').trim();
-  if (!key) return res.json({ ok: false, error: 'PACKLINK_API_KEY non configurata' });
+  if (!isConfigured()) return res.json({ ok: false, error: 'SENDCLOUD_API_KEY / SENDCLOUD_API_SECRET non configurate' });
 
-  const baseParams = 'from[country]=IT&from[zip]=20100&to[country]=IT&to[zip]=00100&packages[0][weight]=1&packages[0][width]=30&packages[0][height]=20&packages[0][length]=20';
-  const auth = `Apikey ${key}`;
-  const headers = { 'Authorization': auth, 'Content-Type': 'application/json' };
+  const r = await fetch(`${SENDCLOUD_BASE}/user`, { headers: sendcloudHeaders() }).catch(() => null);
+  if (!r) return res.json({ ok: false, error: 'Errore di rete verso Sendcloud' });
 
-  const tests = [
-    { label: 'api.packlink.com v1',       url: `https://api.packlink.com/v1/services?${baseParams}&source=PRO` },
-    { label: 'api.packlink.com v1 no src', url: `https://api.packlink.com/v1/services?${baseParams}` },
-    { label: 'api.packlink.com v2',        url: `https://api.packlink.com/v2/services?${baseParams}` },
-    { label: 'pro.packlink.it api v1',     url: `https://pro.packlink.it/api/v1/services?${baseParams}` },
-  ];
+  const body = await r.text();
+  let user: any = null;
+  try { user = JSON.parse(body); } catch {}
 
-  const results = await Promise.all(tests.map(async t => {
-    const r = await fetch(t.url, { headers }).catch(() => null);
-    if (!r) return { label: t.label, status: 0, ok: false, snippet: 'network error' };
-    const body = await r.text();
-    return { label: t.label, status: r.status, ok: r.ok, snippet: body.slice(0, 150) };
-  }));
-
-  res.json({ keyLength: key.length, keyPreview: `${key.slice(0,8)}…${key.slice(-4)}`, results });
+  res.json({
+    ok: r.ok,
+    status: r.status,
+    username: user?.user?.username || null,
+    email: user?.user?.email || null,
+    plan: user?.user?.plan_name || null,
+  });
 });
 
 // ==========================================
 // GET /shipping/rates — tariffe disponibili
-// Query params: fromZip, toZip, weight (kg), width, height, length (cm)
+// Query params: fromZip, toZip, weight (kg)
 // ==========================================
 router.get('/rates', async (req: AuthRequest, res: Response) => {
-  const apiKey = process.env.PACKLINK_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: 'Packlink non configurato. Aggiungi PACKLINK_API_KEY nelle variabili di Railway.' });
+  if (!isConfigured()) {
+    return res.status(503).json({ error: 'Sendcloud non configurato. Aggiungi SENDCLOUD_API_KEY e SENDCLOUD_API_SECRET su Railway.' });
+  }
 
-  const { fromZip = '20100', toZip, weight = '1', width = '30', height = '20', length = '20' } = req.query as Record<string, string>;
+  const { fromZip = '20100', toZip, weight = '1' } = req.query as Record<string, string>;
   if (!toZip) return res.status(400).json({ error: 'toZip obbligatorio' });
 
-  try {
-    const params = new URLSearchParams({
-      'from[country]': 'IT', 'from[zip]': fromZip,
-      'to[country]': 'IT',   'to[zip]': toZip,
-      'packages[0][weight]': weight,
-      'packages[0][width]': width,
-      'packages[0][height]': height,
-      'packages[0][length]': length,
-      'source': 'PRO',
-    });
+  const weightGrams = Math.round(parseFloat(weight) * 1000);
 
-    const r = await fetch(`${PACKLINK_BASE}/v1/services?${params}`, {
-      headers: packlinkHeaders(),
+  const params = new URLSearchParams({
+    from_postal_code: fromZip,
+    to_postal_code:   toZip,
+    to_country:       'IT',
+    weight:           String(weightGrams),
+  });
+
+  try {
+    const r = await fetch(`${SENDCLOUD_BASE}/shipping_methods?${params}`, {
+      headers: sendcloudHeaders(),
     });
 
     if (!r.ok) {
-      const errText = await r.text().catch(() => '');
-      logger.error('Packlink rates error', { status: r.status, body: errText });
-      let msg = `Errore Packlink (${r.status})`;
-      try {
-        const errJson = JSON.parse(errText);
-        msg = errJson?.messages?.[0] || errJson?.detail || errJson?.message || msg;
-      } catch {}
-      return res.status(r.status).json({ error: msg, detail: errText.slice(0, 200) });
+      const errText = await r.text();
+      logger.error('Sendcloud rates error', { status: r.status, body: errText });
+      return res.status(r.status).json({ error: `Errore Sendcloud (${r.status})` });
     }
 
-    const services = await r.json() as any[];
-    // Filtra solo servizi disponibili e ordina per prezzo
-    const available = (Array.isArray(services) ? services : [])
-      .filter((s: any) => s.available !== false)
-      .map((s: any) => ({
-        id: s.id,
-        name: s.name,
-        carrier: s.carrier_name || s.carrier?.name || '',
-        price: s.price?.tax_price ?? s.base_price?.tax_price ?? 0,
-        transitHours: s.transit_hours,
-        logo: s.logo_url || null,
-      }))
+    const data = await r.json() as any;
+    const methods: any[] = data?.shipping_methods || [];
+
+    const weightKg = parseFloat(weight);
+    const available = methods
+      .filter((m: any) => {
+        const minW = parseFloat(m.min_weight || '0');
+        const maxW = parseFloat(m.max_weight || '999');
+        return weightKg >= minW && weightKg <= maxW;
+      })
+      .map((m: any) => {
+        // Cerca il prezzo per l'IT nel campo countries oppure price diretto
+        const itCountry = m.countries?.find((c: any) => c.iso_2 === 'IT');
+        const price = itCountry?.price ?? m.price ?? 0;
+        return {
+          id:           m.id,
+          name:         m.name,
+          carrier:      m.carrier,
+          price:        typeof price === 'string' ? parseFloat(price) : price,
+          minWeight:    parseFloat(m.min_weight || '0'),
+          maxWeight:    parseFloat(m.max_weight || '999'),
+        };
+      })
+      .filter((m: any) => m.price > 0)
       .sort((a: any, b: any) => a.price - b.price);
 
     res.json(available);
   } catch (err: any) {
     logger.error('Errore GET /shipping/rates', { err: err.message });
-    res.status(500).json({ error: 'Errore comunicazione Packlink' });
+    res.status(500).json({ error: 'Errore comunicazione Sendcloud' });
   }
 });
 
 // ==========================================
-// POST /shipping/book — prenota spedizione + ottieni etichetta PDF
+// POST /shipping/book — crea spedizione + ottieni etichetta PDF
 // ==========================================
 router.post('/book', async (req: AuthRequest, res: Response) => {
-  const apiKey = process.env.PACKLINK_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: 'Packlink non configurato.' });
+  if (!isConfigured()) return res.status(503).json({ error: 'Sendcloud non configurato.' });
 
   const { productId, serviceId, from, to, pkg, content } = req.body;
 
-  if (!serviceId || !from?.zip || !to?.name || !to?.address || !to?.zip || !pkg?.weight) {
+  if (!serviceId || !to?.name || !to?.address || !to?.zip || !to?.city || !pkg?.weight) {
     return res.status(400).json({ error: 'Dati spedizione incompleti.' });
   }
 
-  // Verifica accesso al prodotto (opzionale — la spedizione può esistere anche senza prodotto)
   let product: any = null;
   if (productId) {
     const access = await canAccessProduct(req.user!.userId, productId);
@@ -130,81 +136,63 @@ router.post('/book', async (req: AuthRequest, res: Response) => {
   }
 
   try {
-    const body = {
-      service_id: serviceId,
-      draft: false,
-      content: content || (product ? `${product.brand} ${product.name}` : 'Articolo'),
-      from: {
-        country: 'IT',
-        zip_code: from.zip,
-        city: from.city || '',
-        street1: from.address || '',
-        name: from.name || '',
-        phone: from.phone || '',
-        email: from.email || req.user!.email,
-        company: from.company || null,
+    const parcelBody = {
+      parcel: {
+        name:        to.name,
+        address:     to.address,
+        city:        to.city,
+        postal_code: to.zip,
+        country:     'IT',
+        telephone:   to.phone  || '',
+        email:       to.email  || '',
+        weight:      parseFloat(pkg.weight).toFixed(3),
+        shipment:    { id: Number(serviceId) },
+        request_label: true,
+        order_number:  `HQ-${Date.now()}`,
+        data: content || (product ? `${product.brand} ${product.name}` : 'Articolo'),
       },
-      to: {
-        country: 'IT',
-        zip_code: to.zip,
-        city: to.city || '',
-        street1: to.address,
-        name: to.name,
-        phone: to.phone || '',
-        email: to.email || '',
-        company: null,
-      },
-      packages: [{
-        weight: parseFloat(pkg.weight),
-        width:  parseFloat(pkg.width  || 30),
-        height: parseFloat(pkg.height || 20),
-        length: parseFloat(pkg.length || 20),
-      }],
     };
 
-    const r = await fetch(`${PACKLINK_BASE}/v1/shipments`, {
+    const r = await fetch(`${SENDCLOUD_BASE}/parcels`, {
       method: 'POST',
-      headers: packlinkHeaders(),
-      body: JSON.stringify(body),
+      headers: sendcloudHeaders(),
+      body: JSON.stringify(parcelBody),
     });
 
+    const respText = await r.text();
+    let resp: any = {};
+    try { resp = JSON.parse(respText); } catch {}
+
     if (!r.ok) {
-      const err = await r.json().catch(() => ({})) as any;
-      const msg = err?.messages?.[0] || err?.detail || `Errore Packlink (${r.status})`;
-      logger.error('Packlink book error', { status: r.status, err });
+      const msg = resp?.error?.message || resp?.parcel?.error || `Errore Sendcloud (${r.status})`;
+      logger.error('Sendcloud book error', { status: r.status, msg });
       return res.status(r.status).json({ error: msg });
     }
 
-    const shipment = await r.json() as any;
-    const reference = shipment.reference;
+    const parcel = resp.parcel;
+    const trackingNumber = parcel?.tracking_number || parcel?.id?.toString();
 
-    // Recupera l'etichetta PDF
-    let labelUrl: string | null = null;
-    try {
-      const labelR = await fetch(`${PACKLINK_BASE}/v1/shipments/${reference}/labels`, {
-        headers: packlinkHeaders(),
-      });
-      if (labelR.ok) {
-        const labelData = await labelR.json() as any;
-        labelUrl = labelData?.labels?.[0] || null;
-      }
-    } catch { /* non bloccante */ }
+    // URL etichetta: prova label_printer (A6) poi normal_printer (A4)
+    const labelUrl: string | null =
+      parcel?.label?.label_printer ||
+      (Array.isArray(parcel?.label?.normal_printer) ? parcel.label.normal_printer[0] : null) ||
+      null;
 
-    // Salva tracking sul prodotto se fornito
-    if (productId && reference) {
+    // Salva tracking sul prodotto
+    if (productId && trackingNumber) {
       await prisma.product.update({
         where: { id: productId },
         data: {
-          trackingCode: reference,
-          trackingCarrier: 'Packlink',
-          trackingStatus: 'PENDING',
+          trackingCode:     trackingNumber,
+          trackingCarrier:  parcel?.carrier?.code || 'Sendcloud',
+          trackingStatus:   'PENDING',
           trackingUpdatedAt: new Date(),
         },
       }).catch(() => {});
     }
 
-    logger.info('Spedizione Packlink creata', { reference, productId });
-    res.json({ reference, labelUrl, shipment });
+    logger.info('Spedizione Sendcloud creata', { parcelId: parcel?.id, trackingNumber });
+    res.json({ reference: trackingNumber, labelUrl, parcel });
   } catch (err: any) {
     logger.error('Errore POST /shipping/book', { err: err.message });
     res.status(500).json({ error: 'Errore prenotazione spedizione' });
