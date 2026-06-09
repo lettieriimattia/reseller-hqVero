@@ -2447,11 +2447,16 @@ export default function App() {
                             <Edit size={13} /> <span className="hidden sm:inline">Modifica</span>
                           </button>
                           <div className="w-px bg-white/5" />
-                          <button onClick={() => openLabel(g)} disabled={isLoadingLabel}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40">
-                            {isLoadingLabel ? <Loader2 size={13} className="animate-spin" /> : <Tag size={13} />}
-                            <span className="hidden sm:inline">Label</span>
-                          </button>
+                          {user!.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+                            <>
+                              <div className="w-px bg-white/5" />
+                              <button onClick={() => openLabel(g)} disabled={isLoadingLabel}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40">
+                                {isLoadingLabel ? <Loader2 size={13} className="animate-spin" /> : <Tag size={13} />}
+                                <span className="hidden sm:inline">Label</span>
+                              </button>
+                            </>
+                          )}
                           <div className="w-px bg-white/5" />
                           <button onClick={() => { setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
                             className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors ${
