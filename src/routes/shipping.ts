@@ -29,24 +29,25 @@ router.get('/ping', async (req: AuthRequest, res: Response) => {
   const key = (process.env.PACKLINK_API_KEY || '').trim();
   if (!key) return res.json({ ok: false, error: 'PACKLINK_API_KEY non configurata' });
 
-  // Testa direttamente l'endpoint tariffe con una tratta Milano→Roma
-  const url = `${PACKLINK_BASE}/v1/services?from[country]=IT&from[zip]=20100&to[country]=IT&to[zip]=00100&packages[0][weight]=1&packages[0][width]=30&packages[0][height]=20&packages[0][length]=20&source=PRO`;
+  const baseParams = 'from[country]=IT&from[zip]=20100&to[country]=IT&to[zip]=00100&packages[0][weight]=1&packages[0][width]=30&packages[0][height]=20&packages[0][length]=20';
 
-  const r = await fetch(url, { headers: packlinkHeaders() }).catch((e: any) => null);
-  if (!r) return res.json({ ok: false, error: 'Errore di rete verso Packlink' });
+  const tests = [
+    { label: 'Apikey + source=PRO',  url: `${PACKLINK_BASE}/v1/services?${baseParams}&source=PRO`, auth: `Apikey ${key}` },
+    { label: 'Apikey senza source',  url: `${PACKLINK_BASE}/v1/services?${baseParams}`,             auth: `Apikey ${key}` },
+    { label: 'Bearer',               url: `${PACKLINK_BASE}/v1/services?${baseParams}`,             auth: `Bearer ${key}` },
+    { label: 'Raw key',              url: `${PACKLINK_BASE}/v1/services?${baseParams}`,             auth: key },
+  ];
 
-  const body = await r.text();
-  let parsed: any = null;
-  try { parsed = JSON.parse(body); } catch {}
+  const results = await Promise.all(tests.map(async t => {
+    const r = await fetch(t.url, {
+      headers: { 'Authorization': t.auth, 'Content-Type': 'application/json' },
+    }).catch(() => null);
+    if (!r) return { label: t.label, status: 0, ok: false };
+    const body = await r.text();
+    return { label: t.label, status: r.status, ok: r.ok, snippet: body.slice(0, 120) };
+  }));
 
-  res.json({
-    ok: r.ok,
-    status: r.status,
-    keyLength: key.length,
-    keyPreview: `${key.slice(0, 8)}…${key.slice(-4)}`,
-    servicesCount: Array.isArray(parsed) ? parsed.length : null,
-    snippet: body.slice(0, 400),
-  });
+  res.json({ keyLength: key.length, keyPreview: `${key.slice(0,8)}…${key.slice(-4)}`, results });
 });
 
 // ==========================================
