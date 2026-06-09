@@ -1611,3 +1611,134 @@ Rispondi SOLO in JSON valido (senza markdown, nessun testo extra):
     return null;
   }
 }
+
+// ==========================================
+// GENERATORE ANNUNCI — ottimizzato per piattaforma
+// ==========================================
+
+export type ListingPlatform = 'vinted' | 'ebay' | 'depop' | 'wallapop' | 'subito';
+
+export interface GeneratedListing {
+  platform: ListingPlatform;
+  title: string;
+  description: string;
+  hashtags: string[];
+  tips: string;
+  deepLink?: string;
+}
+
+const PLATFORM_CONFIG: Record<ListingPlatform, {
+  label: string; lang: string; tone: string;
+  maxTitle: number; useHashtags: boolean; currency: string;
+}> = {
+  vinted:   { label: 'Vinted',    lang: 'italiano',  tone: 'casual e friendly, come parlasse a un amico, emoji moderate', maxTitle: 80,  useHashtags: true,  currency: '€' },
+  ebay:     { label: 'eBay',      lang: 'italiano',  tone: 'professionale e dettagliato, SEO-friendly, neutro', maxTitle: 80,  useHashtags: false, currency: '€' },
+  depop:    { label: 'Depop',     lang: 'italiano',  tone: 'cool, trendy, Gen-Z, poche emoji, hashtag di moda', maxTitle: 60,  useHashtags: true,  currency: '€' },
+  wallapop: { label: 'Wallapop',  lang: 'italiano',  tone: 'diretto e conciso, locale, no hashtag', maxTitle: 50,  useHashtags: false, currency: '€' },
+  subito:   { label: 'Subito.it', lang: 'italiano',  tone: 'semplice e diretto, per acquirenti locali', maxTitle: 60,  useHashtags: false, currency: '€' },
+};
+
+export async function generateListing(params: {
+  category: string;
+  brand: string;
+  name: string;
+  size: string;
+  condition: string;
+  purchasePrice?: number;
+  marketPriceMin?: number;
+  marketPriceMax?: number;
+  marketPriceAvg?: number;
+  notes?: string;
+  attributes?: Record<string, any>;
+  platform: ListingPlatform;
+}): Promise<GeneratedListing> {
+  const cfg = PLATFORM_CONFIG[params.platform];
+
+  // Prezzo suggerito: usa market avg se disponibile, altrimenti stima conservativa
+  const suggestedPrice = params.marketPriceAvg
+    ? params.marketPriceAvg
+    : params.purchasePrice
+      ? Math.round(params.purchasePrice * 1.35)
+      : null;
+
+  // Condizione in linguaggio umano
+  const conditionMap: Record<string, string> = {
+    'DS': 'deadstock / mai indossato, con cartellini',
+    'VNDS': 'VNDS — praticamente nuovo, provato una volta',
+    'Used': 'usato in buone condizioni',
+    'Worn': 'usato con segni di utilizzo visibili',
+    'New': 'nuovo con tag',
+    'Graded': 'carta gradata',
+  };
+  const conditionDesc = conditionMap[params.condition] ?? params.condition;
+
+  // Attributi dinamici (JSONB) formattati come testo
+  const attrsText = params.attributes && Object.keys(params.attributes).length > 0
+    ? Object.entries(params.attributes)
+        .filter(([, v]) => v !== undefined && v !== '' && v !== null)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(', ')
+    : '';
+
+  const prompt = `Sei un esperto di reselling online che scrive annunci di vendita perfetti.
+
+PRODOTTO:
+- Categoria: ${params.category}
+- Brand: ${params.brand}
+- Modello: ${params.name}
+- Taglia/Misura: ${params.size}
+- Condizione: ${conditionDesc}
+${attrsText ? `- Dettagli: ${attrsText}` : ''}
+${params.notes ? `- Note extra: ${params.notes}` : ''}
+${suggestedPrice ? `- Prezzo consigliato: ${suggestedPrice}${cfg.currency}` : ''}
+
+PIATTAFORMA: ${cfg.label}
+LINGUA: ${cfg.lang}
+TONO: ${cfg.tone}
+TITOLO MAX: ${cfg.maxTitle} caratteri
+
+Genera un annuncio ottimizzato per ${cfg.label}.
+${cfg.useHashtags ? 'Includi hashtag pertinenti (5-10).' : 'NON includere hashtag.'}
+
+Rispondi SOLO con JSON valido, nessun testo prima o dopo:
+{
+  "title": "titolo annuncio (max ${cfg.maxTitle} caratteri)",
+  "description": "descrizione completa multi-riga, naturale, persuasiva",
+  "hashtags": ${cfg.useHashtags ? '["#tag1","#tag2"]' : '[]'},
+  "tips": "1 consiglio brevissimo per vendere più veloce su ${cfg.label}"
+}`;
+
+  const completion = await groqCallWithRetry(client =>
+    client.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: TEXT_MODEL,
+      temperature: 0.5,
+      max_tokens: 1000,
+    })
+  );
+
+  const raw = completion.choices[0]?.message?.content?.trim() || '';
+  const parsed = safeParseJSON(raw) as { title: string; description: string; hashtags: string[]; tips: string } | null;
+
+  if (!parsed?.title || !parsed?.description) {
+    throw new Error('Risposta AI non valida per la generazione annuncio');
+  }
+
+  // Deep link per apertura diretta della piattaforma (dove supportato)
+  const deepLinks: Partial<Record<ListingPlatform, string>> = {
+    vinted:   'https://www.vinted.it/sell',
+    ebay:     `https://www.ebay.it/sell/listing/create?title=${encodeURIComponent(parsed.title)}`,
+    depop:    'https://www.depop.com/selling/',
+    wallapop: 'https://it.wallapop.com/selling',
+    subito:   'https://www.subito.it/annunci-italia/vendita/usato/?q=pubblica',
+  };
+
+  return {
+    platform: params.platform,
+    title: parsed.title,
+    description: parsed.description,
+    hashtags: parsed.hashtags || [],
+    tips: parsed.tips || '',
+    deepLink: deepLinks[params.platform],
+  };
+}

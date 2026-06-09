@@ -471,6 +471,38 @@ export default function App() {
   const [lotNotes, setLotNotes] = useState('');
   const [isCreatingLot, setIsCreatingLot] = useState(false);
 
+  // ----- GENERATORE ANNUNCI -----
+  const [listingModalProduct, setListingModalProduct] = useState<any | null>(null);
+  const [listingPlatform, setListingPlatform] = useState<'vinted' | 'ebay' | 'depop' | 'wallapop' | 'subito'>('vinted');
+  const [listingResult, setListingResult] = useState<any | null>(null);
+  const [isGeneratingListing, setIsGeneratingListing] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const openListingModal = (group: any) => {
+    setListingModalProduct(group);
+    setListingResult(null);
+    setListingPlatform('vinted');
+  };
+
+  const generateListingForProduct = async (platform: 'vinted' | 'ebay' | 'depop' | 'wallapop' | 'subito') => {
+    if (!listingModalProduct) return;
+    setIsGeneratingListing(true);
+    setListingResult(null);
+    const { ok, data } = await apiCall('/api/ai/generate-listing', {
+      method: 'POST',
+      body: JSON.stringify({ productId: listingModalProduct.ids[0], platform }),
+    });
+    setIsGeneratingListing(false);
+    if (ok) setListingResult(data);
+    else showToast(data?.error || 'Errore generazione annuncio', 'err');
+  };
+
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   // ----- NOTE PRODOTTO -----
   const [notesModalProduct, setNotesModalProduct] = useState<Product | null>(null);
   const [notesInput, setNotesInput] = useState('');
@@ -2342,27 +2374,32 @@ export default function App() {
                       {!bulkMode && (
                         <div className="flex border-t border-white/[0.07]">
                           <button onClick={() => openEditModal(g)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
-                            <Edit size={15} /> Modifica
+                            className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                            <Edit size={13} /> <span className="hidden sm:inline">Modifica</span>
                           </button>
                           <div className="w-px bg-white/5" />
                           <button onClick={() => { setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors ${
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors ${
                               g.notes ? 'text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'
                             }`}>
-                            <StickyNote size={15} /> Note
+                            <StickyNote size={13} /> <span className="hidden sm:inline">Note</span>
                           </button>
                           <div className="w-px bg-white/5" />
                           <button onClick={() => openTrackingModal(g)}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors ${
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors ${
                               g.trackingCode ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20' : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'
                             }`}>
-                            <Truck size={15} /> Track
+                            <Truck size={13} /> <span className="hidden sm:inline">Track</span>
+                          </button>
+                          <div className="w-px bg-white/5" />
+                          <button onClick={() => openListingModal(g)}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-purple-400 hover:text-purple-300 hover:bg-purple-900/20 transition-colors">
+                            <Store size={13} /> <span className="hidden sm:inline">Annuncio</span>
                           </button>
                           <div className="w-px bg-white/5" />
                           <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold text-green-400 hover:text-green-300 hover:bg-green-900/20 transition-colors">
-                            <DollarSign size={15} /> Vendi
+                            className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-green-400 hover:text-green-300 hover:bg-green-900/20 transition-colors">
+                            <DollarSign size={13} /> <span className="hidden sm:inline">Vendi</span>
                           </button>
                         </div>
                       )}
@@ -5351,6 +5388,150 @@ export default function App() {
           </div>
         );
       })()}
+
+      {/* ========== GENERATORE ANNUNCI ========== */}
+      {listingModalProduct && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => { setListingModalProduct(null); setListingResult(null); }}>
+          <div className="bg-[#0e0e0e] border border-white/[0.07] w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto animate-slide-up"
+            onClick={e => e.stopPropagation()}>
+
+            {/* Header */}
+            <div className="sticky top-0 bg-[#0e0e0e]/95 backdrop-blur-xl border-b border-white/[0.05] p-5 flex items-center justify-between z-10">
+              <div>
+                <h2 className="font-semibold">Genera Annuncio</h2>
+                <p className="text-[11px] text-gray-600 mt-0.5">{listingModalProduct.brand} {listingModalProduct.name} · {listingModalProduct.size}</p>
+              </div>
+              <button onClick={() => { setListingModalProduct(null); setListingResult(null); }}
+                className="p-2 hover:bg-white/5 rounded-xl transition-colors">
+                <X size={18} className="text-gray-400" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Selezione piattaforma */}
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Scegli la piattaforma</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {([
+                    { id: 'vinted',   label: 'Vinted',    emoji: '🟢' },
+                    { id: 'ebay',     label: 'eBay',      emoji: '🔴' },
+                    { id: 'depop',    label: 'Depop',     emoji: '🔴' },
+                    { id: 'wallapop', label: 'Wallapop',  emoji: '🐾' },
+                    { id: 'subito',   label: 'Subito',    emoji: '🟡' },
+                  ] as const).map(p => (
+                    <button key={p.id}
+                      onClick={() => setListingPlatform(p.id)}
+                      className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border text-center transition-all active:scale-95 ${
+                        listingPlatform === p.id
+                          ? 'bg-purple-500/15 border-purple-500/40 text-white'
+                          : 'bg-[#111] border-white/[0.06] text-gray-500 hover:border-white/[0.15] hover:text-gray-300'
+                      }`}>
+                      <span className="text-lg">{p.emoji}</span>
+                      <span className="text-[10px] font-bold">{p.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottone genera */}
+              <button
+                onClick={() => generateListingForProduct(listingPlatform)}
+                disabled={isGeneratingListing}
+                className="w-full py-3.5 bg-purple-600/80 hover:bg-purple-600 disabled:bg-purple-600/30 rounded-2xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                {isGeneratingListing
+                  ? <><Loader2 size={16} className="animate-spin" /> Generazione in corso…</>
+                  : <><Sparkles size={16} /> Genera con IA</>}
+              </button>
+
+              {/* Risultato */}
+              {listingResult && (
+                <div className="space-y-3">
+
+                  {/* Titolo */}
+                  <div className="bg-[#0a0a0a] border border-white/[0.07] rounded-2xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Titolo</p>
+                      <button onClick={() => copyToClipboard(listingResult.title, 'title')}
+                        className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+                          copiedField === 'title' ? 'bg-green-500/20 text-green-400' : 'bg-white/[0.06] text-gray-400 hover:text-white'
+                        }`}>
+                        <Copy size={11} /> {copiedField === 'title' ? 'Copiato!' : 'Copia'}
+                      </button>
+                    </div>
+                    <p className="text-sm font-semibold text-white leading-snug">{listingResult.title}</p>
+                    <p className="text-[10px] text-gray-700 mt-1">{listingResult.title.length}/80 caratteri</p>
+                  </div>
+
+                  {/* Descrizione */}
+                  <div className="bg-[#0a0a0a] border border-white/[0.07] rounded-2xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Descrizione</p>
+                      <button onClick={() => copyToClipboard(listingResult.description, 'desc')}
+                        className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+                          copiedField === 'desc' ? 'bg-green-500/20 text-green-400' : 'bg-white/[0.06] text-gray-400 hover:text-white'
+                        }`}>
+                        <Copy size={11} /> {copiedField === 'desc' ? 'Copiato!' : 'Copia'}
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{listingResult.description}</p>
+                  </div>
+
+                  {/* Hashtag (se presenti) */}
+                  {listingResult.hashtags?.length > 0 && (
+                    <div className="bg-[#0a0a0a] border border-white/[0.07] rounded-2xl p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Hashtag</p>
+                        <button onClick={() => copyToClipboard(listingResult.hashtags.join(' '), 'tags')}
+                          className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+                            copiedField === 'tags' ? 'bg-green-500/20 text-green-400' : 'bg-white/[0.06] text-gray-400 hover:text-white'
+                          }`}>
+                          <Copy size={11} /> {copiedField === 'tags' ? 'Copiato!' : 'Copia'}
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {listingResult.hashtags.map((tag: string) => (
+                          <span key={tag} className="text-[11px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-full">{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Consiglio AI */}
+                  {listingResult.tips && (
+                    <div className="flex items-start gap-2 px-4 py-3 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+                      <Sparkles size={13} className="text-yellow-500 shrink-0 mt-0.5" />
+                      <p className="text-[12px] text-gray-400 leading-relaxed">{listingResult.tips}</p>
+                    </div>
+                  )}
+
+                  {/* CTA — apri piattaforma */}
+                  {listingResult.deepLink && (
+                    <a href={listingResult.deepLink} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-3 bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.08] rounded-2xl text-sm font-bold text-white transition-colors active:scale-[0.98]">
+                      <Store size={15} /> Apri {(['vinted','ebay','depop','wallapop','subito'].find(p => p === listingResult.platform) || '').charAt(0).toUpperCase() + (listingResult.platform || '').slice(1)} →
+                    </a>
+                  )}
+
+                  {/* Copia tutto */}
+                  <button
+                    onClick={() => copyToClipboard(
+                      `${listingResult.title}\n\n${listingResult.description}${listingResult.hashtags?.length ? '\n\n' + listingResult.hashtags.join(' ') : ''}`,
+                      'all'
+                    )}
+                    className={`w-full py-3 rounded-2xl text-sm font-bold transition-all active:scale-[0.98] ${
+                      copiedField === 'all'
+                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                        : 'bg-purple-600/70 hover:bg-purple-600 text-white'
+                    }`}>
+                    {copiedField === 'all' ? '✓ Tutto copiato!' : 'Copia tutto'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========== TOAST ========== */}
       {toast && (
