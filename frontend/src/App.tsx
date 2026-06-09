@@ -5,7 +5,7 @@ import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
-  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Package
+  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail
 } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
