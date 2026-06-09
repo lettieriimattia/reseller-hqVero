@@ -5,7 +5,7 @@ import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
-  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail
+  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Tag
 } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
@@ -470,6 +470,91 @@ export default function App() {
   const [lotBrand, setLotBrand] = useState('');
   const [lotNotes, setLotNotes] = useState('');
   const [isCreatingLot, setIsCreatingLot] = useState(false);
+
+  // ----- ETICHETTA PRODOTTO -----
+  const [labelData, setLabelData] = useState<any | null>(null);
+  const [isLoadingLabel, setIsLoadingLabel] = useState(false);
+  const [labelQuantity, setLabelQuantity] = useState(1);
+
+  const openLabel = async (group: any) => {
+    setIsLoadingLabel(true);
+    const { ok, data } = await apiCall(`/products/${group.ids[0]}/label`);
+    setIsLoadingLabel(false);
+    if (ok) { setLabelData({ ...data, quantity: group.quantity || 1 }); setLabelQuantity(group.quantity || 1); }
+    else showToast(data?.error || 'Errore etichetta', 'err');
+  };
+
+  const printLabel = () => {
+    const printWindow = window.open('', '_blank', 'width=500,height=700');
+    if (!printWindow || !labelData) return;
+
+    const labelHtml = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Etichetta — ${labelData.brand} ${labelData.name}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fff; }
+  .page { padding: 12mm; }
+  .label {
+    border: 1.5px solid #111;
+    border-radius: 8px;
+    padding: 12px 14px;
+    width: 100%;
+    max-width: 90mm;
+    margin: 0 auto 10mm;
+    page-break-inside: avoid;
+  }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+  .logo { font-size: 20px; font-weight: 900; letter-spacing: -1px; color: #111; }
+  .logo span { opacity: 0.25; }
+  .qr img { width: 52px; height: 52px; border-radius: 4px; background: #111; padding: 3px; }
+  .brand { font-size: 16px; font-weight: 800; color: #111; margin-bottom: 2px; }
+  .name { font-size: 13px; color: #333; margin-bottom: 8px; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; border: 1px solid #ccc; color: #444; }
+  .notes { font-size: 10px; color: #666; border-top: 1px dashed #ddd; padding-top: 6px; margin-top: 6px; }
+  .footer { display: flex; justify-content: space-between; margin-top: 8px; border-top: 1px solid #eee; padding-top: 6px; }
+  .id { font-size: 8px; color: #aaa; font-family: monospace; }
+  .date { font-size: 8px; color: #aaa; }
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @page { margin: 8mm; size: A4; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  ${Array.from({ length: labelQuantity }, () => `
+  <div class="label">
+    <div class="header">
+      <div>
+        <div class="logo">H<span>Q</span></div>
+      </div>
+      <div class="qr"><img src="${labelData.qrCode}" alt="QR" /></div>
+    </div>
+    <div class="brand">${labelData.brand}</div>
+    <div class="name">${labelData.name}</div>
+    <div class="pills">
+      <span class="pill">${labelData.size}</span>
+      <span class="pill">${labelData.condition}</span>
+      <span class="pill">${labelData.category}</span>
+    </div>
+    ${labelData.notes ? `<div class="notes">📝 ${labelData.notes}</div>` : ''}
+    <div class="footer">
+      <span class="id">${labelData.id.slice(-8).toUpperCase()}</span>
+      <span class="date">${new Date(labelData.createdAt).toLocaleDateString('it-IT')}</span>
+    </div>
+  </div>`).join('')}
+</div>
+<script>window.onload = () => { window.print(); window.close(); }<\/script>
+</body>
+</html>`;
+
+    printWindow.document.write(labelHtml);
+    printWindow.document.close();
+  };
 
   // ----- GENERATORE ANNUNCI -----
   const [listingModalProduct, setListingModalProduct] = useState<any | null>(null);
@@ -2376,6 +2461,12 @@ export default function App() {
                           <button onClick={() => openEditModal(g)}
                             className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
                             <Edit size={13} /> <span className="hidden sm:inline">Modifica</span>
+                          </button>
+                          <div className="w-px bg-white/5" />
+                          <button onClick={() => openLabel(g)} disabled={isLoadingLabel}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40">
+                            {isLoadingLabel ? <Loader2 size={13} className="animate-spin" /> : <Tag size={13} />}
+                            <span className="hidden sm:inline">Label</span>
                           </button>
                           <div className="w-px bg-white/5" />
                           <button onClick={() => { setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
@@ -5388,6 +5479,73 @@ export default function App() {
           </div>
         );
       })()}
+
+      {/* ========== ETICHETTA PRODOTTO ========== */}
+      {labelData && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setLabelData(null)}>
+          <div className="bg-[#0e0e0e] border border-white/[0.07] w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl overflow-hidden animate-slide-up"
+            onClick={e => e.stopPropagation()}>
+
+            <div className="p-5 border-b border-white/[0.05] flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold">Etichetta Prodotto</h2>
+                <p className="text-[11px] text-gray-600 mt-0.5">Stampa e attacca al pacco o alla busta</p>
+              </div>
+              <button onClick={() => setLabelData(null)} className="p-2 hover:bg-white/5 rounded-xl">
+                <X size={18} className="text-gray-400" />
+              </button>
+            </div>
+
+            {/* Anteprima etichetta */}
+            <div className="p-5">
+              <div className="bg-white rounded-2xl p-4 shadow-xl">
+                <div className="flex items-start justify-between mb-3 pb-3 border-b border-gray-200">
+                  <div>
+                    <span className="text-2xl font-black tracking-tight text-black leading-none">H<span className="opacity-25">Q</span></span>
+                  </div>
+                  {labelData.qrCode && (
+                    <div className="bg-black rounded-lg p-1.5">
+                      <img src={labelData.qrCode} alt="QR" className="w-12 h-12" />
+                    </div>
+                  )}
+                </div>
+                <p className="font-black text-black text-base leading-tight">{labelData.brand}</p>
+                <p className="text-gray-700 text-sm mb-3">{labelData.name}</p>
+                <div className="flex gap-2 flex-wrap mb-3">
+                  {[labelData.size, labelData.condition, labelData.category].map((v: string) => (
+                    <span key={v} className="text-[10px] font-bold px-2.5 py-1 rounded-full border border-gray-300 text-gray-600">{v}</span>
+                  ))}
+                </div>
+                {labelData.notes && (
+                  <p className="text-[10px] text-gray-500 border-t border-dashed border-gray-200 pt-2 mb-2">{labelData.notes}</p>
+                )}
+                <div className="flex justify-between border-t border-gray-200 pt-2">
+                  <span className="text-[9px] text-gray-400 font-mono">{labelData.id.slice(-8).toUpperCase()}</span>
+                  <span className="text-[9px] text-gray-400">{new Date(labelData.createdAt).toLocaleDateString('it-IT')}</span>
+                </div>
+              </div>
+
+              {/* Numero copie */}
+              <div className="mt-4 flex items-center gap-3">
+                <span className="text-xs text-gray-500 font-semibold">Copie:</span>
+                <div className="flex items-center gap-2 bg-[#111] border border-white/[0.07] rounded-xl p-1">
+                  <button onClick={() => setLabelQuantity(q => Math.max(1, q - 1))}
+                    className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white font-bold transition-colors">−</button>
+                  <span className="text-sm font-bold text-white w-6 text-center">{labelQuantity}</span>
+                  <button onClick={() => setLabelQuantity(q => Math.min(10, q + 1))}
+                    className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white font-bold transition-colors">+</button>
+                </div>
+              </div>
+
+              <button onClick={printLabel}
+                className="mt-4 w-full py-3.5 bg-white hover:bg-gray-100 rounded-2xl text-sm font-bold text-black transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                <Download size={15} /> Stampa {labelQuantity > 1 ? `${labelQuantity} etichette` : 'etichetta'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========== GENERATORE ANNUNCI ========== */}
       {listingModalProduct && (

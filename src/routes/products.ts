@@ -6,6 +6,7 @@
 
 import { Router, Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
+import QRCode from 'qrcode';
 
 import { authenticate, AuthRequest, canAccessProduct } from '../middleware/auth';
 import { resolveRole, stripFinancials } from '../middleware/rbac';
@@ -474,6 +475,41 @@ router.patch('/:id/notes', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     logger.error('Errore PATCH /products/:id/notes', { err: err.message });
     res.status(500).json({ error: 'Errore salvataggio note' });
+  }
+});
+
+// ==========================================
+// GET /products/:id/label — dati etichetta + QR code base64
+// ==========================================
+router.get('/:id/label', async (req: AuthRequest, res: Response) => {
+  try {
+    const { allowed, product } = await canAccessProduct(req.user!.userId, req.params.id);
+    if (!allowed || !product) return res.status(403).json({ error: 'Accesso negato.' });
+    if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
+
+    // URL che apre direttamente il prodotto su HQ (o semplicemente l'ID univoco)
+    const productUrl = `${process.env.APP_URL || 'https://reseller-hq-production.up.railway.app'}/?product=${product.id}`;
+    const qrDataUrl = await QRCode.toDataURL(productUrl, {
+      width: 200,
+      margin: 1,
+      color: { dark: '#ffffff', light: '#00000000' }, // bianco su trasparente — funziona su sfondi scuri
+    });
+
+    res.json({
+      id: product.id,
+      category: product.category,
+      brand: product.brand,
+      name: product.name,
+      size: product.size,
+      condition: product.condition,
+      notes: product.notes,
+      createdAt: product.createdAt,
+      qrCode: qrDataUrl,   // base64 PNG
+      qrUrl: productUrl,
+    });
+  } catch (err: any) {
+    logger.error('Errore GET /products/:id/label', { err: err.message });
+    res.status(500).json({ error: 'Errore generazione etichetta' });
   }
 });
 
