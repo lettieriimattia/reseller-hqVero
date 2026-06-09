@@ -538,9 +538,15 @@ export default function App() {
       setShippingRef(data.reference);
       setShippingLabel(data.labelUrl);
       setShippingStep('done');
-      if (data.labelUrl) window.open(data.labelUrl, '_blank');
+      if (data.labelHtml) {
+        // Modalità demo: apri etichetta HTML in nuova finestra e stampa
+        const w = window.open('', '_blank', 'width=600,height=800');
+        if (w) { w.document.write(data.labelHtml); w.document.close(); }
+      } else if (data.labelUrl) {
+        window.open(data.labelUrl, '_blank');
+      }
       await fetchProducts();
-      showToast('Spedizione creata! Tracking salvato sul prodotto.');
+      showToast(data.demo ? 'Etichetta demo generata!' : 'Spedizione creata! Tracking salvato sul prodotto.');
     } else {
       showToast(data?.error || 'Errore prenotazione spedizione', 'err');
     }
@@ -5565,8 +5571,10 @@ export default function App() {
                   <button onClick={bookShipment} disabled={isBooking}
                     className="w-full py-3.5 bg-orange-600/80 hover:bg-orange-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                     {isBooking
-                      ? <><Loader2 size={15} className="animate-spin" /> Prenotazione…</>
-                      : <><Download size={15} /> Prenota e scarica etichetta · {selectedRate.price.toFixed(2)}€</>}
+                      ? <><Loader2 size={15} className="animate-spin" /> Generazione…</>
+                      : selectedRate.demo
+                        ? <><Download size={15} /> Genera etichetta demo · {selectedRate.price.toFixed(2)}€</>
+                        : <><Download size={15} /> Prenota e scarica etichetta · {selectedRate.price.toFixed(2)}€</>}
                   </button>
                 )}
               </>)}
@@ -5578,9 +5586,13 @@ export default function App() {
                     <CheckCircle className="text-green-400" size={24} />
                   </div>
                   <div>
-                    <p className="font-bold text-white">Spedizione prenotata!</p>
+                    <p className="font-bold text-white">{shippingRef?.startsWith('HQ-DEMO') ? 'Etichetta demo generata!' : 'Spedizione prenotata!'}</p>
                     {shippingRef && <p className="text-xs text-gray-500 mt-1 font-mono">{shippingRef}</p>}
-                    <p className="text-xs text-gray-600 mt-2">Il tracking è stato salvato automaticamente sul prodotto.</p>
+                    <p className="text-xs text-gray-600 mt-2">
+                      {shippingRef?.startsWith('HQ-DEMO')
+                        ? 'Modalità demo — etichetta aperta per la stampa. Aggiungi le credenziali Sendcloud per spedizioni reali.'
+                        : 'Il tracking è stato salvato automaticamente sul prodotto.'}
+                    </p>
                   </div>
                   {shippingLabel
                     ? <a href={shippingLabel} target="_blank" rel="noopener noreferrer"

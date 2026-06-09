@@ -52,12 +52,17 @@ router.get('/ping', async (req: AuthRequest, res: Response) => {
 });
 
 // ==========================================
-// GET /shipping/rates — tariffe disponibili
-// Query params: fromZip, toZip, weight (kg)
+// GET /shipping/rates — tariffe disponibili (demo se Sendcloud non configurato)
 // ==========================================
 router.get('/rates', async (req: AuthRequest, res: Response) => {
   if (!isConfigured()) {
-    return res.status(503).json({ error: 'Sendcloud non configurato. Aggiungi SENDCLOUD_API_KEY e SENDCLOUD_API_SECRET su Railway.' });
+    // Modalità demo: tariffe simulate per testare il flusso UI
+    return res.json([
+      { id: 'demo-1', name: 'BRT Express',          carrier: 'brt',   price: 5.90,  minWeight: 0, maxWeight: 30, demo: true },
+      { id: 'demo-2', name: 'GLS Standard',          carrier: 'gls',   price: 4.50,  minWeight: 0, maxWeight: 30, demo: true },
+      { id: 'demo-3', name: 'Poste Italiane Pacco',  carrier: 'poste', price: 6.20,  minWeight: 0, maxWeight: 20, demo: true },
+      { id: 'demo-4', name: 'DHL Express',           carrier: 'dhl',   price: 12.00, minWeight: 0, maxWeight: 30, demo: true },
+    ]);
   }
 
   const { fromZip = '20100', toZip, weight = '1' } = req.query as Record<string, string>;
@@ -117,10 +122,27 @@ router.get('/rates', async (req: AuthRequest, res: Response) => {
 });
 
 // ==========================================
-// POST /shipping/book — crea spedizione + ottieni etichetta PDF
+// POST /shipping/book — crea spedizione (demo se Sendcloud non configurato)
 // ==========================================
 router.post('/book', async (req: AuthRequest, res: Response) => {
-  if (!isConfigured()) return res.status(503).json({ error: 'Sendcloud non configurato.' });
+  if (!isConfigured()) {
+    // Modalità demo: genera etichetta HTML stampabile senza corriere reale
+    const { from, to, pkg, content, serviceId } = req.body;
+    const demoServices: Record<string, string> = {
+      'demo-1': 'BRT Express', 'demo-2': 'GLS Standard',
+      'demo-3': 'Poste Italiane Pacco', 'demo-4': 'DHL Express',
+    };
+    const carrier = demoServices[serviceId] || serviceId;
+    const trackingCode = `HQ-DEMO-${Date.now()}`;
+    const labelHtml = generateDemoLabel({ from, to, pkg, content, carrier, trackingCode });
+
+    return res.json({
+      reference: trackingCode,
+      labelUrl: null,
+      labelHtml,
+      demo: true,
+    });
+  }
 
   const { productId, serviceId, from, to, pkg, content } = req.body;
 
@@ -198,5 +220,73 @@ router.post('/book', async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Errore prenotazione spedizione' });
   }
 });
+
+function generateDemoLabel(opts: {
+  from: any; to: any; pkg: any; content?: string; carrier: string; trackingCode: string;
+}): string {
+  const { from, to, pkg, content, carrier, trackingCode } = opts;
+  const date = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+  // Barcode visuale semplice (linee verticali CSS — non scansionabile ma estetico)
+  const bars = Array.from({ length: 60 }, (_, i) =>
+    `<div style="width:${i % 5 === 0 ? 3 : 1}px;height:50px;background:#000;display:inline-block;margin:0 0.3px"></div>`
+  ).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Etichetta ${trackingCode}</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:Arial,sans-serif;background:#fff;padding:10mm}
+  .label{border:2px solid #000;width:100mm;padding:5mm;page-break-inside:avoid}
+  .header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #000;padding-bottom:3mm;margin-bottom:3mm}
+  .logo{font-size:22px;font-weight:900;letter-spacing:-1px}
+  .logo span{opacity:.2}
+  .carrier{font-size:14px;font-weight:700;background:#000;color:#fff;padding:2px 8px;border-radius:3px}
+  .section{margin-bottom:3mm}
+  .label-title{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#666;margin-bottom:1mm}
+  .value{font-size:11px;font-weight:700;color:#000;line-height:1.3}
+  .value-sm{font-size:10px;color:#333;line-height:1.4}
+  .divider{border-top:1px dashed #ccc;margin:3mm 0}
+  .barcode{text-align:center;margin:3mm 0}
+  .tracking{text-align:center;font-family:monospace;font-size:9px;font-weight:700;letter-spacing:2px;margin-top:1mm}
+  .demo-badge{background:#ff4d00;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;text-align:center;margin-bottom:2mm}
+  .weight-box{display:inline-block;border:1px solid #000;padding:1mm 3mm;font-size:10px;font-weight:700}
+  @media print{body{padding:0}@page{margin:5mm;size:100mm 150mm}}
+</style></head>
+<body><div class="label">
+  <div class="demo-badge">⚠ ETICHETTA DEMO — Non spedire</div>
+  <div class="header">
+    <div class="logo">H<span>Q</span></div>
+    <div class="carrier">${carrier}</div>
+    <div class="weight-box">${pkg?.weight || '1'} kg</div>
+  </div>
+  <div class="section">
+    <div class="label-title">Mittente</div>
+    <div class="value">${from?.name || '—'}</div>
+    <div class="value-sm">${from?.address || '—'}</div>
+    <div class="value-sm">${from?.zip || ''} ${from?.city || ''}</div>
+  </div>
+  <div class="divider"></div>
+  <div class="section">
+    <div class="label-title">Destinatario</div>
+    <div class="value" style="font-size:14px">${to?.name || '—'}</div>
+    <div class="value-sm">${to?.address || '—'}</div>
+    <div class="value" style="font-size:14px">${to?.zip || ''} ${to?.city || ''}</div>
+  </div>
+  <div class="divider"></div>
+  <div class="section">
+    <div class="label-title">Contenuto</div>
+    <div class="value-sm">${content || '—'}</div>
+  </div>
+  <div class="barcode">${bars}</div>
+  <div class="tracking">${trackingCode}</div>
+  <div class="divider"></div>
+  <div style="display:flex;justify-content:space-between;font-size:8px;color:#999">
+    <span>${date}</span>
+    <span>HQ Reseller Manager</span>
+  </div>
+</div>
+<script>window.onload=()=>{window.print()}<\/script>
+</body></html>`;
+}
 
 export default router;
