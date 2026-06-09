@@ -1273,7 +1273,6 @@ export default function App() {
   const openSellModal = (ids: string[], itemName: string, p: Product) => {
     setProductToSell({
       ids, name: itemName, maxQty: ids.length,
-      suggestedPrice: p.marketPriceAvg,
       purchasePrice: p.purchasePrice,
     });
     setSellQuantity(ids.length.toString());
@@ -3914,15 +3913,6 @@ export default function App() {
             <form onSubmit={confirmSell} className="p-5 space-y-4">
               <p className="text-sm text-gray-400">{productToSell.name}</p>
               
-              {productToSell.suggestedPrice && productToSell.suggestedPrice > 0 && (
-                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3">
-                  <p className="text-xs text-blue-400 font-bold flex items-center gap-1 mb-1">
-                    <Sparkles size={12} /> Prezzo suggerito dall'IA
-                  </p>
-                  <p className="text-lg font-bold text-white">{productToSell.suggestedPrice.toFixed(0)}€</p>
-                  <p className="text-[10px] text-gray-500">Basato su stima mercato salvata in fase di acquisto</p>
-                </div>
-              )}
               
               <div className="grid grid-cols-2 gap-3">
                 <div>
