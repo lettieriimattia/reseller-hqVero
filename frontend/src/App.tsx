@@ -5452,7 +5452,7 @@ export default function App() {
             {/* Header */}
             <div className="sticky top-0 bg-[#0e0e0e]/95 backdrop-blur-xl border-b border-white/[0.05] p-5 flex items-center justify-between z-10">
               <div>
-                <h2 className="font-semibold flex items-center gap-2"><Package size={16} className="text-orange-400" /> Spedizione Packlink</h2>
+                <h2 className="font-semibold flex items-center gap-2"><Package size={16} className="text-orange-400" /> Spedizione</h2>
                 <p className="text-[11px] text-gray-600 mt-0.5">{shippingProduct.brand} {shippingProduct.name} · {shippingProduct.size}</p>
               </div>
               <button onClick={() => setShippingProduct(null)} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
