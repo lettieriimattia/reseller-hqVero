@@ -24,6 +24,7 @@ import trackingRoutes from './src/routes/tracking';
 import adminRoutes from './src/routes/admin';
 import templateRoutes from './src/routes/templates';
 import analyticsRoutes from './src/routes/analytics';
+import shippingRoutes from './src/routes/shipping';
 import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
 import { startEmailJobs } from './src/services/email-jobs.service';
@@ -196,6 +197,7 @@ app.use('/tracking', trackingRoutes);
 app.use('/admin', adminRoutes);
 app.use('/templates', templateRoutes);
 app.use('/analytics', analyticsRoutes);
+app.use('/shipping', shippingRoutes);
 
 // ==========================================
 // SPA FALLBACK + 404

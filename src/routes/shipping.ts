@@ -1,0 +1,180 @@
+// src/routes/shipping.ts
+// Integrazione Packlink Pro per etichette spedizione reali.
+// Richiede PACKLINK_API_KEY in env (da packlink.it → Impostazioni → API).
+
+import { Router, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { authenticate, AuthRequest, canAccessProduct } from '../middleware/auth';
+import { apiLimiter } from '../middleware/rateLimit';
+import { logger } from '../utils/logger';
+
+const router = Router();
+const prisma = new PrismaClient();
+const PACKLINK_BASE = 'https://api.packlink.com';
+
+router.use(authenticate, apiLimiter);
+
+function packlinkHeaders() {
+  return {
+    'Authorization': `Apikey ${process.env.PACKLINK_API_KEY || ''}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+// ==========================================
+// GET /shipping/rates — tariffe disponibili
+// Query params: fromZip, toZip, weight (kg), width, height, length (cm)
+// ==========================================
+router.get('/rates', async (req: AuthRequest, res: Response) => {
+  const apiKey = process.env.PACKLINK_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: 'Packlink non configurato. Aggiungi PACKLINK_API_KEY nelle variabili di Railway.' });
+
+  const { fromZip = '20100', toZip, weight = '1', width = '30', height = '20', length = '20' } = req.query as Record<string, string>;
+  if (!toZip) return res.status(400).json({ error: 'toZip obbligatorio' });
+
+  try {
+    const params = new URLSearchParams({
+      'from[country]': 'IT', 'from[zip]': fromZip,
+      'to[country]': 'IT',   'to[zip]': toZip,
+      'packages[0][weight]': weight,
+      'packages[0][width]': width,
+      'packages[0][height]': height,
+      'packages[0][length]': length,
+      'source': 'PRO',
+    });
+
+    const r = await fetch(`${PACKLINK_BASE}/v1/services?${params}`, {
+      headers: packlinkHeaders(),
+    });
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({})) as any;
+      logger.error('Packlink rates error', { status: r.status, err });
+      return res.status(r.status).json({ error: err?.messages?.[0] || `Errore Packlink (${r.status})` });
+    }
+
+    const services = await r.json() as any[];
+    // Filtra solo servizi disponibili e ordina per prezzo
+    const available = (Array.isArray(services) ? services : [])
+      .filter((s: any) => s.available !== false)
+      .map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        carrier: s.carrier_name || s.carrier?.name || '',
+        price: s.price?.tax_price ?? s.base_price?.tax_price ?? 0,
+        transitHours: s.transit_hours,
+        logo: s.logo_url || null,
+      }))
+      .sort((a: any, b: any) => a.price - b.price);
+
+    res.json(available);
+  } catch (err: any) {
+    logger.error('Errore GET /shipping/rates', { err: err.message });
+    res.status(500).json({ error: 'Errore comunicazione Packlink' });
+  }
+});
+
+// ==========================================
+// POST /shipping/book — prenota spedizione + ottieni etichetta PDF
+// ==========================================
+router.post('/book', async (req: AuthRequest, res: Response) => {
+  const apiKey = process.env.PACKLINK_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: 'Packlink non configurato.' });
+
+  const { productId, serviceId, from, to, pkg, content } = req.body;
+
+  if (!serviceId || !from?.zip || !to?.name || !to?.address || !to?.zip || !pkg?.weight) {
+    return res.status(400).json({ error: 'Dati spedizione incompleti.' });
+  }
+
+  // Verifica accesso al prodotto (opzionale — la spedizione può esistere anche senza prodotto)
+  let product: any = null;
+  if (productId) {
+    const access = await canAccessProduct(req.user!.userId, productId);
+    if (!access.allowed) return res.status(403).json({ error: 'Accesso negato al prodotto.' });
+    product = access.product;
+  }
+
+  try {
+    const body = {
+      service_id: serviceId,
+      draft: false,
+      content: content || (product ? `${product.brand} ${product.name}` : 'Articolo'),
+      from: {
+        country: 'IT',
+        zip_code: from.zip,
+        city: from.city || '',
+        street1: from.address || '',
+        name: from.name || '',
+        phone: from.phone || '',
+        email: from.email || req.user!.email,
+        company: from.company || null,
+      },
+      to: {
+        country: 'IT',
+        zip_code: to.zip,
+        city: to.city || '',
+        street1: to.address,
+        name: to.name,
+        phone: to.phone || '',
+        email: to.email || '',
+        company: null,
+      },
+      packages: [{
+        weight: parseFloat(pkg.weight),
+        width:  parseFloat(pkg.width  || 30),
+        height: parseFloat(pkg.height || 20),
+        length: parseFloat(pkg.length || 20),
+      }],
+    };
+
+    const r = await fetch(`${PACKLINK_BASE}/v1/shipments`, {
+      method: 'POST',
+      headers: packlinkHeaders(),
+      body: JSON.stringify(body),
+    });
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({})) as any;
+      const msg = err?.messages?.[0] || err?.detail || `Errore Packlink (${r.status})`;
+      logger.error('Packlink book error', { status: r.status, err });
+      return res.status(r.status).json({ error: msg });
+    }
+
+    const shipment = await r.json() as any;
+    const reference = shipment.reference;
+
+    // Recupera l'etichetta PDF
+    let labelUrl: string | null = null;
+    try {
+      const labelR = await fetch(`${PACKLINK_BASE}/v1/shipments/${reference}/labels`, {
+        headers: packlinkHeaders(),
+      });
+      if (labelR.ok) {
+        const labelData = await labelR.json() as any;
+        labelUrl = labelData?.labels?.[0] || null;
+      }
+    } catch { /* non bloccante */ }
+
+    // Salva tracking sul prodotto se fornito
+    if (productId && reference) {
+      await prisma.product.update({
+        where: { id: productId },
+        data: {
+          trackingCode: reference,
+          trackingCarrier: 'Packlink',
+          trackingStatus: 'PENDING',
+          trackingUpdatedAt: new Date(),
+        },
+      }).catch(() => {});
+    }
+
+    logger.info('Spedizione Packlink creata', { reference, productId });
+    res.json({ reference, labelUrl, shipment });
+  } catch (err: any) {
+    logger.error('Errore POST /shipping/book', { err: err.message });
+    res.status(500).json({ error: 'Errore prenotazione spedizione' });
+  }
+});
+
+export default router;

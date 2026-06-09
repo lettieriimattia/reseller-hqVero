@@ -5,7 +5,7 @@ import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
-  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Tag
+  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Package
 } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
@@ -471,89 +471,79 @@ export default function App() {
   const [lotNotes, setLotNotes] = useState('');
   const [isCreatingLot, setIsCreatingLot] = useState(false);
 
-  // ----- ETICHETTA PRODOTTO -----
-  const [labelData, setLabelData] = useState<any | null>(null);
-  const [isLoadingLabel, setIsLoadingLabel] = useState(false);
-  const [labelQuantity, setLabelQuantity] = useState(1);
+  // ----- SPEDIZIONE PACKLINK (solo admin) -----
+  const SHIPPING_PRESETS = [
+    { label: 'Busta',      weight: '0.5', width: '30', height: '5',  length: '22' },
+    { label: 'Scatola S',  weight: '1',   width: '30', height: '15', length: '20' },
+    { label: 'Scatola M',  weight: '2',   width: '40', height: '20', length: '30' },
+    { label: 'Scatola L',  weight: '5',   width: '50', height: '30', length: '40' },
+  ];
+  const [shippingProduct, setShippingProduct] = useState<any | null>(null);
+  const [shippingStep, setShippingStep] = useState<'form' | 'rates' | 'done'>('form');
+  const [shippingRates, setShippingRates] = useState<any[]>([]);
+  const [selectedRate, setSelectedRate] = useState<any | null>(null);
+  const [isLoadingRates, setIsLoadingRates] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
+  const [shippingLabel, setShippingLabel] = useState<string | null>(null);
+  const [shippingRef, setShippingRef] = useState<string | null>(null);
+  const [shipPreset, setShipPreset] = useState(SHIPPING_PRESETS[1]);
+  const [shipTo, setShipTo] = useState({ name: '', address: '', city: '', zip: '', phone: '' });
+  const [shipFrom, setShipFrom] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('hq_ship_from') || '{}'); } catch { return {}; }
+  });
 
-  const openLabel = async (group: any) => {
-    setIsLoadingLabel(true);
-    const { ok, data } = await apiCall(`/products/${group.ids[0]}/label`);
-    setIsLoadingLabel(false);
-    if (ok) { setLabelData({ ...data, quantity: group.quantity || 1 }); setLabelQuantity(group.quantity || 1); }
-    else showToast(data?.error || 'Errore etichetta', 'err');
+  const openShipping = (group: any) => {
+    setShippingProduct(group);
+    setShippingStep('form');
+    setShippingRates([]);
+    setSelectedRate(null);
+    setShippingLabel(null);
+    setShippingRef(null);
+    setShipTo({ name: '', address: '', city: '', zip: '', phone: '' });
   };
 
-  const printLabel = () => {
-    const printWindow = window.open('', '_blank', 'width=500,height=700');
-    if (!printWindow || !labelData) return;
+  const fetchRates = async () => {
+    if (!shipTo.zip || shipTo.zip.length < 5) { showToast('Inserisci il CAP destinatario (5 cifre)', 'err'); return; }
+    localStorage.setItem('hq_ship_from', JSON.stringify(shipFrom));
+    setIsLoadingRates(true);
+    const { ok, data } = await apiCall(
+      `/shipping/rates?fromZip=${shipFrom.zip || '20100'}&toZip=${shipTo.zip}&weight=${shipPreset.weight}&width=${shipPreset.width}&height=${shipPreset.height}&length=${shipPreset.length}`
+    );
+    setIsLoadingRates(false);
+    if (ok && Array.isArray(data) && data.length > 0) {
+      setShippingRates(data);
+      setSelectedRate(data[0]);
+      setShippingStep('rates');
+    } else {
+      showToast(data?.error || 'Nessun corriere disponibile per questa tratta', 'err');
+    }
+  };
 
-    const labelHtml = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Etichetta — ${labelData.brand} ${labelData.name}</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fff; }
-  .page { padding: 12mm; }
-  .label {
-    border: 1.5px solid #111;
-    border-radius: 8px;
-    padding: 12px 14px;
-    width: 100%;
-    max-width: 90mm;
-    margin: 0 auto 10mm;
-    page-break-inside: avoid;
-  }
-  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-  .logo { font-size: 20px; font-weight: 900; letter-spacing: -1px; color: #111; }
-  .logo span { opacity: 0.25; }
-  .qr img { width: 52px; height: 52px; border-radius: 4px; background: #111; padding: 3px; }
-  .brand { font-size: 16px; font-weight: 800; color: #111; margin-bottom: 2px; }
-  .name { font-size: 13px; color: #333; margin-bottom: 8px; }
-  .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-  .pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; border: 1px solid #ccc; color: #444; }
-  .notes { font-size: 10px; color: #666; border-top: 1px dashed #ddd; padding-top: 6px; margin-top: 6px; }
-  .footer { display: flex; justify-content: space-between; margin-top: 8px; border-top: 1px solid #eee; padding-top: 6px; }
-  .id { font-size: 8px; color: #aaa; font-family: monospace; }
-  .date { font-size: 8px; color: #aaa; }
-  @media print {
-    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    @page { margin: 8mm; size: A4; }
-  }
-</style>
-</head>
-<body>
-<div class="page">
-  ${Array.from({ length: labelQuantity }, () => `
-  <div class="label">
-    <div class="header">
-      <div>
-        <div class="logo">H<span>Q</span></div>
-      </div>
-      <div class="qr"><img src="${labelData.qrCode}" alt="QR" /></div>
-    </div>
-    <div class="brand">${labelData.brand}</div>
-    <div class="name">${labelData.name}</div>
-    <div class="pills">
-      <span class="pill">${labelData.size}</span>
-      <span class="pill">${labelData.condition}</span>
-      <span class="pill">${labelData.category}</span>
-    </div>
-    ${labelData.notes ? `<div class="notes">📝 ${labelData.notes}</div>` : ''}
-    <div class="footer">
-      <span class="id">${labelData.id.slice(-8).toUpperCase()}</span>
-      <span class="date">${new Date(labelData.createdAt).toLocaleDateString('it-IT')}</span>
-    </div>
-  </div>`).join('')}
-</div>
-<script>window.onload = () => { window.print(); window.close(); }<\/script>
-</body>
-</html>`;
-
-    printWindow.document.write(labelHtml);
-    printWindow.document.close();
+  const bookShipment = async () => {
+    if (!selectedRate) return;
+    setIsBooking(true);
+    const { ok, data } = await apiCall('/shipping/book', {
+      method: 'POST',
+      body: JSON.stringify({
+        productId: shippingProduct?.ids?.[0] || null,
+        serviceId: selectedRate.id,
+        from: { ...shipFrom },
+        to: { ...shipTo },
+        pkg: { weight: shipPreset.weight, width: shipPreset.width, height: shipPreset.height, length: shipPreset.length },
+        content: shippingProduct ? `${shippingProduct.brand} ${shippingProduct.name}` : 'Articolo',
+      }),
+    });
+    setIsBooking(false);
+    if (ok) {
+      setShippingRef(data.reference);
+      setShippingLabel(data.labelUrl);
+      setShippingStep('done');
+      if (data.labelUrl) window.open(data.labelUrl, '_blank');
+      await fetchProducts();
+      showToast('Spedizione creata! Tracking salvato sul prodotto.');
+    } else {
+      showToast(data?.error || 'Errore prenotazione spedizione', 'err');
+    }
   };
 
   // ----- GENERATORE ANNUNCI -----
@@ -2450,10 +2440,10 @@ export default function App() {
                           {user!.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
                             <>
                               <div className="w-px bg-white/5" />
-                              <button onClick={() => openLabel(g)} disabled={isLoadingLabel}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40">
-                                {isLoadingLabel ? <Loader2 size={13} className="animate-spin" /> : <Tag size={13} />}
-                                <span className="hidden sm:inline">Label</span>
+                              <button onClick={() => openShipping(g)}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-orange-400 hover:text-orange-300 hover:bg-orange-900/20 transition-colors">
+                                <Package size={13} />
+                                <span className="hidden sm:inline">Spedisci</span>
                               </button>
                             </>
                           )}
@@ -5452,68 +5442,160 @@ export default function App() {
         );
       })()}
 
-      {/* ========== ETICHETTA PRODOTTO ========== */}
-      {labelData && (
+      {/* ========== SPEDIZIONE PACKLINK (solo admin) ========== */}
+      {shippingProduct && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
-          onClick={() => setLabelData(null)}>
-          <div className="bg-[#0e0e0e] border border-white/[0.07] w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl overflow-hidden animate-slide-up"
+          onClick={() => setShippingProduct(null)}>
+          <div className="bg-[#0e0e0e] border border-white/[0.07] w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto animate-slide-up"
             onClick={e => e.stopPropagation()}>
 
-            <div className="p-5 border-b border-white/[0.05] flex items-center justify-between">
+            {/* Header */}
+            <div className="sticky top-0 bg-[#0e0e0e]/95 backdrop-blur-xl border-b border-white/[0.05] p-5 flex items-center justify-between z-10">
               <div>
-                <h2 className="font-semibold">Etichetta Prodotto</h2>
-                <p className="text-[11px] text-gray-600 mt-0.5">Stampa e attacca al pacco o alla busta</p>
+                <h2 className="font-semibold flex items-center gap-2"><Package size={16} className="text-orange-400" /> Spedizione Packlink</h2>
+                <p className="text-[11px] text-gray-600 mt-0.5">{shippingProduct.brand} {shippingProduct.name} · {shippingProduct.size}</p>
               </div>
-              <button onClick={() => setLabelData(null)} className="p-2 hover:bg-white/5 rounded-xl">
+              <button onClick={() => setShippingProduct(null)} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
                 <X size={18} className="text-gray-400" />
               </button>
             </div>
 
-            {/* Anteprima etichetta */}
-            <div className="p-5">
-              <div className="bg-white rounded-2xl p-4 shadow-xl">
-                <div className="flex items-start justify-between mb-3 pb-3 border-b border-gray-200">
-                  <div>
-                    <span className="text-2xl font-black tracking-tight text-black leading-none">H<span className="opacity-25">Q</span></span>
+            <div className="p-5 space-y-4">
+
+              {/* STEP: FORM */}
+              {shippingStep === 'form' && (<>
+
+                {/* Mittente */}
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Mittente (tu)</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { key: 'name',    label: 'Nome',     placeholder: 'Mario Rossi',   span: 2 },
+                      { key: 'address', label: 'Indirizzo',placeholder: 'Via Roma 1',    span: 2 },
+                      { key: 'city',    label: 'Città',    placeholder: 'Milano',        span: 1 },
+                      { key: 'zip',     label: 'CAP',      placeholder: '20100',         span: 1 },
+                      { key: 'phone',   label: 'Telefono', placeholder: '+393331234567', span: 2 },
+                    ].map(f => (
+                      <div key={f.key} className={f.span === 2 ? 'col-span-2' : ''}>
+                        <label className="text-[10px] text-gray-600 block mb-1">{f.label}</label>
+                        <input
+                          value={shipFrom[f.key] || ''}
+                          onChange={e => setShipFrom((p: any) => ({ ...p, [f.key]: e.target.value }))}
+                          placeholder={f.placeholder}
+                          className="w-full bg-[#111] border border-white/[0.07] rounded-xl px-3 py-2 text-sm text-white placeholder-gray-700 outline-none focus:border-orange-500/50"
+                        />
+                      </div>
+                    ))}
                   </div>
-                  {labelData.qrCode && (
-                    <div className="bg-black rounded-lg p-1.5">
-                      <img src={labelData.qrCode} alt="QR" className="w-12 h-12" />
-                    </div>
-                  )}
                 </div>
-                <p className="font-black text-black text-base leading-tight">{labelData.brand}</p>
-                <p className="text-gray-700 text-sm mb-3">{labelData.name}</p>
-                <div className="flex gap-2 flex-wrap mb-3">
-                  {[labelData.size, labelData.condition, labelData.category].map((v: string) => (
-                    <span key={v} className="text-[10px] font-bold px-2.5 py-1 rounded-full border border-gray-300 text-gray-600">{v}</span>
+
+                {/* Destinatario */}
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Destinatario</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { key: 'name',    label: 'Nome',     placeholder: 'Luca Bianchi',  span: 2 },
+                      { key: 'address', label: 'Indirizzo',placeholder: 'Via Milano 5',  span: 2 },
+                      { key: 'city',    label: 'Città',    placeholder: 'Roma',          span: 1 },
+                      { key: 'zip',     label: 'CAP',      placeholder: '00100',         span: 1 },
+                      { key: 'phone',   label: 'Telefono', placeholder: '+393339876543', span: 2 },
+                    ].map(f => (
+                      <div key={f.key} className={f.span === 2 ? 'col-span-2' : ''}>
+                        <label className="text-[10px] text-gray-600 block mb-1">{f.label}</label>
+                        <input
+                          value={shipTo[f.key as keyof typeof shipTo] || ''}
+                          onChange={e => setShipTo(p => ({ ...p, [f.key]: e.target.value }))}
+                          placeholder={f.placeholder}
+                          className="w-full bg-[#111] border border-white/[0.07] rounded-xl px-3 py-2 text-sm text-white placeholder-gray-700 outline-none focus:border-orange-500/50"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pacco preset */}
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Dimensioni pacco</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {SHIPPING_PRESETS.map(p => (
+                      <button key={p.label} onClick={() => setShipPreset(p)}
+                        className={`p-2.5 rounded-xl border text-center transition-all ${
+                          shipPreset.label === p.label
+                            ? 'bg-orange-500/15 border-orange-500/40 text-white'
+                            : 'bg-[#111] border-white/[0.06] text-gray-500 hover:border-white/15'
+                        }`}>
+                        <p className="text-xs font-bold">{p.label}</p>
+                        <p className="text-[9px] text-gray-600 mt-0.5">{p.weight}kg</p>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-gray-700 mt-1.5">{shipPreset.length}×{shipPreset.width}×{shipPreset.height} cm · {shipPreset.weight} kg</p>
+                </div>
+
+                <button onClick={fetchRates} disabled={isLoadingRates}
+                  className="w-full py-3.5 bg-orange-600/80 hover:bg-orange-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                  {isLoadingRates ? <><Loader2 size={15} className="animate-spin" /> Cerco tariffe…</> : <><Package size={15} /> Vedi tariffe corrieri</>}
+                </button>
+              </>)}
+
+              {/* STEP: RATES */}
+              {shippingStep === 'rates' && (<>
+                <button onClick={() => setShippingStep('form')} className="text-xs text-gray-500 hover:text-white flex items-center gap-1 transition-colors">
+                  ← Modifica dati
+                </button>
+                <div className="space-y-2">
+                  {shippingRates.map(r => (
+                    <button key={r.id} onClick={() => setSelectedRate(r)}
+                      className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all text-left ${
+                        selectedRate?.id === r.id
+                          ? 'bg-orange-500/10 border-orange-500/40'
+                          : 'bg-[#111] border-white/[0.06] hover:border-white/15'
+                      }`}>
+                      <div>
+                        <p className="font-bold text-sm text-white">{r.carrier}</p>
+                        <p className="text-[11px] text-gray-500">{r.name}{r.transitHours ? ` · ${r.transitHours}h` : ''}</p>
+                      </div>
+                      <p className={`font-bold text-base num ${selectedRate?.id === r.id ? 'text-orange-400' : 'text-white'}`}>
+                        {r.price.toFixed(2)}€
+                      </p>
+                    </button>
                   ))}
                 </div>
-                {labelData.notes && (
-                  <p className="text-[10px] text-gray-500 border-t border-dashed border-gray-200 pt-2 mb-2">{labelData.notes}</p>
+                {selectedRate && (
+                  <button onClick={bookShipment} disabled={isBooking}
+                    className="w-full py-3.5 bg-orange-600/80 hover:bg-orange-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                    {isBooking
+                      ? <><Loader2 size={15} className="animate-spin" /> Prenotazione…</>
+                      : <><Download size={15} /> Prenota e scarica etichetta · {selectedRate.price.toFixed(2)}€</>}
+                  </button>
                 )}
-                <div className="flex justify-between border-t border-gray-200 pt-2">
-                  <span className="text-[9px] text-gray-400 font-mono">{labelData.id.slice(-8).toUpperCase()}</span>
-                  <span className="text-[9px] text-gray-400">{new Date(labelData.createdAt).toLocaleDateString('it-IT')}</span>
-                </div>
-              </div>
+              </>)}
 
-              {/* Numero copie */}
-              <div className="mt-4 flex items-center gap-3">
-                <span className="text-xs text-gray-500 font-semibold">Copie:</span>
-                <div className="flex items-center gap-2 bg-[#111] border border-white/[0.07] rounded-xl p-1">
-                  <button onClick={() => setLabelQuantity(q => Math.max(1, q - 1))}
-                    className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white font-bold transition-colors">−</button>
-                  <span className="text-sm font-bold text-white w-6 text-center">{labelQuantity}</span>
-                  <button onClick={() => setLabelQuantity(q => Math.min(10, q + 1))}
-                    className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white font-bold transition-colors">+</button>
+              {/* STEP: DONE */}
+              {shippingStep === 'done' && (
+                <div className="text-center py-6 space-y-4">
+                  <div className="w-14 h-14 rounded-full bg-green-500/15 border border-green-500/20 flex items-center justify-center mx-auto">
+                    <CheckCircle className="text-green-400" size={24} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-white">Spedizione prenotata!</p>
+                    {shippingRef && <p className="text-xs text-gray-500 mt-1 font-mono">{shippingRef}</p>}
+                    <p className="text-xs text-gray-600 mt-2">Il tracking è stato salvato automaticamente sul prodotto.</p>
+                  </div>
+                  {shippingLabel
+                    ? <a href={shippingLabel} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 w-full py-3 bg-white hover:bg-gray-100 rounded-2xl text-sm font-bold text-black transition-colors">
+                        <Download size={15} /> Scarica etichetta PDF
+                      </a>
+                    : <p className="text-xs text-gray-500">L'etichetta sarà disponibile sul sito Packlink.</p>
+                  }
+                  <button onClick={() => setShippingProduct(null)}
+                    className="w-full py-2.5 bg-white/5 hover:bg-white/10 rounded-2xl text-sm text-gray-400 hover:text-white transition-colors">
+                    Chiudi
+                  </button>
                 </div>
-              </div>
+              )}
 
-              <button onClick={printLabel}
-                className="mt-4 w-full py-3.5 bg-white hover:bg-gray-100 rounded-2xl text-sm font-bold text-black transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
-                <Download size={15} /> Stampa {labelQuantity > 1 ? `${labelQuantity} etichette` : 'etichetta'}
-              </button>
             </div>
           </div>
         </div>
