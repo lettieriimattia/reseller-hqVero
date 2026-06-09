@@ -15,11 +15,37 @@ const PACKLINK_BASE = 'https://api.packlink.com';
 router.use(authenticate, apiLimiter);
 
 function packlinkHeaders() {
+  const key = (process.env.PACKLINK_API_KEY || '').trim();
   return {
-    'Authorization': `Apikey ${process.env.PACKLINK_API_KEY || ''}`,
+    'Authorization': `Apikey ${key}`,
     'Content-Type': 'application/json',
   };
 }
+
+// ==========================================
+// GET /shipping/ping — verifica chiave API Packlink (solo debug admin)
+// ==========================================
+router.get('/ping', async (req: AuthRequest, res: Response) => {
+  const key = (process.env.PACKLINK_API_KEY || '').trim();
+  if (!key) return res.json({ ok: false, error: 'PACKLINK_API_KEY non configurata' });
+
+  try {
+    // Chiama l'endpoint più semplice di Packlink per verificare l'auth
+    const r = await fetch(`${PACKLINK_BASE}/v1/users/me`, {
+      headers: packlinkHeaders(),
+    });
+    const body = await r.text();
+    res.json({
+      ok: r.ok,
+      status: r.status,
+      keyLength: key.length,
+      keyPreview: `${key.slice(0, 6)}…${key.slice(-4)}`,
+      body: body.slice(0, 300),
+    });
+  } catch (err: any) {
+    res.json({ ok: false, error: err.message });
+  }
+});
 
 // ==========================================
 // GET /shipping/rates — tariffe disponibili
@@ -48,9 +74,14 @@ router.get('/rates', async (req: AuthRequest, res: Response) => {
     });
 
     if (!r.ok) {
-      const err = await r.json().catch(() => ({})) as any;
-      logger.error('Packlink rates error', { status: r.status, err });
-      return res.status(r.status).json({ error: err?.messages?.[0] || `Errore Packlink (${r.status})` });
+      const errText = await r.text().catch(() => '');
+      logger.error('Packlink rates error', { status: r.status, body: errText });
+      let msg = `Errore Packlink (${r.status})`;
+      try {
+        const errJson = JSON.parse(errText);
+        msg = errJson?.messages?.[0] || errJson?.detail || errJson?.message || msg;
+      } catch {}
+      return res.status(r.status).json({ error: msg, detail: errText.slice(0, 200) });
     }
 
     const services = await r.json() as any[];
