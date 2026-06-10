@@ -2345,140 +2345,76 @@ export default function App() {
                           {isSelected && <CheckCircle size={14} className="text-white" />}
                         </div>
                       )}
-                      {/* Info row */}
-                      <div className="flex items-start gap-3 p-4">
+                      {/* Card compatta — tutto inline */}
+                      <div className="flex items-center gap-3 px-3 py-3">
+                        {/* Foto o emoji */}
                         {(() => {
                           try {
                             const photos = g.photos ? JSON.parse(g.photos) : [];
-                            if (photos.length > 0) {
-                              return (
-                                <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-white/[0.07]">
-                                  <img src={photos[0]} alt="foto" className="w-full h-full object-cover" />
-                                </div>
-                              );
-                            }
-                          } catch {}
-                          return <span className="text-3xl shrink-0 mt-0.5">{getCategoryIcon(g.category)}</span>;
-                        })()}
-                        <div className="flex-1 min-w-0">
-                          {(() => {
-                            const daysInStock = g.oldestDate || g.createdAt
-                              ? Math.floor((Date.now() - new Date(g.oldestDate || g.createdAt).getTime()) / 86400000)
-                              : null;
-                            const margin = null; // stima prezzo AI rimossa
-                            return (
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-bold">{g.brand} {g.name}</p>
-                                {g.quantity > 1 && (
-                                  <span className="text-[10px] bg-[#ff4d00]/20 text-white px-2 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>
-                                )}
-                                {daysInStock !== null && (
-                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
-                                    daysInStock > 30 ? 'bg-red-500/20 text-red-400' :
-                                    daysInStock > 14 ? 'bg-yellow-500/20 text-yellow-400' :
-                                    'bg-white/5 text-gray-500'
-                                  }`}>{daysInStock}g</span>
-                                )}
-                                {margin !== null && (
-                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
-                                    margin >= 20 ? 'bg-green-500/20 text-green-400' :
-                                    margin >= 0 ? 'bg-blue-500/20 text-blue-400' :
-                                    'bg-red-500/20 text-red-400'
-                                  }`}>{margin >= 0 ? '+' : ''}{margin.toFixed(0)}%</span>
-                                )}
-                                {g.authenticityScore != null && (
-                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0 ${
-                                    g.authenticityScore >= 70 ? 'bg-green-500/20 text-green-400' :
-                                    g.authenticityScore >= 40 ? 'bg-yellow-500/20 text-yellow-400' :
-                                    'bg-red-500/20 text-red-400'
-                                  }`}><Shield size={10} /> {g.authenticityScore}/100</span>
-                                )}
-                                {g.trackingStatus && (
-                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0 ${
-                                    g.trackingStatus === 'DELIVERED' ? 'bg-green-500/20 text-green-400' :
-                                    g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'bg-orange-500/20 text-orange-400' :
-                                    g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500/20 text-blue-400' :
-                                    g.trackingStatus === 'EXCEPTION' ? 'bg-red-500/20 text-red-400' :
-                                    'bg-white/5 text-gray-500'
-                                  }`}>
-                                    <Truck size={10} />
-                                    {g.trackingStatus === 'IN_TRANSIT' ? 'In transito' :
-                                     g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' :
-                                     g.trackingStatus === 'DELIVERED' ? 'Consegnato' :
-                                     g.trackingStatus === 'EXCEPTION' ? 'Eccezione' : 'In attesa'}
-                                  </span>
-                                )}
+                            if (photos.length > 0) return (
+                              <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-white/[0.07]">
+                                <img src={photos[0]} alt="" className="w-full h-full object-cover" />
                               </div>
                             );
-                          })()}
-                          <p className="text-xs text-gray-500 mt-1">
-                            {g.size} • {g.condition} • <span className="text-gray-400 font-bold">{g.purchasePrice.toFixed(0)}€</span>
-                          </p>
-                          {(() => {
-                            const shares = getShares(g);
-                            if (shares && shares.length > 0) {
-                              return (
-                                <p className="text-[10px] text-blue-400 mt-1 flex items-center gap-1 flex-wrap">
-                                  <Users size={10} className="shrink-0" />
-                                  {shares.map((s: any) => `${s.name} ${s.percentage}%`).join(' • ')}
-                                </p>
-                              );
-                            }
-                            return null;
-                          })()}
-                        </div>
-                      </div>
-                      {/* Note veloci — se presenti, mostrale */}
-                      {g.notes && (
-                        <div className="mx-4 mb-3 px-3 py-2 bg-white/[0.03] border border-white/[0.05] rounded-xl flex items-start gap-2">
-                          <StickyNote size={11} className="text-gray-500 shrink-0 mt-0.5" />
-                          <p className="text-[11px] text-gray-500 leading-relaxed">{g.notes}</p>
-                        </div>
-                      )}
-                      {/* Action row - nascosta in bulk mode */}
-                      {!bulkMode && (
-                        <>
-                          {/* Riga principale — 4 azioni essenziali */}
-                          <div className="flex border-t border-white/[0.07]">
-                            <button onClick={() => openEditModal(g)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
-                              <Edit size={13} /> Modifica
-                            </button>
-                            <div className="w-px bg-white/5" />
+                          } catch {}
+                          return <span className="text-2xl shrink-0 w-11 text-center">{getCategoryIcon(g.category)}</span>;
+                        })()}
+
+                        {/* Info prodotto */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-sm truncate">{g.brand} {g.name}</span>
+                            {g.quantity > 1 && <span className="text-[10px] bg-[#ff4d00]/20 text-white px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
+                            {(() => {
+                              const days = g.oldestDate || g.createdAt ? Math.floor((Date.now() - new Date(g.oldestDate || g.createdAt).getTime()) / 86400000) : null;
+                              if (!days) return null;
+                              return <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${days > 30 ? 'bg-red-500/20 text-red-400' : days > 14 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/5 text-gray-600'}`}>{days}g</span>;
+                            })()}
+                            {g.authenticityScore != null && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5 shrink-0 ${g.authenticityScore >= 70 ? 'bg-green-500/20 text-green-400' : g.authenticityScore >= 40 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}><Shield size={9} />{g.authenticityScore}</span>}
+                            {g.trackingStatus && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5 shrink-0 ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500/20 text-blue-400' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500/20 text-green-400' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500/20 text-red-400' : 'bg-white/5 text-gray-500'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? 'Transito' : g.trackingStatus === 'DELIVERED' ? 'Consegnato' : g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' : 'Track'}</span>}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[11px] text-gray-500">{g.size} · {g.condition} · <span className="text-gray-300 font-semibold">{g.purchasePrice.toFixed(0)}€</span></span>
+                            {(() => { const s = getShares(g); return s?.length ? <span className="text-[10px] text-blue-400/70">{s.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</span> : null; })()}
+                          </div>
+                          {/* Note inline — click per modificare */}
+                          {!bulkMode && (
                             <button onClick={() => { setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
-                              className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors ${
-                                g.notes ? 'text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'
-                              }`}>
-                              <StickyNote size={13} /> Note
+                              className={`mt-1 text-[11px] flex items-center gap-1 transition-colors ${g.notes ? 'text-gray-500 hover:text-gray-300' : 'text-gray-700 hover:text-gray-500'}`}>
+                              <StickyNote size={10} />
+                              <span className="truncate max-w-[180px]">{g.notes || 'Aggiungi nota…'}</span>
                             </button>
-                            <div className="w-px bg-white/5" />
-                            <button onClick={() => openTrackingModal(g)}
-                              className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors ${
-                                g.trackingCode ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20' : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'
-                              }`}>
-                              <Truck size={13} /> Track
+                          )}
+                        </div>
+
+                        {/* Azioni destra — icone compatte */}
+                        {!bulkMode && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button onClick={() => openTrackingModal(g)} title="Tracking"
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${g.trackingCode ? 'text-blue-400 hover:bg-blue-900/20' : 'text-gray-600 hover:bg-white/5 hover:text-gray-400'}`}>
+                              <Truck size={14} />
                             </button>
-                            <div className="w-px bg-white/5" />
+                            <button onClick={() => openEditModal(g)} title="Modifica"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-600 hover:bg-white/5 hover:text-gray-300 transition-colors">
+                              <Edit size={14} />
+                            </button>
                             <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)}
-                              className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold text-green-400 hover:text-green-300 hover:bg-green-900/20 transition-colors">
-                              <DollarSign size={15} /> Vendi
+                              className="ml-1 px-3 py-1.5 bg-green-500/15 hover:bg-green-500/25 text-green-400 hover:text-green-300 rounded-lg text-xs font-bold transition-colors">
+                              Vendi
                             </button>
                           </div>
-                          {/* Riga admin — Spedisci + Annuncio (solo noreply.hq.app@gmail.com) */}
-                          {user!.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
-                            <div className="flex border-t border-white/[0.04]">
-                              <button onClick={() => openShipping(g)}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-semibold text-orange-500/60 hover:text-orange-400 hover:bg-orange-900/10 transition-colors">
-                                <Package size={11} /> Spedisci
-                              </button>
-                              <div className="w-px bg-white/[0.03]" />
-                              <button onClick={() => openListingModal(g)}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-semibold text-purple-500/60 hover:text-purple-400 hover:bg-purple-900/10 transition-colors">
-                                <Store size={11} /> Annuncio
-                              </button>
-                            </div>
-                          )}
-                        </>
+                        )}
+                      </div>
+                      {/* Riga admin — solo per admin, molto discreta */}
+                      {!bulkMode && user!.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+                        <div className="flex border-t border-white/[0.04] px-3 py-1.5 gap-3">
+                          <button onClick={() => openShipping(g)} className="flex items-center gap-1 text-[10px] text-orange-500/50 hover:text-orange-400 transition-colors">
+                            <Package size={10} /> Spedisci
+                          </button>
+                          <button onClick={() => openListingModal(g)} className="flex items-center gap-1 text-[10px] text-purple-500/50 hover:text-purple-400 transition-colors">
+                            <Store size={10} /> Annuncio
+                          </button>
+                        </div>
                       )}
                     </div>
                   );
