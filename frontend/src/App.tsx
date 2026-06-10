@@ -230,7 +230,6 @@ export default function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
   const [priceEstimate, setPriceEstimate] = useState<any>(null); // rimasto per compatibilità reset, non più usato in UI
-  const [authResult, setAuthResult] = useState<any>(null);
   
   // ----- FOTO PRODOTTO -----
   const [productPhotos, setProductPhotos] = useState<string[]>([]);
@@ -1065,24 +1064,40 @@ export default function App() {
   // FOTO & IA — multi-photo (1-5)
   // ==========================================
   const applyAIScanResult = (data: any, cat: string) => {
-    setScanResult(data.scan);
-    setPriceEstimate(data.price);
-    setAuthResult(data.authenticity);
-    if (data.scan?.confidence !== 'LOW') {
-      if (cat === 'Pokemon' && data.scan?.model) { setPokeName(data.scan.model); }
-      else if (cat === 'Scarpe' && data.scan?.brand && data.scan?.model) { setBrand(data.scan.brand); setName(data.scan.model); }
-      else if (cat === 'Vestiti' && data.scan?.brand && data.scan?.model) { setBrand(data.scan.brand); setName(data.scan.model); }
-      else if (cat === 'Orologi' && data.scan?.brand && data.scan?.model) {
-        setWatchBrand(data.scan.brand); setWatchModel(data.scan.model);
-        if (data.scan.details?.caseSize) setWatchCase(data.scan.details.caseSize.toString());
-        if (data.scan.details?.material) setWatchMaterial(data.scan.details.material);
-      }
+    const scan = data.scan;
+    setScanResult(scan);
+    if (!scan) return;
+    const d = scan.details || {};
+
+    // Riempi i campi disponibili anche con confidence MEDIA/BASSA: meglio un brand
+    // pre-compilato da correggere che un form vuoto.
+    if (cat === 'Pokemon') {
+      if (scan.model) setPokeName(scan.model);
+    } else if (cat === 'Scarpe') {
+      if (scan.brand) setBrand(scan.brand);
+      if (scan.model) setName(scan.model);
+      // Taglia rilevata dall'etichetta/scatola
+      if (d.size) setSize(d.size.toString());
+    } else if (cat === 'Vestiti') {
+      if (scan.brand) setBrand(scan.brand);
+      if (scan.model) setName(scan.model);
+      if (d.size) setSize(d.size.toString());
+    } else if (cat === 'Orologi') {
+      if (scan.brand) setWatchBrand(scan.brand);
+      if (scan.model) setWatchModel(scan.model);
+      if (d.caseSize) setWatchCase(d.caseSize.toString().replace(/[^\d.]/g, ''));
+      if (d.bracelet) setWatchStrap(d.bracelet);
+      if (d.caseMaterial) setWatchMaterial(d.caseMaterial);
+    } else {
+      // Categoria personalizzata: riempi brand/model se presenti
+      if (scan.brand) setBrand(scan.brand);
+      if (scan.model) setName(scan.model);
     }
   };
 
   const runAIScan = async (imageBase64: string, cat: string) => {
     setIsScanning(true);
-    setScanResult(null); setPriceEstimate(null); setAuthResult(null);
+    setScanResult(null); setPriceEstimate(null);
     try {
       const { ok, data } = await apiCall('/api/ai/full-scan', {
         method: 'POST',
@@ -1114,7 +1129,6 @@ export default function App() {
       if (newPhotos.length > 0 && category) {
         setScanResult(null);
         setPriceEstimate(null);
-        setAuthResult(null);
         runAIScan(newPhotos[0], category);
       }
     }
@@ -1129,7 +1143,6 @@ export default function App() {
       // Reset risultati IA quando si rimuove una foto
       setScanResult(null);
       setPriceEstimate(null);
-      setAuthResult(null);
     }
   };
 
@@ -1239,7 +1252,6 @@ export default function App() {
             size: finalSize, condition: finalCondition, price: unitPrice,
             customShares: finalShares,
             photos: productPhotos.length > 0 ? productPhotos : undefined,
-            authenticityScore: authResult?.score,
             attributes: Object.keys(dynamicAttrs).length > 0 ? dynamicAttrs : undefined,
           }),
         });
@@ -1258,7 +1270,7 @@ export default function App() {
       setPokeName(''); setWatchBrand(''); setWatchModel('');
       setWatchCase(''); setWatchStrap(''); setWatchMaterial('');
       setIsSharedPurchase(false); setProductShares([]);
-      setScanResult(null); setPriceEstimate(null); setAuthResult(null);
+      setScanResult(null); setPriceEstimate(null);
       setProductPhotos([]);
       setDynamicAttrs({});
     } catch (err) {
@@ -1880,27 +1892,6 @@ export default function App() {
   // ========================================
   // RENDER PRINCIPALE - APP AUTENTICATA
   // ========================================
-  // -------- VERDICT BADGE (per legit check) --------
-  const verdictBadge = (verdict?: string, score?: number) => {
-    if (!verdict) return null;
-    const config: Record<string, { bg: string; text: string; label: string; icon: any }> = {
-      LIKELY_AUTHENTIC: { bg: 'bg-green-500/10 border-green-500/40', text: 'text-green-400', label: 'Probabile Originale', icon: CheckCircle },
-      SUSPICIOUS: { bg: 'bg-red-500/10 border-red-500/40', text: 'text-red-400', label: 'Sospetto', icon: AlertTriangle },
-      NEEDS_VERIFICATION: { bg: 'bg-yellow-500/10 border-yellow-500/40', text: 'text-yellow-400', label: 'Da Verificare', icon: AlertTriangle },
-    };
-    const c = config[verdict] || config.NEEDS_VERIFICATION;
-    const Icon = c.icon;
-    return (
-      <div className={`${c.bg} border rounded-xl p-3 flex items-center gap-3`}>
-        <Icon className={c.text} size={20} />
-        <div className="flex-1">
-          <p className={`text-sm font-bold ${c.text}`}>{c.label}</p>
-          {score !== undefined && <p className="text-xs text-gray-400">Score: {score}/100</p>}
-        </div>
-      </div>
-    );
-  };
-  
   return (
     <div className="min-h-screen bg-[#080808] text-white" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
 
@@ -3449,7 +3440,7 @@ export default function App() {
                   <span className="text-[10px] text-gray-500">{productPhotos.length}/5 foto</span>
                 </div>
                 <p className="text-[10px] text-gray-400 mb-3">
-                  Aggiungi 1–5 foto. La prima scatena l'IA (riconoscimento + prezzo + legit check). Puoi ri-scansionare qualsiasi foto.
+                  Aggiungi 1–5 foto. La prima scatena l'IA che riconosce brand e modello. Puoi ri-scansionare qualsiasi foto.
                 </p>
 
                 {/* Griglia foto */}
@@ -3501,23 +3492,6 @@ export default function App() {
                       {scanResult.brand && <p>{scanResult.brand} {scanResult.model}</p>}
                       {scanResult.warnings?.map((w: any, i: number) => <p key={i}>⚠️ {w}</p>)}
                     </div>
-                    {authResult && (
-                      <>
-                        {verdictBadge(authResult.verdict, authResult.score)}
-                        {authResult.redFlags?.length > 0 && (
-                          <div className="bg-red-500/5 rounded-lg p-2">
-                            <p className="text-red-400 font-bold mb-1">🚩 Red flags:</p>
-                            {authResult.redFlags.map((f: string, i: number) => <p key={i} className="text-gray-400">• {f}</p>)}
-                          </div>
-                        )}
-                        {authResult.greenFlags?.length > 0 && (
-                          <div className="bg-green-500/5 rounded-lg p-2">
-                            <p className="text-green-400 font-bold mb-1">✓ Positivi:</p>
-                            {authResult.greenFlags.map((f: string, i: number) => <p key={i} className="text-gray-400">• {f}</p>)}
-                          </div>
-                        )}
-                      </>
-                    )}
                   </div>
                 )}
               </div>

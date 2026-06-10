@@ -98,14 +98,6 @@ export interface PriceEstimate {
   cached: boolean;
 }
 
-export interface AuthenticityCheck {
-  score: number;
-  verdict: 'LIKELY_AUTHENTIC' | 'SUSPICIOUS' | 'NEEDS_VERIFICATION';
-  redFlags: string[];
-  greenFlags: string[];
-  disclaimer: string;
-}
-
 // ==========================================
 // SCAN PROMPTS
 // ==========================================
@@ -811,16 +803,21 @@ export async function scanProduct(imageBase64: string, category: string): Promis
   // Scarpe/Vestiti/Orologi usano Maverick con chain-of-thought (più preciso per identificazione visiva)
   const isPokemon = category === 'Pokemon';
 
-  const finalPrompt = isPokemon ? prompt : `ANALISI RAPIDA (max 2 righe): logo/brand visibile, colore principale, elemento più distintivo.
+  const finalPrompt = isPokemon ? prompt : `OSSERVA PRIMA, IDENTIFICA DOPO. Procedi in 3 passi mentali rapidi:
+1. LOGO/TESTO: quale logo o testo del brand è realmente visibile? (se non lo vedi chiaramente, NON indovinare il brand)
+2. DETTAGLI FISICI: colore esatto, materiale, forma/silhouette, elementi distintivi (suola, hardware, cuciture, quadrante)
+3. MATCH: solo se i dettagli combaciano con un modello SPECIFICO che conosci con certezza, indicalo. Altrimenti lascia il modello null e descrivi tutto nei campi descrittivi.
 
-IDENTIFICAZIONE JSON:
+REGOLA D'ORO: è MEGLIO restituire brand corretto + modello null, che inventare un modello sbagliato. Non allucinare referenze/colorway/codici che non vedi.
+
+Ora produci SOLO il JSON secondo questo schema:
 ${prompt}`;
 
   const finalModel = isPokemon
     ? 'meta-llama/llama-4-scout-17b-16e-instruct'  // Scout: più veloce per OCR carta
     : VISION_MODEL;                                  // Maverick: più preciso per oggetti
 
-  const maxTok = isPokemon ? 700 : category === 'Orologi' ? 1500 : category === 'Vestiti' ? 1500 : 1600;
+  const maxTok = isPokemon ? 700 : category === 'Orologi' ? 1700 : category === 'Vestiti' ? 1700 : 1800;
 
   let completion;
   try {
@@ -834,7 +831,7 @@ ${prompt}`;
           ],
         }],
         model: finalModel,
-        temperature: isPokemon ? 0.02 : 0.07,
+        temperature: isPokemon ? 0.02 : 0.04,  // più basso = meno allucinazioni di modelli inesistenti
         max_tokens: maxTok,
       })
     );
@@ -1238,298 +1235,6 @@ Se non conosci abbastanza il prodotto, metti confidence "LOW" e prezzi a 0.`;
   };
 }
 
-// ==========================================
-// LEGIT CHECK PROMPTS
-// ==========================================
-const LEGIT_CHECK_PROMPTS: Record<string, string> = {
-  Scarpe: `Sei il massimo autenticatore di calzature al mondo (certificato CheckCheck, Legit App, StockX Verification, con esperienza in case d'asta di lusso). Analizza OGNI dettaglio visibile per determinare autenticità con precisione assoluta.
-
-━━━ SNEAKER STREETWEAR ━━━
-
-NIKE / AIR JORDAN:
-- Swoosh: curvatura naturale e fluida, spessore uniforme dal tallone alla punta — fake hanno Swoosh troppo grande, storto o con angolo sbagliato
-- Air Jordan 1 Wings logo: proporzioni ali esatte, "NIKE AIR" sul tallone in font corretto
-- Jumpman: silhouette Jordan precisa — fake hanno testa troppo grande o gambe storte
-- Tag interno: font Nike preciso, codice articolo formato XXXXXX-XXX (6+3), "Made in Vietnam/Indonesia/China" — caratteri uniformi
-- Suola: pattern incisioni PROFONDE e uniformi, non superficiali — fake hanno pattern appiattito
-- Cuciture: regolari, distanza uniforme, filo non sfrangiato
-- Air bubble (se visibile): trasparente, uniforme
-
-ADIDAS / YEEZY:
-- Yeezy 350 V2 Primeknit: trama densa e uniforme, pattern geometrico preciso — fake hanno trama rada o irregolare
-- SPLY-350 (modelli con scritta): font e spaziatura precisi, color contrasto corretto
-- Boost: capsule (bolle) uniformi, dense, elastiche visivamente — fake hanno capsule irregolari o piatte
-- Yeezy 700: mesh strutturato con layer precisi — fake hanno mesh irregolare
-- Tre strisce Adidas: equidistanti e parallele PERFETTAMENTE
-
-NEW BALANCE:
-- "N" embroidered: ricamo uniforme, proporzioni corrette per il modello
-- Made in USA tag: specifico formato, font corretto
-- Suola: durometer corretto, flessibilità visiva
-
-━━━ SCARPE DI LUSSO — VERIFICA PROFESSIONALE ━━━
-
-LOUIS VUITTON (verifica più importante):
-- Monogramma Canvas: pattern LV SIMMETRICO — il motivo non deve mai essere tagliato storto alle cuciture, le LV devono essere IDENTICHE tra loro come dimensioni
-- Hardware (fibbie, zip, occhielli): logo LV inciso IN RILIEVO con profondità — sui fake il logo è STAMPATO piatto o superficiale. Hardware deve avere colore uniforme senza macchie o sbavature
-- Stamp interno: "LOUIS VUITTON PARIS MADE IN FRANCE" o "MADE IN ITALY" — font helvetica condensato PRECISO, spaziatura uniforme. Sui fake le lettere sono troppo sottili/spesse o storte
-- Suola: LV molded in gomma — lettere in rilievo uniformi, non sbavate
-- Cuciture: filo colore preciso (beige/marrone per canvas), distanza uniformissima — i fake hanno cuciture irregolari
-- Qualità materiale canvas: texture uniforme, colore profondo — i fake usano canvas più sottile/lucido
-
-GUCCI:
-- Doppia G: SPECULARE e perfettamente simmetrica — una G è il riflesso dell'altra. Su fake una G è più grande o le proporzioni sono diverse
-- Canvas GG: pattern uniforme senza variazioni di tono o dimensione — fake hanno GG di dimensioni diverse
-- Strisce Web (rosse/verdi): PARALLELE e larghezza uniforme — fake hanno strisce storte o di larghezza variabile
-- Cuciture: filo a contrasto regolare, mai sfrangiato
-- Insole: font GUCCI preciso, logo Horsebit se presente
-
-BALENCIAGA:
-- Triple S — Logo "BALENCIAGA" sul tallone: font Balenciaga SANS-SERIF specifico, lettere equidistanti e perfettamente allineate — fake hanno font sbagliato o pixel visibili
-- Tre strati suola: DISTINTI con linee di separazione nette, materiali diversi visibili — fake fondono i layer
-- Upper: ogni sezione ha materiale e texture distinti — mesh, suede, pelle ben separati
-- 3XL — logo: font minuscolo preciso sul tallone
-- Speed Trainer: elastan uniforme, nessuna grinza irregolare
-
-DIOR:
-- Canvas Oblique: CD obliquo UNIFORME — dimensioni identiche in tutto il canvas, mai sbavato
-- "DIOR" sul tallone o laterale: font serif elegante preciso
-- B23: costruzione pulita, cuciture impeccabili
-
-COMMON PROJECTS:
-- Numero dorato sul tallone: CODICE IN ORO REALE — formato preciso [colore]-[UK size]-[anno] (4 cifre + 2 + 2), stampigliatura profonda uniforme — fake hanno stampa sbiadita o formato sbagliato
-- Pelle: qualità pieno fiore liscia, nessuna irregolarità
-- Suola Margom: bianca uniforme, no altri loghi
-
-GOLDEN GOOSE:
-- Stella: applicata (non stampata), cucita o incollata con qualità — sui fake la stella è piatta o stampata
-- Invecchiamento: naturale e artistico — non eccessivo o regolare (paradossalmente i fake TROPPO consumati sono fake)
-- Suola: vulcanizzata di qualità
-
-MAISON MARGIELA REPLICA:
-- Strisce court sulla suola: precisione e uniformità colore
-- Insole: numero di linea MM (es: MM6) in font Maison Margiela preciso
-
-VALENTINO ROCKSTUD:
-- Borchie piramidali: metallo SOLIDO, base quadrata uniforme, non traballanti — su fake le borchie sono cave e leggere
-- Pelle: qualità vitello morbida e uniforme
-
-LANVIN CURB:
-- Suola ondulata: flessibile e di qualità, ondulazioni regolari
-- Logo LANVIN: font preciso sul tallone
-
-Rispondi SOLO in JSON valido (senza markdown):
-{
-  "score": numero 0-100 (100=autentico certo, 50=non verificabile da foto, 0=fake evidente),
-  "verdict": "LIKELY_AUTHENTIC" | "SUSPICIOUS" | "NEEDS_VERIFICATION",
-  "redFlags": ["problemi SPECIFICI e DETTAGLIATI rilevati — es: 'Logo LV sul hardware piatto invece che in rilievo', 'Font BALENCIAGA con spaziatura irregolare'"],
-  "greenFlags": ["segnali SPECIFICI e DETTAGLIATI di autenticità — es: 'Pattern monogramma LV simmetrico e uniforme', 'Numero dorato Common Projects in formato corretto'"]
-}
-Foto di bassa qualità o dettagli non visibili → score 50, verdict "NEEDS_VERIFICATION". Sii SPECIFICO nei flag, non generico.`,
-
-  Vestiti: `Sei un autenticatore esperto di streetwear e lusso (livello professionista). Analizza questa foto per autenticità.
-
-Supreme:
-- Box Logo: font Futura Heavy Oblique PERFETTO — proporzioni H/W del box precise, lettere equidistanti, colore piatto senza variazioni, cuciture hood precise, qualità cotone pesante (non si vede attraverso)
-- Tag interno: font Supreme preciso, taglia in formato S/M/L/XL/XXL, country of manufacture corretto
-
-Stone Island:
-- Patch bussola: RICAMATA (non stampata) — fili singoli visibili, colori vividi e precisi, badge rimovibile con ago che non lascia segni
-- Badge internal lining: font Stone Island preciso
-
-Off-White:
-- Stampa testo: bordi NETTI senza sfalcio o pixel, font Helvetica preciso
-- Zip ties: testo leggibile e corretto, materiale plastica rigida
-- Virgolette " ": dimensioni e posizione precise
-
-Moncler:
-- Patch aquila: ricamo DETTAGLIATO (singoli fili visibili), colori precisi, non stampata
-- Tessuto: nylon lucido di qualità, quilting uniforme
-- Zip YKK: incisione YKK sulla zip visibile
-
-BAPE:
-- Camouflage: pattern SIMMETRICO e dettagliato, colori vividi
-- Logo gorilla: proporzionato, non deformato
-
-Rispondi SOLO in JSON valido (senza markdown):
-{
-  "score": numero 0-100,
-  "verdict": "LIKELY_AUTHENTIC" | "SUSPICIOUS" | "NEEDS_VERIFICATION",
-  "redFlags": ["problemi specifici rilevati"],
-  "greenFlags": ["segnali positivi di autenticità"]
-}`,
-
-  Orologi: `Sei un orologiaio esperto e autenticatore certificato di orologi di lusso. Analizza questa foto.
-
-ROLEX:
-- Corona a 5 punte: incisa sul rehaut (bordo interno quadrante) — precisa e in rilievo, mai piatta
-- Fondello corona di carica: scritta ROLEX in miniatura
-- Ciclope (lente data): ingrandimento 2.5x preciso, bordi netti
-- Lancette: Chromalight/Luminova verde brillante, forma perfetta (foglia, Mercedes, Baton secondo il modello)
-- Testo quadrante: font Rolex helvetica senza sbavature, "Swiss Made" in basso
-- Bracciale: maglie impeccabili, clasp Oysterclasp/Glidelock con logo inciso
-- Rehaut: scritta ROLEX OYSTER ripetuta in cerchio (modelli recenti dal 2002)
-
-AUDEMARS PIGUET Royal Oak:
-- ESATTAMENTE 8 viti esagonali sulla lunetta ottagonale — allineate perfettamente
-- Quadrante Grande Tapisserie: pattern mattoncini UNIFORME e preciso
-- Bracciale integrato: giunzioni cassa-bracciale impeccabili
-- Caseback AP: AP Coat of Arms (scudo con chiavi)
-
-PATEK PHILIPPE:
-- Logo Calatrava (croce con ansa): proporzioni perfette, incisione precisa
-- Scritta GENEVE: font preciso
-- Finitura perlage/côtes de Genève: impeccabile anche su caseback
-- Qualità generale: la migliore al mondo
-
-OMEGA:
-- Logo Ω: proporzionato, base dritta, simmetrico
-- Quadrante sunburst: riflessi radiali UNIFORMI (falsi hanno riflessi irregolari)
-- Co-Axial escapement text sul quadrante: font preciso
-
-HAMILTON:
-- Logo "H" ornamentale in alto sul quadrante: font preciso, simmetrico — sui fake è pixelato o storto
-- Khaki Field: indici triangolari alle 12, ore applicate precise, quadrante matte di qualità
-- Ventura: cassa triangolare asimmetrica — linee geometriche PRECISE, nessun angolo irregolare
-- "HAMILTON" in basso sul quadrante: font Swiss precisissimo
-- Caseback: "HAMILTON" inciso + "ETA" o "H-10" o ref movement
-- Swatch Group Made in Switzerland: "SWISS MADE" in basso obbligatorio sui modelli automatici
-
-TAG HEUER:
-- Monaco: cassa quadrata con angoli precisi e smussature regolari, subdial piccoli secondi in basso destra
-- Carrera: indici applicati precisi, font cronografo su subdial uniformi
-- Logo TAG Heuer: carattere sans-serif specifico, non pixelato
-- Cinturino: qualità acciaio o pelle impeccabile, fibbia con logo inciso
-
-BREITLING:
-- Logo ala con B: simmetria delle ali perfetta
-- Navitimer: regolo scorrevole con scala PRECISA — i fake hanno scale stampate male
-- Quadrante: testo piccolo leggibile, numero marchio certificazione COSC visibile
-
-TISSOT / LONGINES / MIDO (Swatch Group):
-- "SWISS MADE" obbligatorio
-- Logo preciso (croce svizzera Tissot, L calligrafico Longines, M stilizzato Mido)
-- Longines: font "Longines" in corsivo storico preciso — molto imitato sui marketplace
-
-TUDOR:
-- Corona fungo: caratteristica — deve essere prominente e precisa
-- Logo scudo Tudor: forme geometriche precise
-- Bracciale: maglie rifinite con qualità Rolex-adjacent
-- "TUDOR" sul quadrante: font identico Rolex ma con nome diverso
-
-ZENITH:
-- El Primero: lancetta cronografo fa 5 giri al minuto (non 6 come altri). Quadrante tri-colore (nero/argento/grigio) con 3 subdial colorati
-
-PANERAI:
-- Ponte corona: deve avere la chiusura a "8" PRECISA — è il marker più identificativo
-- "OFFICINE PANERAI" in rilievo sul fondello in acciaio
-- "LUMINOR MARINA" o modello inciso sul fondello
-- Quadrante a sandwich: due layer visibili ai bordi (backlight + superficie)
-
-CASIO G-SHOCK:
-- CasiOak (GA-2100): cassa ottagonale con angoli smussati precisi
-- "G-SHOCK" in rilievo sulla lunetta in resina
-- Pulsanti laterali funzionanti, non decorativi
-- Retroilluminazione interna visibile
-
-GENERAL WATCHES — CRITERI UNIVERSALI (applicabili a QUALSIASI orologio):
-- TESTO QUADRANTE: font uniformi, nessuna sbavatura o pixel visibile, allineamento centrato
-- LANCETTE: finitura uniforme, luminova (se presente) applicata con precisione senza sbordature
-- INDICI: tutti allo stesso livello, fissati solidamente, stessa dimensione
-- CORONA: logo del brand inciso con profondità (non stampato superficialmente), resistenza regolare
-- CASEBACK: incisioni profonde e nette (seriale, modello, movimento)
-- CINTURINO/BRACCIALE: qualità materiale congruente con fascia prezzo, fibbia con logo
-- SWEEP SECONDI: automatico = fluido continuo; quarzo = ticchettio regolare
-- Se dichiarato automatico ma fa ticchettio = SOSPETTO
-- Peso: un orologio di qualità si sente pesante in mano — i fake sono spesso troppo leggeri
-- Per orologi NON nell'elenco sopra: valuta in base ai criteri universali e assegna NEEDS_VERIFICATION se non puoi verificare specificamente
-
-Rispondi SOLO in JSON valido (senza markdown):
-{
-  "score": numero 0-100,
-  "verdict": "LIKELY_AUTHENTIC" | "SUSPICIOUS" | "NEEDS_VERIFICATION",
-  "redFlags": ["problemi specifici rilevati con dettagli tecnici precisi"],
-  "greenFlags": ["segnali positivi di autenticità con dettagli tecnici precisi"]
-}`,
-};
-
-// ==========================================
-// LEGIT CHECK
-// ==========================================
-export async function checkAuthenticity(imageBase64: string, category: string): Promise<AuthenticityCheck> {
-  if (!['Scarpe', 'Vestiti', 'Orologi'].includes(category)) {
-    return { score: 50, verdict: 'NEEDS_VERIFICATION', redFlags: [], greenFlags: [], disclaimer: 'Legit check non supportato per questa categoria.' };
-  }
-
-  const prompt = LEGIT_CHECK_PROMPTS[category];
-  let completion;
-  try {
-    completion = await groq.chat.completions.create({
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'text', text: prompt },
-          { type: 'image_url', image_url: { url: imageBase64 } },
-        ],
-      }],
-      model: VISION_MODEL,
-      temperature: 0.1,
-      max_tokens: 900,
-    });
-  } catch (err: any) {
-    // Fallback Scout su rate limit o modello non disponibile
-    if (err?.status === 429 || err?.status === 400 || err?.status === 404 || err?.status === 503) {
-      try {
-        const fallback = await groq.chat.completions.create({
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: imageBase64 } },
-            ],
-          }],
-          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-          temperature: 0.1,
-          max_tokens: 900,
-        });
-        const raw2 = fallback.choices[0]?.message?.content?.trim() || '';
-        const p2 = safeParseJSON(raw2);
-        const d = '⚠️ Valutazione automatica basata sull\'immagine. NON sostituisce un autenticatore professionista.';
-        if (!p2) return { score: 50, verdict: 'NEEDS_VERIFICATION', redFlags: [], greenFlags: [], disclaimer: d };
-        return {
-          score: Math.max(0, Math.min(100, p2.score || 50)),
-          verdict: p2.verdict || 'NEEDS_VERIFICATION',
-          redFlags: Array.isArray(p2.redFlags) ? p2.redFlags.slice(0, 10) : [],
-          greenFlags: Array.isArray(p2.greenFlags) ? p2.greenFlags.slice(0, 10) : [],
-          disclaimer: d,
-        };
-      } catch {
-        /* fall through */
-      }
-    }
-    if (err?.status === 429) {
-      return { score: 50, verdict: 'NEEDS_VERIFICATION', redFlags: [], greenFlags: [], disclaimer: 'Limite richieste IA raggiunto. Attendi qualche minuto e riprova.' };
-    }
-    logger.error('Errore Groq legit check', { err });
-    return { score: 50, verdict: 'NEEDS_VERIFICATION', redFlags: [], greenFlags: [], disclaimer: 'Servizio legit check non disponibile.' };
-  }
-
-  const raw = completion.choices[0]?.message?.content?.trim() || '';
-  const parsed = safeParseJSON(raw);
-  const disclaimer = '⚠️ Valutazione automatica basata sull\'immagine. NON sostituisce un autenticatore professionista. Per acquisti importanti usa Legit App, CheckCheck o un esperto.';
-
-  if (!parsed) {
-    return { score: 50, verdict: 'NEEDS_VERIFICATION', redFlags: [], greenFlags: [], disclaimer: 'IA non ha potuto valutare. ' + disclaimer };
-  }
-
-  return {
-    score: Math.max(0, Math.min(100, parsed.score || 50)),
-    verdict: parsed.verdict || 'NEEDS_VERIFICATION',
-    redFlags: Array.isArray(parsed.redFlags) ? parsed.redFlags.slice(0, 10) : [],
-    greenFlags: Array.isArray(parsed.greenFlags) ? parsed.greenFlags.slice(0, 10) : [],
-    disclaimer,
-  };
-}
 
 // ==========================================
 // GENERA CONFIG CATEGORIA (per reparti personalizzati)
@@ -1548,7 +1253,6 @@ export interface CategoryConfig {
   }>;
   scanPrompt: string;
   conditionOptions: string[];
-  legitPrompt?: string;
 }
 
 export async function generateCategoryConfig(categoryName: string): Promise<CategoryConfig | null> {
@@ -1570,7 +1274,6 @@ ISTRUZIONI:
 2. Il scanPrompt deve essere un prompt completo per fare AI-scan di un prodotto di quella categoria — includi: come riconoscere il brand, come leggere il modello, come valutare condizioni, specifiche tecniche da estrarre. Deve essere lungo e dettagliato (almeno 300 parole)
 3. Includi SEMPRE brand come primo campo required
 4. Le conditionOptions devono essere specifiche per la categoria
-5. Il legitPrompt deve spiegare come verificare autenticità per quella categoria
 
 Rispondi SOLO in JSON valido (senza markdown, nessun testo extra):
 {
@@ -1583,8 +1286,7 @@ Rispondi SOLO in JSON valido (senza markdown, nessun testo extra):
     // ... altri campi specifici
   ],
   "scanPrompt": "prompt completo per scan IA di questa categoria...",
-  "conditionOptions": ["Opzione1", "Opzione2", "Opzione3", "Opzione4", "Opzione5"],
-  "legitPrompt": "come verificare autenticità per questa categoria..."
+  "conditionOptions": ["Opzione1", "Opzione2", "Opzione3", "Opzione4", "Opzione5"]
 }`;
 
   try {

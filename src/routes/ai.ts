@@ -1,11 +1,11 @@
 // src/routes/ai.ts
-// Endpoint IA: scan, stima prezzi, legit check.
+// Endpoint IA: scan prodotto, generatore annunci.
 
 import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimit';
 import { validate, aiScanSchema, priceEstimateSchema } from '../middleware/validate';
-import { scanProduct, estimateMarketPrice, checkAuthenticity, generateListing, ListingPlatform } from '../services/ai.service';
+import { scanProduct, estimateMarketPrice, generateListing, ListingPlatform } from '../services/ai.service';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import { audit } from '../services/audit.service';
@@ -50,52 +50,22 @@ router.post('/price', validate(priceEstimateSchema), async (req: AuthRequest, re
 });
 
 // ==========================================
-// POST /api/ai/authenticity - legit check
-// ==========================================
-router.post('/authenticity', validate(aiScanSchema), async (req: AuthRequest, res: Response) => {
-  try {
-    const { imageBase64, category } = req.body;
-    const result = await checkAuthenticity(imageBase64, category);
-    
-    await audit({ 
-      action: 'AI_SCAN', userId: req.user!.userId, req,
-      metadata: { type: 'legit_check', category, score: result.score, verdict: result.verdict }
-    });
-    
-    res.json(result);
-  } catch (err: any) {
-    logger.error('Errore /ai/authenticity', { err: err.message });
-    res.status(500).json({ error: 'Errore legit check' });
-  }
-});
-
-// ==========================================
-// POST /api/ai/full-scan - tutto insieme
+// POST /api/ai/full-scan - scan riconoscimento prodotto
 // ==========================================
 router.post('/full-scan', validate(aiScanSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { imageBase64, category } = req.body;
-    
-    // Step 1: riconoscimento
     const scan = await scanProduct(imageBase64, category);
-    
-    // Step 2: solo legit check (stima prezzo rimossa — inaccurata)
-    let authenticity: any = null;
-
-    if (scan.brand && scan.model && scan.confidence !== 'LOW' && category !== 'Pokemon') {
-      const authResult = await checkAuthenticity(imageBase64, category).catch(() => null);
-      authenticity = authResult;
-    }
 
     await audit({
       action: 'AI_SCAN', userId: req.user!.userId, req,
       metadata: { type: 'full_scan', category, confidence: scan.confidence }
     });
 
-    res.json({ scan, price: null, authenticity });
+    res.json({ scan, price: null, authenticity: null });
   } catch (err: any) {
     logger.error('Errore /ai/full-scan', { err: err.message });
-    res.status(500).json({ error: err.message || 'Errore scansione completa' });
+    res.status(500).json({ error: err.message || 'Errore scansione' });
   }
 });
 
