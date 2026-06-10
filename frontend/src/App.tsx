@@ -293,7 +293,7 @@ export default function App() {
   const [staleProducts, setStaleProducts] = useState<any[]>([]);
 
   // ----- SORT & FILTER MAGAZZINO -----
-  const [sortField, setSortField] = useState<'date' | 'price' | 'name' | 'margin'>('date');
+  const [sortField, setSortField] = useState<'date' | 'price' | 'name'>('date');
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
   const [filterCondition, setFilterCondition] = useState('all');
   const [filterPriceMin, setFilterPriceMin] = useState('');
@@ -1918,7 +1918,7 @@ export default function App() {
 
           <div className="flex items-center gap-1.5">
             {/* Pulsante Aggiungi (solo desktop) */}
-            <button onClick={() => setAddPickerOpen(true)}
+            <button onClick={() => setIsFormOpen(true)}
               className="hidden lg:flex items-center gap-2 bg-[#ff4d00] hover:bg-[#e84400] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
               <Plus size={15} /> Aggiungi
             </button>
@@ -2289,7 +2289,7 @@ export default function App() {
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1">
                   <ArrowUpDown size={12} /> Ordina:
                 </span>
-                {(['date','price','name','margin'] as const).map(f => (
+                {(['date','price','name'] as const).map(f => (
                   <button key={f} onClick={() => {
                     if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
                     else { setSortField(f); setSortDir('desc'); }
@@ -2437,47 +2437,48 @@ export default function App() {
                       )}
                       {/* Action row - nascosta in bulk mode */}
                       {!bulkMode && (
-                        <div className="flex border-t border-white/[0.07]">
-                          <button onClick={() => openEditModal(g)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
-                            <Edit size={13} /> <span className="hidden sm:inline">Modifica</span>
-                          </button>
-                          <div className="w-px bg-white/5" />
+                        <>
+                          {/* Riga principale — 4 azioni essenziali */}
+                          <div className="flex border-t border-white/[0.07]">
+                            <button onClick={() => openEditModal(g)}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                              <Edit size={13} /> Modifica
+                            </button>
+                            <div className="w-px bg-white/5" />
+                            <button onClick={() => { setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
+                              className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors ${
+                                g.notes ? 'text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'
+                              }`}>
+                              <StickyNote size={13} /> Note
+                            </button>
+                            <div className="w-px bg-white/5" />
+                            <button onClick={() => openTrackingModal(g)}
+                              className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors ${
+                                g.trackingCode ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20' : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'
+                              }`}>
+                              <Truck size={13} /> Track
+                            </button>
+                            <div className="w-px bg-white/5" />
+                            <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)}
+                              className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold text-green-400 hover:text-green-300 hover:bg-green-900/20 transition-colors">
+                              <DollarSign size={15} /> Vendi
+                            </button>
+                          </div>
+                          {/* Riga admin — Spedisci + Annuncio (solo noreply.hq.app@gmail.com) */}
                           {user!.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
-                            <>
-                              <div className="w-px bg-white/5" />
+                            <div className="flex border-t border-white/[0.04]">
                               <button onClick={() => openShipping(g)}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-orange-400 hover:text-orange-300 hover:bg-orange-900/20 transition-colors">
-                                <Package size={13} />
-                                <span className="hidden sm:inline">Spedisci</span>
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-semibold text-orange-500/60 hover:text-orange-400 hover:bg-orange-900/10 transition-colors">
+                                <Package size={11} /> Spedisci
                               </button>
-                            </>
+                              <div className="w-px bg-white/[0.03]" />
+                              <button onClick={() => openListingModal(g)}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-semibold text-purple-500/60 hover:text-purple-400 hover:bg-purple-900/10 transition-colors">
+                                <Store size={11} /> Annuncio
+                              </button>
+                            </div>
                           )}
-                          <div className="w-px bg-white/5" />
-                          <button onClick={() => { setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors ${
-                              g.notes ? 'text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'
-                            }`}>
-                            <StickyNote size={13} /> <span className="hidden sm:inline">Note</span>
-                          </button>
-                          <div className="w-px bg-white/5" />
-                          <button onClick={() => openTrackingModal(g)}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors ${
-                              g.trackingCode ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20' : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'
-                            }`}>
-                            <Truck size={13} /> <span className="hidden sm:inline">Track</span>
-                          </button>
-                          <div className="w-px bg-white/5" />
-                          <button onClick={() => openListingModal(g)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-purple-400 hover:text-purple-300 hover:bg-purple-900/20 transition-colors">
-                            <Store size={13} /> <span className="hidden sm:inline">Annuncio</span>
-                          </button>
-                          <div className="w-px bg-white/5" />
-                          <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-green-400 hover:text-green-300 hover:bg-green-900/20 transition-colors">
-                            <DollarSign size={13} /> <span className="hidden sm:inline">Vendi</span>
-                          </button>
-                        </div>
+                        </>
                       )}
                     </div>
                   );
@@ -3407,7 +3408,7 @@ export default function App() {
       
       {/* ========== FAB MOBILE ========== */}
       <button
-        onClick={() => setAddPickerOpen(true)}
+        onClick={() => setIsFormOpen(true)}
         className="lg:hidden fixed z-40 bg-[#ff4d00] rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-all"
         style={{ width: 54, height: 54, bottom: 'calc(5.5rem + env(safe-area-inset-bottom))', right: 16 }}
       >
@@ -3415,36 +3416,6 @@ export default function App() {
       </button>
 
       {/* ========== ADD TYPE PICKER ========== */}
-      {addPickerOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end" onClick={() => setAddPickerOpen(false)}>
-          <div className="w-full bg-[#0f0f0f] border-t border-white/[0.07] rounded-t-3xl p-5 pb-safe" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-center mb-4"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-            <p className="text-[10px] font-semibold text-gray-500 tracking-[0.12em] uppercase mb-3">Cosa vuoi aggiungere?</p>
-            <div className="space-y-2">
-              <button onClick={() => { setAddPickerOpen(false); setIsFormOpen(true); }}
-                className="w-full flex items-center gap-4 p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] rounded-2xl transition-colors text-left">
-                <div className="w-10 h-10 rounded-xl bg-[#ff4d00]/15 flex items-center justify-center shrink-0">
-                  <Plus size={20} className="text-[#ff4d00]" />
-                </div>
-                <div>
-                  <p className="font-semibold text-sm">Prodotto Singolo</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">Aggiungi un articolo con prezzo, foto e IA scan</p>
-                </div>
-              </button>
-              <button onClick={() => { setAddPickerOpen(false); setLotCategory(userCategories[0] || ''); setLotOpen(true); }}
-                className="w-full flex items-center gap-4 p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] rounded-2xl transition-colors text-left">
-                <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center shrink-0">
-                  <Layers size={20} className="text-gray-300" />
-                </div>
-                <div>
-                  <p className="font-semibold text-sm">Lotto</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">Acquisto multiplo — divide il costo su N articoli</p>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ========== MOBILE BOTTOM NAV — minimal iOS style ========== */}
       <nav
@@ -3499,7 +3470,14 @@ export default function App() {
               <div className="w-10 h-1 bg-gray-700 rounded-full" />
             </div>
             <div className="sticky top-0 bg-[#0f0f0f] border-b border-white/[0.05] p-5 flex items-center justify-between z-10">
-              <h2 className="text-xl font-semibold">Aggiungi Prodotto</h2>
+              <div>
+                <h2 className="text-xl font-semibold">Aggiungi Prodotto</h2>
+                <button type="button"
+                  onClick={() => { setIsFormOpen(false); setLotCategory(userCategories[0] || ''); setLotOpen(true); }}
+                  className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors mt-0.5 flex items-center gap-1">
+                  <Layers size={10} /> Stai comprando un lotto? Clicca qui
+                </button>
+              </div>
               <button onClick={() => setIsFormOpen(false)}
                 className="p-2 hover:bg-white/5 rounded-lg transition-colors">
                 <X size={20} />
