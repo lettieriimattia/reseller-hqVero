@@ -2319,96 +2319,134 @@ export default function App() {
                     <p className="text-gray-500 font-bold">Nessun prodotto in stock</p>
                   </div>
                 ) : (
-                  groupedInStockArray.map((g: any) => {
+                  <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
+                  {groupedInStockArray.map((g: any) => {
                     const groupKey = g.ids.join(',');
                     const isSelected = selectedGroupKeys.has(groupKey);
-                    return (
-                    <div key={groupKey}
-                      onClick={bulkMode ? () => toggleGroupSelection(groupKey) : undefined}
-                      className={`bg-[#0f0f0f] border rounded-2xl overflow-hidden transition-all relative ${
-                        bulkMode ? 'cursor-pointer select-none' : ''
-                      } ${isSelected ? 'border-[#ff4d00] shadow-[0_0_16px_rgba(255,77,0,0.15)]' : 'border-white/5 hover:border-white/10'}`}>
-                      {/* Checkbox bulk */}
-                      {bulkMode && (
-                        <div className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                          isSelected ? 'bg-[#ff4d00] border-[#ff4d00]' : 'border-gray-600 bg-[#0a0a0a]'
-                        }`}>
-                          {isSelected && <CheckCircle size={14} className="text-white" />}
-                        </div>
-                      )}
-                      {/* Card compatta — tutto inline */}
-                      <div className="flex items-center gap-3 px-3 py-3">
-                        {/* Foto o emoji */}
-                        {(() => {
-                          try {
-                            const photos = g.photos ? JSON.parse(g.photos) : [];
-                            if (photos.length > 0) return (
-                              <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-white/[0.07]">
-                                <img src={photos[0]} alt="" className="w-full h-full object-cover" />
-                              </div>
-                            );
-                          } catch {}
-                          return <span className="text-2xl shrink-0 w-11 text-center">{getCategoryIcon(g.category)}</span>;
-                        })()}
+                    const isAdmin = user!.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+                    let photoUrl: string | null = null;
+                    try { const ph = g.photos ? JSON.parse(g.photos) : []; if (ph.length > 0) photoUrl = ph[0]; } catch {}
+                    const days = g.oldestDate || g.createdAt ? Math.floor((Date.now() - new Date(g.oldestDate || g.createdAt).getTime()) / 86400000) : null;
+                    const shares = getShares(g);
+                    const daysBadge = days !== null ? (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${days > 30 ? 'bg-red-500/20 text-red-400' : days > 14 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/5 text-gray-600'}`}>{days}g</span>
+                    ) : null;
+                    const trackBadge = g.trackingStatus ? (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500/20 text-blue-400' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500/20 text-green-400' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500/20 text-red-400' : 'bg-white/5 text-gray-500'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? 'Transito' : g.trackingStatus === 'DELIVERED' ? 'Consegnato' : g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' : 'Track'}</span>
+                    ) : null;
 
-                        {/* Info prodotto */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-sm truncate">{g.brand} {g.name}</span>
-                            {g.quantity > 1 && <span className="text-[10px] bg-[#ff4d00]/20 text-white px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
-                            {(() => {
-                              const days = g.oldestDate || g.createdAt ? Math.floor((Date.now() - new Date(g.oldestDate || g.createdAt).getTime()) / 86400000) : null;
-                              if (!days) return null;
-                              return <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${days > 30 ? 'bg-red-500/20 text-red-400' : days > 14 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/5 text-gray-600'}`}>{days}g</span>;
-                            })()}
-                            {g.trackingStatus && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5 shrink-0 ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500/20 text-blue-400' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500/20 text-green-400' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500/20 text-red-400' : 'bg-white/5 text-gray-500'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? 'Transito' : g.trackingStatus === 'DELIVERED' ? 'Consegnato' : g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' : 'Track'}</span>}
+                    return (
+                    <React.Fragment key={groupKey}>
+
+                      {/* ===== MOBILE/TABLET: card a riga ===== */}
+                      <div
+                        onClick={bulkMode ? () => toggleGroupSelection(groupKey) : undefined}
+                        className={`lg:hidden bg-[#0f0f0f] border rounded-2xl overflow-hidden transition-all relative ${
+                          bulkMode ? 'cursor-pointer select-none' : ''
+                        } ${isSelected ? 'border-[#ff4d00] shadow-[0_0_16px_rgba(255,77,0,0.15)]' : 'border-white/5'}`}>
+                        {bulkMode && (
+                          <div className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#ff4d00] border-[#ff4d00]' : 'border-gray-600 bg-[#0a0a0a]'}`}>
+                            {isSelected && <CheckCircle size={14} className="text-white" />}
                           </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[11px] text-gray-500">{g.size} · {g.condition} · <span className="text-gray-300 font-semibold">{g.purchasePrice.toFixed(0)}€</span></span>
-                            {(() => { const s = getShares(g); return s?.length ? <span className="text-[10px] text-blue-400/70">{s.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</span> : null; })()}
+                        )}
+                        <div className="flex items-center gap-3 p-3.5">
+                          {photoUrl
+                            ? <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-white/[0.07]"><img src={photoUrl} alt="" className="w-full h-full object-cover" /></div>
+                            : <span className="text-3xl shrink-0 w-14 text-center">{getCategoryIcon(g.category)}</span>}
+                          <div className={`flex-1 min-w-0 ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
+                            onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-sm truncate">{g.brand} {g.name}</span>
+                              {g.quantity > 1 && <span className="text-[10px] bg-[#ff4d00]/20 text-white px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
+                              {daysBadge}{trackBadge}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">{g.size} · {g.condition} · <span className="text-gray-300 font-semibold">{g.purchasePrice.toFixed(0)}€</span></p>
+                            {shares?.length > 0 && <p className="text-[10px] text-blue-400/70 mt-0.5 truncate">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
+                            {!bulkMode && (
+                              <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
+                                className={`mt-1 text-[11px] flex items-center gap-1 ${g.notes ? 'text-gray-500' : 'text-gray-700'}`}>
+                                <StickyNote size={10} /><span className="truncate max-w-[180px]">{g.notes || 'Aggiungi nota…'}</span>
+                              </button>
+                            )}
                           </div>
-                          {/* Note inline — click per modificare */}
                           {!bulkMode && (
-                            <button onClick={() => { setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
-                              className={`mt-1 text-[11px] flex items-center gap-1 transition-colors ${g.notes ? 'text-gray-500 hover:text-gray-300' : 'text-gray-700 hover:text-gray-500'}`}>
-                              <StickyNote size={10} />
-                              <span className="truncate max-w-[180px]">{g.notes || 'Aggiungi nota…'}</span>
-                            </button>
+                            <div className="flex flex-col gap-1 shrink-0">
+                              <button onClick={() => openTrackingModal(g)} className="px-3 py-1.5 bg-white/[0.05] text-gray-400 rounded-lg text-xs font-bold">Track</button>
+                              {isAdmin
+                                ? <button onClick={() => openListingModal(g)} className="px-3 py-1.5 bg-purple-500/15 text-purple-400 rounded-lg text-xs font-bold">Annuncio</button>
+                                : <button onClick={() => openEditModal(g)} className="px-3 py-1.5 bg-white/[0.05] text-gray-400 rounded-lg text-xs font-bold">Modifica</button>}
+                              {!isAdmin && <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="px-3 py-1.5 bg-green-500/15 text-green-400 rounded-lg text-xs font-bold">Vendi</button>}
+                            </div>
                           )}
                         </div>
-
-                        {/* Azioni destra — 3 bottoni impilati */}
-                        {!bulkMode && (
-                          <div className="flex flex-col gap-1 shrink-0">
-                            <button onClick={() => openTrackingModal(g)}
-                              className="px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.09] text-gray-400 hover:text-white rounded-lg text-xs font-bold transition-colors">
-                              Track
-                            </button>
-                            <button onClick={() => openEditModal(g)}
-                              className="px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.09] text-gray-400 hover:text-white rounded-lg text-xs font-bold transition-colors">
-                              Modifica
-                            </button>
-                            <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)}
-                              className="px-3 py-1.5 bg-green-500/15 hover:bg-green-500/25 text-green-400 hover:text-green-300 rounded-lg text-xs font-bold transition-colors">
-                              Vendi
-                            </button>
+                        {!bulkMode && isAdmin && (
+                          <div className="flex border-t border-white/[0.06]">
+                            <button onClick={() => openShipping(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-orange-400 hover:bg-orange-900/15"><Package size={13} /> Spedisci</button>
+                            <div className="w-px bg-white/[0.06]" />
+                            <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> Vendi</button>
                           </div>
                         )}
                       </div>
-                      {/* Riga admin — solo per admin, molto discreta */}
-                      {!bulkMode && user!.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
-                        <div className="flex border-t border-white/[0.04] px-3 py-1.5 gap-3">
-                          <button onClick={() => openShipping(g)} className="flex items-center gap-1 text-[10px] text-orange-500/50 hover:text-orange-400 transition-colors">
-                            <Package size={10} /> Spedisci
-                          </button>
-                          <button onClick={() => openListingModal(g)} className="flex items-center gap-1 text-[10px] text-purple-500/50 hover:text-purple-400 transition-colors">
-                            <Store size={10} /> Annuncio
-                          </button>
+
+                      {/* ===== DESKTOP: card a cubetto ===== */}
+                      <div
+                        onClick={bulkMode ? () => toggleGroupSelection(groupKey) : undefined}
+                        className={`hidden lg:flex flex-col bg-[#0f0f0f] border rounded-2xl overflow-hidden transition-all relative ${
+                          bulkMode ? 'cursor-pointer select-none' : ''
+                        } ${isSelected ? 'border-[#ff4d00] shadow-[0_0_16px_rgba(255,77,0,0.15)]' : 'border-white/5 hover:border-white/[0.12]'}`}>
+                        <div
+                          className={`relative aspect-square bg-gradient-to-br from-[#141414] to-[#0a0a0a] flex items-center justify-center overflow-hidden ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
+                          onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
+                          {photoUrl
+                            ? <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+                            : <span className="text-6xl opacity-80">{getCategoryIcon(g.category)}</span>}
+                          <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
+                            {g.quantity > 1 && <span className="text-[10px] bg-[#ff4d00] text-white px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
+                            {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-white' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-gray-300'}`}>{days}g</span>}
+                            {g.trackingStatus && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500 text-white' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500 text-white' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500 text-white' : 'bg-black/50 backdrop-blur text-gray-300'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? 'Transito' : g.trackingStatus === 'DELIVERED' ? 'Consegnato' : g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' : 'Track'}</span>}
+                          </div>
+                          {bulkMode && (
+                            <div className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#ff4d00] border-[#ff4d00]' : 'border-white/60 bg-black/40 backdrop-blur'}`}>
+                              {isSelected && <CheckCircle size={14} className="text-white" />}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                        <div className="p-4 flex-1 flex flex-col">
+                          <p className="font-bold text-base leading-tight line-clamp-2">{g.brand} {g.name}</p>
+                          <p className="text-xs text-gray-500 mt-1">{g.size} · {g.condition}</p>
+                          <p className="text-lg font-bold text-white mt-1.5 num">{g.purchasePrice.toFixed(0)}€</p>
+                          {shares?.length > 0 && <p className="text-[10px] text-blue-400/70 mt-1 truncate">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
+                          {!bulkMode && (
+                            <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
+                              className={`mt-2 text-[11px] flex items-center gap-1 text-left ${g.notes ? 'text-gray-500 hover:text-gray-300' : 'text-gray-700 hover:text-gray-500'}`}>
+                              <StickyNote size={10} className="shrink-0" /><span className="truncate">{g.notes || 'Aggiungi nota…'}</span>
+                            </button>
+                          )}
+                        </div>
+                        {!bulkMode && (
+                          <div className="border-t border-white/[0.06] p-2.5 flex flex-col gap-1.5">
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <button onClick={() => openTrackingModal(g)} className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.trackingCode ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' : 'bg-white/[0.05] text-gray-400 hover:bg-white/[0.09] hover:text-white'}`}><Truck size={12} /> Track</button>
+                              {isAdmin
+                                ? <button onClick={() => openListingModal(g)} className="py-2 rounded-lg text-xs font-bold bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 hover:text-purple-300 transition-colors flex items-center justify-center gap-1"><Store size={12} /> Annuncio</button>
+                                : <button onClick={() => openEditModal(g)} className="py-2 rounded-lg text-xs font-bold bg-white/[0.05] text-gray-400 hover:bg-white/[0.09] hover:text-white transition-colors flex items-center justify-center gap-1"><Edit size={12} /> Modifica</button>}
+                            </div>
+                            {isAdmin ? (
+                              <div className="grid grid-cols-2 gap-1.5">
+                                <button onClick={() => openShipping(g)} className="py-2 rounded-lg text-xs font-bold bg-orange-500/15 text-orange-400 hover:bg-orange-500/25 hover:text-orange-300 transition-colors flex items-center justify-center gap-1"><Package size={12} /> Spedisci</button>
+                                <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1"><DollarSign size={12} /> Vendi</button>
+                              </div>
+                            ) : (
+                              <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> Vendi</button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                    </React.Fragment>
                   );
-                  })
+                  })}
+                  </div>
                 )
               ) : (
                 groupedSoldArray.length === 0 ? (
