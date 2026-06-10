@@ -312,6 +312,34 @@ export default function App() {
   // ----- BULK ACTIONS -----
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedGroupKeys, setSelectedGroupKeys] = useState<Set<string>>(new Set());
+
+  // Long-press per entrare in selezione (sostituisce il tasto "Seleziona")
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+  const startLongPress = (groupKey: string) => {
+    longPressFired.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      setBulkMode(true);
+      setSelectedGroupKeys(prev => { const n = new Set(prev); n.add(groupKey); return n; });
+      if ('vibrate' in navigator) { try { navigator.vibrate(30); } catch {} }
+    }, 450);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  };
+  // Props riutilizzabili per ogni card: avvia/annulla long-press + click che gestisce toggle/edit
+  const cardPressProps = (groupKey: string) => (!bulkMode ? {
+    onMouseDown: () => startLongPress(groupKey),
+    onMouseUp: cancelLongPress,
+    onMouseLeave: cancelLongPress,
+    onTouchStart: () => startLongPress(groupKey),
+    onTouchEnd: cancelLongPress,
+  } : {});
+  const cardClick = (groupKey: string) => {
+    if (longPressFired.current) { longPressFired.current = false; return; }
+    if (bulkMode) toggleGroupSelection(groupKey);
+  };
   const [bulkSellOpen, setBulkSellOpen] = useState(false);
   const [bulkSellPrice, setBulkSellPrice] = useState('');
   const [bulkSellPlatform, setBulkSellPlatform] = useState('Vinted');
@@ -2234,19 +2262,11 @@ export default function App() {
               <h2 className="text-3xl font-semibold">Magazzino</h2>
 
               <div className="flex flex-wrap items-center gap-2">
-                {magazzinoView === 'instock' && (
-                  <>
-                    <button onClick={toggleBulkMode}
-                      className={`px-3 py-2 text-xs font-bold rounded-xl border transition-colors ${
-                        bulkMode ? 'bg-[#ff4d00] border-[#ff4d00] text-white' : 'bg-[#0f0f0f] border-white/[0.07] text-gray-400 hover:text-white'
-                      }`}>
-                      {bulkMode ? `✓ Selezione ON` : 'Seleziona'}
-                    </button>
-                    <label className="px-3 py-2 text-xs font-bold rounded-xl border border-white/[0.07] bg-[#0f0f0f] text-gray-400 hover:text-white cursor-pointer transition-colors flex items-center gap-1.5">
-                      <Download size={13} /> Importa Excel
-                      <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelFile} />
-                    </label>
-                  </>
+                {bulkMode && (
+                  <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
+                    className="px-3 py-2 text-xs font-bold rounded-xl border bg-[#ff4d00] border-[#ff4d00] text-white transition-colors">
+                    ✕ Annulla selezione
+                  </button>
                 )}
                 <div className="flex bg-[#0f0f0f] p-1 rounded-xl border border-white/[0.07]">
                   <button onClick={() => { setMagazzinoView('instock'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
@@ -2340,7 +2360,8 @@ export default function App() {
 
                       {/* ===== MOBILE/TABLET: card a riga ===== */}
                       <div
-                        onClick={bulkMode ? () => toggleGroupSelection(groupKey) : undefined}
+                        onClick={() => cardClick(groupKey)}
+                        {...cardPressProps(groupKey)}
                         className={`lg:hidden bg-[#0f0f0f] border rounded-2xl overflow-hidden transition-all relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
                         } ${isSelected ? 'border-[#ff4d00] shadow-[0_0_16px_rgba(255,77,0,0.15)]' : 'border-white/5'}`}>
@@ -2390,7 +2411,8 @@ export default function App() {
 
                       {/* ===== DESKTOP: card a cubetto ===== */}
                       <div
-                        onClick={bulkMode ? () => toggleGroupSelection(groupKey) : undefined}
+                        onClick={() => cardClick(groupKey)}
+                        {...cardPressProps(groupKey)}
                         className={`hidden lg:flex flex-col bg-[#0f0f0f] border rounded-2xl overflow-hidden transition-all relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
                         } ${isSelected ? 'border-[#ff4d00] shadow-[0_0_16px_rgba(255,77,0,0.15)]' : 'border-white/5 hover:border-white/[0.12]'}`}>
@@ -3351,6 +3373,29 @@ export default function App() {
               </form>
             </section>
 
+            {/* ===== DATI: import/export ===== */}
+            <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <Download size={15} className="text-gray-400" />
+                <h3 className="font-semibold text-sm">Dati</h3>
+              </div>
+              <p className="text-[11px] text-gray-600 mb-4">Importa prodotti da Excel/CSV o esporta il tuo magazzino.</p>
+              <div className="flex flex-wrap gap-2">
+                <label className="px-4 py-2.5 text-xs font-bold rounded-xl border border-white/[0.07] bg-[#0a0a0a] text-gray-300 hover:text-white hover:border-white/[0.15] cursor-pointer transition-colors flex items-center gap-2">
+                  <Download size={14} /> Importa Excel
+                  <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelFile} />
+                </label>
+                <button onClick={downloadImportTemplate}
+                  className="px-4 py-2.5 text-xs font-bold rounded-xl border border-white/[0.07] bg-[#0a0a0a] text-gray-300 hover:text-white hover:border-white/[0.15] transition-colors flex items-center gap-2">
+                  <Download size={14} /> Scarica template
+                </button>
+                <button onClick={exportCSV}
+                  className="px-4 py-2.5 text-xs font-bold rounded-xl border border-white/[0.07] bg-[#0a0a0a] text-gray-300 hover:text-white hover:border-white/[0.15] transition-colors flex items-center gap-2">
+                  <Download size={14} /> Esporta CSV
+                </button>
+              </div>
+            </section>
+
             {/* ===== ELIMINAZIONE ACCOUNT ===== */}
             <section className="bg-[#0f0f0f] border border-red-500/[0.12] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-1">
@@ -4206,6 +4251,10 @@ export default function App() {
           <div className={`bg-[#1a1a1a] border rounded-2xl p-3 flex items-center gap-2 shadow-2xl transition-all ${
             selectedGroupKeys.size > 0 ? 'border-[#ff4d00]/50' : 'border-gray-700'
           }`}>
+            <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
+              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+              <X size={16} />
+            </button>
             <button onClick={selectAllGroups}
               className="text-xs text-gray-500 hover:text-white font-bold transition-colors shrink-0 px-2">
               Tutti
@@ -4214,7 +4263,7 @@ export default function App() {
               <span className="text-sm font-bold">
                 {selectedGroupKeys.size > 0
                   ? `${getBulkSelectedIds().length} pezzi selezionati`
-                  : 'Tocca le card per selezionare'}
+                  : 'Tieni premuto una card per selezionare'}
               </span>
             </div>
             <button
