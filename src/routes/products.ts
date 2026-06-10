@@ -8,6 +8,7 @@ import { Router, Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { authenticate, AuthRequest, canAccessProduct } from '../middleware/auth';
 import { resolveRole, stripFinancials } from '../middleware/rbac';
+import { uploadImages, isCloudinaryConfigured } from '../services/upload.service';
 import { apiLimiter } from '../middleware/rateLimit';
 import { validate, createProductSchema, editProductSchema, sellProductSchema } from '../middleware/validate';
 import { audit } from '../services/audit.service';
@@ -173,9 +174,12 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
       ? JSON.stringify(customShares.map((s: any) => ({ ...s, percentage: Number(s.percentage) || 0 })))
       : null;
 
-    const parsedPhotos = photos && Array.isArray(photos) && photos.length > 0
-      ? JSON.stringify(photos)
-      : null;
+    // Se Cloudinary è configurato, carica le foto e salva gli URL invece del base64
+    let finalPhotos = photos && Array.isArray(photos) && photos.length > 0 ? photos : null;
+    if (finalPhotos && isCloudinaryConfigured()) {
+      finalPhotos = await uploadImages(finalPhotos);
+    }
+    const parsedPhotos = finalPhotos ? JSON.stringify(finalPhotos) : null;
 
     const newProduct = await prisma.product.create({
       data: {
@@ -426,9 +430,11 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
       ? JSON.stringify(customShares.map((s: any) => ({ ...s, percentage: Number(s.percentage) || 0 })))
       : null;
 
-    const parsedPhotos = photos && Array.isArray(photos) && photos.length > 0
-      ? JSON.stringify(photos)
-      : null;
+    let finalEditPhotos = photos && Array.isArray(photos) && photos.length > 0 ? photos : null;
+    if (finalEditPhotos && isCloudinaryConfigured()) {
+      finalEditPhotos = await uploadImages(finalEditPhotos);
+    }
+    const parsedPhotos = finalEditPhotos ? JSON.stringify(finalEditPhotos) : null;
 
     const p = await prisma.product.update({
       where: { id: req.params.id },

@@ -25,6 +25,7 @@ import adminRoutes from './src/routes/admin';
 import templateRoutes from './src/routes/templates';
 import analyticsRoutes from './src/routes/analytics';
 import shippingRoutes from './src/routes/shipping';
+import uploadRoutes from './src/routes/upload';
 import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
 import { startEmailJobs } from './src/services/email-jobs.service';
@@ -198,6 +199,7 @@ app.use('/admin', adminRoutes);
 app.use('/templates', templateRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/shipping', shippingRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // ==========================================
 // SPA FALLBACK + 404
@@ -287,6 +289,15 @@ serverInstance.listen(PORT, () => {
       logger.error('Errore cleanup reservation', { err });
     }
   }, 60_000);
+
+  // Self-ping ogni 14 minuti su Render free tier (evita lo spin-down dopo 15min di inattività)
+  // Si attiva solo se APP_URL è configurato (non in dev locale)
+  if (isProduction && process.env.APP_URL) {
+    setInterval(() => {
+      fetch(`${process.env.APP_URL}/health`).catch(() => {});
+    }, 14 * 60 * 1000);
+    logger.info('🔁 Self-ping attivo (ogni 14 min) per Render free tier');
+  }
 
   // Polling tracking ogni 2 ore (solo se API key configurata)
   if (process.env.TRACKING_17TRACK_KEY) {

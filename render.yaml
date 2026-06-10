@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: reseller-hq-api
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: node dist/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Le seguenti vanno aggiunte manualmente nel dashboard Render:
+      # DATABASE_URL        → stringa Neon PostgreSQL
+      # JWT_ACCESS_SECRET   → copia da Railway
+      # JWT_REFRESH_SECRET  → copia da Railway
+      # ENCRYPTION_KEY      → copia da Railway
+      # ALLOWED_ORIGINS     → https://reseller-hq.vercel.app (il tuo dominio Vercel)
+      # COOKIE_SAME_SITE    → none
+      # COOKIE_SECURE       → true
+      # GROQ_API_KEY        → copia da Railway
+      # BREVO_API_KEY       → copia da Railway
+      # ADMIN_EMAIL         → noreply.hq.app@gmail.com
+      # PACKLINK_API_KEY    → copia da Railway (se presente)
+      # SENDCLOUD_API_KEY   → quando disponibile
+      # SENDCLOUD_API_SECRET→ quando disponibile
+      # CLOUDINARY_CLOUD_NAME  → da cloudinary.com (Dashboard → Cloud Name)
+      # CLOUDINARY_API_KEY     → da cloudinary.com (Settings → API Keys)
+      # CLOUDINARY_API_SECRET  → da cloudinary.com (Settings → API Keys)
+      # APP_URL             → https://reseller-hq-api.onrender.com (il tuo URL Render)

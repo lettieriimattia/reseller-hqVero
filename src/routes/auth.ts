@@ -58,11 +58,15 @@ async function issueTokens(res: Response, user: { id: string; email: string }, r
   const isProd = process.env.NODE_ENV === 'production';
   const secure = process.env.COOKIE_SECURE === 'true';
   const domain = process.env.COOKIE_DOMAIN || undefined;
-  
+  // COOKIE_SAME_SITE=none quando frontend e backend sono su domini diversi (es. Vercel + Render)
+  // In sviluppo locale resta 'lax' per compatibilità con HTTP
+  const sameSiteEnv = process.env.COOKIE_SAME_SITE as 'lax' | 'none' | 'strict' | undefined;
+  const sameSite = sameSiteEnv || (isProd ? 'lax' : 'lax');
+
   const cookieOpts = {
     httpOnly: true,
     secure: isProd || secure,
-    sameSite: 'lax' as const, // 'lax' funziona bene per la maggior parte dei casi
+    sameSite,
     domain,
   };
   
