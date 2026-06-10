@@ -2372,8 +2372,8 @@ export default function App() {
                         )}
                         <div className="flex items-center gap-3 p-3.5">
                           {photoUrl
-                            ? <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-white/[0.07]"><img src={photoUrl} alt="" className="w-full h-full object-cover" /></div>
-                            : <span className="text-3xl shrink-0 w-14 text-center">{getCategoryIcon(g.category)}</span>}
+                            ? <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-white/[0.07]"><img src={photoUrl} alt="" className="w-full h-full object-cover" /></div>
+                            : <span className="text-3xl shrink-0 w-16 text-center">{getCategoryIcon(g.category)}</span>}
                           <div className={`flex-1 min-w-0 ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
                             onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -2417,11 +2417,11 @@ export default function App() {
                           bulkMode ? 'cursor-pointer select-none' : ''
                         } ${isSelected ? 'border-[#ff4d00] shadow-[0_0_16px_rgba(255,77,0,0.15)]' : 'border-white/5 hover:border-white/[0.12]'}`}>
                         <div
-                          className={`relative aspect-square bg-gradient-to-br from-[#141414] to-[#0a0a0a] flex items-center justify-center overflow-hidden ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
+                          className={`relative aspect-[3/2] bg-gradient-to-br from-[#141414] to-[#0a0a0a] flex items-center justify-center overflow-hidden ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                           {photoUrl
                             ? <img src={photoUrl} alt="" className="w-full h-full object-cover" />
-                            : <span className="text-6xl opacity-80">{getCategoryIcon(g.category)}</span>}
+                            : <span className="text-5xl opacity-80">{getCategoryIcon(g.category)}</span>}
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                             {g.quantity > 1 && <span className="text-[10px] bg-[#ff4d00] text-white px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
                             {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-white' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-gray-300'}`}>{days}g</span>}
@@ -2433,15 +2433,15 @@ export default function App() {
                             </div>
                           )}
                         </div>
-                        <div className="p-4 flex-1 flex flex-col">
-                          <p className="font-bold text-base leading-tight line-clamp-2">{g.brand} {g.name}</p>
-                          <p className="text-xs text-gray-500 mt-1">{g.size} · {g.condition}</p>
-                          <p className="text-lg font-bold text-white mt-1.5 num">{g.purchasePrice.toFixed(0)}€</p>
-                          {shares?.length > 0 && <p className="text-[10px] text-blue-400/70 mt-1 truncate">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
+                        <div className="p-4 flex-1 flex flex-col items-center text-center">
+                          <p className="font-bold text-lg leading-tight line-clamp-2">{g.brand} {g.name}</p>
+                          <p className="text-sm text-gray-400 mt-1.5">{g.size} · {g.condition}</p>
+                          <p className="text-2xl font-bold text-white mt-2 num">{g.purchasePrice.toFixed(0)}€</p>
+                          {shares?.length > 0 && <p className="text-[11px] text-blue-400/70 mt-1.5 truncate max-w-full">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                           {!bulkMode && (
                             <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
-                              className={`mt-2 text-[11px] flex items-center gap-1 text-left ${g.notes ? 'text-gray-500 hover:text-gray-300' : 'text-gray-700 hover:text-gray-500'}`}>
-                              <StickyNote size={10} className="shrink-0" /><span className="truncate">{g.notes || 'Aggiungi nota…'}</span>
+                              className={`mt-2 text-xs flex items-center justify-center gap-1 ${g.notes ? 'text-gray-500 hover:text-gray-300' : 'text-gray-700 hover:text-gray-500'}`}>
+                              <StickyNote size={11} className="shrink-0" /><span className="truncate">{g.notes || 'Aggiungi nota…'}</span>
                             </button>
                           )}
                         </div>
