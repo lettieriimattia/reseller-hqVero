@@ -2370,7 +2370,6 @@ export default function App() {
                               if (!days) return null;
                               return <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${days > 30 ? 'bg-red-500/20 text-red-400' : days > 14 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/5 text-gray-600'}`}>{days}g</span>;
                             })()}
-                            {g.authenticityScore != null && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5 shrink-0 ${g.authenticityScore >= 70 ? 'bg-green-500/20 text-green-400' : g.authenticityScore >= 40 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}><Shield size={9} />{g.authenticityScore}</span>}
                             {g.trackingStatus && <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5 shrink-0 ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500/20 text-blue-400' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500/20 text-green-400' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500/20 text-red-400' : 'bg-white/5 text-gray-500'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? 'Transito' : g.trackingStatus === 'DELIVERED' ? 'Consegnato' : g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' : 'Track'}</span>}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -2391,11 +2390,7 @@ export default function App() {
                         {!bulkMode && (
                           <div className="flex flex-col gap-1 shrink-0">
                             <button onClick={() => openTrackingModal(g)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                                g.trackingCode
-                                  ? 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 hover:text-blue-300'
-                                  : 'bg-white/[0.05] hover:bg-white/[0.09] text-gray-500 hover:text-gray-300'
-                              }`}>
+                              className="px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.09] text-gray-400 hover:text-white rounded-lg text-xs font-bold transition-colors">
                               Track
                             </button>
                             <button onClick={() => openEditModal(g)}
@@ -4408,7 +4403,11 @@ export default function App() {
                 <h2 className="font-semibold text-base flex items-center gap-2">
                   <Layers size={16} className="text-gray-400" /> Crea Lotto
                 </h2>
-                <p className="text-[11px] text-gray-600 mt-0.5">Divide il costo totale tra tutti gli articoli</p>
+                <button type="button"
+                  onClick={() => { setLotOpen(false); setIsFormOpen(true); }}
+                  className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors mt-0.5 flex items-center gap-1">
+                  <Plus size={10} /> Torna a Prodotto Singolo
+                </button>
               </div>
               <button onClick={() => setLotOpen(false)} className="p-2 hover:bg-white/[0.05] rounded-xl transition-colors">
                 <X size={18} className="text-gray-400" />
