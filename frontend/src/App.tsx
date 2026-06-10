@@ -2257,42 +2257,43 @@ export default function App() {
         
         {/* ========== MAGAZZINO ========== */}
         {currentView === 'magazzino' && (
-          <div className="space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h2 className="text-3xl font-semibold">Magazzino</h2>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {bulkMode && (
-                  <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-                    className="px-3 py-2 text-xs font-bold rounded-xl border bg-[#ff4d00] border-[#ff4d00] text-white transition-colors">
-                    ✕ Annulla selezione
-                  </button>
-                )}
+          <div className="space-y-3">
+            {/* Riga 1: titolo + toggle IN STOCK/VENDUTI accanto, ricerca inline su desktop */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+              <div className="flex items-center gap-3 shrink-0">
+                <h2 className="text-2xl lg:text-3xl font-semibold">Magazzino</h2>
                 <div className="flex bg-[#0f0f0f] p-1 rounded-xl border border-white/[0.07]">
                   <button onClick={() => { setMagazzinoView('instock'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-                    className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors ${
+                    className={`px-3 lg:px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
                       magazzinoView === 'instock' ? 'bg-[#ff4d00] text-white' : 'text-gray-500'
                     }`}>IN STOCK</button>
                   <button onClick={() => { setMagazzinoView('sold'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-                    className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors ${
+                    className={`px-3 lg:px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
                       magazzinoView === 'sold' ? 'bg-green-600 text-white' : 'text-gray-500'
                     }`}>VENDUTI</button>
                 </div>
+                {bulkMode && (
+                  <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
+                    className="px-3 py-1.5 text-xs font-bold rounded-xl border bg-[#ff4d00] border-[#ff4d00] text-white transition-colors">
+                    ✕ Annulla
+                  </button>
+                )}
               </div>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-                <input type="text" placeholder="Cerca brand o modello..."
-                  value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
-                  className="w-full bg-[#0f0f0f] border border-white/[0.05] rounded-xl pl-10 pr-4 py-3 text-sm focus:border-[#ff4d00] outline-none" />
+
+              {/* Ricerca + reparto — inline su desktop, sotto su mobile */}
+              <div className="flex gap-2 lg:gap-3 lg:flex-1 lg:justify-end">
+                <div className="relative flex-1 lg:max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                  <input type="text" placeholder="Cerca brand o modello..."
+                    value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
+                    className="w-full bg-[#0f0f0f] border border-white/[0.05] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#ff4d00] outline-none" />
+                </div>
+                <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
+                  className="bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-3 py-2.5 text-sm focus:border-[#ff4d00] outline-none shrink-0">
+                  <option value="all">Tutti i reparti</option>
+                  {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
-              <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
-                className="bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-4 py-3 text-sm focus:border-[#ff4d00] outline-none">
-                <option value="all">Tutti i reparti</option>
-                {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
-              </select>
             </div>
 
             {magazzinoView === 'instock' && (
