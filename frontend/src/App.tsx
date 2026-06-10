@@ -2387,19 +2387,23 @@ export default function App() {
                           )}
                         </div>
 
-                        {/* Azioni destra — icone compatte */}
+                        {/* Azioni destra — 3 bottoni impilati */}
                         {!bulkMode && (
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button onClick={() => openTrackingModal(g)} title="Tracking"
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${g.trackingCode ? 'text-blue-400 hover:bg-blue-900/20' : 'text-gray-600 hover:bg-white/5 hover:text-gray-400'}`}>
-                              <Truck size={14} />
+                          <div className="flex flex-col gap-1 shrink-0">
+                            <button onClick={() => openTrackingModal(g)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                                g.trackingCode
+                                  ? 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 hover:text-blue-300'
+                                  : 'bg-white/[0.05] hover:bg-white/[0.09] text-gray-500 hover:text-gray-300'
+                              }`}>
+                              Track
                             </button>
-                            <button onClick={() => openEditModal(g)} title="Modifica"
-                              className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-600 hover:bg-white/5 hover:text-gray-300 transition-colors">
-                              <Edit size={14} />
+                            <button onClick={() => openEditModal(g)}
+                              className="px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.09] text-gray-400 hover:text-white rounded-lg text-xs font-bold transition-colors">
+                              Modifica
                             </button>
                             <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)}
-                              className="ml-1 px-3 py-1.5 bg-green-500/15 hover:bg-green-500/25 text-green-400 hover:text-green-300 rounded-lg text-xs font-bold transition-colors">
+                              className="px-3 py-1.5 bg-green-500/15 hover:bg-green-500/25 text-green-400 hover:text-green-300 rounded-lg text-xs font-bold transition-colors">
                               Vendi
                             </button>
                           </div>
