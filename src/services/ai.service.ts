@@ -149,7 +149,8 @@ COSA LEGGERE:
 
 Rispondi SOLO in JSON valido (senza markdown, senza testo extra):
 {
-  "name": "nome ESATTO del Pokémon come scritto sulla carta",
+  "name": "nome INTERNAZIONALE INGLESE del Pokémon (vedi REGOLA TRADUZIONE sotto)",
+  "nameOriginal": "il nome ESATTAMENTE come scritto sulla carta, anche se in giapponese/coreano/cinese (es: リザードン, 리자몽, 喷火龙). Null se identico al nome inglese.",
   "variant": "base|EX|GX|V|VMAX|VSTAR|ex|Radiant|Tera|null",
   "cardNumber": "numero ESATTO come scritto sulla carta (es: 4/102, TG01/TG30, SWSH076)",
   "setName": "nome set identificato o null",
@@ -163,6 +164,14 @@ Rispondi SOLO in JSON valido (senza markdown, senza testo extra):
   "isHolo": true o false,
   "notes": "qualsiasi testo visibile sulla carta che aiuti l'identificazione — numero carta, HP, testo set, ecc."
 }
+
+━━━ REGOLA TRADUZIONE NOME (FONDAMENTALE) ━━━
+Ogni Pokémon ha un nome UFFICIALE diverso in ogni lingua, ma esiste UN nome internazionale inglese universale.
+- Se la carta è in INGLESE: "name" = nome come scritto, "nameOriginal" = null
+- Se la carta è in GIAPPONESE/COREANO/CINESE/altra lingua: TRADUCI il nome al nome UFFICIALE INGLESE nel campo "name" (es: リザードン→Charizard, ピカチュウ→Pikachu, ミュウツー→Mewtwo, 리자몽→Charizard, 喷火龙→Charizard) e metti il testo originale letterale in "nameOriginal".
+- Devi conoscere le traduzioni ufficiali: usa il National Pokédex. Il nome inglese è quello che permette di cercare la carta nei database internazionali.
+- Esempi giapponese→inglese: フシギダネ→Bulbasaur, ヒトカゲ→Charmander, ゼニガメ→Squirtle, ゲンガー→Gengar, カビゴン→Snorlax, ミミッキュ→Mimikyu, ザシアン→Zacian, コライドン→Koraidon.
+
 NON inventare dati — se non riesci a leggere un campo metti null. Trascrivi FEDELMENTE i numeri visibili. Rispondi SOLO JSON.`,
 
   Scarpe: `Sei il massimo esperto mondiale di calzature: conosci ogni sneaker streetwear E ogni scarpa di lusso come un autenticatore StockX + un personal shopper dei migliori department store di Parigi e Milano. Analizza questa scarpa con attenzione assoluta a OGNI dettaglio visibile: logo, suola, tomaia, cuciture, etichette, colori, texture, hardware, pattern, silhouette.
@@ -880,7 +889,18 @@ ${prompt}`;
       result.brand = 'Pokémon';
 
       const pokeVariant = parsed.variant && parsed.variant !== 'base' ? ` ${parsed.variant}` : '';
-      const pokeLang = parsed.language && parsed.language !== 'EN' ? ` [${parsed.language}]` : '';
+      // Suffisso lingua: mostra la lingua originale leggibile + il nome com'era scritto sulla carta
+      const LANG_LABELS: Record<string, string> = {
+        JP: 'Giapponese', KO: 'Coreano', ZH: 'Cinese', FR: 'Francese',
+        DE: 'Tedesco', PT: 'Portoghese', IT: 'Italiano', EN: 'Inglese',
+      };
+      const isForeign = parsed.language && parsed.language !== 'EN' && parsed.language !== 'unknown';
+      const langName = isForeign ? (LANG_LABELS[parsed.language] || parsed.language) : '';
+      const pokeLang = isForeign
+        ? (parsed.nameOriginal
+            ? ` (${langName}: ${parsed.nameOriginal})`
+            : ` (${langName})`)
+        : '';
       const pokeRarity = parsed.rarity ? ` — ${parsed.rarity}` : '';
 
       if (parsed.name) {
