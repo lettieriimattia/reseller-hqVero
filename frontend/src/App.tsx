@@ -114,16 +114,16 @@ function StatCard({ title, value, sub, icon, color = 'text-white', onClick }: an
   return (
     <div
       onClick={onClick}
-      className={`bg-[#0f0f0f] border border-white/[0.05] p-5 rounded-2xl transition-colors ${
+      className={`bg-[#0f0f0f] border border-white/[0.05] p-5 lg:p-6 rounded-2xl transition-colors ${
         onClick ? 'cursor-pointer hover:border-white/[0.1]' : ''
       }`}
     >
-      <div className="flex justify-between items-start mb-4">
-        <span className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase">{title}</span>
+      <div className="flex justify-between items-start mb-4 lg:mb-5">
+        <span className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase">{title}</span>
         {icon}
       </div>
-      <p className={`text-2xl font-semibold num ${color}`}>{value}</p>
-      <p className="text-[11px] text-gray-600 mt-1.5">{sub}</p>
+      <p className={`text-2xl lg:text-4xl font-semibold num ${color}`}>{value}</p>
+      <p className="text-[11px] lg:text-sm text-gray-500 mt-1.5 lg:mt-2">{sub}</p>
     </div>
   );
 }
@@ -2044,20 +2044,20 @@ export default function App() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Mio profitto */}
               <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5 hover:border-white/[0.1] transition-colors">
-                <p className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
+                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
                   <Wallet size={10} /> Personale
                 </p>
-                <p className="text-2xl font-bold text-white num">{mioProfitto.toFixed(0)}€</p>
+                <p className="text-2xl lg:text-3xl font-bold text-white num">{mioProfitto.toFixed(0)}€</p>
                 <p className="text-[11px] text-gray-600 mt-1.5">Quote personali</p>
               </div>
 
               {/* Team — clickable per team panel */}
               <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5 cursor-pointer hover:border-white/[0.1] transition-colors group"
                 onClick={() => setTeamPanelOpen(true)}>
-                <p className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
+                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
                   <Users size={10} /> Team
                 </p>
-                <p className="text-2xl font-bold text-purple-400 num">{globalProfitto.toFixed(0)}€</p>
+                <p className="text-2xl lg:text-3xl font-bold text-purple-400 num">{globalProfitto.toFixed(0)}€</p>
                 <div className="flex items-center justify-between mt-1.5">
                   <p className="text-[11px] text-gray-600">Profitto totale</p>
                   <span className="text-[9px] text-gray-600 group-hover:text-gray-400 transition-colors">Dettaglio →</span>
@@ -2067,20 +2067,20 @@ export default function App() {
               {/* Stock */}
               <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5 cursor-pointer hover:border-white/[0.1] transition-colors group"
                 onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); }}>
-                <p className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
+                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
                   <Layers size={10} /> Stock
                 </p>
-                <p className="text-2xl font-bold num">{stockValore.toFixed(0)}€</p>
+                <p className="text-2xl lg:text-3xl font-bold num">{stockValore.toFixed(0)}€</p>
                 <p className="text-[11px] text-gray-600 mt-1.5">{inStockItems.length} pezzi · <span className="group-hover:text-gray-400 transition-colors">Vedi →</span></p>
               </div>
 
               {/* Vendite */}
               <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5 cursor-pointer hover:border-white/[0.1] transition-colors group"
                 onClick={() => { setCurrentView('magazzino'); setMagazzinoView('sold'); }}>
-                <p className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
+                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
                   <TrendingUp size={10} /> Vendite
                 </p>
-                <p className="text-2xl font-bold text-emerald-400 num">{soldItemsTotal.length}</p>
+                <p className="text-2xl lg:text-3xl font-bold text-emerald-400 num">{soldItemsTotal.length}</p>
                 <p className="text-[11px] text-gray-600 mt-1.5">{ricaviTotali.toFixed(0)}€ ricavi · <span className="group-hover:text-gray-400 transition-colors">Vedi →</span></p>
               </div>
             </div>
@@ -2149,7 +2149,7 @@ export default function App() {
               <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5 cursor-pointer hover:border-white/[0.1] transition-colors"
                 onClick={() => setTeamPanelOpen(true)}>
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase flex items-center gap-1.5">
+                  <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase flex items-center gap-1.5">
                     <Trophy size={10} /> Libro Paga
                   </p>
                   <span className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors">Dettaglio →</span>
@@ -2319,7 +2319,7 @@ export default function App() {
                     <p className="text-gray-500 font-bold">Nessun prodotto in stock</p>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
+                  <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 lg:gap-3">
                   {groupedInStockArray.map((g: any) => {
                     const groupKey = g.ids.join(',');
                     const isSelected = selectedGroupKeys.has(groupKey);
@@ -2560,31 +2560,31 @@ export default function App() {
             {/* KPI row 1: principali */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4">
-                <p className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
+                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <TrendingUp size={10} /> ROI
                 </p>
-                <p className={`text-2xl font-bold num ${parseFloat(roi) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{roi}%</p>
+                <p className={`text-2xl lg:text-3xl font-bold num ${parseFloat(roi) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{roi}%</p>
                 <p className="text-[11px] text-gray-600 mt-1.5">Return on Investment</p>
               </div>
               <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4">
-                <p className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
+                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <Wallet size={10} /> Profitto Netto
                 </p>
-                <p className={`text-2xl font-bold num ${profittoNetto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{profittoNetto.toFixed(0)}€</p>
+                <p className={`text-2xl lg:text-3xl font-bold num ${profittoNetto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{profittoNetto.toFixed(0)}€</p>
                 <p className="text-[11px] text-gray-600 mt-1.5">Dopo fees · {ricaviTotali.toFixed(0)}€ ricavi</p>
               </div>
               <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4">
-                <p className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
+                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <Layers size={10} /> Stock
                 </p>
-                <p className="text-2xl font-bold num">{stockValore.toFixed(0)}€</p>
+                <p className="text-2xl lg:text-3xl font-bold num">{stockValore.toFixed(0)}€</p>
                 <p className="text-[11px] text-gray-600 mt-1.5">Capitale immobilizzato</p>
               </div>
               <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4">
-                <p className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
+                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <DollarSign size={10} /> Vendite
                 </p>
-                <p className="text-2xl font-bold text-purple-400 num">{soldItemsTotal.length}</p>
+                <p className="text-2xl lg:text-3xl font-bold text-purple-400 num">{soldItemsTotal.length}</p>
                 <p className="text-[11px] text-gray-600 mt-1.5">Totali · {sellThroughRate}% sell-through</p>
               </div>
             </div>
@@ -2969,7 +2969,7 @@ export default function App() {
                 ].map(s => (
                   <div key={s.label} className={`${s.bg} border rounded-2xl p-4 text-center relative overflow-hidden`}>
                     <div className={`absolute inset-0 ${s.glow} pointer-events-none`} />
-                    <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                    <p className={`text-2xl lg:text-3xl font-bold ${s.color}`}>{s.value}</p>
                     <p className="text-[9px] text-gray-600 font-semibold tracking-[0.1em] uppercase mt-1.5">{s.label}</p>
                   </div>
                 ))}
@@ -2987,7 +2987,7 @@ export default function App() {
               {/* Sezione: Attive */}
               {active.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase flex items-center gap-2">
+                  <h3 className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase flex items-center gap-2">
                     <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
                     Spedizioni attive ({active.length})
                   </h3>
@@ -2998,7 +2998,7 @@ export default function App() {
               {/* Sezione: Eccezioni / Resi */}
               {exceptions.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase flex items-center gap-2">
+                  <h3 className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase flex items-center gap-2">
                     <span className="w-2 h-2 bg-red-400 rounded-full" />
                     Eccezioni / Resi ({exceptions.length})
                   </h3>
@@ -3009,7 +3009,7 @@ export default function App() {
               {/* Sezione: Consegnate */}
               {delivered.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-[9px] font-semibold text-gray-500 tracking-[0.12em] uppercase flex items-center gap-2">
+                  <h3 className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase flex items-center gap-2">
                     <span className="w-2 h-2 bg-green-400 rounded-full" />
                     Consegnate ({delivered.length})
                   </h3>
