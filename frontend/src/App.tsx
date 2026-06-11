@@ -2038,13 +2038,13 @@ export default function App() {
                   : 0;
                 return (
                   <button key={tab.id} onClick={() => navigateTo(tab.id as any)}
-                    className={`relative flex items-center gap-2 px-4 py-3.5 text-xs font-semibold tracking-wide transition-colors ${
+                    className={`relative flex items-center gap-2.5 px-6 py-4 text-[15px] font-semibold tracking-wide transition-colors ${
                       active ? 'text-[var(--text)]' : 'text-[var(--text-soft)] hover:text-gray-300'
                     }`}>
                     {active && (
-                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#ff4d00] rounded-full" />
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-[#ff4d00] rounded-full" />
                     )}
-                    <Icon size={14} /> {tab.label}
+                    <Icon size={18} /> {tab.label}
                     {trackingBadge > 0 && (
                       <span className="w-4 h-4 bg-blue-500 text-[var(--text)] rounded-full text-[9px] font-semibold flex items-center justify-center">
                         {trackingBadge}
@@ -2064,19 +2064,23 @@ export default function App() {
         {currentView === 'dashboard' && (
           <div className="space-y-5">
 
-            {/* Greeting */}
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-              <div>
-                <p className="text-[11px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">{new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-                <h2 className="text-3xl font-bold mt-1">
+            {/* Greeting — 3 colonne su desktop: giorno (sx) · saluto (centro) · stat (dx) */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              {/* Sinistra: giorno */}
+              <div className="sm:flex-1 min-w-0">
+                <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">{new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+              </div>
+              {/* Centro: saluto */}
+              <div className="sm:flex-1 sm:text-center min-w-0">
+                <h2 className="text-3xl lg:text-4xl font-bold">
                   Ciao, <span className="text-[var(--text)]">{user.name.split(' ')[0]}</span>
                 </h2>
                 <p className="hidden lg:block text-sm text-[var(--text-soft)] mt-2">
-                  Hai <span className="font-bold text-[var(--text)] num">{inStockItems.length}</span> pezzi in stock per <span className="font-bold text-[var(--text)] num">{stockValore.toFixed(0)}€</span> · <span className="font-bold text-emerald-400 num">{soldItemsTotal.length}</span> venduti finora
+                  Hai <span className="font-bold text-[var(--text)] num">{inStockItems.length}</span> pezzi in stock per <span className="font-bold text-[var(--text)] num">{stockValore.toFixed(0)}€</span> · <span className="font-bold text-emerald-400 num">{soldItemsTotal.length}</span> venduti
                 </p>
               </div>
-              {/* Cluster stat — riempie l'header su desktop */}
-              <div className="hidden sm:flex items-stretch gap-5 lg:gap-7 shrink-0">
+              {/* Destra: cluster stat — riempie l'header su desktop */}
+              <div className="hidden sm:flex sm:flex-1 items-stretch justify-end gap-5 lg:gap-7">
                 <div className="flex flex-col items-end justify-center">
                   <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">Settimana</p>
                   <p className={`text-xl lg:text-2xl font-bold num ${weekProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
