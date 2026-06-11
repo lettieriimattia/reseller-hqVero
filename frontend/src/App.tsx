@@ -217,6 +217,10 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
   const [chartTimeframe, setChartTimeframe] = useState<'1D' | '1W' | '1M' | '1Y' | 'MAX'>('MAX');
+  // ----- COMMAND PALETTE (Ctrl/Cmd+K) -----
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [cmdQuery, setCmdQuery] = useState('');
+  const [cmdIndex, setCmdIndex] = useState(0);
   
   // ----- FORM PRODOTTO -----
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -1436,6 +1440,24 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Scorciatoie da tastiera (desktop): ⌘/Ctrl+K o "/" apre la palette, "n" nuovo prodotto
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      const typing = el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA' || el?.tagName === 'SELECT' || el?.isContentEditable;
+      if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setCmdQuery(''); setCmdIndex(0); setCmdOpen(o => !o);
+        return;
+      }
+      if (typing) return;
+      if (e.key === '/') { e.preventDefault(); setCmdQuery(''); setCmdIndex(0); setCmdOpen(true); }
+      else if (e.key === 'n' || e.key === 'N') { e.preventDefault(); setIsFormOpen(true); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   // ==========================================
   // BULK ACTIONS
   // ==========================================
@@ -1951,6 +1973,12 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Ricerca globale ⌘K (solo desktop) */}
+            <button onClick={() => { setCmdQuery(''); setCmdIndex(0); setCmdOpen(true); }}
+              className="hidden lg:flex items-center gap-2 bg-[var(--surface-2)] hover:border-[var(--border-3)] border border-[var(--border-2)] text-[var(--text-soft)] px-3 py-2 rounded-xl text-sm transition-colors mr-1">
+              <Search size={15} /> Cerca
+              <kbd className="text-[10px] text-[var(--text-faint)] border border-[var(--border-2)] rounded px-1.5 py-0.5">⌘K</kbd>
+            </button>
             {/* Pulsante Aggiungi (solo desktop) */}
             <button onClick={() => setIsFormOpen(true)}
               className="hidden lg:flex items-center gap-2 bg-[#ff4d00] hover:bg-[#e84400] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
@@ -3496,7 +3524,81 @@ export default function App() {
           </div>
         )}
       </main>
-      
+
+      {/* ========== COMMAND PALETTE (⌘K / Ctrl+K) ========== */}
+      {cmdOpen && (() => {
+        const q = cmdQuery.trim().toLowerCase();
+        const navActions = [
+          { key: 'nav-dashboard', icon: LayoutDashboard, label: 'Vai a Dashboard', sub: '', run: () => navigateTo('dashboard') },
+          { key: 'nav-magazzino', icon: Package, label: 'Vai a Magazzino', sub: '', run: () => navigateTo('magazzino') },
+          { key: 'nav-analytics', icon: BarChart3, label: 'Vai ad Analytics', sub: '', run: () => navigateTo('analytics') },
+          { key: 'nav-tracking', icon: Truck, label: 'Vai a Tracking', sub: '', run: () => navigateTo('tracking') },
+          { key: 'nav-settings', icon: Settings, label: 'Vai a Impostazioni', sub: '', run: () => navigateTo('settings') },
+          { key: 'act-add', icon: Plus, label: 'Aggiungi prodotto', sub: 'Nuovo inserimento in magazzino', run: () => setIsFormOpen(true) },
+        ].filter(a => !q || a.label.toLowerCase().includes(q));
+        const prodItems = (q.length > 0
+          ? products.filter((p: any) => `${p.brand} ${p.name} ${p.size || ''} ${p.category || ''}`.toLowerCase().includes(q)).slice(0, 8)
+          : []
+        ).map((p: any) => ({
+          key: `prod-${p.id}`, icon: Package,
+          label: `${p.brand} ${p.name}`,
+          sub: `${p.size ? p.size + ' · ' : ''}${p.category || ''} · ${p.status === 'VENDUTO' ? 'venduto' : 'in stock'}`,
+          run: () => {
+            setCurrentView('magazzino');
+            setMagazzinoView(p.status === 'VENDUTO' ? 'sold' : 'instock');
+            setFilterCat('all');
+            setSearchTerm(`${p.brand} ${p.name}`);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          },
+        }));
+        const items = [...navActions, ...prodItems];
+        const sel = Math.min(cmdIndex, Math.max(0, items.length - 1));
+        const close = () => { setCmdOpen(false); setCmdQuery(''); setCmdIndex(0); };
+        const choose = (i: number) => { const it = items[i]; if (it) { it.run(); close(); } };
+        return (
+          <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-[12vh] bg-black/60 backdrop-blur-sm" onClick={close}>
+            <div className="w-full max-w-xl bg-[var(--surface)] border border-[var(--border-2)] rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-3 px-4 border-b border-[var(--border)]">
+                <Search size={18} className="text-[var(--text-faint)] shrink-0" />
+                <input autoFocus value={cmdQuery}
+                  onChange={(e: any) => { setCmdQuery(e.target.value); setCmdIndex(0); }}
+                  onKeyDown={(e: any) => {
+                    if (e.key === 'ArrowDown') { e.preventDefault(); setCmdIndex(i => Math.min(i + 1, items.length - 1)); }
+                    else if (e.key === 'ArrowUp') { e.preventDefault(); setCmdIndex(i => Math.max(i - 1, 0)); }
+                    else if (e.key === 'Enter') { e.preventDefault(); choose(sel); }
+                    else if (e.key === 'Escape') { e.preventDefault(); close(); }
+                  }}
+                  placeholder="Cerca prodotti o azioni…"
+                  className="flex-1 bg-transparent py-4 text-sm outline-none placeholder:text-[var(--text-faint)]" />
+                <kbd className="hidden sm:block text-[10px] text-[var(--text-faint)] border border-[var(--border-2)] rounded px-1.5 py-0.5">ESC</kbd>
+              </div>
+              <div className="max-h-[50vh] overflow-y-auto py-2">
+                {items.length === 0 ? (
+                  <p className="px-4 py-8 text-center text-sm text-[var(--text-soft)]">Nessun risultato</p>
+                ) : items.map((it, i) => {
+                  const Icon = it.icon;
+                  return (
+                    <button key={it.key} onMouseEnter={() => setCmdIndex(i)} onClick={() => choose(i)}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${i === sel ? 'bg-[var(--fill-2)]' : 'hover:bg-[var(--fill)]'}`}>
+                      <Icon size={16} className="text-[var(--text-muted)] shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold truncate">{it.label}</p>
+                        {it.sub && <p className="text-[11px] text-[var(--text-faint)] truncate">{it.sub}</p>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="hidden sm:flex items-center gap-4 px-4 py-2 border-t border-[var(--border)] text-[10px] text-[var(--text-faint)]">
+                <span className="flex items-center gap-1"><kbd className="border border-[var(--border-2)] rounded px-1">↑</kbd><kbd className="border border-[var(--border-2)] rounded px-1">↓</kbd> naviga</span>
+                <span className="flex items-center gap-1"><kbd className="border border-[var(--border-2)] rounded px-1">↵</kbd> apri</span>
+                <span className="ml-auto">⌘K / Ctrl K</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ========== FAB MOBILE ========== */}
       <button
         onClick={() => setIsFormOpen(true)}
