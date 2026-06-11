@@ -2065,22 +2065,40 @@ export default function App() {
           <div className="space-y-5">
 
             {/* Greeting */}
-            <div className="flex items-end justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
               <div>
                 <p className="text-[11px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">{new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                 <h2 className="text-3xl font-bold mt-1">
                   Ciao, <span className="text-[var(--text)]">{user.name.split(' ')[0]}</span>
                 </h2>
+                <p className="hidden lg:block text-sm text-[var(--text-soft)] mt-2">
+                  Hai <span className="font-bold text-[var(--text)] num">{inStockItems.length}</span> pezzi in stock per <span className="font-bold text-[var(--text)] num">{stockValore.toFixed(0)}€</span> · <span className="font-bold text-emerald-400 num">{soldItemsTotal.length}</span> venduti finora
+                </p>
               </div>
-              {weekSales.length > 0 && (
-                <div className="hidden sm:flex flex-col items-end gap-0.5">
+              {/* Cluster stat — riempie l'header su desktop */}
+              <div className="hidden sm:flex items-stretch gap-5 lg:gap-7 shrink-0">
+                <div className="flex flex-col items-end justify-center">
                   <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">Settimana</p>
-                  <p className={`text-xl font-bold num ${weekProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <p className={`text-xl lg:text-2xl font-bold num ${weekProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                     {weekProfit >= 0 ? '+' : ''}{weekProfit.toFixed(0)}€
                   </p>
                   <p className="text-[11px] text-[var(--text-faint)]">{weekSales.length} {weekSales.length === 1 ? 'vendita' : 'vendite'}</p>
                 </div>
-              )}
+                <div className="hidden lg:block w-px bg-[var(--border-2)]" />
+                <div className="hidden lg:flex flex-col items-end justify-center">
+                  <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">Da spedire</p>
+                  <p className="text-xl lg:text-2xl font-bold num text-blue-400">
+                    {products.filter(p => p.trackingCode && ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING')).length}
+                  </p>
+                  <p className="text-[11px] text-[var(--text-faint)]">in transito</p>
+                </div>
+                <div className="hidden lg:block w-px bg-[var(--border-2)]" />
+                <div className="hidden lg:flex flex-col items-end justify-center">
+                  <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">Fermi</p>
+                  <p className={`text-xl lg:text-2xl font-bold num ${staleCount > 0 ? 'text-red-400' : 'text-[var(--text-faint)]'}`}>{staleCount}</p>
+                  <p className="text-[11px] text-[var(--text-faint)]">oltre 30gg</p>
+                </div>
+              </div>
             </div>
 
             {/* KPI principali */}
