@@ -3409,20 +3409,12 @@ export default function App() {
                 <Download size={15} className="text-[var(--text-muted)]" />
                 <h3 className="font-semibold text-sm">Dati</h3>
               </div>
-              <p className="text-[11px] text-[var(--text-faint)] mb-4">Importa prodotti da Excel/CSV o esporta il tuo magazzino.</p>
+              <p className="text-[11px] text-[var(--text-faint)] mb-4">Importa prodotti da Excel/CSV nel tuo magazzino.</p>
               <div className="flex flex-wrap gap-2">
                 <label className="px-4 py-2.5 text-xs font-bold rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-gray-300 hover:text-[var(--text)] hover:border-[var(--border-3)] cursor-pointer transition-colors flex items-center gap-2">
                   <Download size={14} /> Importa Excel
                   <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelFile} />
                 </label>
-                <button onClick={downloadImportTemplate}
-                  className="px-4 py-2.5 text-xs font-bold rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-gray-300 hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors flex items-center gap-2">
-                  <Download size={14} /> Scarica template
-                </button>
-                <button onClick={exportCSV}
-                  className="px-4 py-2.5 text-xs font-bold rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-gray-300 hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors flex items-center gap-2">
-                  <Download size={14} /> Esporta CSV
-                </button>
               </div>
             </section>
 
