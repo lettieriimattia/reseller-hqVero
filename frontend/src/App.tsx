@@ -282,12 +282,13 @@ export default function App() {
   const [isAddingCat, setIsAddingCat] = useState(false);
   
   // ----- TOAST -----
-  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' | 'warn' } | null>(null);
+  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' | 'warn'; action?: { label: string; onClick: () => void } } | null>(null);
   const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const showToast = useCallback((msg: string, type: 'ok' | 'err' | 'warn' = 'ok') => {
+  const showToast = useCallback((msg: string, type: 'ok' | 'err' | 'warn' = 'ok', action?: { label: string; onClick: () => void }) => {
     if (toastRef.current) clearTimeout(toastRef.current);
-    setToast({ msg, type });
-    toastRef.current = setTimeout(() => setToast(null), 3200);
+    setToast({ msg, type, action });
+    // Più tempo per agire quando c'è un "Annulla"
+    toastRef.current = setTimeout(() => setToast(null), action ? 6000 : 3200);
   }, []);
 
   // ----- 2FA SETUP -----
@@ -1359,7 +1360,7 @@ export default function App() {
       await fetchProducts();
       setSellModalOpen(false);
       setProductToSell(null);
-      showToast('Vendita registrata!');
+      showToast('Vendita registrata!', 'ok', { label: 'Annulla', onClick: () => undoSellIds(idsToProcess) });
     }
   };
   
@@ -1490,6 +1491,18 @@ export default function App() {
     return ids;
   };
 
+  // Undo: ripristina prodotti eliminati / riporta in stock prodotti venduti
+  const undoDeleteIds = async (ids: string[]) => {
+    await Promise.allSettled(ids.map(id => apiCall(`/products/${id}/restore`, { method: 'POST' })));
+    await fetchProducts();
+    showToast('Eliminazione annullata');
+  };
+  const undoSellIds = async (ids: string[]) => {
+    await Promise.allSettled(ids.map(id => apiCall(`/products/${id}/return`, { method: 'POST' })));
+    await fetchProducts();
+    showToast('Vendita annullata — di nuovo in stock');
+  };
+
   const handleBulkDelete = async () => {
     setIsBulkProcessing(true);
     const ids = getBulkSelectedIds();
@@ -1503,7 +1516,7 @@ export default function App() {
     setSelectedGroupKeys(new Set());
     setBulkMode(false);
     await fetchProducts();
-    errors > 0 ? showToast(`Eliminati con ${errors} errori`, 'warn') : showToast(`${ids.length} prodotti eliminati`);
+    errors > 0 ? showToast(`Eliminati con ${errors} errori`, 'warn') : showToast(`${ids.length} prodotti eliminati`, 'ok', { label: 'Annulla', onClick: () => undoDeleteIds(ids) });
   };
 
   const handleBulkSell = async (e: React.FormEvent) => {
@@ -1525,7 +1538,7 @@ export default function App() {
     setSelectedGroupKeys(new Set());
     setBulkMode(false);
     await fetchProducts();
-    errors > 0 ? showToast(`Vendite con ${errors} errori`, 'warn') : showToast(`${ids.length} prodotti venduti!`);
+    errors > 0 ? showToast(`Vendite con ${errors} errori`, 'warn') : showToast(`${ids.length} prodotti venduti!`, 'ok', { label: 'Annulla', onClick: () => undoSellIds(ids) });
   };
 
   // Reso: riporta un pezzo venduto in stock (operazione inversa della vendita) — immediato, niente conferma
@@ -1618,14 +1631,15 @@ export default function App() {
   // ==========================================
   const handleDeleteProduct = async () => {
     if (!productToDelete) return;
+    const ids = productToDelete.ids as string[];
     // Ottimisticamente rimuovi dalla UI prima della chiamata API
-    setProducts(prev => prev.filter(p => !productToDelete.ids.includes(p.id)));
+    setProducts(prev => prev.filter(p => !ids.includes(p.id)));
     setDeleteConfirmOpen(false);
     setProductToDelete(null);
     setEditModalOpen(false);
 
     const results = await Promise.allSettled(
-      productToDelete.ids.map(id => apiCall(`/products/${id}`, { method: 'DELETE' }))
+      ids.map(id => apiCall(`/products/${id}`, { method: 'DELETE' }))
     );
     const errors = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok)).length;
 
@@ -1633,7 +1647,7 @@ export default function App() {
       showToast('Errore eliminazione — ricarico la lista', 'err');
       await fetchProducts(); // Re-sync se ci sono stati errori
     } else {
-      showToast('Prodotto eliminato');
+      showToast('Prodotto eliminato', 'ok', { label: 'Annulla', onClick: () => undoDeleteIds(ids) });
     }
   };
 
@@ -6063,6 +6077,12 @@ export default function App() {
           <span className={`text-sm font-semibold flex-1 ${
             toast.type === 'ok' ? 'text-emerald-300' : toast.type === 'err' ? 'text-red-300' : 'text-yellow-300'
           }`}>{toast.msg}</span>
+          {toast.action && (
+            <button onClick={(e) => { e.stopPropagation(); const fn = toast.action!.onClick; setToast(null); fn(); }}
+              className="shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg bg-[var(--text)]/10 hover:bg-[var(--text)]/20 text-[var(--text)] transition-colors">
+              {toast.action.label}
+            </button>
+          )}
           <X size={13} className="shrink-0 text-[var(--text)]/30" />
         </div>
       )}

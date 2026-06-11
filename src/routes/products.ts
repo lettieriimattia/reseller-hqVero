@@ -577,4 +577,39 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// ==========================================
+// POST /products/:id/restore — annulla un'eliminazione (ripristina dal soft-delete)
+// ==========================================
+router.post('/:id/restore', async (req: AuthRequest, res: Response) => {
+  try {
+    const { allowed, product } = await canAccessProduct(req.user!.userId, req.params.id);
+    if (!allowed || !product) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
+    if (!product.deletedAt) return res.status(400).json({ error: 'Il prodotto non è eliminato.' });
+
+    await prisma.product.update({
+      where: { id: req.params.id },
+      data: { deletedAt: null },
+    });
+
+    await logInventory({
+      productId: req.params.id,
+      userId: req.user!.userId,
+      action: 'SOFT_DELETE',
+      field: 'deletedAt',
+      note: `Ripristinato: ${product.brand} ${product.name}`,
+    });
+
+    await audit({
+      action: 'PRODUCT_EDIT', userId: req.user!.userId, req,
+      resource: req.params.id,
+      metadata: { brand: product.brand, name: product.name, restored: true },
+    });
+
+    res.json({ success: true });
+  } catch (err: any) {
+    logger.error('Errore POST /products/:id/restore', { err: err.message });
+    res.status(500).json({ error: 'Errore ripristino' });
+  }
+});
+
 export default router;
