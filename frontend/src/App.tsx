@@ -2668,10 +2668,14 @@ export default function App() {
                 )
               ) : (
                 groupedSoldArray.length === 0 ? (
-                  <div className="text-center py-16 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
-                    <CheckCircle className="mx-auto text-gray-800 mb-4" size={40} />
+                  <div className="text-center py-16 px-5 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
+                    <CheckCircle className="mx-auto text-[var(--text-faint)] mb-4" size={40} />
                     <p className="text-[var(--text-muted)] font-semibold">Nessuna vendita ancora</p>
-                    <p className="text-[var(--text-faint)] text-sm mt-1">Vai su IN STOCK e registra la tua prima vendita</p>
+                    <p className="text-[var(--text-faint)] text-sm mt-1 mb-5">Registra la tua prima vendita dalla sezione IN STOCK</p>
+                    <button onClick={() => setMagazzinoView('instock')}
+                      className="bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--text-soft)] hover:text-[var(--text)] px-5 py-2.5 rounded-xl font-bold text-sm transition-colors">
+                      Vai a IN STOCK
+                    </button>
                   </div>
                 ) : (
                   (() => {
