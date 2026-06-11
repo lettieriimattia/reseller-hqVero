@@ -2744,6 +2744,27 @@ export default function App() {
               const fees = monthSold.reduce((a: number, p: any) => a + (p.fees || 0), 0);
               const netto = ricavi - costo - fees;
               const roi = costo > 0 ? (netto / costo * 100) : 0;
+              // Confronto col mese precedente
+              const pm = reportMonth.m === 0 ? { y: reportMonth.y - 1, m: 11 } : { y: reportMonth.y, m: reportMonth.m - 1 };
+              const prevSold = products.filter((p: any) => { if (p.status !== 'VENDUTO' || !p.soldAt) return false; const d = new Date(p.soldAt); return d.getFullYear() === pm.y && d.getMonth() === pm.m; });
+              const prevNetto = prevSold.reduce((a: number, p: any) => a + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)), 0);
+              const hasPrev = prevSold.length > 0;
+              const deltaPct = prevNetto !== 0 ? ((netto - prevNetto) / Math.abs(prevNetto) * 100) : (netto > 0 ? 100 : 0);
+              // Export CSV del mese
+              const exportMonth = () => {
+                const rows = [['Brand', 'Nome', 'Taglia', 'Acquisto', 'Vendita', 'Fee', 'Profitto', 'Piattaforma', 'Data vendita']];
+                monthSold.forEach((p: any) => rows.push([
+                  p.brand, p.name, p.size || '', String(p.purchasePrice), String(p.salePrice || 0), String(p.fees || 0),
+                  ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)).toFixed(2), p.platform || '',
+                  p.soldAt ? new Date(p.soldAt).toLocaleDateString('it-IT') : '',
+                ]));
+                const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+                const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `report-${reportMonth.y}-${String(reportMonth.m + 1).padStart(2, '0')}.csv`; a.click();
+                URL.revokeObjectURL(url);
+              };
               const label = new Date(reportMonth.y, reportMonth.m, 1).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
               const shift = (delta: number) => setReportMonth(({ y, m }) => {
                 const nm = m + delta;
@@ -2756,13 +2777,21 @@ export default function App() {
               const isCurrent = reportMonth.y === now.getFullYear() && reportMonth.m === now.getMonth();
               return (
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-4 gap-2">
                     <h3 className="font-semibold">Conto economico</h3>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => shift(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg">‹</button>
-                      <span className="text-sm font-bold capitalize min-w-[130px] text-center">{label}</span>
-                      <button onClick={() => shift(1)} disabled={isCurrent}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg disabled:opacity-30">›</button>
+                    <div className="flex items-center gap-2">
+                      {monthSold.length > 0 && (
+                        <button onClick={exportMonth} title="Esporta CSV del mese"
+                          className="flex items-center gap-1.5 bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--text-soft)] hover:text-[var(--text)] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors">
+                          <Download size={13} /> <span className="hidden sm:inline">Esporta</span>
+                        </button>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => shift(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg">‹</button>
+                        <span className="text-sm font-bold capitalize min-w-[110px] sm:min-w-[130px] text-center">{label}</span>
+                        <button onClick={() => shift(1)} disabled={isCurrent}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg disabled:opacity-30">›</button>
+                      </div>
                     </div>
                   </div>
                   {monthSold.length === 0 ? (
@@ -2782,7 +2811,10 @@ export default function App() {
                       <div className="bg-[var(--surface-2)] rounded-xl p-4">
                         <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">Profitto netto</p>
                         <p className={`text-2xl font-bold num ${netto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{netto >= 0 ? '+' : ''}{netto.toFixed(0)}€</p>
-                        <p className="text-[11px] text-[var(--text-soft)] mt-1">ROI {roi >= 0 ? '+' : ''}{roi.toFixed(0)}%</p>
+                        <p className="text-[11px] text-[var(--text-soft)] mt-1">
+                          ROI {roi >= 0 ? '+' : ''}{roi.toFixed(0)}%
+                          {hasPrev && <span className={`ml-1.5 font-bold ${deltaPct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{deltaPct >= 0 ? '▲' : '▼'}{Math.abs(deltaPct).toFixed(0)}% <span className="font-normal text-[var(--text-faint)]">vs mese prec.</span></span>}
+                        </p>
                       </div>
                       <div className="bg-[var(--surface-2)] rounded-xl p-4">
                         <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">Top piattaforma</p>
