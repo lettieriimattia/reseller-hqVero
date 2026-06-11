@@ -1990,7 +1990,7 @@ export default function App() {
       {/* ========== HEADER ========== */}
       <header className="sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)]"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="w-full px-4 lg:px-8 py-3.5 flex justify-between items-center">
+        <div className="w-full max-w-[1280px] mx-auto px-4 lg:px-8 py-3.5 flex justify-between items-center">
           <div className="flex items-center">
             {/* Staggered HQ logo */}
             <div className="relative w-[1.6rem] h-[1.7rem] shrink-0 mr-2">
@@ -2071,8 +2071,8 @@ export default function App() {
         
         {/* Tabs */}
         <nav className="border-t border-[var(--border)] hidden lg:block">
-          <div className="w-full px-8">
-            <div className="flex gap-0">
+          <div className="w-full max-w-[1280px] mx-auto px-8">
+            <div className="flex gap-0 justify-center">
               {[
                 { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
                 { id: 'magazzino', label: 'Magazzino', icon: Package },
@@ -2107,7 +2107,7 @@ export default function App() {
         </nav>
       </header>
       
-      <main key={currentView} className="w-full px-4 lg:px-8 py-5 lg:py-12 pb-28 lg:pb-16 animate-fade-in">
+      <main key={currentView} className="w-full max-w-[1280px] mx-auto px-4 lg:px-8 py-5 lg:py-12 pb-28 lg:pb-16 animate-fade-in">
 
         {/* ========== DASHBOARD ========== */}
         {currentView === 'dashboard' && (
