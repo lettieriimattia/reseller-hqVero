@@ -113,9 +113,9 @@ html.glass, html.glass body {
 }
 
 html, body {
-  /* La schermata resta ferma: niente scorrimento o pan orizzontale */
-  overflow-x: hidden;
-  width: 100%;
+  /* Niente pan orizzontale, MA con 'clip' (non 'hidden'): clip evita di creare
+     uno scroll-container, così lo scroll verticale resta nativo e funziona col touchpad. */
+  overflow-x: clip;
   max-width: 100%;
 }
 
