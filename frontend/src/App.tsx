@@ -3067,9 +3067,9 @@ export default function App() {
                 {adminPanelOpen && (
                   <div className="border-t border-white/[0.05]">
                     {/* Toolbar */}
-                    <div className="px-5 py-3 flex items-center justify-between border-b border-white/[0.04]">
+                    <div className="px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-white/[0.04]">
                       <p className="text-[10px] text-gray-600">Auto-aggiornamento ogni 5 min</p>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <button onClick={sendTestEmail}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] rounded-xl text-xs font-semibold transition-colors">
                           <Mail size={12} /> Test Email
