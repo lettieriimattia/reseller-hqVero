@@ -7,7 +7,7 @@ import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
-  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail
+  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon
 } from 'lucide-react';
 
 // ==========================================
@@ -111,20 +111,20 @@ function HQLoader() {
 // ==========================================
 // COMPONENTI RIUTILIZZABILI
 // ==========================================
-function StatCard({ title, value, sub, icon, color = 'text-white', onClick }: any) {
+function StatCard({ title, value, sub, icon, color = 'text-[var(--text)]', onClick }: any) {
   return (
     <div
       onClick={onClick}
-      className={`bg-[#0f0f0f] border border-white/[0.05] p-5 lg:p-6 rounded-2xl transition-colors ${
-        onClick ? 'cursor-pointer hover:border-white/[0.1]' : ''
+      className={`bg-[var(--surface)] border border-[var(--border)] p-5 lg:p-6 rounded-2xl transition-colors ${
+        onClick ? 'cursor-pointer hover:border-[var(--border-2)]' : ''
       }`}
     >
       <div className="flex justify-between items-start mb-4 lg:mb-5">
-        <span className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase">{title}</span>
+        <span className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase">{title}</span>
         {icon}
       </div>
       <p className={`text-2xl lg:text-4xl font-semibold num ${color}`}>{value}</p>
-      <p className="text-[11px] lg:text-sm text-gray-500 mt-1.5 lg:mt-2">{sub}</p>
+      <p className="text-[11px] lg:text-sm text-[var(--text-soft)] mt-1.5 lg:mt-2">{sub}</p>
     </div>
   );
 }
@@ -200,6 +200,17 @@ export default function App() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   
+  // ----- TEMA (chiaro/scuro) -----
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try { return (localStorage.getItem('hq-theme') as 'dark' | 'light') || 'dark'; } catch { return 'dark'; }
+  });
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'light') root.classList.add('light');
+    else root.classList.remove('light');
+    try { localStorage.setItem('hq-theme', theme); } catch {}
+  }, [theme]);
+
   // ----- UI STATE -----
   const [currentView, setCurrentView] = useState<'dashboard' | 'magazzino' | 'analytics' | 'tracking' | 'settings'>('dashboard');
   const [magazzinoView, setMagazzinoView] = useState<'instock' | 'sold'>('instock');
@@ -1723,7 +1734,7 @@ export default function App() {
   // ==========================================
   if (bootLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-6">
+      <div className="min-h-screen bg-[var(--surface-2)] flex flex-col items-center justify-center gap-6">
         <HQLoader />
         {/* Skeleton cards */}
         <div className="w-full max-w-sm px-6 space-y-3 mt-4">
@@ -1740,16 +1751,16 @@ export default function App() {
   // ==========================================
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 font-sans">
-        <div className="bg-[#0f0f0f] border border-white/[0.05] p-8 rounded-3xl w-full max-w-md">
+      <div className="min-h-screen bg-[var(--surface-2)] flex items-center justify-center p-4 font-sans">
+        <div className="bg-[var(--surface)] border border-[var(--border)] p-8 rounded-3xl w-full max-w-md">
           {/* Logo HQ centrato */}
           <div className="flex justify-center mb-6">
             <div className="relative w-14 h-16">
-              <span className="absolute top-0 left-0 text-[3rem] font-black leading-none text-white">H</span>
-              <span className="absolute bottom-0 right-0 text-[3rem] font-black leading-none text-white/40">Q</span>
+              <span className="absolute top-0 left-0 text-[3rem] font-black leading-none text-[var(--text)]">H</span>
+              <span className="absolute bottom-0 right-0 text-[3rem] font-black leading-none text-[var(--text)]/40">Q</span>
             </div>
           </div>
-          <p className="text-center text-gray-500 text-sm mb-8">
+          <p className="text-center text-[var(--text-soft)] text-sm mb-8">
             {authMode === 'login' ? 'Accedi al tuo account' : 'Crea il tuo account'}
           </p>
           
@@ -1758,15 +1769,15 @@ export default function App() {
               <div className="bg-blue-500/10 border border-blue-500/30 p-5 rounded-2xl">
                 <div className="flex items-center gap-2 mb-3">
                   <Shield className="text-blue-500" size={20} />
-                  <h3 className="text-white font-bold">Verifica 2FA</h3>
+                  <h3 className="text-[var(--text)] font-bold">Verifica 2FA</h3>
                 </div>
-                <p className="text-xs text-gray-400 mb-4">
+                <p className="text-xs text-[var(--text-muted)] mb-4">
                   Inserisci il codice a 6 cifre dalla tua app authenticator (o un codice di backup).
                 </p>
                 <input 
                   type="text" autoFocus inputMode="numeric" required
                   value={twoFactorCode} onChange={e => setTwoFactorCode(e.target.value)}
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-white outline-none focus:border-blue-500 font-mono text-center text-2xl tracking-widest"
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-blue-500 font-mono text-center text-2xl tracking-widest"
                   placeholder="000000" maxLength={8}
                 />
               </div>
@@ -1774,30 +1785,30 @@ export default function App() {
               <>
                 {authMode === 'register' && (
                   <>
-                    <div className="flex bg-[#0a0a0a] p-1 rounded-xl border border-white/[0.07] mb-6">
+                    <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] mb-6">
                       <button type="button" onClick={() => setRegType('new_team')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
-                          regType === 'new_team' ? 'bg-[#ff4d00] text-white' : 'text-gray-500'
+                          regType === 'new_team' ? 'bg-[#ff4d00] text-[var(--text)]' : 'text-[var(--text-soft)]'
                         }`}>Fonda un'Azienda</button>
                       <button type="button" onClick={() => setRegType('join_team')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
-                          regType === 'join_team' ? 'bg-blue-600 text-white' : 'text-gray-500'
+                          regType === 'join_team' ? 'bg-blue-600 text-[var(--text)]' : 'text-[var(--text-soft)]'
                         }`}>Entra in un Team</button>
                     </div>
                     
                     <div>
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-2">Il tuo Nome</label>
+                      <label className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Il tuo Nome</label>
                       <input type="text" required value={authName} onChange={e => setAuthName(e.target.value)}
-                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-white focus:border-[#ff4d00] outline-none"
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#ff4d00] outline-none"
                         placeholder="Es. Mario Rossi" />
                     </div>
                     
                     {regType === 'new_team' && (
-                      <div className="mt-6 mb-4 border-t border-white/[0.07] pt-6">
-                        <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-1">
-                          <Layers className="text-white" size={18} /> I tuoi Reparti
+                      <div className="mt-6 mb-4 border-t border-[var(--border-2)] pt-6">
+                        <h3 className="text-lg font-bold text-[var(--text)] flex items-center gap-2 mb-1">
+                          <Layers className="text-[var(--text)]" size={18} /> I tuoi Reparti
                         </h3>
-                        <p className="text-xs text-gray-500 mb-4">Seleziona cosa venderà la tua nuova azienda.</p>
+                        <p className="text-xs text-[var(--text-soft)] mb-4">Seleziona cosa venderà la tua nuova azienda.</p>
                         <div className="grid grid-cols-2 gap-3">
                           {availableCategories.map(cat => (
                             <button key={cat.id} type="button" onClick={() => {
@@ -1807,8 +1818,8 @@ export default function App() {
                             }}
                               className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
                                 regCategories.includes(cat.id)
-                                  ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-white shadow-[0_0_15px_rgba(255,77,0,0.2)]'
-                                  : 'bg-[#0a0a0a] border-white/[0.07] text-gray-500 hover:border-gray-600 hover:text-gray-300'
+                                  ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-[var(--text)] shadow-[0_0_15px_rgba(255,77,0,0.2)]'
+                                  : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600 hover:text-gray-300'
                               }`}>
                               <span className="text-2xl">{cat.icon}</span>
                               <span className="text-sm font-bold">{cat.label}</span>
@@ -1819,14 +1830,14 @@ export default function App() {
                     )}
                     
                     {regType === 'join_team' && (
-                      <div className="mt-6 mb-4 border-t border-white/[0.07] pt-6">
-                        <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-1">
+                      <div className="mt-6 mb-4 border-t border-[var(--border-2)] pt-6">
+                        <h3 className="text-lg font-bold text-[var(--text)] flex items-center gap-2 mb-1">
                           <UserPlus className="text-blue-500" size={18} /> Codice Invito
                         </h3>
-                        <p className="text-xs text-gray-500 mb-4">Inserisci il codice fornito dal tuo socio.</p>
+                        <p className="text-xs text-[var(--text-soft)] mb-4">Inserisci il codice fornito dal tuo socio.</p>
                         <input type="text" required value={joinCode}
                           onChange={e => setJoinCode(e.target.value.toUpperCase())}
-                          className="w-full bg-[#0a0a0a] border border-blue-500/50 rounded-xl p-3 text-white outline-none font-mono"
+                          className="w-full bg-[var(--surface-2)] border border-blue-500/50 rounded-xl p-3 text-[var(--text)] outline-none font-mono"
                           placeholder="INV-XXXXXXXX" />
                       </div>
                     )}
@@ -1834,27 +1845,27 @@ export default function App() {
                 )}
                 
                 <div className="pt-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-2">Email</label>
+                  <label className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Email</label>
                   <input type="email" required value={authEmail}
                     onChange={e => setAuthEmail(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-white focus:border-[#ff4d00] outline-none"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#ff4d00] outline-none"
                     placeholder="mario@email.com" />
                 </div>
                 
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-2">Password</label>
+                  <label className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Password</label>
                   <div className="relative">
                     <input type={showPassword ? 'text' : 'password'} required value={authPassword}
                       onChange={e => setAuthPassword(e.target.value)}
-                      className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 pr-12 text-white focus:border-[#ff4d00] outline-none"
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 pr-12 text-[var(--text)] focus:border-[#ff4d00] outline-none"
                       placeholder="••••••••" />
                     <button type="button" onClick={() => setShowPassword(s => !s)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)] hover:text-[var(--text)]">
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                   {authMode === 'register' && (
-                    <p className="text-[10px] text-gray-500 mt-2">
+                    <p className="text-[10px] text-[var(--text-soft)] mt-2">
                       Almeno 10 caratteri, una maiuscola, un numero e un carattere speciale.
                     </p>
                   )}
@@ -1877,13 +1888,13 @@ export default function App() {
               <div className="space-y-3 mt-4">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" required className="mt-0.5 shrink-0 accent-white w-4 h-4 rounded" />
-                  <span className="text-[12px] text-gray-500 leading-relaxed">
+                  <span className="text-[12px] text-[var(--text-soft)] leading-relaxed">
                     Ho letto e accetto la{' '}
-                    <button type="button" onClick={() => setPrivacyOpen(true)} className="text-white underline underline-offset-2 hover:no-underline">
+                    <button type="button" onClick={() => setPrivacyOpen(true)} className="text-[var(--text)] underline underline-offset-2 hover:no-underline">
                       Privacy Policy
                     </button>
                     {' '}e il trattamento dei dati personali ai sensi del Regolamento UE 2016/679 (GDPR).{' '}
-                    <span className="text-gray-600">Obbligatorio</span>
+                    <span className="text-[var(--text-faint)]">Obbligatorio</span>
                   </span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
@@ -1893,16 +1904,16 @@ export default function App() {
                     onChange={e => setMarketingConsent(e.target.checked)}
                     className="mt-0.5 shrink-0 accent-white w-4 h-4 rounded"
                   />
-                  <span className="text-[12px] text-gray-500 leading-relaxed">
+                  <span className="text-[12px] text-[var(--text-soft)] leading-relaxed">
                     Acconsento a ricevere comunicazioni via email relative ad aggiornamenti del servizio, nuove funzionalità e novità di HQ. Il consenso è revocabile in qualsiasi momento dalle impostazioni del profilo.{' '}
-                    <span className="text-gray-600">Facoltativo</span>
+                    <span className="text-[var(--text-faint)]">Facoltativo</span>
                   </span>
                 </label>
               </div>
             )}
 
             <button type="submit" disabled={authLoading}
-              className="w-full bg-[#ff4d00] hover:bg-[#ff6a2a] py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50 mt-4 flex items-center justify-center">
+              className="w-full bg-[#ff4d00] hover:bg-[#ff6a2a] py-3 rounded-xl text-[var(--text)] font-bold transition-all disabled:opacity-50 mt-4 flex items-center justify-center">
               {authLoading ? <Loader2 className="animate-spin" size={20} /> :
                 require2FA ? 'Verifica 2FA' : (authMode === 'login' ? 'Entra' : 'Registrati')}
             </button>
@@ -1911,7 +1922,7 @@ export default function App() {
           <div className="mt-6 text-center">
             <button type="button" 
               onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(null); }}
-              className="text-gray-500 hover:text-white text-sm transition-colors font-bold">
+              className="text-[var(--text-soft)] hover:text-[var(--text)] text-sm transition-colors font-bold">
               {authMode === 'login' ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi'}
             </button>
           </div>
@@ -1925,17 +1936,17 @@ export default function App() {
   // RENDER PRINCIPALE - APP AUTENTICATA
   // ========================================
   return (
-    <div className="min-h-screen bg-[#080808] text-white" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
 
       {/* ========== HEADER ========== */}
-      <header className="sticky top-0 z-40 bg-[#080808]/95 backdrop-blur-xl border-b border-white/[0.05]"
+      <header className="sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)]"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="w-full px-4 lg:px-8 py-3.5 flex justify-between items-center">
           <div className="flex items-center">
             {/* Staggered HQ logo */}
             <div className="relative w-[1.6rem] h-[1.7rem] shrink-0 mr-2">
-              <span className="absolute top-0 left-0 text-[1.15rem] font-black leading-none text-white">H</span>
-              <span className="absolute bottom-0 right-[-2px] text-[1.15rem] font-black leading-none text-white/50">Q</span>
+              <span className="absolute top-0 left-0 text-[1.15rem] font-black leading-none text-[var(--text)]">H</span>
+              <span className="absolute bottom-0 right-[-2px] text-[1.15rem] font-black leading-none text-[var(--text)]/50">Q</span>
             </div>
           </div>
 
@@ -1949,41 +1960,41 @@ export default function App() {
             {/* Notifiche */}
             <div className="relative">
               <button onClick={() => setNotifPanelOpen(!notifPanelOpen)}
-                className="relative p-2 rounded-xl hover:bg-white/[0.05] transition-colors">
-                <Bell size={18} className="text-gray-400" />
+                className="relative p-2 rounded-xl hover:bg-[var(--fill)] transition-colors">
+                <Bell size={18} className="text-[var(--text-muted)]" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-[#ff4d00] text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 bg-[#ff4d00] text-[var(--text)] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </button>
 
               {notifPanelOpen && (
-                <div className="absolute right-0 top-12 w-80 sm:w-96 bg-[#0f0f0f] border border-white/[0.07] rounded-2xl shadow-xl overflow-hidden z-50">
-                  <div className="p-4 border-b border-white/[0.05] flex justify-between items-center">
+                <div className="absolute right-0 top-12 w-80 sm:w-96 bg-[var(--surface)] border border-[var(--border-2)] rounded-2xl shadow-xl overflow-hidden z-50">
+                  <div className="p-4 border-b border-[var(--border)] flex justify-between items-center">
                     <h3 className="font-semibold text-sm">Notifiche</h3>
                     {unreadCount > 0 && (
                       <button onClick={markAllNotificationsRead}
-                        className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+                        className="text-xs text-[var(--text-soft)] hover:text-gray-300 transition-colors">
                         Segna tutto letto
                       </button>
                     )}
                   </div>
                   <div className="max-h-96 overflow-y-auto">
                     {notifications.length === 0 ? (
-                      <p className="p-8 text-center text-gray-500 text-sm">Nessuna notifica</p>
+                      <p className="p-8 text-center text-[var(--text-soft)] text-sm">Nessuna notifica</p>
                     ) : (
                       notifications.map((n: any) => (
                         <button key={n.id} onClick={() => markNotificationRead(n.id)}
-                          className={`w-full text-left p-3.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors ${
-                            !n.read ? 'bg-white/[0.02]' : ''
+                          className={`w-full text-left p-3.5 border-b border-[var(--border)] hover:bg-[var(--fill)] transition-colors ${
+                            !n.read ? 'bg-[var(--fill)]' : ''
                           }`}>
                           <div className="flex items-start gap-3">
                             {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-[#ff4d00] mt-1.5 shrink-0" />}
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-white truncate">{n.title}</p>
-                              <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
-                              <p className="text-[10px] text-gray-600 mt-1">
+                              <p className="text-sm font-semibold text-[var(--text)] truncate">{n.title}</p>
+                              <p className="text-xs text-[var(--text-soft)] mt-0.5">{n.message}</p>
+                              <p className="text-[10px] text-[var(--text-faint)] mt-1">
                                 {new Date(n.createdAt).toLocaleString('it-IT')}
                               </p>
                             </div>
@@ -1997,20 +2008,20 @@ export default function App() {
             </div>
 
             <button onClick={() => navigateTo('settings')}
-              className="p-2 rounded-xl hover:bg-white/[0.05] transition-colors hidden sm:block">
-              <Settings size={18} className="text-gray-400" />
+              className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors hidden sm:block">
+              <Settings size={18} className="text-[var(--text-muted)]" />
             </button>
 
             <button onClick={handleLogout} title="Esci"
-              className="p-2 rounded-xl hover:bg-white/[0.05] transition-colors">
-              <LogOut size={18} className="text-gray-400" />
+              className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors">
+              <LogOut size={18} className="text-[var(--text-muted)]" />
             </button>
             
           </div>
         </div>
         
         {/* Tabs */}
-        <nav className="border-t border-white/[0.05] hidden lg:block">
+        <nav className="border-t border-[var(--border)] hidden lg:block">
           <div className="w-full px-8">
             <div className="flex gap-0">
               {[
@@ -2028,14 +2039,14 @@ export default function App() {
                 return (
                   <button key={tab.id} onClick={() => navigateTo(tab.id as any)}
                     className={`relative flex items-center gap-2 px-4 py-3.5 text-xs font-semibold tracking-wide transition-colors ${
-                      active ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                      active ? 'text-[var(--text)]' : 'text-[var(--text-soft)] hover:text-gray-300'
                     }`}>
                     {active && (
                       <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#ff4d00] rounded-full" />
                     )}
                     <Icon size={14} /> {tab.label}
                     {trackingBadge > 0 && (
-                      <span className="w-4 h-4 bg-blue-500 text-white rounded-full text-[9px] font-semibold flex items-center justify-center">
+                      <span className="w-4 h-4 bg-blue-500 text-[var(--text)] rounded-full text-[9px] font-semibold flex items-center justify-center">
                         {trackingBadge}
                       </span>
                     )}
@@ -2056,18 +2067,18 @@ export default function App() {
             {/* Greeting */}
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-[11px] text-gray-600 font-semibold uppercase tracking-[0.1em]">{new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                <p className="text-[11px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">{new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                 <h2 className="text-3xl font-bold mt-1">
-                  Ciao, <span className="text-white">{user.name.split(' ')[0]}</span>
+                  Ciao, <span className="text-[var(--text)]">{user.name.split(' ')[0]}</span>
                 </h2>
               </div>
               {weekSales.length > 0 && (
                 <div className="hidden sm:flex flex-col items-end gap-0.5">
-                  <p className="text-[9px] text-gray-600 font-semibold uppercase tracking-[0.1em]">Settimana</p>
+                  <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">Settimana</p>
                   <p className={`text-xl font-bold num ${weekProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                     {weekProfit >= 0 ? '+' : ''}{weekProfit.toFixed(0)}€
                   </p>
-                  <p className="text-[11px] text-gray-600">{weekSales.length} {weekSales.length === 1 ? 'vendita' : 'vendite'}</p>
+                  <p className="text-[11px] text-[var(--text-faint)]">{weekSales.length} {weekSales.length === 1 ? 'vendita' : 'vendite'}</p>
                 </div>
               )}
             </div>
@@ -2075,52 +2086,52 @@ export default function App() {
             {/* KPI principali */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Mio profitto */}
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5 hover:border-white/[0.1] transition-colors">
-                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 hover:border-[var(--border-2)] transition-colors">
+                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
                   <Wallet size={10} /> Personale
                 </p>
-                <p className="text-2xl lg:text-3xl font-bold text-white num">{mioProfitto.toFixed(0)}€</p>
-                <p className="text-[11px] text-gray-600 mt-1.5">Quote personali</p>
+                <p className="text-2xl lg:text-3xl font-bold text-[var(--text)] num">{mioProfitto.toFixed(0)}€</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Quote personali</p>
               </div>
 
               {/* Team — clickable per team panel */}
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5 cursor-pointer hover:border-white/[0.1] transition-colors group"
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] transition-colors group"
                 onClick={() => setTeamPanelOpen(true)}>
-                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
+                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
                   <Users size={10} /> Team
                 </p>
                 <p className="text-2xl lg:text-3xl font-bold text-purple-400 num">{globalProfitto.toFixed(0)}€</p>
                 <div className="flex items-center justify-between mt-1.5">
-                  <p className="text-[11px] text-gray-600">Profitto totale</p>
-                  <span className="text-[9px] text-gray-600 group-hover:text-gray-400 transition-colors">Dettaglio →</span>
+                  <p className="text-[11px] text-[var(--text-faint)]">Profitto totale</p>
+                  <span className="text-[9px] text-[var(--text-faint)] group-hover:text-[var(--text-muted)] transition-colors">Dettaglio →</span>
                 </div>
               </div>
 
               {/* Stock */}
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5 cursor-pointer hover:border-white/[0.1] transition-colors group"
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] transition-colors group"
                 onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); }}>
-                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
+                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
                   <Layers size={10} /> Stock
                 </p>
                 <p className="text-2xl lg:text-3xl font-bold num">{stockValore.toFixed(0)}€</p>
-                <p className="text-[11px] text-gray-600 mt-1.5">{inStockItems.length} pezzi · <span className="group-hover:text-gray-400 transition-colors">Vedi →</span></p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{inStockItems.length} pezzi · <span className="group-hover:text-[var(--text-muted)] transition-colors">Vedi →</span></p>
               </div>
 
               {/* Vendite */}
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5 cursor-pointer hover:border-white/[0.1] transition-colors group"
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] transition-colors group"
                 onClick={() => { setCurrentView('magazzino'); setMagazzinoView('sold'); }}>
-                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
+                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
                   <TrendingUp size={10} /> Vendite
                 </p>
                 <p className="text-2xl lg:text-3xl font-bold text-emerald-400 num">{soldItemsTotal.length}</p>
-                <p className="text-[11px] text-gray-600 mt-1.5">{ricaviTotali.toFixed(0)}€ ricavi · <span className="group-hover:text-gray-400 transition-colors">Vedi →</span></p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{ricaviTotali.toFixed(0)}€ ricavi · <span className="group-hover:text-[var(--text-muted)] transition-colors">Vedi →</span></p>
               </div>
             </div>
 
             {/* Smart Insights */}
             {(staleCount > 0 || weekSales.length > 0 || bestCategoryEntry?.profit > 0) && (
-              <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5">
-                <p className="text-[9px] font-semibold text-gray-500 uppercase tracking-[0.12em] mb-4 flex items-center gap-2">
+              <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                <p className="text-[9px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.12em] mb-4 flex items-center gap-2">
                   <Sparkles size={10} /> Insights
                 </p>
                 <div className="space-y-3">
@@ -2130,9 +2141,9 @@ export default function App() {
                       <AlertTriangle size={16} className="text-red-400 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-red-300">{staleCount} {staleCount === 1 ? 'prodotto fermo' : 'prodotti fermi'} da oltre 30 giorni</p>
-                        <p className="text-[10px] text-gray-500">Valuta uno sconto per sbloccare capitale</p>
+                        <p className="text-[10px] text-[var(--text-soft)]">Valuta uno sconto per sbloccare capitale</p>
                       </div>
-                      <span className="text-[10px] text-gray-500 shrink-0">Vedi →</span>
+                      <span className="text-[10px] text-[var(--text-soft)] shrink-0">Vedi →</span>
                     </div>
                   )}
                   {weekSales.length > 0 && (
@@ -2143,7 +2154,7 @@ export default function App() {
                           {weekSales.length} {weekSales.length === 1 ? 'vendita' : 'vendite'} questa settimana
                           {weekProfit > 0 && ` · +${weekProfit.toFixed(0)}€`}
                         </p>
-                        <p className="text-[10px] text-gray-500">Ottimo ritmo di smaltimento stock</p>
+                        <p className="text-[10px] text-[var(--text-soft)]">Ottimo ritmo di smaltimento stock</p>
                       </div>
                     </div>
                   )}
@@ -2152,7 +2163,7 @@ export default function App() {
                       <span className="text-xl shrink-0">{getCategoryIcon(bestCategoryEntry.cat)}</span>
                       <div>
                         <p className="text-sm font-bold">{bestCategoryEntry.cat} è il tuo reparto migliore</p>
-                        <p className="text-[10px] text-gray-500">+{bestCategoryEntry.profit.toFixed(0)}€ · {bestCategoryEntry.count} vendite</p>
+                        <p className="text-[10px] text-[var(--text-soft)]">+{bestCategoryEntry.profit.toFixed(0)}€ · {bestCategoryEntry.count} vendite</p>
                       </div>
                     </div>
                   )}
@@ -2160,15 +2171,15 @@ export default function App() {
                     <div className="flex items-center gap-3">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1.5">
-                          <p className="text-xs text-gray-400 font-semibold">Sell-through rate</p>
-                          <p className="text-xs font-bold text-white num">{sellThroughRate}%</p>
+                          <p className="text-xs text-[var(--text-muted)] font-semibold">Sell-through rate</p>
+                          <p className="text-xs font-bold text-[var(--text)] num">{sellThroughRate}%</p>
                         </div>
                         <div className="h-1.5 bg-black/40 rounded-full overflow-hidden">
                           <div className={`h-full rounded-full transition-all ${
                             sellThroughRate >= 60 ? 'bg-green-500' : sellThroughRate >= 30 ? 'bg-yellow-500' : 'bg-gray-600'
                           }`} style={{ width: `${sellThroughRate}%` }} />
                         </div>
-                        <p className="text-[10px] text-gray-600 mt-1">{globalSold.length} venduti su {totalItems} totali</p>
+                        <p className="text-[10px] text-[var(--text-faint)] mt-1">{globalSold.length} venduti su {totalItems} totali</p>
                       </div>
                     </div>
                   )}
@@ -2178,13 +2189,13 @@ export default function App() {
 
             {/* Libro Paga Soci */}
             {Object.keys(sociProfits).length > 1 && (
-              <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5 cursor-pointer hover:border-white/[0.1] transition-colors"
+              <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] transition-colors"
                 onClick={() => setTeamPanelOpen(true)}>
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase flex items-center gap-1.5">
+                  <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-1.5">
                     <Trophy size={10} /> Libro Paga
                   </p>
-                  <span className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors">Dettaglio →</span>
+                  <span className="text-[9px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">Dettaglio →</span>
                 </div>
                 <div className="space-y-1.5">
                   {Object.values(sociProfits)
@@ -2193,20 +2204,20 @@ export default function App() {
                       const maxP = Math.max(...Object.values(sociProfits).map((s: any) => s.profit), 1);
                       return (
                         <div key={idx} className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
-                          socio.name === user.name ? 'bg-white/[0.03] border border-white/[0.06]' : ''
+                          socio.name === user.name ? 'bg-[var(--fill)] border border-[var(--border)]' : ''
                         }`}>
-                          <div className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center text-xs font-semibold text-gray-400 shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-[var(--fill)] flex items-center justify-center text-xs font-semibold text-[var(--text-muted)] shrink-0">
                             {socio.name[0]?.toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1.5">
                               <span className="font-semibold text-sm truncate">{socio.name}</span>
                               {socio.name === user.name && (
-                                <span className="text-[9px] bg-white/[0.06] text-gray-400 px-1.5 py-0.5 rounded-full shrink-0">tu</span>
+                                <span className="text-[9px] bg-[var(--fill)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full shrink-0">tu</span>
                               )}
                             </div>
-                            <div className="h-0.5 bg-white/[0.04] rounded-full overflow-hidden">
-                              <div className="h-full bg-white/20 rounded-full transition-all"
+                            <div className="h-0.5 bg-[var(--fill)] rounded-full overflow-hidden">
+                              <div className="h-full bg-[var(--fill-3)] rounded-full transition-all"
                                 style={{ width: `${(socio.profit / maxP) * 100}%` }} />
                             </div>
                           </div>
@@ -2220,7 +2231,7 @@ export default function App() {
 
             {/* Reparti */}
             <section>
-              <p className="text-[9px] font-semibold text-gray-600 tracking-[0.12em] uppercase mb-3">Reparti</p>
+              <p className="text-[9px] font-semibold text-[var(--text-faint)] tracking-[0.12em] uppercase mb-3">Reparti</p>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {userCategories.map((cat: string) => {
                   const catAll = products.filter(p => p.category === cat);
@@ -2233,22 +2244,22 @@ export default function App() {
                     : 0;
                   return (
                     <div key={cat} onClick={() => { setCurrentView('magazzino'); setFilterCat(cat); }}
-                      className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4 lg:p-5 hover:border-white/[0.1] transition-colors cursor-pointer group">
+                      className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 lg:p-5 hover:border-[var(--border-2)] transition-colors cursor-pointer group">
                       <div className="flex items-center justify-between mb-3 lg:mb-4">
                         <span className="text-xl lg:text-3xl">{getCategoryIcon(cat)}</span>
-                        <span className="text-[9px] lg:text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/[0.04] text-gray-400">{catSellRate}%</span>
+                        <span className="text-[9px] lg:text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-muted)]">{catSellRate}%</span>
                       </div>
                       <p className="font-bold text-base lg:text-2xl leading-none">{cat}</p>
-                      <p className="text-[11px] lg:text-sm text-gray-500 mt-1 lg:mt-1.5 mb-3 lg:mb-4">{catStock.length} stock · {catSold.length} venduti</p>
-                      <div className="h-0.5 lg:h-1 bg-white/[0.04] rounded-full overflow-hidden mb-2.5 lg:mb-3">
+                      <p className="text-[11px] lg:text-sm text-[var(--text-soft)] mt-1 lg:mt-1.5 mb-3 lg:mb-4">{catStock.length} stock · {catSold.length} venduti</p>
+                      <div className="h-0.5 lg:h-1 bg-[var(--fill)] rounded-full overflow-hidden mb-2.5 lg:mb-3">
                         <div className="h-full bg-[#ff4d00] rounded-full" style={{ width: `${catSellRate}%` }} />
                       </div>
                       <div className="flex items-center justify-between">
-                        <p className={`text-sm lg:text-lg font-bold num ${catProfit > 0 ? 'text-emerald-400' : catProfit < 0 ? 'text-red-400' : 'text-gray-600'}`}>
+                        <p className={`text-sm lg:text-lg font-bold num ${catProfit > 0 ? 'text-emerald-400' : catProfit < 0 ? 'text-red-400' : 'text-[var(--text-faint)]'}`}>
                           {catProfit > 0 ? '+' : ''}{catProfit.toFixed(0)}€
                         </p>
                         {catAvgMargin !== 0 && (
-                          <p className="text-[11px] lg:text-sm text-gray-500 num">avg {catAvgMargin > 0 ? '+' : ''}{catAvgMargin.toFixed(0)}%</p>
+                          <p className="text-[11px] lg:text-sm text-[var(--text-soft)] num">avg {catAvgMargin > 0 ? '+' : ''}{catAvgMargin.toFixed(0)}%</p>
                         )}
                       </div>
                     </div>
@@ -2266,19 +2277,19 @@ export default function App() {
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <div className="flex items-center gap-3 shrink-0">
                 <h2 className="text-2xl lg:text-3xl font-semibold">Magazzino</h2>
-                <div className="flex bg-[#0f0f0f] p-1 rounded-xl border border-white/[0.07]">
+                <div className="flex bg-[var(--surface)] p-1 rounded-xl border border-[var(--border-2)]">
                   <button onClick={() => { setMagazzinoView('instock'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`px-3 lg:px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      magazzinoView === 'instock' ? 'bg-[#ff4d00] text-white' : 'text-gray-500'
+                      magazzinoView === 'instock' ? 'bg-[#ff4d00] text-[var(--text)]' : 'text-[var(--text-soft)]'
                     }`}>IN STOCK</button>
                   <button onClick={() => { setMagazzinoView('sold'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`px-3 lg:px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      magazzinoView === 'sold' ? 'bg-green-600 text-white' : 'text-gray-500'
+                      magazzinoView === 'sold' ? 'bg-green-600 text-[var(--text)]' : 'text-[var(--text-soft)]'
                     }`}>VENDUTI</button>
                 </div>
                 {bulkMode && (
                   <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-                    className="px-3 py-1.5 text-xs font-bold rounded-xl border bg-[#ff4d00] border-[#ff4d00] text-white transition-colors">
+                    className="px-3 py-1.5 text-xs font-bold rounded-xl border bg-[#ff4d00] border-[#ff4d00] text-[var(--text)] transition-colors">
                     ✕ Annulla
                   </button>
                 )}
@@ -2287,13 +2298,13 @@ export default function App() {
               {/* Ricerca + reparto — inline su desktop, impilati su mobile */}
               <div className="flex flex-col lg:flex-row gap-2 lg:gap-3 lg:flex-1 lg:justify-end mt-2 lg:mt-0">
                 <div className="relative flex-1 lg:max-w-md">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)]" size={16} />
                   <input type="text" placeholder="Cerca brand o modello..."
                     value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
-                    className="w-full bg-[#0f0f0f] border border-white/[0.05] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#ff4d00] outline-none" />
                 </div>
                 <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
-                  className="w-full lg:w-auto bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-3 py-2.5 text-sm focus:border-[#ff4d00] outline-none shrink-0">
+                  className="w-full lg:w-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#ff4d00] outline-none shrink-0">
                   <option value="all">Tutti i reparti</option>
                   {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -2304,7 +2315,7 @@ export default function App() {
               <div className="flex flex-col lg:flex-row lg:flex-wrap gap-2 lg:items-center">
                 {/* Ordina */}
                 <div className="flex flex-wrap gap-2 items-center">
-                  <span className="w-full lg:w-auto text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                  <span className="w-full lg:w-auto text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex items-center gap-1">
                     <ArrowUpDown size={12} /> Ordina:
                   </span>
                   {(['date','price','name'] as const).map(f => (
@@ -2313,7 +2324,7 @@ export default function App() {
                       else { setSortField(f); setSortDir('desc'); }
                     }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                        sortField === f ? 'bg-[#ff4d00] text-white' : 'bg-[#0f0f0f] border border-white/[0.05] text-gray-500 hover:text-white'
+                        sortField === f ? 'bg-[#ff4d00] text-[var(--text)]' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
                       }`}>
                       {f === 'date' ? 'Data' : f === 'price' ? 'Prezzo' : f === 'name' ? 'Nome' : 'Margine'}
                       {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
@@ -2322,7 +2333,7 @@ export default function App() {
                 </div>
                 {/* Condizione */}
                 <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
-                  className="w-full lg:w-auto lg:ml-auto bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-3 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400">
+                  className="w-full lg:w-auto lg:ml-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-[var(--text-muted)]">
                   <option value="all">Condizione</option>
                   <option value="DS">DS</option>
                   <option value="VNDS">VNDS</option>
@@ -2332,10 +2343,10 @@ export default function App() {
                 <div className="flex gap-2">
                   <input type="number" placeholder="Min €" value={filterPriceMin}
                     onChange={(e: any) => setFilterPriceMin(e.target.value)}
-                    className="w-16 bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400" />
+                    className="w-16 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-[var(--text-muted)]" />
                   <input type="number" placeholder="Max €" value={filterPriceMax}
                     onChange={(e: any) => setFilterPriceMax(e.target.value)}
-                    className="w-16 bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400" />
+                    className="w-16 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-[var(--text-muted)]" />
                 </div>
               </div>
             )}
@@ -2344,9 +2355,9 @@ export default function App() {
             <div className="space-y-2.5">
               {magazzinoView === 'instock' ? (
                 groupedInStockArray.length === 0 ? (
-                  <div className="text-center py-16 bg-[#0f0f0f] rounded-2xl border border-white/[0.05]">
+                  <div className="text-center py-16 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
                     <Package className="mx-auto text-gray-800 mb-3" size={44} />
-                    <p className="text-gray-500 font-bold">Nessun prodotto in stock</p>
+                    <p className="text-[var(--text-soft)] font-bold">Nessun prodotto in stock</p>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 lg:gap-3">
@@ -2359,10 +2370,10 @@ export default function App() {
                     const days = g.oldestDate || g.createdAt ? Math.floor((Date.now() - new Date(g.oldestDate || g.createdAt).getTime()) / 86400000) : null;
                     const shares = getShares(g);
                     const daysBadge = days !== null ? (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${days > 30 ? 'bg-red-500/20 text-red-400' : days > 14 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/5 text-gray-600'}`}>{days}g</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${days > 30 ? 'bg-red-500/20 text-red-400' : days > 14 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-[var(--fill)] text-[var(--text-faint)]'}`}>{days}g</span>
                     ) : null;
                     const trackBadge = g.trackingStatus ? (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500/20 text-blue-400' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500/20 text-green-400' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500/20 text-red-400' : 'bg-white/5 text-gray-500'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? 'Transito' : g.trackingStatus === 'DELIVERED' ? 'Consegnato' : g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' : 'Track'}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500/20 text-blue-400' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500/20 text-green-400' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500/20 text-red-400' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? 'Transito' : g.trackingStatus === 'DELIVERED' ? 'Consegnato' : g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' : 'Track'}</span>
                     ) : null;
 
                     return (
@@ -2372,48 +2383,48 @@ export default function App() {
                       <div
                         onClick={() => cardClick(groupKey)}
                         {...cardPressProps(groupKey)}
-                        className={`lg:hidden bg-[#0f0f0f] border rounded-2xl overflow-hidden transition-all relative ${
+                        className={`lg:hidden bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
-                        } ${isSelected ? 'border-[#ff4d00] shadow-[0_0_16px_rgba(255,77,0,0.15)]' : 'border-white/5'}`}>
+                        } ${isSelected ? 'border-[#ff4d00] shadow-[0_0_16px_rgba(255,77,0,0.15)]' : 'border-[var(--border)]'}`}>
                         {bulkMode && (
-                          <div className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#ff4d00] border-[#ff4d00]' : 'border-gray-600 bg-[#0a0a0a]'}`}>
-                            {isSelected && <CheckCircle size={14} className="text-white" />}
+                          <div className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#ff4d00] border-[#ff4d00]' : 'border-gray-600 bg-[var(--surface-2)]'}`}>
+                            {isSelected && <CheckCircle size={14} className="text-[var(--text)]" />}
                           </div>
                         )}
                         <div className="flex items-center gap-3 p-3.5">
                           {photoUrl
-                            ? <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-white/[0.07]"><img src={photoUrl} alt="" className="w-full h-full object-cover" /></div>
+                            ? <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)]"><img src={photoUrl} alt="" className="w-full h-full object-cover" /></div>
                             : <span className="text-3xl shrink-0 w-16 text-center">{getCategoryIcon(g.category)}</span>}
                           <div className={`flex-1 min-w-0 ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
                             onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-bold text-sm truncate">{g.brand} {g.name}</span>
-                              {g.quantity > 1 && <span className="text-[10px] bg-[#ff4d00]/20 text-white px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
+                              {g.quantity > 1 && <span className="text-[10px] bg-[#ff4d00]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
                               {daysBadge}{trackBadge}
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">{g.size} · {g.condition} · <span className="text-gray-300 font-semibold">{g.purchasePrice.toFixed(0)}€</span></p>
+                            <p className="text-xs text-[var(--text-soft)] mt-1">{g.size} · {g.condition} · <span className="text-gray-300 font-semibold">{g.purchasePrice.toFixed(0)}€</span></p>
                             {shares?.length > 0 && <p className="text-[10px] text-blue-400/70 mt-0.5 truncate">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                             {!bulkMode && (
                               <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
-                                className={`mt-1 text-[11px] flex items-center gap-1 ${g.notes ? 'text-gray-500' : 'text-gray-700'}`}>
+                                className={`mt-1 text-[11px] flex items-center gap-1 ${g.notes ? 'text-[var(--text-soft)]' : 'text-gray-700'}`}>
                                 <StickyNote size={10} /><span className="truncate max-w-[180px]">{g.notes || 'Aggiungi nota…'}</span>
                               </button>
                             )}
                           </div>
                           {!bulkMode && (
                             <div className="flex flex-col gap-1 shrink-0">
-                              <button onClick={() => openTrackingModal(g)} className="px-3 py-1.5 bg-white/[0.05] text-gray-400 rounded-lg text-xs font-bold">Track</button>
+                              <button onClick={() => openTrackingModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">Track</button>
                               {isAdmin
                                 ? <button onClick={() => openListingModal(g)} className="px-3 py-1.5 bg-purple-500/15 text-purple-400 rounded-lg text-xs font-bold">Annuncio</button>
-                                : <button onClick={() => openEditModal(g)} className="px-3 py-1.5 bg-white/[0.05] text-gray-400 rounded-lg text-xs font-bold">Modifica</button>}
+                                : <button onClick={() => openEditModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">Modifica</button>}
                               {!isAdmin && <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="px-3 py-1.5 bg-green-500/15 text-green-400 rounded-lg text-xs font-bold">Vendi</button>}
                             </div>
                           )}
                         </div>
                         {!bulkMode && isAdmin && (
-                          <div className="flex border-t border-white/[0.06]">
+                          <div className="flex border-t border-[var(--border)]">
                             <button onClick={() => openShipping(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-orange-400 hover:bg-orange-900/15"><Package size={13} /> Spedisci</button>
-                            <div className="w-px bg-white/[0.06]" />
+                            <div className="w-px bg-[var(--fill)]" />
                             <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> Vendi</button>
                           </div>
                         )}
@@ -2423,9 +2434,9 @@ export default function App() {
                       <div
                         onClick={() => cardClick(groupKey)}
                         {...cardPressProps(groupKey)}
-                        className={`hidden lg:flex flex-col bg-[#0f0f0f] border rounded-2xl overflow-hidden transition-all relative ${
+                        className={`hidden lg:flex flex-col bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
-                        } ${isSelected ? 'border-[#ff4d00] shadow-[0_0_16px_rgba(255,77,0,0.15)]' : 'border-white/5 hover:border-white/[0.12]'}`}>
+                        } ${isSelected ? 'border-[#ff4d00] shadow-[0_0_16px_rgba(255,77,0,0.15)]' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
                         <div
                           className={`relative aspect-[3/2] bg-gradient-to-br from-[#141414] to-[#0a0a0a] flex items-center justify-center overflow-hidden ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
@@ -2433,35 +2444,35 @@ export default function App() {
                             ? <img src={photoUrl} alt="" className="w-full h-full object-cover" />
                             : <span className="text-5xl opacity-80">{getCategoryIcon(g.category)}</span>}
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
-                            {g.quantity > 1 && <span className="text-[10px] bg-[#ff4d00] text-white px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
-                            {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-white' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-gray-300'}`}>{days}g</span>}
-                            {g.trackingStatus && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500 text-white' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500 text-white' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500 text-white' : 'bg-black/50 backdrop-blur text-gray-300'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? 'Transito' : g.trackingStatus === 'DELIVERED' ? 'Consegnato' : g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' : 'Track'}</span>}
+                            {g.quantity > 1 && <span className="text-[10px] bg-[#ff4d00] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
+                            {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-[var(--text)]' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-gray-300'}`}>{days}g</span>}
+                            {g.trackingStatus && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500 text-[var(--text)]' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500 text-[var(--text)]' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500 text-[var(--text)]' : 'bg-black/50 backdrop-blur text-gray-300'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? 'Transito' : g.trackingStatus === 'DELIVERED' ? 'Consegnato' : g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' : 'Track'}</span>}
                           </div>
                           {bulkMode && (
-                            <div className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#ff4d00] border-[#ff4d00]' : 'border-white/60 bg-black/40 backdrop-blur'}`}>
-                              {isSelected && <CheckCircle size={14} className="text-white" />}
+                            <div className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#ff4d00] border-[#ff4d00]' : 'border-[var(--border-3)] bg-black/40 backdrop-blur'}`}>
+                              {isSelected && <CheckCircle size={14} className="text-[var(--text)]" />}
                             </div>
                           )}
                         </div>
                         <div className="p-4 flex-1 flex flex-col items-center text-center">
                           <p className="font-bold text-lg leading-tight line-clamp-2">{g.brand} {g.name}</p>
-                          <p className="text-sm text-gray-400 mt-1.5">{g.size} · {g.condition}</p>
-                          <p className="text-2xl font-bold text-white mt-2 num">{g.purchasePrice.toFixed(0)}€</p>
+                          <p className="text-sm text-[var(--text-muted)] mt-1.5">{g.size} · {g.condition}</p>
+                          <p className="text-2xl font-bold text-[var(--text)] mt-2 num">{g.purchasePrice.toFixed(0)}€</p>
                           {shares?.length > 0 && <p className="text-[11px] text-blue-400/70 mt-1.5 truncate max-w-full">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                           {!bulkMode && (
                             <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
-                              className={`mt-2 text-xs flex items-center justify-center gap-1 ${g.notes ? 'text-gray-500 hover:text-gray-300' : 'text-gray-700 hover:text-gray-500'}`}>
+                              className={`mt-2 text-xs flex items-center justify-center gap-1 ${g.notes ? 'text-[var(--text-soft)] hover:text-gray-300' : 'text-gray-700 hover:text-[var(--text-soft)]'}`}>
                               <StickyNote size={11} className="shrink-0" /><span className="truncate">{g.notes || 'Aggiungi nota…'}</span>
                             </button>
                           )}
                         </div>
                         {!bulkMode && (
-                          <div className="border-t border-white/[0.06] p-2.5 flex flex-col gap-1.5">
+                          <div className="border-t border-[var(--border)] p-2.5 flex flex-col gap-1.5">
                             <div className="grid grid-cols-2 gap-1.5">
-                              <button onClick={() => openTrackingModal(g)} className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.trackingCode ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' : 'bg-white/[0.05] text-gray-400 hover:bg-white/[0.09] hover:text-white'}`}><Truck size={12} /> Track</button>
+                              <button onClick={() => openTrackingModal(g)} className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.trackingCode ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> Track</button>
                               {isAdmin
                                 ? <button onClick={() => openListingModal(g)} className="py-2 rounded-lg text-xs font-bold bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 hover:text-purple-300 transition-colors flex items-center justify-center gap-1"><Store size={12} /> Annuncio</button>
-                                : <button onClick={() => openEditModal(g)} className="py-2 rounded-lg text-xs font-bold bg-white/[0.05] text-gray-400 hover:bg-white/[0.09] hover:text-white transition-colors flex items-center justify-center gap-1"><Edit size={12} /> Modifica</button>}
+                                : <button onClick={() => openEditModal(g)} className="py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1"><Edit size={12} /> Modifica</button>}
                             </div>
                             {isAdmin ? (
                               <div className="grid grid-cols-2 gap-1.5">
@@ -2482,10 +2493,10 @@ export default function App() {
                 )
               ) : (
                 groupedSoldArray.length === 0 ? (
-                  <div className="text-center py-16 bg-[#0f0f0f] rounded-2xl border border-white/[0.05]">
+                  <div className="text-center py-16 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
                     <CheckCircle className="mx-auto text-gray-800 mb-4" size={40} />
-                    <p className="text-gray-400 font-semibold">Nessuna vendita ancora</p>
-                    <p className="text-gray-600 text-sm mt-1">Vai su IN STOCK e registra la tua prima vendita</p>
+                    <p className="text-[var(--text-muted)] font-semibold">Nessuna vendita ancora</p>
+                    <p className="text-[var(--text-faint)] text-sm mt-1">Vai su IN STOCK e registra la tua prima vendita</p>
                   </div>
                 ) : (
                   (() => {
@@ -2494,7 +2505,7 @@ export default function App() {
                       'StockX': 'text-green-300 bg-green-500/15 border-green-500/20',
                       'eBay': 'text-yellow-300 bg-yellow-500/15 border-yellow-500/20',
                       'Subito': 'text-orange-300 bg-orange-500/15 border-orange-500/20',
-                      'Privato': 'text-gray-400 bg-white/5 border-white/10',
+                      'Privato': 'text-[var(--text-muted)] bg-[var(--fill)] border-[var(--border-2)]',
                     };
                     return groupedSoldArray.map((g: any) => {
                       const marginPct = g.totalRevenue > 0 && g.purchasePrice > 0
@@ -2503,18 +2514,18 @@ export default function App() {
                       const soldDate = g.soldAt ? new Date(g.soldAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }) : null;
                       let photos: string[] = [];
                       try { photos = g.photos ? JSON.parse(g.photos) : []; } catch {}
-                      const platCls = platColors[g.platform] || 'text-gray-400 bg-white/5 border-white/10';
+                      const platCls = platColors[g.platform] || 'text-[var(--text-muted)] bg-[var(--fill)] border-[var(--border-2)]';
 
                       if (g.salePrice === 0) {
                         return (
-                          <div key={g.ids.join(',')} className="bg-[#0f0f0f] border border-yellow-500/20 rounded-2xl overflow-hidden">
+                          <div key={g.ids.join(',')} className="bg-[var(--surface)] border border-yellow-500/20 rounded-2xl overflow-hidden">
                             <div className="flex items-center gap-3 p-4">
                               {photos.length > 0
-                                ? <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-white/[0.05]"><img src={photos[0]} alt="" className="w-full h-full object-cover" /></div>
+                                ? <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[var(--border)]"><img src={photos[0]} alt="" className="w-full h-full object-cover" /></div>
                                 : <span className="text-2xl shrink-0 opacity-60">{getCategoryIcon(g.category)}</span>}
                               <div className="flex-1 min-w-0">
                                 <p className="font-bold text-sm">{g.brand} {g.name}</p>
-                                <p className="text-[10px] text-gray-500">{g.size} · {g.condition}</p>
+                                <p className="text-[10px] text-[var(--text-soft)]">{g.size} · {g.condition}</p>
                               </div>
                               <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)}
                                 className="shrink-0 text-xs bg-yellow-500/15 border border-yellow-500/25 text-yellow-400 hover:bg-yellow-500/25 px-3 py-2 rounded-xl font-semibold transition-colors flex items-center gap-1.5">
@@ -2529,10 +2540,10 @@ export default function App() {
                       }
 
                       return (
-                        <div key={g.ids.join(',')} className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl overflow-hidden hover:border-white/10 transition-all group">
+                        <div key={g.ids.join(',')} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:border-[var(--border-2)] transition-all group">
                           <div className="flex items-center gap-3 p-4">
                             {photos.length > 0
-                              ? <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-white/[0.05] group-hover:border-white/10 transition-colors"><img src={photos[0]} alt="" className="w-full h-full object-cover" /></div>
+                              ? <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[var(--border)] group-hover:border-[var(--border-2)] transition-colors"><img src={photos[0]} alt="" className="w-full h-full object-cover" /></div>
                               : <span className="text-2xl shrink-0 opacity-40">{getCategoryIcon(g.category)}</span>}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
@@ -2542,7 +2553,7 @@ export default function App() {
                                 )}
                               </div>
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-[10px] text-gray-600">{g.size}</span>
+                                <span className="text-[10px] text-[var(--text-faint)]">{g.size}</span>
                                 <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border ${platCls}`}>{g.platform}</span>
                                 {soldDate && <span className="text-[10px] text-gray-700">{soldDate}</span>}
                               </div>
@@ -2558,11 +2569,11 @@ export default function App() {
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 px-4 pb-3 border-t border-white/4 pt-2.5">
+                          <div className="flex items-center gap-2 px-4 pb-3 border-t border-[var(--border)] pt-2.5">
                             <span className="text-[10px] text-gray-700 flex items-center gap-1">
                               {g.purchasePrice?.toFixed(0)}€
                               <span className="text-gray-800 mx-0.5">→</span>
-                              <span className="text-gray-500 font-bold">{g.totalRevenue.toFixed(0)}€</span>
+                              <span className="text-[var(--text-soft)] font-bold">{g.totalRevenue.toFixed(0)}€</span>
                             </span>
                             {g.totalFees > 0 && (
                               <span className="text-[10px] text-gray-700">· {g.totalFees.toFixed(0)}€ fee</span>
@@ -2584,76 +2595,76 @@ export default function App() {
             <div className="flex items-center justify-between">
               <h2 className="text-3xl font-semibold">Analytics</h2>
               <button onClick={exportCSV}
-                className="flex items-center gap-2 bg-[#0f0f0f] border border-white/[0.07] hover:border-white/15 px-4 py-2 rounded-xl text-sm font-bold transition-colors text-gray-500 hover:text-white active:scale-95">
+                className="flex items-center gap-2 bg-[var(--surface)] border border-[var(--border-2)] hover:border-[var(--border-3)] px-4 py-2 rounded-xl text-sm font-bold transition-colors text-[var(--text-soft)] hover:text-[var(--text)] active:scale-95">
                 <Download size={15} /> CSV
               </button>
             </div>
 
             {/* KPI row 1: principali */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4">
-                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <TrendingUp size={10} /> ROI
                 </p>
                 <p className={`text-2xl lg:text-3xl font-bold num ${parseFloat(roi) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{roi}%</p>
-                <p className="text-[11px] text-gray-600 mt-1.5">Return on Investment</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Return on Investment</p>
               </div>
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4">
-                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <Wallet size={10} /> Profitto Netto
                 </p>
                 <p className={`text-2xl lg:text-3xl font-bold num ${profittoNetto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{profittoNetto.toFixed(0)}€</p>
-                <p className="text-[11px] text-gray-600 mt-1.5">Dopo fees · {ricaviTotali.toFixed(0)}€ ricavi</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Dopo fees · {ricaviTotali.toFixed(0)}€ ricavi</p>
               </div>
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4">
-                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <Layers size={10} /> Stock
                 </p>
                 <p className="text-2xl lg:text-3xl font-bold num">{stockValore.toFixed(0)}€</p>
-                <p className="text-[11px] text-gray-600 mt-1.5">Capitale immobilizzato</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Capitale immobilizzato</p>
               </div>
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4">
-                <p className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <DollarSign size={10} /> Vendite
                 </p>
                 <p className="text-2xl lg:text-3xl font-bold text-purple-400 num">{soldItemsTotal.length}</p>
-                <p className="text-[11px] text-gray-600 mt-1.5">Totali · {sellThroughRate}% sell-through</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Totali · {sellThroughRate}% sell-through</p>
               </div>
             </div>
 
             {/* KPI row 2: metriche operative */}
             <div className="grid grid-cols-3 gap-2">
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-3 text-center">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
                 <p className={`text-xl font-bold num ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-purple-400' : 'text-red-400'}`}>
                   {avgMarginPct >= 0 ? '+' : ''}{avgMarginPct.toFixed(1)}%
                 </p>
-                <p className="text-[9px] text-gray-600 font-semibold mt-1.5 leading-tight">
+                <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
                   <span className="sm:hidden">Margine</span>
                   <span className="hidden sm:inline">Margine Medio</span>
                 </p>
               </div>
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-3 text-center">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
                 <p className="text-xl font-bold text-purple-400 num">{Math.round(avgDaysToSell)}</p>
-                <p className="text-[9px] text-gray-600 font-semibold mt-1.5 leading-tight">
+                <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
                   <span className="sm:hidden">Gg/vendita</span>
                   <span className="hidden sm:inline">Giorni medi vendita</span>
                 </p>
               </div>
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-3 text-center">
-                <p className="text-xl font-bold text-white num">{sellThroughRate}%</p>
-                <p className="text-[9px] text-gray-600 font-semibold mt-1.5 leading-tight">Sell-through</p>
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
+                <p className="text-xl font-bold text-[var(--text)] num">{sellThroughRate}%</p>
+                <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">Sell-through</p>
               </div>
             </div>
 
             {/* Grafico */}
-            <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5">
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                 <h3 className="font-semibold">Andamento Vendite</h3>
-                <div className="flex gap-1 bg-[#0a0a0a] p-1 rounded-xl border border-white/[0.07]">
+                <div className="flex gap-1 bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)]">
                   {(['1D', '1W', '1M', '1Y', 'MAX'] as const).map(tf => (
                     <button key={tf} onClick={() => setChartTimeframe(tf)}
                       className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                        chartTimeframe === tf ? 'bg-[#ff4d00] text-white' : 'text-gray-500 hover:text-white'
+                        chartTimeframe === tf ? 'bg-[#ff4d00] text-[var(--text)]' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
                       }`}>{tf}</button>
                   ))}
                 </div>
@@ -2661,7 +2672,7 @@ export default function App() {
               {trendData.length === 0 ? (
                 <div className="text-center py-10">
                   <BarChart3 className="mx-auto text-gray-800 mb-3" size={36} />
-                  <p className="text-gray-500 text-sm">Nessun dato per questo periodo</p>
+                  <p className="text-[var(--text-soft)] text-sm">Nessun dato per questo periodo</p>
                 </div>
               ) : (
                 <Suspense fallback={<div className="h-[280px] flex items-center justify-center"><Loader2 className="animate-spin text-gray-700" size={28} /></div>}>
@@ -2669,17 +2680,17 @@ export default function App() {
                 </Suspense>
               )}
               <div className="flex items-center gap-5 mt-3 justify-end">
-                <div className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="w-3 h-0.5 bg-green-500 rounded-full inline-block" />Ricavi</div>
-                <div className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="w-3 h-0.5 bg-[#ff4d00] rounded-full inline-block" />Profitto</div>
+                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-green-500 rounded-full inline-block" />Ricavi</div>
+                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#ff4d00] rounded-full inline-block" />Profitto</div>
               </div>
             </section>
 
             {/* Piattaforme + Soci — 2 colonne su desktop */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {platformBreakdown.length > 0 && (
-                <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5">
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
-                    <Store className="text-white" size={15} />
+                    <Store className="text-[var(--text)]" size={15} />
                     <h3 className="font-semibold">Piattaforme</h3>
                   </div>
                   <div className="space-y-4">
@@ -2691,7 +2702,7 @@ export default function App() {
                           <div className="flex items-center justify-between mb-1.5">
                             <span className="text-sm font-bold">{plat}</span>
                             <div className="flex items-center gap-3">
-                              <span className="text-[10px] text-gray-500">{stats.count} vend.</span>
+                              <span className="text-[10px] text-[var(--text-soft)]">{stats.count} vend.</span>
                               <span className="text-sm font-semibold text-green-400">+{stats.profit.toFixed(0)}€</span>
                             </div>
                           </div>
@@ -2700,8 +2711,8 @@ export default function App() {
                               style={{ width: `${(stats.revenue / maxRev) * 100}%` }} />
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-[10px] text-gray-600">{stats.revenue.toFixed(0)}€ ricavi · {stats.fees.toFixed(0)}€ fee</span>
-                            <span className="text-[10px] text-gray-500">{platMargin >= 0 ? '+' : ''}{platMargin.toFixed(0)}€/vend.</span>
+                            <span className="text-[10px] text-[var(--text-faint)]">{stats.revenue.toFixed(0)}€ ricavi · {stats.fees.toFixed(0)}€ fee</span>
+                            <span className="text-[10px] text-[var(--text-soft)]">{platMargin >= 0 ? '+' : ''}{platMargin.toFixed(0)}€/vend.</span>
                           </div>
                         </div>
                       );
@@ -2711,7 +2722,7 @@ export default function App() {
               )}
 
               {Object.keys(sociProfits).length > 0 && (
-                <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5">
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <Users className="text-purple-400" size={15} />
                     <h3 className="font-semibold">Soci</h3>
@@ -2732,7 +2743,7 @@ export default function App() {
                                 </div>
                                 <span className="text-sm font-bold">{socio.name}</span>
                                 {socio.name === user.name && (
-                                  <span className="text-[9px] bg-[#ff4d00]/20 text-white px-1.5 py-0.5 rounded-full">TU</span>
+                                  <span className="text-[9px] bg-[#ff4d00]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full">TU</span>
                                 )}
                               </div>
                               <span className="font-semibold text-green-400">{socio.profit.toFixed(0)}€</span>
@@ -2757,9 +2768,9 @@ export default function App() {
                 .sort((a, b) => b.profit - a.profit)
                 .slice(0, 3);
               return (
-                <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5">
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
-                    <Trophy className="text-white" size={15} />
+                    <Trophy className="text-[var(--text)]" size={15} />
                     <h3 className="font-semibold">Top 3 Vendite</h3>
                   </div>
                   <div className="space-y-3">
@@ -2767,11 +2778,11 @@ export default function App() {
                       const medals = ['🥇', '🥈', '🥉'];
                       const margin = p.purchasePrice > 0 ? ((p.profit / p.purchasePrice) * 100) : 0;
                       return (
-                        <div key={p.id} className="flex items-center gap-3 p-3 bg-[#0a0a0a] rounded-xl">
+                        <div key={p.id} className="flex items-center gap-3 p-3 bg-[var(--surface-2)] rounded-xl">
                           <span className="text-lg shrink-0">{medals[i]}</span>
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-sm truncate">{p.brand} {p.name}</p>
-                            <p className="text-[10px] text-gray-500">{p.size} · {p.platform} · {p.purchasePrice.toFixed(0)}€→{(p.salePrice || 0).toFixed(0)}€</p>
+                            <p className="text-[10px] text-[var(--text-soft)]">{p.size} · {p.platform} · {p.purchasePrice.toFixed(0)}€→{(p.salePrice || 0).toFixed(0)}€</p>
                           </div>
                           <div className="text-right shrink-0">
                             <p className="font-semibold text-green-400">+{p.profit.toFixed(0)}€</p>
@@ -2801,38 +2812,38 @@ export default function App() {
               }).filter(r => r.total > 0);
               if (rows.length === 0) return null;
               return (
-                <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5">
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
-                    <PieChartIcon className="text-white" size={15} />
+                    <PieChartIcon className="text-[var(--text)]" size={15} />
                     <h3 className="font-semibold">Reparti</h3>
                   </div>
                   <div className="overflow-x-auto -mx-1">
                     <table className="w-full text-[11px]">
                       <thead>
-                        <tr className="border-b border-white/[0.07]">
+                        <tr className="border-b border-[var(--border-2)]">
                           {['Reparto', 'Totale', 'Venduti', 'Stock', 'Sell-through', 'Capitale', 'Profitto', 'Gg/vendita'].map(h => (
-                            <th key={h} className="text-left text-gray-600 font-semibold uppercase tracking-wider py-2 pr-4 last:pr-0">{h}</th>
+                            <th key={h} className="text-left text-[var(--text-faint)] font-semibold uppercase tracking-wider py-2 pr-4 last:pr-0">{h}</th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/[0.04]">
+                      <tbody className="divide-y divide-[var(--border)]">
                         {rows.map(r => (
-                          <tr key={r.cat} className="hover:bg-white/[0.02] transition-colors">
-                            <td className="py-2.5 pr-4 font-bold text-white">{getCategoryIcon(r.cat)} {r.cat}</td>
-                            <td className="py-2.5 pr-4 text-gray-400 num">{r.total}</td>
+                          <tr key={r.cat} className="hover:bg-[var(--fill)] transition-colors">
+                            <td className="py-2.5 pr-4 font-bold text-[var(--text)]">{getCategoryIcon(r.cat)} {r.cat}</td>
+                            <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.total}</td>
                             <td className="py-2.5 pr-4 text-purple-400 num">{r.sold}</td>
-                            <td className="py-2.5 pr-4 text-gray-400 num">{r.inStock}</td>
+                            <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.inStock}</td>
                             <td className="py-2.5 pr-4">
                               <div className="flex items-center gap-2">
-                                <div className="w-16 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                                <div className="w-16 h-1.5 bg-[var(--fill)] rounded-full overflow-hidden">
                                   <div className="h-full bg-[#ff4d00] rounded-full" style={{ width: `${r.st}%` }} />
                                 </div>
                                 <span className={`num font-semibold ${r.st >= 60 ? 'text-emerald-400' : r.st >= 30 ? 'text-yellow-400' : 'text-red-400'}`}>{r.st}%</span>
                               </div>
                             </td>
-                            <td className="py-2.5 pr-4 text-gray-400 num">{r.capital.toFixed(0)}€</td>
+                            <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.capital.toFixed(0)}€</td>
                             <td className={`py-2.5 pr-4 num font-semibold ${r.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{r.profit >= 0 ? '+' : ''}{r.profit.toFixed(0)}€</td>
-                            <td className="py-2.5 text-gray-500 num">{r.avgDays ?? '—'}</td>
+                            <td className="py-2.5 text-[var(--text-soft)] num">{r.avgDays ?? '—'}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -2844,36 +2855,36 @@ export default function App() {
 
             {/* ---- Dead-Stock Alert ---- */}
             {staleProducts.length > 0 && (
-              <section className="bg-[#0f0f0f] border border-yellow-500/20 rounded-2xl p-5">
+              <section className="bg-[var(--surface)] border border-yellow-500/20 rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="text-yellow-500" size={15} />
                     <h3 className="font-semibold">Dead Stock Alert</h3>
                     <span className="bg-yellow-500/10 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded-full">{staleProducts.length} prodotti</span>
                   </div>
-                  <span className="text-[10px] text-gray-600">fermi da +{staleThreshold} giorni · {staleProducts.reduce((s: number, p: any) => s + (p.purchasePrice || 0), 0).toFixed(0)}€ immobilizzati</span>
+                  <span className="text-[10px] text-[var(--text-faint)]">fermi da +{staleThreshold} giorni · {staleProducts.reduce((s: number, p: any) => s + (p.purchasePrice || 0), 0).toFixed(0)}€ immobilizzati</span>
                 </div>
                 <div className="space-y-2">
                   {staleProducts.slice(0, 5).map((p: any) => {
                     const days = p.createdAt ? Math.floor((Date.now() - new Date(p.createdAt).getTime()) / 86400000) : 0;
                     return (
-                      <div key={p.id} className="flex items-center gap-3 p-3 bg-[#0a0a0a] rounded-xl">
+                      <div key={p.id} className="flex items-center gap-3 p-3 bg-[var(--surface-2)] rounded-xl">
                         <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center flex-shrink-0">
                           <span className="text-base">{getCategoryIcon(p.category)}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold truncate">{p.brand} {p.name}</p>
-                          <p className="text-[10px] text-gray-500">{p.size} · {p.condition}</p>
+                          <p className="text-[10px] text-[var(--text-soft)]">{p.size} · {p.condition}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-semibold text-white">{(p.purchasePrice || 0).toFixed(0)}€</p>
+                          <p className="text-sm font-semibold text-[var(--text)]">{(p.purchasePrice || 0).toFixed(0)}€</p>
                           <p className="text-[10px] text-yellow-600">{days} giorni</p>
                         </div>
                       </div>
                     );
                   })}
                   {staleProducts.length > 5 && (
-                    <p className="text-[11px] text-gray-600 text-center pt-1">+{staleProducts.length - 5} altri prodotti fermi</p>
+                    <p className="text-[11px] text-[var(--text-faint)] text-center pt-1">+{staleProducts.length - 5} altri prodotti fermi</p>
                   )}
                 </div>
               </section>
@@ -2894,7 +2905,7 @@ export default function App() {
             if (s === 'DELIVERED') return { text: 'Consegnato', cls: 'bg-green-500/20 text-green-400', dot: 'bg-green-400' };
             if (s === 'EXCEPTION') return { text: 'Eccezione', cls: 'bg-red-500/20 text-red-400', dot: 'bg-red-400' };
             if (s === 'RETURNED') return { text: 'Reso', cls: 'bg-purple-500/20 text-purple-400', dot: 'bg-purple-400' };
-            return { text: 'In attesa', cls: 'bg-white/5 text-gray-500', dot: 'bg-gray-600' };
+            return { text: 'In attesa', cls: 'bg-[var(--fill)] text-[var(--text-soft)]', dot: 'bg-gray-600' };
           };
 
           const TrackCard = ({ p }: { p: Product }) => {
@@ -2912,14 +2923,14 @@ export default function App() {
               : null;
 
             return (
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl overflow-hidden hover:border-white/10 transition-all">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:border-[var(--border-2)] transition-all">
                 <div className="flex items-center gap-3 p-4">
                   {photos.length > 0 ? (
-                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-white/[0.07]">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)]">
                       <img src={photos[0]} alt="" className="w-full h-full object-cover" />
                     </div>
                   ) : (
-                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center shrink-0 text-xl">
+                    <div className="w-12 h-12 rounded-xl bg-[var(--fill)] flex items-center justify-center shrink-0 text-xl">
                       {getCategoryIcon(p.category)}
                     </div>
                   )}
@@ -2931,15 +2942,15 @@ export default function App() {
                         {st.text}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5 font-mono truncate">{p.trackingCode}</p>
+                    <p className="text-xs text-[var(--text-soft)] mt-0.5 font-mono truncate">{p.trackingCode}</p>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-[10px] text-gray-600 bg-white/5 px-2 py-0.5 rounded-full">{p.trackingCarrier}</span>
-                      {updatedAgo && <span className="text-[10px] text-gray-600">aggiornato {updatedAgo}</span>}
+                      <span className="text-[10px] text-[var(--text-faint)] bg-[var(--fill)] px-2 py-0.5 rounded-full">{p.trackingCarrier}</span>
+                      {updatedAgo && <span className="text-[10px] text-[var(--text-faint)]">aggiornato {updatedAgo}</span>}
                     </div>
                   </div>
                   <button
                     onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); setTimeout(() => openTrackingModal({ ...p, ids: [p.id], quantity: 1 }), 100); }}
-                    className="shrink-0 p-2 hover:bg-white/5 rounded-xl transition-colors text-gray-500 hover:text-white">
+                    className="shrink-0 p-2 hover:bg-[var(--fill)] rounded-xl transition-colors text-[var(--text-soft)] hover:text-[var(--text)]">
                     <Truck size={16} />
                   </button>
                 </div>
@@ -2963,7 +2974,7 @@ export default function App() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-3xl font-semibold">Tracking</h2>
-                  <p className="text-gray-500 text-sm mt-1">Monitora le tue spedizioni</p>
+                  <p className="text-[var(--text-soft)] text-sm mt-1">Monitora le tue spedizioni</p>
                 </div>
                 {active.length > 0 && (
                   <button onClick={handleRefreshAllTrackings} disabled={isRefreshingAll}
@@ -2977,31 +2988,31 @@ export default function App() {
               {/* Stats */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Attive', value: active.length, color: 'text-blue-400', bg: 'bg-[#0f0f0f] border-blue-500/20', glow: 'bg-blue-500/8' },
-                  { label: 'Consegnate', value: delivered.length, color: 'text-emerald-400', bg: 'bg-[#0f0f0f] border-green-500/20', glow: 'bg-green-500/8' },
-                  { label: 'Eccezioni', value: exceptions.length, color: 'text-red-400', bg: 'bg-[#0f0f0f] border-red-500/20', glow: 'bg-red-500/8' },
+                  { label: 'Attive', value: active.length, color: 'text-blue-400', bg: 'bg-[var(--surface)] border-blue-500/20', glow: 'bg-blue-500/8' },
+                  { label: 'Consegnate', value: delivered.length, color: 'text-emerald-400', bg: 'bg-[var(--surface)] border-green-500/20', glow: 'bg-green-500/8' },
+                  { label: 'Eccezioni', value: exceptions.length, color: 'text-red-400', bg: 'bg-[var(--surface)] border-red-500/20', glow: 'bg-red-500/8' },
                 ].map(s => (
                   <div key={s.label} className={`${s.bg} border rounded-2xl p-4 text-center relative overflow-hidden`}>
                     <div className={`absolute inset-0 ${s.glow} pointer-events-none`} />
                     <p className={`text-2xl lg:text-3xl font-bold ${s.color}`}>{s.value}</p>
-                    <p className="text-[9px] text-gray-600 font-semibold tracking-[0.1em] uppercase mt-1.5">{s.label}</p>
+                    <p className="text-[9px] text-[var(--text-faint)] font-semibold tracking-[0.1em] uppercase mt-1.5">{s.label}</p>
                   </div>
                 ))}
               </div>
 
               {/* Nessun tracking */}
               {allTracked.length === 0 && (
-                <div className="text-center py-16 bg-[#0f0f0f] rounded-2xl border border-white/[0.05]">
+                <div className="text-center py-16 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
                   <Truck className="mx-auto text-gray-800 mb-3" size={44} />
-                  <p className="text-gray-400 font-semibold">Nessuna spedizione tracciata</p>
-                  <p className="text-gray-600 text-sm mt-1">Aggiungi un codice tracking da Magazzino → Track</p>
+                  <p className="text-[var(--text-muted)] font-semibold">Nessuna spedizione tracciata</p>
+                  <p className="text-[var(--text-faint)] text-sm mt-1">Aggiungi un codice tracking da Magazzino → Track</p>
                 </div>
               )}
 
               {/* Sezione: Attive */}
               {active.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase flex items-center gap-2">
+                  <h3 className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-2">
                     <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
                     Spedizioni attive ({active.length})
                   </h3>
@@ -3012,7 +3023,7 @@ export default function App() {
               {/* Sezione: Eccezioni / Resi */}
               {exceptions.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase flex items-center gap-2">
+                  <h3 className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-2">
                     <span className="w-2 h-2 bg-red-400 rounded-full" />
                     Eccezioni / Resi ({exceptions.length})
                   </h3>
@@ -3023,7 +3034,7 @@ export default function App() {
               {/* Sezione: Consegnate */}
               {delivered.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-[10px] lg:text-xs font-semibold text-gray-400 tracking-[0.12em] uppercase flex items-center gap-2">
+                  <h3 className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-2">
                     <span className="w-2 h-2 bg-green-400 rounded-full" />
                     Consegnate ({delivered.length})
                   </h3>
@@ -3039,17 +3050,44 @@ export default function App() {
           <div className="space-y-5">
             <h2 className="text-3xl font-semibold">Impostazioni</h2>
 
+            {/* SEZIONE: Aspetto / Tema */}
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  {theme === 'light' ? <Sun className="text-[#ff4d00] mt-0.5" size={22} /> : <Moon className="text-[#ff4d00] mt-0.5" size={22} />}
+                  <div>
+                    <h3 className="text-lg font-bold tracking-tighter">Aspetto</h3>
+                    <p className="text-xs text-[var(--text-soft)] mt-1">Scegli il tema chiaro o scuro.</p>
+                  </div>
+                </div>
+                <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] shrink-0">
+                  <button onClick={() => setTheme('light')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                      theme === 'light' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
+                    }`}>
+                    <Sun size={13} /> Chiaro
+                  </button>
+                  <button onClick={() => setTheme('dark')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                      theme === 'dark' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
+                    }`}>
+                    <Moon size={13} /> Scuro
+                  </button>
+                </div>
+              </div>
+            </section>
+
             {/* ===== PANNELLO ADMIN (collassabile) ===== */}
             {user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
-              <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl overflow-hidden">
+              <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
                 {/* Header sempre visibile — click per aprire/chiudere */}
                 <button onClick={toggleAdminPanel}
-                  className="w-full p-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                  className="w-full p-5 flex items-center justify-between hover:bg-[var(--fill)] transition-colors">
                   <div className="flex items-center gap-2">
-                    <Shield size={15} className="text-gray-500" />
+                    <Shield size={15} className="text-[var(--text-soft)]" />
                     <span className="font-semibold text-sm">Admin</span>
                     {adminLoaded && (
-                      <span className="text-[10px] bg-white/[0.05] text-gray-500 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] bg-[var(--fill)] text-[var(--text-soft)] px-2 py-0.5 rounded-full">
                         {adminUsers.length} utenti
                       </span>
                     )}
@@ -3060,28 +3098,28 @@ export default function App() {
                       </span>
                     )}
                   </div>
-                  <ChevronDown size={16} className={`text-gray-600 transition-transform duration-200 ${adminPanelOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={16} className={`text-[var(--text-faint)] transition-transform duration-200 ${adminPanelOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Contenuto collassabile */}
                 {adminPanelOpen && (
-                  <div className="border-t border-white/[0.05]">
+                  <div className="border-t border-[var(--border)]">
                     {/* Toolbar */}
-                    <div className="px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-white/[0.04]">
-                      <p className="text-[10px] text-gray-600">Auto-aggiornamento ogni 5 min</p>
+                    <div className="px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-[var(--border)]">
+                      <p className="text-[10px] text-[var(--text-faint)]">Auto-aggiornamento ogni 5 min</p>
                       <div className="flex flex-wrap gap-2">
                         <button onClick={sendTestEmail}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] rounded-xl text-xs font-semibold transition-colors">
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--fill)] hover:bg-[var(--fill)] rounded-xl text-xs font-semibold transition-colors">
                           <Mail size={12} /> Test Email
                         </button>
                         {adminLoaded && (
                           <button onClick={exportAdminExcel}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.05] hover:bg-white/[0.08] rounded-xl text-xs font-semibold transition-colors">
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--fill)] hover:bg-[var(--fill)] rounded-xl text-xs font-semibold transition-colors">
                             <Download size={12} /> Excel
                           </button>
                         )}
                         <button onClick={fetchAdminUsers} disabled={adminLoading}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.07] hover:bg-white/[0.1] rounded-xl text-xs font-semibold transition-colors disabled:opacity-40">
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--fill)] hover:bg-[var(--fill-2)] rounded-xl text-xs font-semibold transition-colors disabled:opacity-40">
                           {adminLoading ? <Loader2 size={12} className="animate-spin" /> : <Users size={12} />}
                           Aggiorna
                         </button>
@@ -3091,23 +3129,23 @@ export default function App() {
                     {adminLoaded && (
                       <>
                         {/* KPI */}
-                        <div className="grid grid-cols-2 border-b border-white/[0.04]">
+                        <div className="grid grid-cols-2 border-b border-[var(--border)]">
                           {[
                             { label: 'Utenti', value: adminUsers.length },
                             { label: 'Prodotti totali', value: adminUsers.reduce((a, u) => a + u.stats.totalProducts, 0) },
                           ].map(s => (
-                            <div key={s.label} className="p-3 text-center border-r border-white/[0.04] last:border-0">
+                            <div key={s.label} className="p-3 text-center border-r border-[var(--border)] last:border-0">
                               <p className="text-base font-bold num">{s.value}</p>
-                              <p className="text-[9px] text-gray-600 mt-0.5">{s.label}</p>
+                              <p className="text-[9px] text-[var(--text-faint)] mt-0.5">{s.label}</p>
                             </div>
                           ))}
                         </div>
 
                         {/* Lista utenti */}
-                        <div className="divide-y divide-white/[0.03] max-h-96 overflow-y-auto">
+                        <div className="divide-y divide-[var(--border)] max-h-96 overflow-y-auto">
                           {adminUsers.map(u => (
                             <div key={u.id} className="px-4 py-3 flex items-start gap-3">
-                              <div className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5">
+                              <div className="w-7 h-7 rounded-full bg-[var(--fill)] flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5">
                                 {u.name?.[0]?.toUpperCase()}
                               </div>
                               <div className="flex-1 min-w-0">
@@ -3115,7 +3153,7 @@ export default function App() {
                                   <span className="font-semibold text-sm">{u.name}</span>
                                   {u.twoFactorEnabled && <span className="text-[8px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded-full">2FA</span>}
                                 </div>
-                                <p className="text-[10px] text-gray-500">{u.email}</p>
+                                <p className="text-[10px] text-[var(--text-soft)]">{u.email}</p>
                                 <p className="text-[10px] text-gray-700 mt-0.5">
                                   {u.stats.inStock} in stock · {u.stats.sold} venduti · {u.stats.totalProducts} totali
                                 </p>
@@ -3134,7 +3172,7 @@ export default function App() {
 
                     {!adminLoaded && adminLoading && (
                       <div className="p-6 flex justify-center">
-                        <Loader2 size={20} className="animate-spin text-gray-600" />
+                        <Loader2 size={20} className="animate-spin text-[var(--text-faint)]" />
                       </div>
                     )}
                   </div>
@@ -3143,16 +3181,16 @@ export default function App() {
             )}
 
             {/* SEZIONE: Prodotti Fermi */}
-            <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-6">
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle className="text-yellow-500" size={18} />
                 <h3 className="text-lg font-bold tracking-tighter">Notifiche Prodotti Fermi</h3>
               </div>
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="text-xs text-[var(--text-soft)] mb-4">
                 Ricevi una notifica quando hai prodotti in magazzino da troppo tempo, con suggerimento di sconto basato sull'IA.
               </p>
               <div className="flex items-center gap-3 mb-4">
-                <label className="text-sm text-gray-400 flex-1">Avvisami dopo</label>
+                <label className="text-sm text-[var(--text-muted)] flex-1">Avvisami dopo</label>
                 <input 
                   type="number" min="7" max="365" value={staleThreshold}
                   onChange={(e: any) => {
@@ -3160,9 +3198,9 @@ export default function App() {
                     setStaleThreshold(v);
                     localStorage.setItem('staleThreshold', v.toString());
                   }}
-                  className="w-24 bg-[#0a0a0a] border border-white/[0.07] rounded-lg px-3 py-2 text-sm text-right focus:border-[#ff4d00] outline-none"
+                  className="w-24 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm text-right focus:border-[#ff4d00] outline-none"
                 />
-                <span className="text-sm text-gray-400">giorni</span>
+                <span className="text-sm text-[var(--text-muted)]">giorni</span>
               </div>
               {staleProducts.length > 0 ? (
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3">
@@ -3171,9 +3209,9 @@ export default function App() {
                   </p>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {staleProducts.slice(0, 10).map((sp: any) => (
-                      <div key={sp.id} className="text-xs bg-[#0a0a0a] p-2 rounded-lg">
-                        <p className="text-white font-bold">{sp.brand} {sp.name}</p>
-                        <p className="text-gray-500">
+                      <div key={sp.id} className="text-xs bg-[var(--surface-2)] p-2 rounded-lg">
+                        <p className="text-[var(--text)] font-bold">{sp.brand} {sp.name}</p>
+                        <p className="text-[var(--text-soft)]">
                           {sp.daysInStock}g in stock • Sconto: <span className="text-yellow-400 font-bold">-{sp.suggestedDiscount}%</span> → <span className="text-green-400">€{sp.suggestedPrice}</span>
                         </p>
                       </div>
@@ -3181,7 +3219,7 @@ export default function App() {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-gray-600 italic">✓ Nessun prodotto fermo oltre la soglia</p>
+                <p className="text-xs text-[var(--text-faint)] italic">✓ Nessun prodotto fermo oltre la soglia</p>
               )}
               <button 
                 onClick={checkStaleProducts}
@@ -3191,13 +3229,13 @@ export default function App() {
             </section>
             
             {/* SEZIONE: 2FA */}
-            <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-6">
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="flex items-start gap-3">
-                  <Shield className={user.twoFactorEnabled ? 'text-green-400' : 'text-gray-500'} size={24} />
+                  <Shield className={user.twoFactorEnabled ? 'text-green-400' : 'text-[var(--text-soft)]'} size={24} />
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">Autenticazione a Due Fattori</h3>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-[var(--text-soft)] mt-1">
                       {user.twoFactorEnabled 
                         ? '✓ 2FA attivo. Il tuo account ha un livello di sicurezza extra.' 
                         : 'Aggiungi un livello di sicurezza al tuo account.'}
@@ -3219,13 +3257,13 @@ export default function App() {
             </section>
             
             {/* SEZIONE: CAMBIA PASSWORD */}
-            <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-6">
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <Lock className="text-gray-500 mt-0.5" size={22} />
+                  <Lock className="text-[var(--text-soft)] mt-0.5" size={22} />
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">Password</h3>
-                    <p className="text-xs text-gray-500 mt-1">Cambia la password del tuo account.</p>
+                    <p className="text-xs text-[var(--text-soft)] mt-1">Cambia la password del tuo account.</p>
                   </div>
                 </div>
                 <button onClick={() => setChangePwdOpen(true)}
@@ -3236,21 +3274,21 @@ export default function App() {
             </section>
 
             {/* SEZIONE: Reparti & Codici Invito */}
-            <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-6">
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-5">
-                <Layers className="text-white" size={18} />
+                <Layers className="text-[var(--text)]" size={18} />
                 <h3 className="text-lg font-bold tracking-tighter">I tuoi Reparti</h3>
               </div>
               
               <div className="space-y-3 mb-6">
                 {user.warehouses.map((w: any) => (
-                  <div key={w.id} className="bg-[#0a0a0a] p-4 rounded-xl border border-white/[0.07]">
+                  <div key={w.id} className="bg-[var(--surface-2)] p-4 rounded-xl border border-[var(--border-2)]">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{getCategoryIcon(w.name.replace('Magazzino ', ''))}</span>
                         <div>
                           <p className="font-bold">{w.name}</p>
-                          <p className="text-[10px] text-gray-500 uppercase">
+                          <p className="text-[10px] text-[var(--text-soft)] uppercase">
                             {w.role === 'OWNER' ? 'Fondatore' : 'Membro'} • Quota {w.percentage}%
                           </p>
                         </div>
@@ -3271,11 +3309,11 @@ export default function App() {
               </div>
               
               {isFounder && (
-                <form onSubmit={handleAddCategory} className="flex flex-col sm:flex-row gap-3 pt-5 border-t border-white/[0.07]">
+                <form onSubmit={handleAddCategory} className="flex flex-col sm:flex-row gap-3 pt-5 border-t border-[var(--border-2)]">
                   <input type="text" value={newCatName}
                     onChange={(e: any) => setNewCatName(e.target.value)}
                     placeholder="Nome nuovo reparto (es. Borse, Vinili...)"
-                    className="flex-1 bg-[#0a0a0a] border border-white/[0.07] rounded-xl px-4 py-2 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#ff4d00] outline-none" />
                   <button type="submit" disabled={isAddingCat}
                     className="bg-[#ff4d00] hover:bg-[#ff6a2a] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap">
                     {isAddingCat ? <Loader2 className="animate-spin" size={16} /> : '+ Aggiungi Reparto'}
@@ -3286,7 +3324,7 @@ export default function App() {
             
             {/* SEZIONE: Team & Quote */}
             {teamData.map((team: any) => (
-              <section key={team.warehouseId} className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-6">
+              <section key={team.warehouseId} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-5">
                   <Users className="text-blue-500" size={18} />
                   <h3 className="text-lg font-bold tracking-tighter">Soci di {team.warehouseName}</h3>
@@ -3294,18 +3332,18 @@ export default function App() {
                 
                 <div className="space-y-3 mb-4">
                   {team.members.map((m: any) => (
-                    <div key={m.membershipId} className="flex items-center gap-3 bg-[#0a0a0a] p-3 rounded-xl">
+                    <div key={m.membershipId} className="flex items-center gap-3 bg-[var(--surface-2)] p-3 rounded-xl">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center font-bold text-sm">
                         {m.name[0]?.toUpperCase()}
                       </div>
                       <div className="flex-1">
                         <p className="font-bold text-sm">{m.name}</p>
-                        <p className="text-[10px] text-gray-500 uppercase">{m.role === 'OWNER' ? 'Fondatore' : 'Membro'}</p>
+                        <p className="text-[10px] text-[var(--text-soft)] uppercase">{m.role === 'OWNER' ? 'Fondatore' : 'Membro'}</p>
                       </div>
                       <input type="number" min="0" max="100" value={m.percentage}
                         onChange={(e: any) => updateMemberPercentage(team.warehouseId, m.membershipId, e.target.value)}
-                        className="w-20 bg-[#0f0f0f] border border-white/[0.05] rounded-lg px-3 py-1.5 text-sm text-right focus:border-[#ff4d00] outline-none" />
-                      <span className="text-gray-500 text-xs">%</span>
+                        className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right focus:border-[#ff4d00] outline-none" />
+                      <span className="text-[var(--text-soft)] text-xs">%</span>
                     </div>
                   ))}
                 </div>
@@ -3326,7 +3364,7 @@ export default function App() {
 
                 {/* Elimina reparto — solo OWNER, piccolo e discreto */}
                 {team.myRole === 'OWNER' && user.warehouses.length > 1 && (
-                  <div className="mt-4 pt-4 border-t border-white/[0.04] flex justify-end">
+                  <div className="mt-4 pt-4 border-t border-[var(--border)] flex justify-end">
                     <button
                       onClick={async () => {
                         if (!confirm(`Eliminare il reparto "${team.warehouseName.replace('Magazzino ', '')}"? Tutti i prodotti associati verranno rimossi.`)) return;
@@ -3344,19 +3382,19 @@ export default function App() {
             ))}
 
             {/* ===== ENTRA IN UN MAGAZZINO ===== */}
-            <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5">
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-1">
-                <UserPlus size={15} className="text-gray-400" />
+                <UserPlus size={15} className="text-[var(--text-muted)]" />
                 <h3 className="font-semibold text-sm">Entra in un Magazzino</h3>
               </div>
-              <p className="text-[11px] text-gray-600 mb-4">Hai ricevuto un codice invito? Inseriscilo qui per unirti al team.</p>
+              <p className="text-[11px] text-[var(--text-faint)] mb-4">Hai ricevuto un codice invito? Inseriscilo qui per unirti al team.</p>
               <form onSubmit={handleJoinWarehouse} className="flex flex-col gap-2">
                 <input
                   value={joinCodeInput}
                   onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
                   placeholder="Codice invito (es: ABC123XY)"
                   maxLength={20}
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl px-4 py-3 text-sm font-mono tracking-widest focus:border-white/[0.2] outline-none uppercase"
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-3 text-sm font-mono tracking-widest focus:border-[var(--border-3)] outline-none uppercase"
                 />
                 <button type="submit" disabled={isJoining || !joinCodeInput.trim()}
                   className="w-full py-3 bg-white text-black rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-40">
@@ -3366,35 +3404,35 @@ export default function App() {
             </section>
 
             {/* ===== DATI: import/export ===== */}
-            <section className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-5">
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-1">
-                <Download size={15} className="text-gray-400" />
+                <Download size={15} className="text-[var(--text-muted)]" />
                 <h3 className="font-semibold text-sm">Dati</h3>
               </div>
-              <p className="text-[11px] text-gray-600 mb-4">Importa prodotti da Excel/CSV o esporta il tuo magazzino.</p>
+              <p className="text-[11px] text-[var(--text-faint)] mb-4">Importa prodotti da Excel/CSV o esporta il tuo magazzino.</p>
               <div className="flex flex-wrap gap-2">
-                <label className="px-4 py-2.5 text-xs font-bold rounded-xl border border-white/[0.07] bg-[#0a0a0a] text-gray-300 hover:text-white hover:border-white/[0.15] cursor-pointer transition-colors flex items-center gap-2">
+                <label className="px-4 py-2.5 text-xs font-bold rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-gray-300 hover:text-[var(--text)] hover:border-[var(--border-3)] cursor-pointer transition-colors flex items-center gap-2">
                   <Download size={14} /> Importa Excel
                   <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelFile} />
                 </label>
                 <button onClick={downloadImportTemplate}
-                  className="px-4 py-2.5 text-xs font-bold rounded-xl border border-white/[0.07] bg-[#0a0a0a] text-gray-300 hover:text-white hover:border-white/[0.15] transition-colors flex items-center gap-2">
+                  className="px-4 py-2.5 text-xs font-bold rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-gray-300 hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors flex items-center gap-2">
                   <Download size={14} /> Scarica template
                 </button>
                 <button onClick={exportCSV}
-                  className="px-4 py-2.5 text-xs font-bold rounded-xl border border-white/[0.07] bg-[#0a0a0a] text-gray-300 hover:text-white hover:border-white/[0.15] transition-colors flex items-center gap-2">
+                  className="px-4 py-2.5 text-xs font-bold rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-gray-300 hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors flex items-center gap-2">
                   <Download size={14} /> Esporta CSV
                 </button>
               </div>
             </section>
 
             {/* ===== ELIMINAZIONE ACCOUNT ===== */}
-            <section className="bg-[#0f0f0f] border border-red-500/[0.12] rounded-2xl p-5">
+            <section className="bg-[var(--surface)] border border-red-500/[0.12] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle size={15} className="text-red-500/60" />
                 <h3 className="font-semibold text-sm text-red-400/80">Eliminazione Account</h3>
               </div>
-              <p className="text-[11px] text-gray-600 mb-4">
+              <p className="text-[11px] text-[var(--text-faint)] mb-4">
                 L'eliminazione dell'account è permanente e irreversibile. Tutti i tuoi prodotti, dati e accessi verranno cancellati definitivamente.
               </p>
               <button onClick={() => setDeleteAccountStep(1)}
@@ -3424,9 +3462,9 @@ export default function App() {
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {/* Sfondo quasi invisibile — frosted glass leggero */}
-        <div className="absolute inset-0 bg-[#080808]/70 backdrop-blur-2xl" />
+        <div className="absolute inset-0 bg-[var(--bg-overlay)] backdrop-blur-2xl" />
         {/* Separatore appena percettibile */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-white/[0.04]" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-[var(--fill)]" />
 
         <div className="relative grid grid-cols-5 px-2">
           {[
@@ -3444,12 +3482,12 @@ export default function App() {
             return (
               <button key={tab.id} onClick={() => navigateTo(tab.id as any)}
                 className={`flex flex-col items-center justify-center py-2.5 relative active:scale-90 transition-all duration-150 ${
-                  active ? 'text-white' : 'text-white/25'
+                  active ? 'text-[var(--text)]' : 'text-[var(--text)]/25'
                 }`}>
                 <div className="relative">
                   <Icon size={22} strokeWidth={active ? 2 : 1.5} />
                   {badge > 0 && (
-                    <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 bg-[#ff4d00] text-white rounded-full text-[8px] font-bold flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 bg-[#ff4d00] text-[var(--text)] rounded-full text-[8px] font-bold flex items-center justify-center">
                       {badge}
                     </span>
                   )}
@@ -3465,22 +3503,22 @@ export default function App() {
       {/* ========== MODALE: AGGIUNGI PRODOTTO ========== */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
             {/* Drag handle (solo mobile) */}
             <div className="flex justify-center pt-3 pb-1 sm:hidden">
               <div className="w-10 h-1 bg-gray-700 rounded-full" />
             </div>
-            <div className="sticky top-0 bg-[#0f0f0f] border-b border-white/[0.05] p-5 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <div>
                 <h2 className="text-xl font-semibold">Aggiungi Prodotto</h2>
                 <button type="button"
                   onClick={() => { setIsFormOpen(false); setLotCategory(userCategories[0] || ''); setLotOpen(true); }}
-                  className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors mt-0.5 flex items-center gap-1">
+                  className="text-[11px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors mt-0.5 flex items-center gap-1">
                   <Layers size={10} /> Stai comprando un lotto? Clicca qui
                 </button>
               </div>
               <button onClick={() => setIsFormOpen(false)}
-                className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+                className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -3489,14 +3527,14 @@ export default function App() {
               
               {/* Tabs categoria */}
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Reparto</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Reparto</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {userCategories.map((cat: string) => (
                     <button key={cat} type="button" onClick={() => setCategory(cat)}
                       className={`p-3 rounded-xl text-sm font-bold border transition-all ${
                         category === cat 
-                          ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-white' 
-                          : 'bg-[#0a0a0a] border-white/[0.07] text-gray-500 hover:border-gray-600'
+                          ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-[var(--text)]' 
+                          : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
                       }`}>
                       <span className="block text-xl mb-1">{getCategoryIcon(cat)}</span>
                       {cat}
@@ -3510,18 +3548,18 @@ export default function App() {
                 <div className="flex items-center justify-between mb-2">
                   <label className="flex items-center gap-2">
                     <Sparkles className="text-purple-400" size={16} />
-                    <span className="text-xs font-bold text-white">Foto + Analisi IA</span>
+                    <span className="text-xs font-bold text-[var(--text)]">Foto + Analisi IA</span>
                   </label>
-                  <span className="text-[10px] text-gray-500">{productPhotos.length}/5 foto</span>
+                  <span className="text-[10px] text-[var(--text-soft)]">{productPhotos.length}/5 foto</span>
                 </div>
-                <p className="text-[10px] text-gray-400 mb-3">
+                <p className="text-[10px] text-[var(--text-muted)] mb-3">
                   Aggiungi 1–5 foto. La prima scatena l'IA che riconosce brand e modello. Puoi ri-scansionare qualsiasi foto.
                 </p>
 
                 {/* Griglia foto */}
                 <div className="grid grid-cols-5 gap-2 mb-3">
                   {productPhotos.map((photo, i) => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[#0a0a0a] border border-purple-500/30">
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border border-purple-500/30">
                       <img src={photo} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removePhoto(i)}
                         className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
@@ -3543,7 +3581,7 @@ export default function App() {
                       ) : (
                         <>
                           <Camera size={18} className="text-purple-400 mb-1" />
-                          <span className="text-[9px] text-gray-500">Aggiungi</span>
+                          <span className="text-[9px] text-[var(--text-soft)]">Aggiungi</span>
                         </>
                       )}
                     </label>
@@ -3575,28 +3613,28 @@ export default function App() {
               {category === 'Pokemon' ? (
                 <>
                   <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Nome Carta</label>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nome Carta</label>
                     <input type="text" required value={pokeName}
                       onChange={(e: any) => setPokeName(e.target.value)}
                       placeholder="Es. Charizard 4/102"
-                      className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Gradata?</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Gradata?</label>
                       <select value={pokeGraded} onChange={(e: any) => setPokeGraded(e.target.value)}
-                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
                         <option value="No">No (Raw)</option>
                         <option value="Si">Sì</option>
                       </select>
                     </div>
                     {pokeGraded === 'Si' && (
                       <div>
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Grade</label>
+                        <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Grade</label>
                         <input type="text" value={pokeGrade}
                           onChange={(e: any) => setPokeGrade(e.target.value)}
                           placeholder="10, 9.5..."
-                          className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                       </div>
                     )}
                   </div>
@@ -3605,47 +3643,47 @@ export default function App() {
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Brand</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Brand</label>
                       <input type="text" required value={watchBrand}
                         onChange={(e: any) => setWatchBrand(e.target.value)}
                         placeholder="Rolex" 
-                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Modello</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Modello</label>
                       <input type="text" required value={watchModel}
                         onChange={(e: any) => setWatchModel(e.target.value)}
                         placeholder="Submariner"
-                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Cassa</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Cassa</label>
                       <input type="text" value={watchCase}
                         onChange={(e: any) => setWatchCase(e.target.value)}
                         placeholder="41mm"
-                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Cinturino</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Cinturino</label>
                       <input type="text" value={watchStrap}
                         onChange={(e: any) => setWatchStrap(e.target.value)}
                         placeholder="Oyster"
-                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Materiale</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Materiale</label>
                       <input type="text" value={watchMaterial}
                         onChange={(e: any) => setWatchMaterial(e.target.value)}
                         placeholder="Acciaio"
-                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                     </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Condizione</label>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
                     <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
-                      className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
                       <option value="Full Set">Full Set</option>
                       <option value="Solo Box">Solo Box</option>
                       <option value="Solo Carta">Solo Carta</option>
@@ -3669,13 +3707,13 @@ export default function App() {
                           };
                           return (
                             <div key={f.name} className={f.name === 'model' || f.type === 'text' && f.placeholder?.length > 20 ? 'col-span-2' : ''}>
-                              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">
+                              <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">
                                 {f.label}{!f.required && <span className="text-gray-700 normal-case font-normal ml-1">(opz.)</span>}
                               </label>
                               {f.type === 'select' ? (
                                 <select value={val} onChange={(e: any) => setVal(e.target.value)}
                                   required={f.required}
-                                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
                                   <option value="">Seleziona...</option>
                                   {(f.options || []).map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
@@ -3684,16 +3722,16 @@ export default function App() {
                                   value={val} onChange={(e: any) => setVal(e.target.value)}
                                   required={f.required}
                                   placeholder={f.placeholder || ''}
-                                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                               )}
                             </div>
                           );
                         })}
                         {/* Condizione dal config AI */}
                         <div>
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Condizione</label>
+                          <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
                           <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
-                            className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
                             {(catConfig.conditionOptions || ['Nuovo','Ottimo','Buono','Usato']).map((opt: string) => (
                               <option key={opt} value={opt}>{opt}</option>
                             ))}
@@ -3708,24 +3746,24 @@ export default function App() {
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Brand</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Brand</label>
                       <input type="text" required value={brand}
                         onChange={(e: any) => setBrand(e.target.value)}
                         placeholder={category === 'Scarpe' ? 'Nike' : category === 'Vestiti' ? 'Supreme' : 'Louis Vuitton'}
-                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Modello</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Modello</label>
                       <input type="text" required value={name}
                         onChange={(e: any) => setName(e.target.value)}
                         placeholder={category === 'Scarpe' ? 'Air Jordan 1 Chicago' : category === 'Vestiti' ? 'Box Logo Hoodie' : 'Neverfull MM'}
-                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       {/* Taglia — sempre input libero con suggerimenti datalist */}
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">
                         {category === 'Scarpe' ? 'Taglia (EU)' : category === 'Vestiti' ? 'Taglia' : 'Dimensione / Taglia'}
                       </label>
                       <input
@@ -3733,7 +3771,7 @@ export default function App() {
                         value={size}
                         onChange={(e: any) => setSize(e.target.value)}
                         placeholder={category === 'Scarpe' ? 'es. 42, 42.5, US 9' : category === 'Vestiti' ? 'es. M, L, XL' : 'es. MM, 30cm, Small'}
-                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none"
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none"
                       />
                       <datalist id={`size-suggestions-${category}`}>
                         {category === 'Scarpe'
@@ -3748,9 +3786,9 @@ export default function App() {
                       </datalist>
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Condizione</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
                       <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
-                        className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
                         <option value="DS">DS (Nuovo)</option>
                         <option value="VNDS">VNDS (Quasi nuovo)</option>
                         <option value="Used">Used (Usato)</option>
@@ -3760,8 +3798,8 @@ export default function App() {
                   </div>
                   {/* Campi dinamici dalla CategoryTemplate (JSONB) */}
                   {activeTemplate && activeTemplate.fields?.length > 0 && (
-                    <div className="border-t border-white/[0.07] pt-4">
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Dettagli Categoria</p>
+                    <div className="border-t border-[var(--border-2)] pt-4">
+                      <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest mb-3">Dettagli Categoria</p>
                       <DynamicForm
                         fields={activeTemplate.fields}
                         values={dynamicAttrs}
@@ -3775,16 +3813,16 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Prezzo Acquisto €</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo Acquisto €</label>
                   <input type="number" step="0.01" required value={price}
                     onChange={(e: any) => setPrice(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Quantità</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Quantità</label>
                   <input type="number" min="1" required value={quantity}
                     onChange={(e: any) => setQuantity(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                 </div>
               </div>
               
@@ -3793,7 +3831,7 @@ export default function App() {
                 const currentTeam = teamData.find((t: any) => t.warehouseName.replace('Magazzino ', '') === category);
                 if (!currentTeam || currentTeam.members.length <= 1) return null;
                 return (
-                  <div className="border-t border-white/[0.07] pt-4">
+                  <div className="border-t border-[var(--border-2)] pt-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Users size={14} className="text-blue-400" />
@@ -3802,13 +3840,13 @@ export default function App() {
                       {!isSharedPurchase ? (
                         <button type="button"
                           onClick={() => setIsSharedPurchase(true)}
-                          className="text-xs text-white hover:text-[#ff6a2a] font-bold transition-colors">
+                          className="text-xs text-[var(--text)] hover:text-[#ff6a2a] font-bold transition-colors">
                           Cambia percentuali
                         </button>
                       ) : (
                         <button type="button"
                           onClick={() => { setIsSharedPurchase(false); setProductShares([]); }}
-                          className="text-xs text-gray-500 hover:text-white font-bold transition-colors">
+                          className="text-xs text-[var(--text-soft)] hover:text-[var(--text)] font-bold transition-colors">
                           Ripristina default
                         </button>
                       )}
@@ -3817,17 +3855,17 @@ export default function App() {
                     {!isSharedPurchase ? (
                       <div className="space-y-2">
                         {currentTeam.members.map((m: any) => (
-                          <div key={m.userId} className="flex items-center gap-3 bg-[#0a0a0a] p-3 rounded-xl">
+                          <div key={m.userId} className="flex items-center gap-3 bg-[var(--surface-2)] p-3 rounded-xl">
                             <span className="font-bold text-sm flex-1">{m.name}</span>
-                            <span className="text-gray-400 text-sm font-bold w-12 text-right">{m.percentage}%</span>
+                            <span className="text-[var(--text-muted)] text-sm font-bold w-12 text-right">{m.percentage}%</span>
                           </div>
                         ))}
-                        <p className="text-[10px] text-gray-600 mt-1">Quote default del team — modifica in Impostazioni</p>
+                        <p className="text-[10px] text-[var(--text-faint)] mt-1">Quote default del team — modifica in Impostazioni</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
                         {productShares.map((s: any, i: number) => (
-                          <div key={s.userId} className="flex items-center gap-3 bg-[#0a0a0a] p-3 rounded-xl">
+                          <div key={s.userId} className="flex items-center gap-3 bg-[var(--surface-2)] p-3 rounded-xl">
                             <span className="font-bold text-sm flex-1">{s.name}</span>
                             <input type="number" min="0" max="100" value={s.percentage}
                               onChange={(e: any) => {
@@ -3835,8 +3873,8 @@ export default function App() {
                                 newShares[i].percentage = e.target.value;
                                 setProductShares(newShares);
                               }}
-                              className="w-20 bg-[#0f0f0f] border border-white/[0.05] rounded-lg px-3 py-1.5 text-sm text-right" />
-                            <span className="text-gray-500 text-xs">%</span>
+                              className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right" />
+                            <span className="text-[var(--text-soft)] text-xs">%</span>
                           </div>
                         ))}
                         <p className={`text-[10px] mt-1 font-bold ${
@@ -3863,40 +3901,40 @@ export default function App() {
       {/* ========== MODALE: VENDI ========== */}
       {sellModalOpen && productToSell && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-            <div className="sticky top-0 bg-[#0f0f0f] border-b border-white/[0.05] p-5 flex items-center justify-between">
+            <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between">
               <h2 className="text-xl font-semibold">Registra Vendita</h2>
               <button onClick={() => setSellModalOpen(false)}
-                className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+                className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors">
                 <X size={20} />
               </button>
             </div>
             
             <form onSubmit={confirmSell} className="p-5 space-y-4">
-              <p className="text-sm text-gray-400">{productToSell.name}</p>
+              <p className="text-sm text-[var(--text-muted)]">{productToSell.name}</p>
               
               
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Quantità</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Quantità</label>
                   <input type="number" min="1" max={productToSell.maxQty}
                     value={sellQuantity} onChange={(e: any) => setSellQuantity(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
-                  <p className="text-[10px] text-gray-500 mt-1">Max disponibile: {productToSell.maxQty}</p>
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                  <p className="text-[10px] text-[var(--text-soft)] mt-1">Max disponibile: {productToSell.maxQty}</p>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Prezzo Totale €</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo Totale €</label>
                   <input type="number" step="0.01" required value={sellPrice}
                     onChange={(e: any) => setSellPrice(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                 </div>
               </div>
               
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Piattaforma</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Piattaforma</label>
                 <select value={sellPlatform} onChange={(e: any) => setSellPlatform(e.target.value)}
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
                   <option value="Vinted">Vinted</option>
                   <option value="Subito">Subito</option>
                   <option value="StockX">StockX (12% fee)</option>
@@ -3906,17 +3944,17 @@ export default function App() {
               </div>
               
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Metodo Pagamento</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Metodo Pagamento</label>
                 <select value={sellPaymentMethod} onChange={(e: any) => setSellPaymentMethod(e.target.value)}
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
                   <option>Nessuna Fee (Contanti/Bonifico)</option>
                   <option>PayPal Beni e Servizi</option>
                 </select>
               </div>
               
-              <div className="bg-[#0a0a0a] p-3 rounded-xl space-y-1.5">
+              <div className="bg-[var(--surface-2)] p-3 rounded-xl space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Fees calcolate</span>
+                  <span className="text-[var(--text-soft)]">Fees calcolate</span>
                   <span className="font-bold text-red-400">-{sellFees}€</span>
                 </div>
                 {productToSell?.purchasePrice && sellPrice && (() => {
@@ -3928,14 +3966,14 @@ export default function App() {
                   const margin = totalCost > 0 ? (profit / totalCost * 100) : 0;
                   return (
                     <>
-                      <div className="flex justify-between text-xs border-t border-white/[0.07] pt-1.5">
-                        <span className="text-gray-500">Profitto atteso</span>
+                      <div className="flex justify-between text-xs border-t border-[var(--border-2)] pt-1.5">
+                        <span className="text-[var(--text-soft)]">Profitto atteso</span>
                         <span className={`font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {profit >= 0 ? '+' : ''}{profit.toFixed(2)}€
                         </span>
                       </div>
                       <div className="flex justify-between text-xs">
-                        <span className="text-gray-500">Margine</span>
+                        <span className="text-[var(--text-soft)]">Margine</span>
                         <span className={`font-bold ${margin >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {margin >= 0 ? '+' : ''}{margin.toFixed(1)}%
                         </span>
@@ -3957,12 +3995,12 @@ export default function App() {
       {/* ========== MODALE: MODIFICA PRODOTTO ========== */}
       {editModalOpen && productToEdit && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-            <div className="sticky top-0 bg-[#0f0f0f] border-b border-white/[0.05] p-5 flex items-center justify-between">
+            <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between">
               <h2 className="text-xl font-semibold">Modifica Prodotto</h2>
               <button onClick={() => setEditModalOpen(false)}
-                className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+                className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -3970,51 +4008,51 @@ export default function App() {
             <form onSubmit={handleSaveEdit} className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Brand</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Brand</label>
                   <input type="text" required value={editBrand}
                     onChange={(e: any) => setEditBrand(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Nome</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nome</label>
                   <input type="text" required value={editName}
                     onChange={(e: any) => setEditName(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Taglia</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Taglia</label>
                   <input type="text" value={editSize}
                     onChange={(e: any) => setEditSize(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Condizione</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
                   <input type="text" value={editCondition}
                     onChange={(e: any) => setEditCondition(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Prezzo Acquisto €</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo Acquisto €</label>
                 <input type="number" step="0.01" required value={editPrice}
                   onChange={(e: any) => setEditPrice(e.target.value)}
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
               </div>
 
               {/* Foto prodotto nel modale modifica */}
-              <div className="border-t border-white/[0.07] pt-4">
+              <div className="border-t border-[var(--border-2)] pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Camera size={14} className="text-purple-400" />
                     <span className="text-sm font-bold">Foto</span>
                   </div>
-                  <span className="text-[10px] text-gray-500">{editPhotos.length}/5</span>
+                  <span className="text-[10px] text-[var(--text-soft)]">{editPhotos.length}/5</span>
                 </div>
                 <div className="grid grid-cols-5 gap-2">
                   {editPhotos.map((photo, i) => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[#0a0a0a] border border-white/[0.07]">
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border border-[var(--border-2)]">
                       <img src={photo} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removePhoto(i, true)}
                         className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
@@ -4026,8 +4064,8 @@ export default function App() {
                     <label className="aspect-square rounded-xl border-2 border-dashed border-gray-700 hover:border-purple-500 flex flex-col items-center justify-center cursor-pointer transition-colors">
                       <input type="file" accept="image/*" multiple className="hidden"
                         onChange={(e: any) => handlePhotoAdd(e, true)} />
-                      <Camera size={16} className="text-gray-500 mb-0.5" />
-                      <span className="text-[9px] text-gray-500">Aggiungi</span>
+                      <Camera size={16} className="text-[var(--text-soft)] mb-0.5" />
+                      <span className="text-[9px] text-[var(--text-soft)]">Aggiungi</span>
                     </label>
                   )}
                 </div>
@@ -4038,7 +4076,7 @@ export default function App() {
                 const currentTeam = teamData.find((t: any) => t.warehouseName.replace('Magazzino ', '') === productToEdit?.category);
                 if (!currentTeam || currentTeam.members.length <= 1) return null;
                 return (
-                  <div className="border-t border-white/[0.07] pt-4">
+                  <div className="border-t border-[var(--border-2)] pt-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Users size={14} className="text-blue-400" />
@@ -4052,13 +4090,13 @@ export default function App() {
                               userId: m.userId, name: m.name, percentage: m.percentage,
                             })));
                           }}
-                          className="text-xs text-white hover:text-[#ff6a2a] font-bold transition-colors">
+                          className="text-xs text-[var(--text)] hover:text-[#ff6a2a] font-bold transition-colors">
                           Cambia percentuali
                         </button>
                       ) : (
                         <button type="button"
                           onClick={() => { setIsEditShared(false); setEditShares([]); }}
-                          className="text-xs text-gray-500 hover:text-white font-bold transition-colors">
+                          className="text-xs text-[var(--text-soft)] hover:text-[var(--text)] font-bold transition-colors">
                           Ripristina default
                         </button>
                       )}
@@ -4066,17 +4104,17 @@ export default function App() {
                     {!isEditShared ? (
                       <div className="space-y-2">
                         {currentTeam.members.map((m: any) => (
-                          <div key={m.userId} className="flex items-center gap-3 bg-[#0a0a0a] p-3 rounded-xl">
+                          <div key={m.userId} className="flex items-center gap-3 bg-[var(--surface-2)] p-3 rounded-xl">
                             <span className="font-bold text-sm flex-1">{m.name}</span>
-                            <span className="text-gray-400 text-sm font-bold w-12 text-right">{m.percentage}%</span>
+                            <span className="text-[var(--text-muted)] text-sm font-bold w-12 text-right">{m.percentage}%</span>
                           </div>
                         ))}
-                        <p className="text-[10px] text-gray-600 mt-1">Quote default del team — modifica in Impostazioni</p>
+                        <p className="text-[10px] text-[var(--text-faint)] mt-1">Quote default del team — modifica in Impostazioni</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
                         {editShares.map((s: any, i: number) => (
-                          <div key={s.userId} className="flex items-center gap-3 bg-[#0a0a0a] p-3 rounded-xl">
+                          <div key={s.userId} className="flex items-center gap-3 bg-[var(--surface-2)] p-3 rounded-xl">
                             <span className="font-bold text-sm flex-1">{s.name}</span>
                             <input type="number" min="0" max="100" value={s.percentage}
                               onChange={(e: any) => {
@@ -4084,8 +4122,8 @@ export default function App() {
                                 ns[i].percentage = e.target.value;
                                 setEditShares(ns);
                               }}
-                              className="w-20 bg-[#0f0f0f] border border-white/[0.05] rounded-lg px-3 py-1.5 text-sm text-right" />
-                            <span className="text-gray-500 text-xs">%</span>
+                              className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right" />
+                            <span className="text-[var(--text-soft)] text-xs">%</span>
                           </div>
                         ))}
                         <p className={`text-[10px] mt-1 font-bold ${
@@ -4119,13 +4157,13 @@ export default function App() {
       {/* ========== MODALE: 2FA SETUP ========== */}
       {twoFaSetupOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="border-b border-white/[0.07] p-5 flex items-center justify-between">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="border-b border-[var(--border-2)] p-5 flex items-center justify-between">
               <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Shield className="text-white" size={20} /> Attiva 2FA
+                <Shield className="text-[var(--text)]" size={20} /> Attiva 2FA
               </h2>
               <button onClick={() => { setTwoFaSetupOpen(false); setTwoFaBackupCodes(null); setTwoFaCode(''); }}
-                className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+                className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -4133,8 +4171,8 @@ export default function App() {
             <div className="p-5 space-y-4">
               {!twoFaBackupCodes ? (
                 <>
-                  <div className="space-y-2 text-sm text-gray-400">
-                    <p>1. Scarica un'app come <span className="text-white font-bold">Google Authenticator</span> o <span className="text-white font-bold">Authy</span></p>
+                  <div className="space-y-2 text-sm text-[var(--text-muted)]">
+                    <p>1. Scarica un'app come <span className="text-[var(--text)] font-bold">Google Authenticator</span> o <span className="text-[var(--text)] font-bold">Authy</span></p>
                     <p>2. Scansiona il QR qui sotto</p>
                     <p>3. Inserisci il codice generato dall'app</p>
                   </div>
@@ -4146,11 +4184,11 @@ export default function App() {
                   )}
                   
                   <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Codice dall'app</label>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Codice dall'app</label>
                     <input type="text" inputMode="numeric" value={twoFaCode}
                       onChange={(e: any) => setTwoFaCode(e.target.value)}
                       placeholder="000000" maxLength={6}
-                      className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-center font-mono text-2xl tracking-widest focus:border-[#ff4d00] outline-none" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-center font-mono text-2xl tracking-widest focus:border-[#ff4d00] outline-none" />
                   </div>
                   
                   <button onClick={handle2FAVerify} disabled={twoFaLoading || twoFaCode.length !== 6}
@@ -4167,18 +4205,18 @@ export default function App() {
                     <p className="text-xs text-gray-300">Salva questi codici di backup in un posto sicuro. Ti permetteranno di accedere se perdi l'authenticator.</p>
                   </div>
                   
-                  <div className="bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-4">
-                    <p className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-widest">Codici di Backup</p>
+                  <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-4">
+                    <p className="text-xs font-bold text-[var(--text-soft)] mb-3 uppercase tracking-widest">Codici di Backup</p>
                     <div className="grid grid-cols-2 gap-2 font-mono text-sm">
                       {twoFaBackupCodes.map((c: string, i: number) => (
-                        <div key={i} className="bg-[#0f0f0f] p-2 rounded text-center">{c}</div>
+                        <div key={i} className="bg-[var(--surface)] p-2 rounded text-center">{c}</div>
                       ))}
                     </div>
                     <button onClick={() => {
                       navigator.clipboard.writeText(twoFaBackupCodes.join('\n'));
                       showToast('Codici copiati!');
                     }}
-                      className="mt-3 w-full bg-white/5 hover:bg-white/8 py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2">
+                      className="mt-3 w-full bg-[var(--fill)] hover:bg-[var(--fill)] py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2">
                       <Copy size={12} /> Copia tutti i codici
                     </button>
                   </div>
@@ -4201,7 +4239,7 @@ export default function App() {
       {/* ========== MODALE: DISABILITA 2FA ========== */}
       {twoFaDisableOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6">
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center gap-2 mb-5">
               <Shield className="text-red-400" size={20} />
@@ -4209,18 +4247,18 @@ export default function App() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Password account</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Password account</label>
                 <input type="password" value={twoFaDisablePwd}
                   onChange={e => setTwoFaDisablePwd(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-white outline-none focus:border-red-500" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-red-500" />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Codice dall'app 2FA</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Codice dall'app 2FA</label>
                 <input type="text" inputMode="numeric" value={twoFaDisableOtp}
                   onChange={e => setTwoFaDisableOtp(e.target.value)}
                   maxLength={6} placeholder="000000"
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-white font-mono text-center text-2xl tracking-widest outline-none focus:border-red-500" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] font-mono text-center text-2xl tracking-widest outline-none focus:border-red-500" />
               </div>
               <button onClick={confirm2FADisable}
                 disabled={!twoFaDisablePwd || twoFaDisableOtp.length < 6}
@@ -4228,7 +4266,7 @@ export default function App() {
                 Conferma disabilitazione
               </button>
               <button onClick={() => setTwoFaDisableOpen(false)}
-                className="w-full bg-white/5 hover:bg-white/8 py-3 rounded-xl font-bold text-sm transition-colors">
+                className="w-full bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
                 Annulla
               </button>
             </div>
@@ -4244,11 +4282,11 @@ export default function App() {
             selectedGroupKeys.size > 0 ? 'border-[#ff4d00]/50' : 'border-gray-700'
           }`}>
             <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fill-2)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
               <X size={16} />
             </button>
             <button onClick={selectAllGroups}
-              className="text-xs text-gray-500 hover:text-white font-bold transition-colors shrink-0 px-2">
+              className="text-xs text-[var(--text-soft)] hover:text-[var(--text)] font-bold transition-colors shrink-0 px-2">
               Tutti
             </button>
             <div className="flex-1 text-center">
@@ -4267,7 +4305,7 @@ export default function App() {
             <button
               onClick={() => setBulkSellOpen(true)}
               disabled={selectedGroupKeys.size === 0}
-              className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-bold disabled:opacity-30 transition-colors flex items-center gap-1.5">
+              className="px-4 py-2 bg-green-600 hover:bg-green-500 text-[var(--text)] rounded-xl text-xs font-bold disabled:opacity-30 transition-colors flex items-center gap-1.5">
               <DollarSign size={14} /> Vendi
             </button>
           </div>
@@ -4277,38 +4315,38 @@ export default function App() {
       {/* ========== MODALE: BULK VENDI ========== */}
       {bulkSellOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6">
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <h2 className="text-xl font-semibold mb-1">Vendi in Blocco</h2>
-            <p className="text-xs text-gray-500 mb-5">
+            <p className="text-xs text-[var(--text-soft)] mb-5">
               {getBulkSelectedIds().length} prodotti — stessa piattaforma e stesso prezzo unitario per tutti
             </p>
             <form onSubmit={handleBulkSell} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Prezzo unitario €</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo unitario €</label>
                   <input type="number" step="0.01" required value={bulkSellPrice}
                     onChange={e => setBulkSellPrice(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Fees unitarie €</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Fees unitarie €</label>
                   <input type="number" step="0.01" value={bulkSellFees}
                     onChange={e => setBulkSellFees(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Piattaforma</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Piattaforma</label>
                 <select value={bulkSellPlatform} onChange={e => setBulkSellPlatform(e.target.value)}
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
                   <option>Vinted</option><option>Subito</option><option>StockX</option>
                   <option>eBay</option><option>Privato</option>
                 </select>
               </div>
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setBulkSellOpen(false)}
-                  className="flex-1 bg-white/5 hover:bg-white/8 py-3 rounded-xl font-bold text-sm transition-colors">
+                  className="flex-1 bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
                   Annulla
                 </button>
                 <button type="submit" disabled={isBulkProcessing}
@@ -4324,7 +4362,7 @@ export default function App() {
       {/* ========== MODALE: BULK ELIMINA ========== */}
       {bulkDeleteConfirmOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6">
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
@@ -4332,12 +4370,12 @@ export default function App() {
               </div>
               <div>
                 <h3 className="font-semibold text-base">Elimina {getBulkSelectedIds().length} prodotti</h3>
-                <p className="text-xs text-gray-500">Azione irreversibile</p>
+                <p className="text-xs text-[var(--text-soft)]">Azione irreversibile</p>
               </div>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setBulkDeleteConfirmOpen(false)}
-                className="flex-1 bg-white/5 hover:bg-white/8 py-3 rounded-xl font-bold text-sm transition-colors">
+                className="flex-1 bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
                 Annulla
               </button>
               <button onClick={handleBulkDelete} disabled={isBulkProcessing}
@@ -4352,14 +4390,14 @@ export default function App() {
       {/* ========== MODALE: IMPORT EXCEL ========== */}
       {importOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-            <div className="sticky top-0 bg-[#0f0f0f] border-b border-white/[0.05] p-5 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Download size={20} className="text-white" /> Importa da Excel
+                <Download size={20} className="text-[var(--text)]" /> Importa da Excel
               </h2>
               <button onClick={() => { setImportOpen(false); setImportRows([]); setImportErrors([]); }}
-                className="p-2 hover:bg-white/5 rounded-lg transition-colors"><X size={20} /></button>
+                className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors"><X size={20} /></button>
             </div>
             <div className="p-5 space-y-4">
               <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3 text-xs text-blue-400">
@@ -4372,11 +4410,11 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-3">
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex-1">
-                  Reparto di default <span className="text-gray-600">(per righe senza colonna Categoria)</span>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex-1">
+                  Reparto di default <span className="text-[var(--text-faint)]">(per righe senza colonna Categoria)</span>
                 </label>
                 <select value={importCategory} onChange={e => setImportCategory(e.target.value)}
-                  className="bg-[#0a0a0a] border border-white/[0.07] rounded-lg px-3 py-2 text-sm focus:border-[#ff4d00] outline-none">
+                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm focus:border-[#ff4d00] outline-none">
                   {userCategories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -4384,19 +4422,19 @@ export default function App() {
               {importRows.length > 0 && (
                 <>
                   <p className="text-sm font-bold">
-                    <span className="text-white">{importRows.length}</span> righe trovate
+                    <span className="text-[var(--text)]">{importRows.length}</span> righe trovate
                     {importRows.filter(r => !r.brand || !r.name || !r.price).length > 0 && (
                       <span className="text-red-400 ml-2 text-xs">
                         ({importRows.filter(r => !r.brand || !r.name || !r.price).length} con errori — verranno saltate)
                       </span>
                     )}
                   </p>
-                  <div className="overflow-x-auto rounded-xl border border-white/[0.07]">
+                  <div className="overflow-x-auto rounded-xl border border-[var(--border-2)]">
                     <table className="w-full text-xs">
-                      <thead className="bg-[#0a0a0a] border-b border-white/[0.07]">
+                      <thead className="bg-[var(--surface-2)] border-b border-[var(--border-2)]">
                         <tr>
                           {['Brand','Nome','Taglia','Cond.','Prezzo','Categoria'].map(h => (
-                            <th key={h} className="px-3 py-2 text-left text-gray-500 font-bold">{h}</th>
+                            <th key={h} className="px-3 py-2 text-left text-[var(--text-soft)] font-bold">{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -4407,17 +4445,17 @@ export default function App() {
                             <tr key={i} className={`border-b border-gray-900 ${hasErr ? 'bg-red-500/5' : ''}`}>
                               <td className="px-3 py-2">{r.brand || <span className="text-red-400">⚠ mancante</span>}</td>
                               <td className="px-3 py-2 max-w-[120px] truncate">{r.name || <span className="text-red-400">⚠ mancante</span>}</td>
-                              <td className="px-3 py-2 text-gray-400">{r.size || '—'}</td>
-                              <td className="px-3 py-2 text-gray-400">{r.condition || 'DS'}</td>
+                              <td className="px-3 py-2 text-[var(--text-muted)]">{r.size || '—'}</td>
+                              <td className="px-3 py-2 text-[var(--text-muted)]">{r.condition || 'DS'}</td>
                               <td className="px-3 py-2">{r.price > 0 ? `€${r.price}` : <span className="text-red-400">⚠ {String(r.price)}</span>}</td>
-                              <td className="px-3 py-2 text-gray-400">{r.category || <span className="text-blue-400">{importCategory}</span>}</td>
+                              <td className="px-3 py-2 text-[var(--text-muted)]">{r.category || <span className="text-blue-400">{importCategory}</span>}</td>
                             </tr>
                           );
                         })}
                       </tbody>
                     </table>
                     {importRows.length > 12 && (
-                      <p className="p-3 text-xs text-gray-500 text-center">...e altri {importRows.length - 12} prodotti</p>
+                      <p className="p-3 text-xs text-[var(--text-soft)] text-center">...e altri {importRows.length - 12} prodotti</p>
                     )}
                   </div>
                 </>
@@ -4431,7 +4469,7 @@ export default function App() {
 
               <div className="flex gap-3 pt-1">
                 <button onClick={() => { setImportOpen(false); setImportRows([]); setImportErrors([]); }}
-                  className="flex-1 bg-white/5 hover:bg-white/8 py-3 rounded-xl font-bold text-sm transition-colors">
+                  className="flex-1 bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
                   Annulla
                 </button>
                 <button onClick={confirmImport} disabled={isImporting || importRows.length === 0}
@@ -4449,33 +4487,33 @@ export default function App() {
       {/* ========== MODALE: CREA LOTTO ========== */}
       {lotOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-md">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-            <div className="p-5 border-b border-white/[0.05] flex items-center justify-between">
+            <div className="p-5 border-b border-[var(--border)] flex items-center justify-between">
               <div>
                 <h2 className="font-semibold text-base flex items-center gap-2">
-                  <Layers size={16} className="text-gray-400" /> Crea Lotto
+                  <Layers size={16} className="text-[var(--text-muted)]" /> Crea Lotto
                 </h2>
                 <button type="button"
                   onClick={() => { setLotOpen(false); setIsFormOpen(true); }}
-                  className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors mt-0.5 flex items-center gap-1">
+                  className="text-[11px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors mt-0.5 flex items-center gap-1">
                   <Plus size={10} /> Torna a Prodotto Singolo
                 </button>
               </div>
-              <button onClick={() => setLotOpen(false)} className="p-2 hover:bg-white/[0.05] rounded-xl transition-colors">
-                <X size={18} className="text-gray-400" />
+              <button onClick={() => setLotOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
+                <X size={18} className="text-[var(--text-muted)]" />
               </button>
             </div>
             <form onSubmit={handleCreateLot} className="p-5 space-y-4">
 
               {/* Reparto */}
               <div>
-                <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em] block mb-2">Reparto</label>
+                <label className="text-[10px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.1em] block mb-2">Reparto</label>
                 <div className="grid grid-cols-2 gap-2">
                   {userCategories.map(cat => (
                     <button key={cat} type="button" onClick={() => setLotCategory(cat)}
                       className={`p-2.5 rounded-xl border text-sm font-semibold transition-colors flex items-center gap-2 ${
-                        lotCategory === cat ? 'bg-white/[0.06] border-white/[0.15] text-white' : 'bg-[#0a0a0a] border-white/[0.06] text-gray-500'
+                        lotCategory === cat ? 'bg-[var(--fill)] border-[var(--border-3)] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-soft)]'
                       }`}>
                       <span>{getCategoryIcon(cat)}</span> {cat}
                     </button>
@@ -4485,33 +4523,33 @@ export default function App() {
 
               {/* Nome lotto */}
               <div>
-                <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em] block mb-2">Nome Lotto</label>
+                <label className="text-[10px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.1em] block mb-2">Nome Lotto</label>
                 <input required value={lotName} onChange={e => setLotName(e.target.value)}
                   placeholder="Es: Bundle Pokemon Giugno, Lotto Scarpe Verano..."
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:border-white/[0.2] outline-none" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] placeholder-gray-600 focus:border-[var(--border-3)] outline-none" />
               </div>
 
               {/* Prezzo totale + numero pezzi */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em] block mb-2">Prezzo Totale €</label>
+                  <label className="text-[10px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.1em] block mb-2">Prezzo Totale €</label>
                   <input required type="number" min="0.01" step="0.01" value={lotTotal} onChange={e => setLotTotal(e.target.value)}
                     placeholder="300"
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:border-white/[0.2] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] placeholder-gray-600 focus:border-[var(--border-3)] outline-none" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em] block mb-2">N° Articoli</label>
+                  <label className="text-[10px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.1em] block mb-2">N° Articoli</label>
                   <input required type="number" min="2" max="200" step="1" value={lotQty} onChange={e => setLotQty(e.target.value)}
                     placeholder="10"
-                    className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:border-white/[0.2] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] placeholder-gray-600 focus:border-[var(--border-3)] outline-none" />
                 </div>
               </div>
 
               {/* Preview costo per articolo */}
               {lotTotal && lotQty && parseFloat(lotTotal) > 0 && parseInt(lotQty) >= 2 && (
-                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 flex items-center justify-between">
-                  <span className="text-[12px] text-gray-500">Costo per articolo</span>
-                  <span className="font-semibold text-white text-sm">
+                <div className="bg-[var(--fill)] border border-[var(--border)] rounded-xl p-3 flex items-center justify-between">
+                  <span className="text-[12px] text-[var(--text-soft)]">Costo per articolo</span>
+                  <span className="font-semibold text-[var(--text)] text-sm">
                     {(parseFloat(lotTotal) / parseInt(lotQty)).toFixed(2)}€
                   </span>
                 </div>
@@ -4519,23 +4557,23 @@ export default function App() {
 
               {/* Brand (opzionale) */}
               <div>
-                <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em] block mb-2">Brand <span className="text-gray-700 normal-case font-normal">(opzionale)</span></label>
+                <label className="text-[10px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.1em] block mb-2">Brand <span className="text-gray-700 normal-case font-normal">(opzionale)</span></label>
                 <input value={lotBrand} onChange={e => setLotBrand(e.target.value)}
                   placeholder="Es: Pokémon, Nike, Rolex..."
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:border-white/[0.2] outline-none" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] placeholder-gray-600 focus:border-[var(--border-3)] outline-none" />
               </div>
 
               {/* Note */}
               <div>
-                <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em] block mb-2">Note <span className="text-gray-700 normal-case font-normal">(opzionale)</span></label>
+                <label className="text-[10px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.1em] block mb-2">Note <span className="text-gray-700 normal-case font-normal">(opzionale)</span></label>
                 <input value={lotNotes} onChange={e => setLotNotes(e.target.value)}
                   placeholder="Es: acquistato da privato, condizioni miste..."
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm text-white placeholder-gray-600 focus:border-white/[0.2] outline-none" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] placeholder-gray-600 focus:border-[var(--border-3)] outline-none" />
               </div>
 
               <div className="flex gap-2 pt-1">
                 <button type="button" onClick={() => setLotOpen(false)}
-                  className="flex-1 py-3 rounded-xl border border-white/[0.07] text-sm text-gray-400 hover:text-white transition-colors">
+                  className="flex-1 py-3 rounded-xl border border-[var(--border-2)] text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
                   Annulla
                 </button>
                 <button type="submit" disabled={isCreatingLot || !lotCategory || !lotName || !lotTotal || !lotQty}
@@ -4551,7 +4589,7 @@ export default function App() {
       {/* ========== MODALE: ELIMINA ACCOUNT (multi-step) ========== */}
       {deleteAccountStep > 0 && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[80] p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-md">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
 
             {/* STEP 1: Warning */}
@@ -4563,7 +4601,7 @@ export default function App() {
                   </div>
                   <div>
                     <h3 className="font-semibold">Eliminare l'account?</h3>
-                    <p className="text-[11px] text-gray-500">Questa azione è permanente e irreversibile</p>
+                    <p className="text-[11px] text-[var(--text-soft)]">Questa azione è permanente e irreversibile</p>
                   </div>
                 </div>
                 <div className="bg-red-500/[0.06] border border-red-500/[0.15] rounded-xl p-4 mb-5 space-y-1.5">
@@ -4573,10 +4611,10 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-                <p className="text-[11px] text-gray-600 mb-5">I tuoi soci non verranno eliminati. I prodotti condivisi resteranno visibili al team.</p>
+                <p className="text-[11px] text-[var(--text-faint)] mb-5">I tuoi soci non verranno eliminati. I prodotti condivisi resteranno visibili al team.</p>
                 <div className="flex gap-2">
                   <button onClick={() => setDeleteAccountStep(0)}
-                    className="flex-1 py-3 rounded-xl border border-white/[0.07] text-sm text-gray-400 hover:text-white transition-colors">
+                    className="flex-1 py-3 rounded-xl border border-[var(--border-2)] text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
                     Annulla
                   </button>
                   <button onClick={() => setDeleteAccountStep(2)}
@@ -4591,18 +4629,18 @@ export default function App() {
             {deleteAccountStep === 2 && (
               <div className="p-6">
                 <h3 className="font-semibold mb-1">Conferma la tua email</h3>
-                <p className="text-[12px] text-gray-500 mb-4">Scrivi la tua email per confermare l'eliminazione</p>
-                <p className="text-xs text-gray-600 bg-white/[0.03] border border-white/[0.05] rounded-xl p-3 mb-4 font-mono">{user?.email}</p>
+                <p className="text-[12px] text-[var(--text-soft)] mb-4">Scrivi la tua email per confermare l'eliminazione</p>
+                <p className="text-xs text-[var(--text-faint)] bg-[var(--fill)] border border-[var(--border)] rounded-xl p-3 mb-4 font-mono">{user?.email}</p>
                 <input
                   value={deleteEmailConfirm}
                   onChange={e => setDeleteEmailConfirm(e.target.value)}
                   placeholder="Scrivi qui la tua email"
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-red-500/40 outline-none mb-4"
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-red-500/40 outline-none mb-4"
                   autoFocus
                 />
                 <div className="flex gap-2">
                   <button onClick={() => setDeleteAccountStep(1)}
-                    className="flex-1 py-3 rounded-xl border border-white/[0.07] text-sm text-gray-400 transition-colors">
+                    className="flex-1 py-3 rounded-xl border border-[var(--border-2)] text-sm text-[var(--text-muted)] transition-colors">
                     Indietro
                   </button>
                   <button
@@ -4624,18 +4662,18 @@ export default function App() {
             {deleteAccountStep === 3 && (
               <div className="p-6">
                 <h3 className="font-semibold mb-1">Inserisci la tua password</h3>
-                <p className="text-[12px] text-gray-500 mb-4">Per sicurezza conferma la tua password attuale</p>
+                <p className="text-[12px] text-[var(--text-soft)] mb-4">Per sicurezza conferma la tua password attuale</p>
                 <input
                   type="password"
                   value={deletePasswordConfirm}
                   onChange={e => setDeletePasswordConfirm(e.target.value)}
                   placeholder="Password attuale"
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-sm focus:border-red-500/40 outline-none mb-4"
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-red-500/40 outline-none mb-4"
                   autoFocus
                 />
                 <div className="flex gap-2">
                   <button onClick={() => setDeleteAccountStep(2)}
-                    className="flex-1 py-3 rounded-xl border border-white/[0.07] text-sm text-gray-400 transition-colors">
+                    className="flex-1 py-3 rounded-xl border border-[var(--border-2)] text-sm text-[var(--text-muted)] transition-colors">
                     Indietro
                   </button>
                   <button
@@ -4657,22 +4695,22 @@ export default function App() {
                   </div>
                 </div>
                 <h3 className="font-semibold text-center mb-1">Ultima conferma</h3>
-                <p className="text-[12px] text-gray-500 text-center mb-5">Una volta eliminato non potrai recuperare nulla</p>
+                <p className="text-[12px] text-[var(--text-soft)] text-center mb-5">Una volta eliminato non potrai recuperare nulla</p>
                 <label className="flex items-start gap-3 cursor-pointer mb-5 p-3 bg-red-500/[0.05] border border-red-500/[0.12] rounded-xl">
                   <input type="checkbox" checked={deleteCheckbox} onChange={e => setDeleteCheckbox(e.target.checked)}
                     className="mt-0.5 shrink-0 w-4 h-4 accent-red-500" />
-                  <span className="text-[12px] text-gray-400 leading-relaxed">
+                  <span className="text-[12px] text-[var(--text-muted)] leading-relaxed">
                     Capisco che questa azione è permanente e che perderò tutti i miei dati, prodotti e accessi senza possibilità di recupero.
                   </span>
                 </label>
                 <div className="flex gap-2">
                   <button onClick={() => { setDeleteAccountStep(0); setDeleteEmailConfirm(''); setDeletePasswordConfirm(''); setDeleteCheckbox(false); }}
-                    className="flex-1 py-3 rounded-xl border border-white/[0.07] text-sm text-gray-400 transition-colors">
+                    className="flex-1 py-3 rounded-xl border border-[var(--border-2)] text-sm text-[var(--text-muted)] transition-colors">
                     Annulla
                   </button>
                   <button onClick={handleDeleteAccount}
                     disabled={!deleteCheckbox || isDeletingAccount}
-                    className="flex-1 py-3 rounded-xl bg-red-600 text-white text-sm font-semibold disabled:opacity-40 hover:bg-red-700 transition-colors">
+                    className="flex-1 py-3 rounded-xl bg-red-600 text-[var(--text)] text-sm font-semibold disabled:opacity-40 hover:bg-red-700 transition-colors">
                     {isDeletingAccount ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Elimina Account'}
                   </button>
                 </div>
@@ -4685,14 +4723,14 @@ export default function App() {
       {/* ========== COOKIE BANNER ========== */}
       {!cookieConsent && (
         <div className="fixed bottom-0 left-0 right-0 z-[100] lg:bottom-6 lg:left-6 lg:right-auto lg:max-w-sm">
-          <div className="bg-[#0f0f0f] border border-white/[0.08] lg:rounded-2xl p-5 shadow-2xl border-t lg:border">
+          <div className="bg-[var(--surface)] border border-[var(--border-2)] lg:rounded-2xl p-5 shadow-2xl border-t lg:border">
             <div className="flex items-start gap-3 mb-4">
               <div className="text-lg shrink-0">🍪</div>
               <div>
-                <p className="text-sm font-semibold text-white mb-1">Informativa Cookie</p>
-                <p className="text-[12px] text-gray-500 leading-relaxed">
+                <p className="text-sm font-semibold text-[var(--text)] mb-1">Informativa Cookie</p>
+                <p className="text-[12px] text-[var(--text-soft)] leading-relaxed">
                   Usiamo solo cookie <span className="text-gray-300">strettamente necessari</span> per l'autenticazione e il funzionamento dell'app. Nessun cookie di marketing o profilazione.{' '}
-                  <button onClick={() => setPrivacyOpen(true)} className="text-white underline underline-offset-2 hover:no-underline">
+                  <button onClick={() => setPrivacyOpen(true)} className="text-[var(--text)] underline underline-offset-2 hover:no-underline">
                     Privacy Policy
                   </button>
                 </p>
@@ -4700,7 +4738,7 @@ export default function App() {
             </div>
             <div className="flex gap-2">
               <button onClick={() => setPrivacyOpen(true)}
-                className="flex-1 py-2 rounded-xl border border-white/[0.07] text-xs text-gray-400 hover:text-white transition-colors">
+                className="flex-1 py-2 rounded-xl border border-[var(--border-2)] text-xs text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
                 Leggi tutto
               </button>
               <button onClick={() => { localStorage.setItem('hq_cookie_consent', '1'); setCookieConsent(true); }}
@@ -4715,25 +4753,25 @@ export default function App() {
       {/* ========== MODALE: PRIVACY POLICY ========== */}
       {privacyOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between p-5 border-b border-white/[0.05] shrink-0">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-[var(--border)] shrink-0">
               <div>
                 <h2 className="font-semibold text-base">Privacy Policy & Cookie</h2>
-                <p className="text-[11px] text-gray-500 mt-0.5">Ultimo aggiornamento: {new Date().toLocaleDateString('it-IT', { year: 'numeric', month: 'long' })}</p>
+                <p className="text-[11px] text-[var(--text-soft)] mt-0.5">Ultimo aggiornamento: {new Date().toLocaleDateString('it-IT', { year: 'numeric', month: 'long' })}</p>
               </div>
-              <button onClick={() => setPrivacyOpen(false)} className="p-2 hover:bg-white/[0.05] rounded-xl transition-colors">
-                <X size={18} className="text-gray-400" />
+              <button onClick={() => setPrivacyOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
+                <X size={18} className="text-[var(--text-muted)]" />
               </button>
             </div>
-            <div className="overflow-y-auto p-5 space-y-5 text-[13px] text-gray-400 leading-relaxed">
+            <div className="overflow-y-auto p-5 space-y-5 text-[13px] text-[var(--text-muted)] leading-relaxed">
 
               <section>
-                <h3 className="text-white font-semibold text-sm mb-2">1. Titolare del Trattamento</h3>
+                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">1. Titolare del Trattamento</h3>
                 <p>Il titolare del trattamento dei dati personali è l'operatore dell'account HQ. Per qualsiasi richiesta relativa ai dati personali, contatta il responsabile della piattaforma.</p>
               </section>
 
               <section>
-                <h3 className="text-white font-semibold text-sm mb-2">2. Dati Raccolti</h3>
+                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">2. Dati Raccolti</h3>
                 <p className="mb-2">HQ raccoglie i seguenti dati personali:</p>
                 <ul className="space-y-1 list-none">
                   {[
@@ -4744,7 +4782,7 @@ export default function App() {
                     'Log di accesso e azioni (audit)',
                   ].map(item => (
                     <li key={item} className="flex items-start gap-2">
-                      <span className="text-gray-600 mt-0.5">—</span>
+                      <span className="text-[var(--text-faint)] mt-0.5">—</span>
                       <span>{item}</span>
                     </li>
                   ))}
@@ -4752,7 +4790,7 @@ export default function App() {
               </section>
 
               <section>
-                <h3 className="text-white font-semibold text-sm mb-2">3. Finalità del Trattamento</h3>
+                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">3. Finalità del Trattamento</h3>
                 <p>I dati sono trattati esclusivamente per:</p>
                 <ul className="space-y-1 mt-2 list-none">
                   {[
@@ -4762,7 +4800,7 @@ export default function App() {
                     'Prevenzione di accessi non autorizzati',
                   ].map(item => (
                     <li key={item} className="flex items-start gap-2">
-                      <span className="text-gray-600 mt-0.5">—</span>
+                      <span className="text-[var(--text-faint)] mt-0.5">—</span>
                       <span>{item}</span>
                     </li>
                   ))}
@@ -4770,18 +4808,18 @@ export default function App() {
               </section>
 
               <section>
-                <h3 className="text-white font-semibold text-sm mb-2">4. Cookie Utilizzati</h3>
-                <p className="mb-3">HQ utilizza <span className="text-white">esclusivamente cookie tecnici strettamente necessari</span>, non richiesti dal consenso ai sensi dell'art. 122 D.Lgs. 196/2003 e delle Linee Guida Garante.</p>
-                <div className="bg-white/[0.03] border border-white/[0.05] rounded-xl overflow-hidden">
-                  <div className="grid grid-cols-3 text-[11px] font-semibold text-gray-500 p-3 border-b border-white/[0.05] uppercase tracking-wider">
+                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">4. Cookie Utilizzati</h3>
+                <p className="mb-3">HQ utilizza <span className="text-[var(--text)]">esclusivamente cookie tecnici strettamente necessari</span>, non richiesti dal consenso ai sensi dell'art. 122 D.Lgs. 196/2003 e delle Linee Guida Garante.</p>
+                <div className="bg-[var(--fill)] border border-[var(--border)] rounded-xl overflow-hidden">
+                  <div className="grid grid-cols-3 text-[11px] font-semibold text-[var(--text-soft)] p-3 border-b border-[var(--border)] uppercase tracking-wider">
                     <span>Nome</span><span>Durata</span><span>Scopo</span>
                   </div>
                   {[
                     ['access_token', '15 minuti', 'Autenticazione sessione'],
                     ['refresh_token', '7 giorni', 'Rinnovo sessione automatico'],
                   ].map(([name, duration, purpose]) => (
-                    <div key={name} className="grid grid-cols-3 text-[12px] p-3 border-b border-white/[0.03] last:border-0">
-                      <span className="text-white font-mono">{name}</span>
+                    <div key={name} className="grid grid-cols-3 text-[12px] p-3 border-b border-[var(--border)] last:border-0">
+                      <span className="text-[var(--text)] font-mono">{name}</span>
                       <span>{duration}</span>
                       <span>{purpose}</span>
                     </div>
@@ -4791,37 +4829,37 @@ export default function App() {
               </section>
 
               <section>
-                <h3 className="text-white font-semibold text-sm mb-2">5. Base Giuridica</h3>
+                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">5. Base Giuridica</h3>
                 <p>Il trattamento si basa sull'esecuzione del contratto di servizio (art. 6.1.b GDPR) e sul legittimo interesse alla sicurezza della piattaforma (art. 6.1.f GDPR).</p>
               </section>
 
               <section>
-                <h3 className="text-white font-semibold text-sm mb-2">6. Conservazione dei Dati</h3>
+                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">6. Conservazione dei Dati</h3>
                 <p>I dati dell'account sono conservati per tutta la durata del rapporto contrattuale. I log di sicurezza sono conservati per 90 giorni. Dopo la cancellazione dell'account, i dati vengono eliminati entro 30 giorni.</p>
               </section>
 
               <section>
-                <h3 className="text-white font-semibold text-sm mb-2">7. Diritti dell'Interessato</h3>
+                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">7. Diritti dell'Interessato</h3>
                 <p>Ai sensi del GDPR (artt. 15-22) hai il diritto di: accedere ai tuoi dati, rettificarli, richiederne la cancellazione, opporti al trattamento, richiedere la portabilità. Per esercitare i tuoi diritti, contatta il titolare del trattamento.</p>
               </section>
 
               <section>
-                <h3 className="text-white font-semibold text-sm mb-2">8. Sicurezza</h3>
+                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">8. Sicurezza</h3>
                 <p>I dati sono protetti con crittografia AES-256, password hashate con bcrypt, autenticazione a due fattori (2FA), comunicazioni cifrate HTTPS, e token JWT con rotazione automatica.</p>
               </section>
 
               <section>
-                <h3 className="text-white font-semibold text-sm mb-2">9. Comunicazioni Email</h3>
-                <p>Previo consenso facoltativo espresso in fase di registrazione, HQ potrà inviare all'indirizzo email fornito comunicazioni relative ad aggiornamenti del servizio, nuove funzionalità e novità della piattaforma. Il consenso è revocabile in qualsiasi momento accedendo alle <span className="text-white">Impostazioni → Profilo</span> dell'app, senza pregiudizio per la liceità dei trattamenti effettuati prima della revoca. Il mancato consenso non pregiudica l'accesso al servizio.</p>
+                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">9. Comunicazioni Email</h3>
+                <p>Previo consenso facoltativo espresso in fase di registrazione, HQ potrà inviare all'indirizzo email fornito comunicazioni relative ad aggiornamenti del servizio, nuove funzionalità e novità della piattaforma. Il consenso è revocabile in qualsiasi momento accedendo alle <span className="text-[var(--text)]">Impostazioni → Profilo</span> dell'app, senza pregiudizio per la liceità dei trattamenti effettuati prima della revoca. Il mancato consenso non pregiudica l'accesso al servizio.</p>
               </section>
 
               <section>
-                <h3 className="text-white font-semibold text-sm mb-2">10. Modifiche alla Privacy Policy</h3>
+                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">10. Modifiche alla Privacy Policy</h3>
                 <p>Questa policy può essere aggiornata. Le modifiche sostanziali saranno comunicate tramite notifica in-app.</p>
               </section>
 
             </div>
-            <div className="p-5 border-t border-white/[0.05] shrink-0">
+            <div className="p-5 border-t border-[var(--border)] shrink-0">
               <button onClick={() => { localStorage.setItem('hq_cookie_consent', '1'); setCookieConsent(true); setPrivacyOpen(false); }}
                 className="w-full py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-gray-200 transition-colors">
                 Ho letto e accetto
@@ -4834,33 +4872,33 @@ export default function App() {
       {/* ========== MODALE: NOTE PRODOTTO ========== */}
       {notesModalProduct && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-md">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <StickyNote size={16} className="text-gray-400" />
+                  <StickyNote size={16} className="text-[var(--text-muted)]" />
                   <div>
                     <h3 className="font-semibold text-sm">{notesModalProduct.brand} {notesModalProduct.name}</h3>
-                    <p className="text-[11px] text-gray-600">{notesModalProduct.size} · Note operative</p>
+                    <p className="text-[11px] text-[var(--text-faint)]">{notesModalProduct.size} · Note operative</p>
                   </div>
                 </div>
-                <button onClick={() => setNotesModalProduct(null)} className="p-1.5 hover:bg-white/[0.05] rounded-lg transition-colors">
-                  <X size={16} className="text-gray-400" />
+                <button onClick={() => setNotesModalProduct(null)} className="p-1.5 hover:bg-[var(--fill)] rounded-lg transition-colors">
+                  <X size={16} className="text-[var(--text-muted)]" />
                 </button>
               </div>
               <textarea
                 value={notesInput}
                 onChange={e => setNotesInput(e.target.value)}
                 placeholder="Es: cinturino usurato, scatola mancante, graffio sul fondello, acquistato da privato..."
-                className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3.5 text-sm text-white placeholder-gray-600 focus:border-white/[0.15] outline-none resize-none"
+                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3.5 text-sm text-[var(--text)] placeholder-gray-600 focus:border-[var(--border-3)] outline-none resize-none"
                 rows={4}
                 autoFocus
               />
-              <p className="text-[10px] text-gray-600 mt-1.5 mb-4">{notesInput.length}/500 caratteri</p>
+              <p className="text-[10px] text-[var(--text-faint)] mt-1.5 mb-4">{notesInput.length}/500 caratteri</p>
               <div className="flex gap-2">
                 <button onClick={() => setNotesModalProduct(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-white/[0.07] text-sm text-gray-400 hover:text-white transition-colors">
+                  className="flex-1 py-2.5 rounded-xl border border-[var(--border-2)] text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
                   Annulla
                 </button>
                 <button onClick={saveNotes} disabled={isSavingNotes}
@@ -4876,7 +4914,7 @@ export default function App() {
       {/* ========== MODALE: ELIMINA PRODOTTO ========== */}
       {deleteConfirmOpen && productToDelete && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6">
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
@@ -4884,16 +4922,16 @@ export default function App() {
               </div>
               <div>
                 <h3 className="font-semibold text-base">Elimina prodotto</h3>
-                <p className="text-xs text-gray-500">Questa azione è irreversibile</p>
+                <p className="text-xs text-[var(--text-soft)]">Questa azione è irreversibile</p>
               </div>
             </div>
-            <p className="text-sm text-gray-400 mb-6">
-              Stai eliminando <span className="text-white font-bold">{productToDelete.brand} {productToDelete.name}</span>
+            <p className="text-sm text-[var(--text-muted)] mb-6">
+              Stai eliminando <span className="text-[var(--text)] font-bold">{productToDelete.brand} {productToDelete.name}</span>
               {productToDelete.quantity > 1 && ` (${productToDelete.quantity} pezzi)`}.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConfirmOpen(false)}
-                className="flex-1 bg-white/5 hover:bg-white/8 py-3 rounded-xl font-bold text-sm transition-colors">
+                className="flex-1 bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
                 Annulla
               </button>
               <button onClick={handleDeleteProduct}
@@ -4908,40 +4946,40 @@ export default function App() {
       {/* ========== MODALE: CAMBIA PASSWORD ========== */}
       {changePwdOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6">
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center gap-3 mb-5">
-              <Lock className="text-white" size={22} />
+              <Lock className="text-[var(--text)]" size={22} />
               <h3 className="font-semibold text-base">Cambia Password</h3>
             </div>
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Password attuale</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Password attuale</label>
                 <input type="password" required value={changePwdCurrent}
                   onChange={e => setChangePwdCurrent(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-white outline-none focus:border-[#ff4d00]" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#ff4d00]" />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Nuova password</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nuova password</label>
                 <input type="password" required value={changePwdNew}
                   onChange={e => setChangePwdNew(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-white outline-none focus:border-[#ff4d00]" />
-                <p className="text-[10px] text-gray-500 mt-1">Min. 10 caratteri, maiuscola, numero e carattere speciale.</p>
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#ff4d00]" />
+                <p className="text-[10px] text-[var(--text-soft)] mt-1">Min. 10 caratteri, maiuscola, numero e carattere speciale.</p>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Conferma nuova password</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Conferma nuova password</label>
                 <input type="password" required value={changePwdConfirm}
                   onChange={e => setChangePwdConfirm(e.target.value)}
                   placeholder="••••••••"
-                  className={`w-full bg-[#0a0a0a] border rounded-xl p-3 text-white outline-none focus:border-[#ff4d00] ${
-                    changePwdConfirm && changePwdNew !== changePwdConfirm ? 'border-red-500' : 'border-white/[0.07]'
+                  className={`w-full bg-[var(--surface-2)] border rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#ff4d00] ${
+                    changePwdConfirm && changePwdNew !== changePwdConfirm ? 'border-red-500' : 'border-[var(--border-2)]'
                   }`} />
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => { setChangePwdOpen(false); setChangePwdCurrent(''); setChangePwdNew(''); setChangePwdConfirm(''); }}
-                  className="flex-1 bg-white/5 hover:bg-white/8 py-3 rounded-xl font-bold text-sm transition-colors">
+                  className="flex-1 bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
                   Annulla
                 </button>
                 <button type="submit" disabled={changePwdLoading || (!!changePwdConfirm && changePwdNew !== changePwdConfirm)}
@@ -4957,7 +4995,7 @@ export default function App() {
       {/* ========== MODALE: TRACKING SPEDIZIONE ========== */}
       {trackingModalOpen && trackingProduct && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
-          <div className="bg-[#0f0f0f] border-t sm:border border-white/[0.07] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
@@ -4966,11 +5004,11 @@ export default function App() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-base">Tracking Spedizione</h3>
-                  <p className="text-xs text-gray-500">{trackingProduct.brand} {trackingProduct.name}</p>
+                  <p className="text-xs text-[var(--text-soft)]">{trackingProduct.brand} {trackingProduct.name}</p>
                 </div>
               </div>
               <button onClick={() => setTrackingModalOpen(false)}>
-                <X size={20} className="text-gray-500 hover:text-white" />
+                <X size={20} className="text-[var(--text-soft)] hover:text-[var(--text)]" />
               </button>
             </div>
 
@@ -4981,10 +5019,10 @@ export default function App() {
                 trackingProduct.trackingStatus === 'OUT_FOR_DELIVERY' ? 'border-orange-800 bg-orange-900/20' :
                 trackingProduct.trackingStatus === 'IN_TRANSIT' ? 'border-blue-800 bg-blue-900/20' :
                 trackingProduct.trackingStatus === 'EXCEPTION' ? 'border-red-800 bg-red-900/20' :
-                'border-white/[0.07] bg-white/5/30'
+                'border-[var(--border-2)] bg-[var(--fill)]/30'
               }`}>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Stato attuale</p>
+                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest">Stato attuale</p>
                   <p className="font-bold text-sm mt-0.5">
                     {trackingProduct.trackingStatus === 'IN_TRANSIT' ? '🚚 In transito' :
                      trackingProduct.trackingStatus === 'OUT_FOR_DELIVERY' ? '📦 In consegna oggi' :
@@ -4992,7 +5030,7 @@ export default function App() {
                      trackingProduct.trackingStatus === 'EXCEPTION' ? '⚠️ Eccezione' :
                      '⏳ In attesa'}
                   </p>
-                  <p className="text-[10px] text-gray-500 mt-0.5 truncate">{trackingProduct.trackingCarrier} • {trackingProduct.trackingCode}</p>
+                  <p className="text-[10px] text-[var(--text-soft)] mt-0.5 truncate">{trackingProduct.trackingCarrier} • {trackingProduct.trackingCode}</p>
                 </div>
                 <button onClick={handleRefreshTracking} disabled={isRefreshingTracking}
                   className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-bold bg-blue-900/30 px-3 py-2 rounded-xl disabled:opacity-50 shrink-0 transition-colors">
@@ -5004,18 +5042,18 @@ export default function App() {
             {/* Storico eventi */}
             {trackingDetail?.history?.length > 0 && (
               <div className="mb-5">
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Storico eventi</p>
+                <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest mb-3">Storico eventi</p>
                 <div className="space-y-0 max-h-44 overflow-y-auto pr-1">
                   {(trackingDetail.history as any[]).map((ev: any, i: number) => (
                     <div key={i} className="flex gap-3 text-xs">
                       <div className="flex flex-col items-center pt-1">
                         <div className={`w-2 h-2 rounded-full shrink-0 ${i === 0 ? 'bg-blue-400' : 'bg-gray-700'}`} />
-                        {i < trackingDetail.history.length - 1 && <div className="w-px flex-1 bg-white/5 my-1 min-h-[12px]" />}
+                        {i < trackingDetail.history.length - 1 && <div className="w-px flex-1 bg-[var(--fill)] my-1 min-h-[12px]" />}
                       </div>
                       <div className="pb-3">
-                        <p className="text-white font-medium">{ev.description || '—'}</p>
-                        {ev.location && <p className="text-gray-500">{ev.location}</p>}
-                        {ev.date && <p className="text-gray-600 text-[10px]">{ev.date}</p>}
+                        <p className="text-[var(--text)] font-medium">{ev.description || '—'}</p>
+                        {ev.location && <p className="text-[var(--text-soft)]">{ev.location}</p>}
+                        {ev.date && <p className="text-[var(--text-faint)] text-[10px]">{ev.date}</p>}
                       </div>
                     </div>
                   ))}
@@ -5026,17 +5064,17 @@ export default function App() {
             {/* Form aggiungi/modifica tracking */}
             <div className="space-y-3 mb-5">
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Codice Tracking</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Codice Tracking</label>
                 <input type="text" value={trackingInput}
                   onChange={e => setTrackingInput(e.target.value.toUpperCase())}
                   placeholder="ES: BRT123456789IT"
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-white outline-none focus:border-blue-500 font-mono text-sm uppercase"
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-blue-500 font-mono text-sm uppercase"
                 />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">Vettore</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Vettore</label>
                 <select value={trackingCarrierSel} onChange={e => setTrackingCarrierSel(e.target.value)}
-                  className="w-full bg-[#0a0a0a] border border-white/[0.07] rounded-xl p-3 text-white outline-none focus:border-blue-500">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-blue-500">
                   {(carrierList.length > 0 ? carrierList : [
                     { key: 'Auto', label: 'Auto-detect' }, { key: 'BRT', label: 'BRT/Bartolini' },
                     { key: 'GLS', label: 'GLS' }, { key: 'Poste Italiane', label: 'Poste Italiane' },
@@ -5059,7 +5097,7 @@ export default function App() {
                 </button>
               )}
               <button onClick={() => setTrackingModalOpen(false)}
-                className="flex-1 bg-white/5 hover:bg-white/8 py-3 rounded-xl font-bold text-sm transition-colors">
+                className="flex-1 bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
                 Annulla
               </button>
               <button onClick={handleSaveTracking} disabled={!trackingInput.trim() || isSavingTracking}
@@ -5119,36 +5157,36 @@ export default function App() {
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[70] flex items-end lg:justify-end"
             onClick={() => setTeamPanelOpen(false)}>
             <div
-              className="bg-[#0e0e0e] border-t lg:border-t-0 lg:border-l border-white/[0.07] w-full lg:w-[460px] max-h-[92vh] lg:h-full overflow-y-auto rounded-t-3xl lg:rounded-none animate-slide-up lg:animate-slide-right"
+              className="bg-[var(--surface)] border-t lg:border-t-0 lg:border-l border-[var(--border-2)] w-full lg:w-[460px] max-h-[92vh] lg:h-full overflow-y-auto rounded-t-3xl lg:rounded-none animate-slide-up lg:animate-slide-right"
               onClick={e => e.stopPropagation()}>
 
               {/* Header sticky */}
-              <div className="sticky top-0 bg-[#0e0e0e]/95 backdrop-blur-xl border-b border-white/[0.05] p-5 flex items-center justify-between z-10">
+              <div className="sticky top-0 bg-[var(--surface-blur)] backdrop-blur-xl border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center">
                     <Users className="text-purple-400" size={18} />
                   </div>
                   <div>
                     <h2 className="font-semibold text-base leading-none">Il Tuo Team</h2>
-                    <p className="text-[10px] text-gray-600 mt-0.5">{totalSoci} {totalSoci === 1 ? 'socio' : 'soci'} · {teamData.length} {teamData.length === 1 ? 'reparto' : 'reparti'}</p>
+                    <p className="text-[10px] text-[var(--text-faint)] mt-0.5">{totalSoci} {totalSoci === 1 ? 'socio' : 'soci'} · {teamData.length} {teamData.length === 1 ? 'reparto' : 'reparti'}</p>
                   </div>
                 </div>
-                <button onClick={() => setTeamPanelOpen(false)} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
-                  <X size={19} className="text-gray-400" />
+                <button onClick={() => setTeamPanelOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
+                  <X size={19} className="text-[var(--text-muted)]" />
                 </button>
               </div>
 
               {/* Stats rapide globali */}
-              <div className="grid grid-cols-4 gap-2 p-4 border-b border-white/[0.05]">
+              <div className="grid grid-cols-4 gap-2 p-4 border-b border-[var(--border)]">
                 {[
                   { label: 'Soci', value: totalSoci, color: 'text-purple-400' },
-                  { label: 'In Stock', value: totalStock, color: 'text-white' },
+                  { label: 'In Stock', value: totalStock, color: 'text-[var(--text)]' },
                   { label: 'Venduti', value: totalSoldCount, color: 'text-blue-400' },
                   { label: 'Profitto', value: (totalProfit >= 0 ? '+' : '') + totalProfit.toFixed(0) + '€', color: totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' },
                 ].map(s => (
-                  <div key={s.label} className="bg-[#0a0a0a] rounded-xl p-2.5 text-center">
+                  <div key={s.label} className="bg-[var(--surface-2)] rounded-xl p-2.5 text-center">
                     <p className={`text-sm font-bold num ${s.color}`}>{s.value}</p>
-                    <p className="text-[9px] text-gray-600 mt-0.5 uppercase tracking-wider">{s.label}</p>
+                    <p className="text-[9px] text-[var(--text-faint)] mt-0.5 uppercase tracking-wider">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -5190,43 +5228,43 @@ export default function App() {
                   }));
 
                   return (
-                    <section key={team.warehouseId} className="bg-[#080808] rounded-2xl border border-white/[0.05] overflow-hidden">
+                    <section key={team.warehouseId} className="bg-[var(--bg)] rounded-2xl border border-[var(--border)] overflow-hidden">
 
                       {/* Reparto header */}
-                      <div className="p-4 border-b border-white/[0.05]">
+                      <div className="p-4 border-b border-[var(--border)]">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[#111] border border-white/[0.05] flex items-center justify-center text-xl shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-[#111] border border-[var(--border)] flex items-center justify-center text-xl shrink-0">
                               {getCategoryIcon(cat)}
                             </div>
                             <div>
                               <p className="font-bold">{cat}</p>
-                              <p className="text-[10px] text-gray-600">{team.members.length} soci · {teamStock.length} stock · {teamSold.length} vendite</p>
+                              <p className="text-[10px] text-[var(--text-faint)]">{team.members.length} soci · {teamStock.length} stock · {teamSold.length} vendite</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className={`font-semibold num ${teamProfit > 0 ? 'text-emerald-400' : teamProfit < 0 ? 'text-red-400' : 'text-gray-600'}`}>
+                            <p className={`font-semibold num ${teamProfit > 0 ? 'text-emerald-400' : teamProfit < 0 ? 'text-red-400' : 'text-[var(--text-faint)]'}`}>
                               {teamProfit > 0 ? '+' : ''}{teamProfit.toFixed(0)}€
                             </p>
-                            <p className="text-[10px] text-gray-600 mt-0.5">{teamRevenue.toFixed(0)}€ ricavi · {sellThrough}% sell-through</p>
+                            <p className="text-[10px] text-[var(--text-faint)] mt-0.5">{teamRevenue.toFixed(0)}€ ricavi · {sellThrough}% sell-through</p>
                           </div>
                         </div>
 
                         {/* Mini progress sell-through */}
-                        <div className="h-1 bg-white/[0.04] rounded-full overflow-hidden">
+                        <div className="h-1 bg-[var(--fill)] rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-[#ff4d00] to-orange-400 rounded-full transition-all" style={{ width: `${sellThrough}%` }} />
                         </div>
                       </div>
 
                       {/* Membri */}
-                      <div className="divide-y divide-white/[0.04]">
+                      <div className="divide-y divide-[var(--border)]">
                         {memberProfits.map((m: any, idx: number) => {
                           const medals = ['🥇', '🥈', '🥉'];
                           const isMe = m.userId === user!.id;
                           const canKick = isOwnerHere && !isMe && m.role !== 'OWNER';
                           return (
                             <div key={m.membershipId}>
-                              <div className={`flex items-center gap-3 p-3.5 transition-colors ${isMe ? 'bg-[#ff4d00]/[0.04]' : 'hover:bg-white/[0.02]'}`}>
+                              <div className={`flex items-center gap-3 p-3.5 transition-colors ${isMe ? 'bg-[#ff4d00]/[0.04]' : 'hover:bg-[var(--fill)]'}`}>
                                 {/* Rank medal o avatar */}
                                 <div className="relative shrink-0">
                                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center font-black text-xs shadow-sm">
@@ -5241,14 +5279,14 @@ export default function App() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-bold text-sm">{m.name}</span>
-                                    {isMe && <span className="text-[8px] bg-[#ff4d00]/20 text-white px-1.5 py-0.5 rounded-full font-semibold">TU</span>}
-                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${m.role === 'OWNER' ? 'bg-[#ff4d00]/15 text-white/80' : 'bg-white/5 text-gray-500'}`}>
+                                    {isMe && <span className="text-[8px] bg-[#ff4d00]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-semibold">TU</span>}
+                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${m.role === 'OWNER' ? 'bg-[#ff4d00]/15 text-[var(--text)]/80' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                                       {m.role === 'OWNER' ? 'Owner' : 'Socio'}
                                     </span>
                                   </div>
                                   {/* Contribuzione */}
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-[10px] text-gray-600">{m.productsAdded ?? 0} aggiunti · {m.productsSold ?? 0} venduti</span>
+                                    <span className="text-[10px] text-[var(--text-faint)]">{m.productsAdded ?? 0} aggiunti · {m.productsSold ?? 0} venduti</span>
                                   </div>
                                 </div>
 
@@ -5259,10 +5297,10 @@ export default function App() {
                                       type="number" min="0" max="100" step="1"
                                       value={editQuoteValues[m.membershipId] ?? m.percentage}
                                       onChange={e => setEditQuoteValues(prev => ({ ...prev, [m.membershipId]: e.target.value }))}
-                                      className="w-14 bg-[#0a0a0a] border border-white/[0.1] rounded-lg px-2 py-1 text-xs text-center text-white outline-none focus:border-[#ff4d00]"
+                                      className="w-14 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-1 text-xs text-center text-[var(--text)] outline-none focus:border-[#ff4d00]"
                                     />
                                   ) : (
-                                    <span className="text-[10px] text-gray-500 font-semibold bg-white/[0.04] px-2 py-1 rounded-lg">{m.percentage}%</span>
+                                    <span className="text-[10px] text-[var(--text-soft)] font-semibold bg-[var(--fill)] px-2 py-1 rounded-lg">{m.percentage}%</span>
                                   )}
                                   <span className={`font-semibold text-sm w-16 text-right num ${m.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                                     {m.profit >= 0 ? '+' : ''}{m.profit.toFixed(0)}€
@@ -5283,7 +5321,7 @@ export default function App() {
                                 <div className="mx-3.5 mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between gap-3">
                                   <p className="text-xs text-red-300">Rimuovere <strong>{m.name}</strong>?</p>
                                   <div className="flex gap-2">
-                                    <button onClick={() => setKickConfirm(null)} className="text-[11px] text-gray-500 hover:text-white px-2 py-1 rounded-lg hover:bg-white/5">Annulla</button>
+                                    <button onClick={() => setKickConfirm(null)} className="text-[11px] text-[var(--text-soft)] hover:text-[var(--text)] px-2 py-1 rounded-lg hover:bg-[var(--fill)]">Annulla</button>
                                     <button onClick={() => kickMember(m.membershipId)} className="text-[11px] text-red-300 hover:text-red-200 bg-red-500/20 hover:bg-red-500/30 px-3 py-1 rounded-lg font-bold">Rimuovi</button>
                                   </div>
                                 </div>
@@ -5294,15 +5332,15 @@ export default function App() {
                       </div>
 
                       {/* Footer reparto */}
-                      <div className="p-4 border-t border-white/[0.05] space-y-3">
+                      <div className="p-4 border-t border-[var(--border)] space-y-3">
 
                         {/* Pareggio conti */}
                         {teamProfit !== 0 && (
-                          <div className="bg-[#0a0a0a] rounded-xl p-3">
+                          <div className="bg-[var(--surface-2)] rounded-xl p-3">
                             <div className="flex items-center gap-1.5 mb-2.5">
                               <DollarSign size={11} className="text-emerald-500" />
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pareggio conti</p>
-                              <span className="ml-auto text-[10px] text-gray-600 num">{teamProfit >= 0 ? '+' : ''}{teamProfit.toFixed(0)}€ totali</span>
+                              <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Pareggio conti</p>
+                              <span className="ml-auto text-[10px] text-[var(--text-faint)] num">{teamProfit >= 0 ? '+' : ''}{teamProfit.toFixed(0)}€ totali</span>
                             </div>
                             <div className="space-y-1.5">
                               {settleAmounts.map((m: any) => (
@@ -5311,7 +5349,7 @@ export default function App() {
                                     <div className="w-4 h-4 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center font-black text-[7px]">
                                       {m.name[0]?.toUpperCase()}
                                     </div>
-                                    <span className="text-xs text-gray-400">{m.name}</span>
+                                    <span className="text-xs text-[var(--text-muted)]">{m.name}</span>
                                     <span className="text-[10px] text-gray-700">{m.percentage}%</span>
                                   </div>
                                   <span className={`text-sm font-bold num ${m.spettante >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -5328,7 +5366,7 @@ export default function App() {
                           isEditing ? (
                             <div className="space-y-2">
                               <div className="flex items-center justify-between text-[10px]">
-                                <span className="text-gray-600">
+                                <span className="text-[var(--text-faint)]">
                                   Totale: {team.members.reduce((s: number, m: any) => s + (Number(editQuoteValues[m.membershipId] ?? m.percentage) || 0), 0)}%
                                   {Math.round(team.members.reduce((s: number, m: any) => s + (Number(editQuoteValues[m.membershipId] ?? m.percentage) || 0), 0)) !== 100 && (
                                     <span className="text-red-400 ml-1">· deve essere 100%</span>
@@ -5337,11 +5375,11 @@ export default function App() {
                               </div>
                               <div className="flex gap-2">
                                 <button onClick={() => { setEditQuoteWarehouse(null); setEditQuoteValues({}); }}
-                                  className="flex-1 py-2 text-xs font-bold text-gray-500 hover:text-white bg-white/[0.04] hover:bg-white/[0.07] rounded-xl transition-colors">
+                                  className="flex-1 py-2 text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] bg-[var(--fill)] hover:bg-[var(--fill)] rounded-xl transition-colors">
                                   Annulla
                                 </button>
                                 <button onClick={() => saveEditedQuotes(team)} disabled={isSavingTeam}
-                                  className="flex-1 py-2 text-xs font-bold text-white bg-[#ff4d00]/80 hover:bg-[#ff4d00] rounded-xl transition-colors disabled:opacity-40">
+                                  className="flex-1 py-2 text-xs font-bold text-[var(--text)] bg-[#ff4d00]/80 hover:bg-[#ff4d00] rounded-xl transition-colors disabled:opacity-40">
                                   {isSavingTeam ? 'Salvo...' : 'Salva Quote'}
                                 </button>
                               </div>
@@ -5353,7 +5391,7 @@ export default function App() {
                               team.members.forEach((m: any) => { init[m.membershipId] = String(m.percentage); });
                               setEditQuoteValues(init);
                             }}
-                              className="w-full py-2 text-[11px] font-bold text-gray-500 hover:text-white bg-white/[0.03] hover:bg-white/[0.06] rounded-xl border border-white/[0.05] hover:border-white/[0.1] transition-colors flex items-center justify-center gap-1.5">
+                              className="w-full py-2 text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] bg-[var(--fill)] hover:bg-[var(--fill)] rounded-xl border border-[var(--border)] hover:border-[var(--border-2)] transition-colors flex items-center justify-center gap-1.5">
                               <Edit size={11} /> Modifica Quote
                             </button>
                           )
@@ -5361,24 +5399,24 @@ export default function App() {
 
                         {/* Sezione invito */}
                         {isOwnerHere && team.inviteCode && (
-                          <div className="bg-[#0a0a0a] rounded-xl p-3 border border-white/[0.04]">
-                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                          <div className="bg-[var(--surface-2)] rounded-xl p-3 border border-[var(--border)]">
+                            <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
                               <UserPlus size={10} /> Invita un socio
                             </p>
                             <div className="flex gap-2">
-                              <div className="flex-1 bg-[#111] border border-white/[0.07] rounded-xl px-3 py-2 flex items-center gap-2 overflow-hidden">
-                                <KeyRound size={11} className="text-gray-600 shrink-0" />
+                              <div className="flex-1 bg-[#111] border border-[var(--border-2)] rounded-xl px-3 py-2 flex items-center gap-2 overflow-hidden">
+                                <KeyRound size={11} className="text-[var(--text-faint)] shrink-0" />
                                 <span className="font-mono text-xs text-gray-300 truncate">{team.inviteCode}</span>
                               </div>
                               <button
                                 onClick={() => { navigator.clipboard.writeText(team.inviteCode); showToast('Codice copiato!'); }}
-                                className="px-3 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.07] rounded-xl text-gray-400 hover:text-white transition-colors active:scale-95">
+                                className="px-3 bg-[var(--fill)] hover:bg-[var(--fill-2)] border border-[var(--border-2)] rounded-xl text-[var(--text-muted)] hover:text-[var(--text)] transition-colors active:scale-95">
                                 <Copy size={14} />
                               </button>
                               <button
                                 onClick={() => regenerateInvite(team.warehouseId)}
                                 disabled={isRegenerating === team.warehouseId}
-                                className="px-3 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.07] rounded-xl text-gray-400 hover:text-white transition-colors disabled:opacity-40 active:scale-95"
+                                className="px-3 bg-[var(--fill)] hover:bg-[var(--fill-2)] border border-[var(--border-2)] rounded-xl text-[var(--text-muted)] hover:text-[var(--text)] transition-colors disabled:opacity-40 active:scale-95"
                                 title="Rigenera codice">
                                 {isRegenerating === team.warehouseId
                                   ? <Loader2 size={14} className="animate-spin" />
@@ -5394,18 +5432,18 @@ export default function App() {
                 })}
 
                 {/* Entra in un team esistente */}
-                <section className="bg-[#080808] rounded-2xl border border-white/[0.05] p-4">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <section className="bg-[var(--bg)] rounded-2xl border border-[var(--border)] p-4">
+                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
                     <UserPlus size={10} className="text-blue-400" /> Entra in un Team
                   </p>
                   <form onSubmit={handleJoinWarehouse} className="flex gap-2">
                     <input
                       type="text" value={joinCodeInput} onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
                       placeholder="Inserisci codice invito"
-                      className="flex-1 bg-[#0a0a0a] border border-white/[0.07] rounded-xl px-3 py-2 text-sm text-white placeholder-gray-700 outline-none focus:border-blue-500/50 font-mono"
+                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-blue-500/50 font-mono"
                     />
                     <button type="submit" disabled={isJoining || !joinCodeInput.trim()}
-                      className="px-4 py-2 bg-blue-600/80 hover:bg-blue-600 rounded-xl text-xs font-bold text-white transition-colors disabled:opacity-40 active:scale-95">
+                      className="px-4 py-2 bg-blue-600/80 hover:bg-blue-600 rounded-xl text-xs font-bold text-[var(--text)] transition-colors disabled:opacity-40 active:scale-95">
                       {isJoining ? <Loader2 size={14} className="animate-spin" /> : 'Entra'}
                     </button>
                   </form>
@@ -5422,17 +5460,17 @@ export default function App() {
       {shippingProduct && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
           onClick={() => setShippingProduct(null)}>
-          <div className="bg-[#0e0e0e] border border-white/[0.07] w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto animate-slide-up"
+          <div className="bg-[var(--surface)] border border-[var(--border-2)] w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto animate-slide-up"
             onClick={e => e.stopPropagation()}>
 
             {/* Header */}
-            <div className="sticky top-0 bg-[#0e0e0e]/95 backdrop-blur-xl border-b border-white/[0.05] p-5 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-[var(--surface-blur)] backdrop-blur-xl border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <div>
                 <h2 className="font-semibold flex items-center gap-2"><Package size={16} className="text-orange-400" /> Spedizione</h2>
-                <p className="text-[11px] text-gray-600 mt-0.5">{shippingProduct.brand} {shippingProduct.name} · {shippingProduct.size}</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{shippingProduct.brand} {shippingProduct.name} · {shippingProduct.size}</p>
               </div>
-              <button onClick={() => setShippingProduct(null)} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
-                <X size={18} className="text-gray-400" />
+              <button onClick={() => setShippingProduct(null)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
+                <X size={18} className="text-[var(--text-muted)]" />
               </button>
             </div>
 
@@ -5443,7 +5481,7 @@ export default function App() {
 
                 {/* Mittente */}
                 <div>
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Mittente (tu)</p>
+                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-2">Mittente (tu)</p>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { key: 'name',    label: 'Nome',     placeholder: 'Mario Rossi',   span: 2 },
@@ -5453,12 +5491,12 @@ export default function App() {
                       { key: 'phone',   label: 'Telefono', placeholder: '+393331234567', span: 2 },
                     ].map(f => (
                       <div key={f.key} className={f.span === 2 ? 'col-span-2' : ''}>
-                        <label className="text-[10px] text-gray-600 block mb-1">{f.label}</label>
+                        <label className="text-[10px] text-[var(--text-faint)] block mb-1">{f.label}</label>
                         <input
                           value={shipFrom[f.key] || ''}
                           onChange={e => setShipFrom((p: any) => ({ ...p, [f.key]: e.target.value }))}
                           placeholder={f.placeholder}
-                          className="w-full bg-[#111] border border-white/[0.07] rounded-xl px-3 py-2 text-sm text-white placeholder-gray-700 outline-none focus:border-orange-500/50"
+                          className="w-full bg-[#111] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-orange-500/50"
                         />
                       </div>
                     ))}
@@ -5467,7 +5505,7 @@ export default function App() {
 
                 {/* Destinatario */}
                 <div>
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Destinatario</p>
+                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-2">Destinatario</p>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { key: 'name',    label: 'Nome',     placeholder: 'Luca Bianchi',  span: 2 },
@@ -5477,12 +5515,12 @@ export default function App() {
                       { key: 'phone',   label: 'Telefono', placeholder: '+393339876543', span: 2 },
                     ].map(f => (
                       <div key={f.key} className={f.span === 2 ? 'col-span-2' : ''}>
-                        <label className="text-[10px] text-gray-600 block mb-1">{f.label}</label>
+                        <label className="text-[10px] text-[var(--text-faint)] block mb-1">{f.label}</label>
                         <input
                           value={shipTo[f.key as keyof typeof shipTo] || ''}
                           onChange={e => setShipTo(p => ({ ...p, [f.key]: e.target.value }))}
                           placeholder={f.placeholder}
-                          className="w-full bg-[#111] border border-white/[0.07] rounded-xl px-3 py-2 text-sm text-white placeholder-gray-700 outline-none focus:border-orange-500/50"
+                          className="w-full bg-[#111] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-orange-500/50"
                         />
                       </div>
                     ))}
@@ -5491,17 +5529,17 @@ export default function App() {
 
                 {/* Pacco preset */}
                 <div>
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Dimensioni pacco</p>
+                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-2">Dimensioni pacco</p>
                   <div className="grid grid-cols-4 gap-2">
                     {SHIPPING_PRESETS.map(p => (
                       <button key={p.label} onClick={() => setShipPreset(p)}
                         className={`p-2.5 rounded-xl border text-center transition-all ${
                           shipPreset.label === p.label
-                            ? 'bg-orange-500/15 border-orange-500/40 text-white'
-                            : 'bg-[#111] border-white/[0.06] text-gray-500 hover:border-white/15'
+                            ? 'bg-orange-500/15 border-orange-500/40 text-[var(--text)]'
+                            : 'bg-[#111] border-[var(--border)] text-[var(--text-soft)] hover:border-[var(--border-3)]'
                         }`}>
                         <p className="text-xs font-bold">{p.label}</p>
-                        <p className="text-[9px] text-gray-600 mt-0.5">{p.weight}kg</p>
+                        <p className="text-[9px] text-[var(--text-faint)] mt-0.5">{p.weight}kg</p>
                       </button>
                     ))}
                   </div>
@@ -5509,14 +5547,14 @@ export default function App() {
                 </div>
 
                 <button onClick={fetchRates} disabled={isLoadingRates}
-                  className="w-full py-3.5 bg-orange-600/80 hover:bg-orange-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                  className="w-full py-3.5 bg-orange-600/80 hover:bg-orange-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                   {isLoadingRates ? <><Loader2 size={15} className="animate-spin" /> Cerco tariffe…</> : <><Package size={15} /> Vedi tariffe corrieri</>}
                 </button>
               </>)}
 
               {/* STEP: RATES */}
               {shippingStep === 'rates' && (<>
-                <button onClick={() => setShippingStep('form')} className="text-xs text-gray-500 hover:text-white flex items-center gap-1 transition-colors">
+                <button onClick={() => setShippingStep('form')} className="text-xs text-[var(--text-soft)] hover:text-[var(--text)] flex items-center gap-1 transition-colors">
                   ← Modifica dati
                 </button>
                 <div className="space-y-2">
@@ -5525,13 +5563,13 @@ export default function App() {
                       className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all text-left ${
                         selectedRate?.id === r.id
                           ? 'bg-orange-500/10 border-orange-500/40'
-                          : 'bg-[#111] border-white/[0.06] hover:border-white/15'
+                          : 'bg-[#111] border-[var(--border)] hover:border-[var(--border-3)]'
                       }`}>
                       <div>
-                        <p className="font-bold text-sm text-white">{r.carrier}</p>
-                        <p className="text-[11px] text-gray-500">{r.name}{r.transitHours ? ` · ${r.transitHours}h` : ''}</p>
+                        <p className="font-bold text-sm text-[var(--text)]">{r.carrier}</p>
+                        <p className="text-[11px] text-[var(--text-soft)]">{r.name}{r.transitHours ? ` · ${r.transitHours}h` : ''}</p>
                       </div>
-                      <p className={`font-bold text-base num ${selectedRate?.id === r.id ? 'text-orange-400' : 'text-white'}`}>
+                      <p className={`font-bold text-base num ${selectedRate?.id === r.id ? 'text-orange-400' : 'text-[var(--text)]'}`}>
                         {r.price.toFixed(2)}€
                       </p>
                     </button>
@@ -5539,7 +5577,7 @@ export default function App() {
                 </div>
                 {selectedRate && (
                   <button onClick={bookShipment} disabled={isBooking}
-                    className="w-full py-3.5 bg-orange-600/80 hover:bg-orange-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                    className="w-full py-3.5 bg-orange-600/80 hover:bg-orange-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                     {isBooking
                       ? <><Loader2 size={15} className="animate-spin" /> Generazione…</>
                       : selectedRate.demo
@@ -5556,9 +5594,9 @@ export default function App() {
                     <CheckCircle className="text-green-400" size={24} />
                   </div>
                   <div>
-                    <p className="font-bold text-white">{shippingRef?.startsWith('HQ-DEMO') ? 'Etichetta demo generata!' : 'Spedizione prenotata!'}</p>
-                    {shippingRef && <p className="text-xs text-gray-500 mt-1 font-mono">{shippingRef}</p>}
-                    <p className="text-xs text-gray-600 mt-2">
+                    <p className="font-bold text-[var(--text)]">{shippingRef?.startsWith('HQ-DEMO') ? 'Etichetta demo generata!' : 'Spedizione prenotata!'}</p>
+                    {shippingRef && <p className="text-xs text-[var(--text-soft)] mt-1 font-mono">{shippingRef}</p>}
+                    <p className="text-xs text-[var(--text-faint)] mt-2">
                       {shippingRef?.startsWith('HQ-DEMO')
                         ? 'Modalità demo — etichetta aperta per la stampa. Aggiungi le credenziali Sendcloud per spedizioni reali.'
                         : 'Il tracking è stato salvato automaticamente sul prodotto.'}
@@ -5569,10 +5607,10 @@ export default function App() {
                         className="flex items-center justify-center gap-2 w-full py-3 bg-white hover:bg-gray-100 rounded-2xl text-sm font-bold text-black transition-colors">
                         <Download size={15} /> Scarica etichetta PDF
                       </a>
-                    : <p className="text-xs text-gray-500">L'etichetta sarà disponibile sul sito Packlink.</p>
+                    : <p className="text-xs text-[var(--text-soft)]">L'etichetta sarà disponibile sul sito Packlink.</p>
                   }
                   <button onClick={() => setShippingProduct(null)}
-                    className="w-full py-2.5 bg-white/5 hover:bg-white/10 rounded-2xl text-sm text-gray-400 hover:text-white transition-colors">
+                    className="w-full py-2.5 bg-[var(--fill)] hover:bg-[var(--fill-2)] rounded-2xl text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
                     Chiudi
                   </button>
                 </div>
@@ -5587,25 +5625,25 @@ export default function App() {
       {listingModalProduct && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
           onClick={() => { setListingModalProduct(null); setListingResult(null); }}>
-          <div className="bg-[#0e0e0e] border border-white/[0.07] w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto animate-slide-up"
+          <div className="bg-[var(--surface)] border border-[var(--border-2)] w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto animate-slide-up"
             onClick={e => e.stopPropagation()}>
 
             {/* Header */}
-            <div className="sticky top-0 bg-[#0e0e0e]/95 backdrop-blur-xl border-b border-white/[0.05] p-5 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-[var(--surface-blur)] backdrop-blur-xl border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <div>
                 <h2 className="font-semibold">Genera Annuncio</h2>
-                <p className="text-[11px] text-gray-600 mt-0.5">{listingModalProduct.brand} {listingModalProduct.name} · {listingModalProduct.size}</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{listingModalProduct.brand} {listingModalProduct.name} · {listingModalProduct.size}</p>
               </div>
               <button onClick={() => { setListingModalProduct(null); setListingResult(null); }}
-                className="p-2 hover:bg-white/5 rounded-xl transition-colors">
-                <X size={18} className="text-gray-400" />
+                className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
+                <X size={18} className="text-[var(--text-muted)]" />
               </button>
             </div>
 
             <div className="p-5 space-y-4">
               {/* Selezione piattaforma */}
               <div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Scegli la piattaforma</p>
+                <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-3">Scegli la piattaforma</p>
                 <div className="grid grid-cols-5 gap-2">
                   {([
                     { id: 'vinted',   label: 'Vinted',    emoji: '🟢' },
@@ -5618,8 +5656,8 @@ export default function App() {
                       onClick={() => setListingPlatform(p.id)}
                       className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border text-center transition-all active:scale-95 ${
                         listingPlatform === p.id
-                          ? 'bg-purple-500/15 border-purple-500/40 text-white'
-                          : 'bg-[#111] border-white/[0.06] text-gray-500 hover:border-white/[0.15] hover:text-gray-300'
+                          ? 'bg-purple-500/15 border-purple-500/40 text-[var(--text)]'
+                          : 'bg-[#111] border-[var(--border)] text-[var(--text-soft)] hover:border-[var(--border-3)] hover:text-gray-300'
                       }`}>
                       <span className="text-lg">{p.emoji}</span>
                       <span className="text-[10px] font-bold">{p.label}</span>
@@ -5632,7 +5670,7 @@ export default function App() {
               <button
                 onClick={() => generateListingForProduct(listingPlatform)}
                 disabled={isGeneratingListing}
-                className="w-full py-3.5 bg-purple-600/80 hover:bg-purple-600 disabled:bg-purple-600/30 rounded-2xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                className="w-full py-3.5 bg-purple-600/80 hover:bg-purple-600 disabled:bg-purple-600/30 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                 {isGeneratingListing
                   ? <><Loader2 size={16} className="animate-spin" /> Generazione in corso…</>
                   : <><Sparkles size={16} /> Genera con IA</>}
@@ -5643,27 +5681,27 @@ export default function App() {
                 <div className="space-y-3">
 
                   {/* Titolo */}
-                  <div className="bg-[#0a0a0a] border border-white/[0.07] rounded-2xl p-4">
+                  <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-2xl p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Titolo</p>
+                      <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider">Titolo</p>
                       <button onClick={() => copyToClipboard(listingResult.title, 'title')}
                         className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
-                          copiedField === 'title' ? 'bg-green-500/20 text-green-400' : 'bg-white/[0.06] text-gray-400 hover:text-white'
+                          copiedField === 'title' ? 'bg-green-500/20 text-green-400' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)]'
                         }`}>
                         <Copy size={11} /> {copiedField === 'title' ? 'Copiato!' : 'Copia'}
                       </button>
                     </div>
-                    <p className="text-sm font-semibold text-white leading-snug">{listingResult.title}</p>
+                    <p className="text-sm font-semibold text-[var(--text)] leading-snug">{listingResult.title}</p>
                     <p className="text-[10px] text-gray-700 mt-1">{listingResult.title.length}/80 caratteri</p>
                   </div>
 
                   {/* Descrizione */}
-                  <div className="bg-[#0a0a0a] border border-white/[0.07] rounded-2xl p-4">
+                  <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-2xl p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Descrizione</p>
+                      <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider">Descrizione</p>
                       <button onClick={() => copyToClipboard(listingResult.description, 'desc')}
                         className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
-                          copiedField === 'desc' ? 'bg-green-500/20 text-green-400' : 'bg-white/[0.06] text-gray-400 hover:text-white'
+                          copiedField === 'desc' ? 'bg-green-500/20 text-green-400' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)]'
                         }`}>
                         <Copy size={11} /> {copiedField === 'desc' ? 'Copiato!' : 'Copia'}
                       </button>
@@ -5673,12 +5711,12 @@ export default function App() {
 
                   {/* Hashtag (se presenti) */}
                   {listingResult.hashtags?.length > 0 && (
-                    <div className="bg-[#0a0a0a] border border-white/[0.07] rounded-2xl p-4">
+                    <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-2xl p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Hashtag</p>
+                        <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider">Hashtag</p>
                         <button onClick={() => copyToClipboard(listingResult.hashtags.join(' '), 'tags')}
                           className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
-                            copiedField === 'tags' ? 'bg-green-500/20 text-green-400' : 'bg-white/[0.06] text-gray-400 hover:text-white'
+                            copiedField === 'tags' ? 'bg-green-500/20 text-green-400' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)]'
                           }`}>
                           <Copy size={11} /> {copiedField === 'tags' ? 'Copiato!' : 'Copia'}
                         </button>
@@ -5693,16 +5731,16 @@ export default function App() {
 
                   {/* Consiglio AI */}
                   {listingResult.tips && (
-                    <div className="flex items-start gap-2 px-4 py-3 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+                    <div className="flex items-start gap-2 px-4 py-3 bg-[var(--fill)] border border-[var(--border)] rounded-xl">
                       <Sparkles size={13} className="text-yellow-500 shrink-0 mt-0.5" />
-                      <p className="text-[12px] text-gray-400 leading-relaxed">{listingResult.tips}</p>
+                      <p className="text-[12px] text-[var(--text-muted)] leading-relaxed">{listingResult.tips}</p>
                     </div>
                   )}
 
                   {/* CTA — apri piattaforma */}
                   {listingResult.deepLink && (
                     <a href={listingResult.deepLink} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.08] rounded-2xl text-sm font-bold text-white transition-colors active:scale-[0.98]">
+                      className="flex items-center justify-center gap-2 w-full py-3 bg-[var(--fill)] hover:bg-[var(--fill-2)] border border-[var(--border-2)] rounded-2xl text-sm font-bold text-[var(--text)] transition-colors active:scale-[0.98]">
                       <Store size={15} /> Apri {(['vinted','ebay','depop','wallapop','subito'].find(p => p === listingResult.platform) || '').charAt(0).toUpperCase() + (listingResult.platform || '').slice(1)} →
                     </a>
                   )}
@@ -5716,7 +5754,7 @@ export default function App() {
                     className={`w-full py-3 rounded-2xl text-sm font-bold transition-all active:scale-[0.98] ${
                       copiedField === 'all'
                         ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                        : 'bg-purple-600/70 hover:bg-purple-600 text-white'
+                        : 'bg-purple-600/70 hover:bg-purple-600 text-[var(--text)]'
                     }`}>
                     {copiedField === 'all' ? '✓ Tutto copiato!' : 'Copia tutto'}
                   </button>
@@ -5757,7 +5795,7 @@ export default function App() {
           <span className={`text-sm font-semibold flex-1 ${
             toast.type === 'ok' ? 'text-emerald-300' : toast.type === 'err' ? 'text-red-300' : 'text-yellow-300'
           }`}>{toast.msg}</span>
-          <X size={13} className="shrink-0 text-white/30" />
+          <X size={13} className="shrink-0 text-[var(--text)]/30" />
         </div>
       )}
     </div>

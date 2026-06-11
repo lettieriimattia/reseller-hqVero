@@ -13,6 +13,48 @@
   --accent: #ff4d00;
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
     'Inter', 'Helvetica Neue', system-ui, sans-serif;
+
+  /* ===== TEMA SCURO (default) =====
+     Token semantici usati in tutta l'app via bg-[var(--surface)] ecc.
+     Cambiando questi valori (o con .light) l'intera UI cambia tema. */
+  --bg: #080808;            /* sfondo pagina */
+  --surface: #0f0f0f;       /* card / pannelli */
+  --surface-2: #0a0a0a;     /* inset, input, sezioni annidate */
+  --border: rgba(255,255,255,0.05);   /* bordo sottile */
+  --border-2: rgba(255,255,255,0.07); /* bordo più marcato */
+  --text: #ffffff;          /* testo primario */
+  --text-soft: #6b7280;     /* testo secondario (era gray-500) */
+  --text-muted: #9ca3af;    /* testo attenuato (era gray-400) */
+  --text-faint: #4b5563;    /* testo molto tenue (era gray-600) */
+  --border-3: rgba(255,255,255,0.15); /* bordo accentato */
+  /* Fill neutri (chip, hover, inset) — 3 intensità */
+  --fill: rgba(255,255,255,0.05);
+  --fill-2: rgba(255,255,255,0.10);
+  --fill-3: rgba(255,255,255,0.20);
+  /* Superfici translucide (header/modali con backdrop-blur) */
+  --bg-blur: rgba(8,8,8,0.95);
+  --bg-overlay: rgba(8,8,8,0.70);
+  --surface-blur: rgba(14,14,14,0.95);
+}
+
+/* ===== TEMA CHIARO ===== */
+.light {
+  --bg: #f4f4f6;
+  --surface: #ffffff;
+  --surface-2: #f1f1f4;
+  --border: rgba(0,0,0,0.08);
+  --border-2: rgba(0,0,0,0.12);
+  --text: #18181b;
+  --text-soft: #6b7280;
+  --text-muted: #52525b;
+  --text-faint: #9ca3af;
+  --border-3: rgba(0,0,0,0.18);
+  --fill: rgba(0,0,0,0.05);
+  --fill-2: rgba(0,0,0,0.08);
+  --fill-3: rgba(0,0,0,0.14);
+  --bg-blur: rgba(244,244,246,0.85);
+  --bg-overlay: rgba(244,244,246,0.70);
+  --surface-blur: rgba(255,255,255,0.90);
 }
 
 html, body {
@@ -25,7 +67,9 @@ html, body {
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background-color: #080808;
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.25s ease, color 0.25s ease;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
   /* Blocca il pan elastico laterale su iOS */
