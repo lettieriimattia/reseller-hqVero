@@ -2773,6 +2773,11 @@ export default function App() {
               const byPlat: Record<string, number> = {};
               monthSold.forEach((p: any) => { const k = p.platform || 'Privato'; byPlat[k] = (byPlat[k] || 0) + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)); });
               const topPlat = Object.entries(byPlat).sort((a, b) => b[1] - a[1])[0];
+              // Profitto per reparto (del mese)
+              const byCat: Record<string, number> = {};
+              monthSold.forEach((p: any) => { const k = p.category || 'Altro'; byCat[k] = (byCat[k] || 0) + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)); });
+              const catRows = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+              const maxCatAbs = Math.max(...catRows.map(([, v]) => Math.abs(v)), 1);
               const now = new Date();
               const isCurrent = reportMonth.y === now.getFullYear() && reportMonth.m === now.getMonth();
               return (
@@ -2797,6 +2802,7 @@ export default function App() {
                   {monthSold.length === 0 ? (
                     <p className="text-center py-8 text-sm text-[var(--text-soft)] capitalize">Nessuna vendita in {label}</p>
                   ) : (
+                    <>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                       <div className="bg-[var(--surface-2)] rounded-xl p-4">
                         <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">Ricavi</p>
@@ -2822,6 +2828,23 @@ export default function App() {
                         {topPlat && <p className="text-[11px] text-[var(--text-soft)] mt-1 num">{topPlat[1] >= 0 ? '+' : ''}{topPlat[1].toFixed(0)}€ profitto</p>}
                       </div>
                     </div>
+                    {catRows.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-3">Profitto per reparto</p>
+                        <div className="space-y-2">
+                          {catRows.map(([cat, val]) => (
+                            <div key={cat} className="flex items-center gap-3">
+                              <span className="text-xs w-24 shrink-0 truncate flex items-center gap-1.5"><span>{getCategoryIcon(cat)}</span>{cat}</span>
+                              <div className="flex-1 h-2 bg-[var(--fill)] rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${val >= 0 ? 'bg-emerald-500' : 'bg-red-500'}`} style={{ width: `${(Math.abs(val) / maxCatAbs) * 100}%` }} />
+                              </div>
+                              <span className={`text-xs font-bold num w-16 text-right ${val >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{val >= 0 ? '+' : ''}{val.toFixed(0)}€</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    </>
                   )}
                 </section>
               );
