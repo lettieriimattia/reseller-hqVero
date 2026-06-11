@@ -268,6 +268,9 @@ export default function App() {
   
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<any>(null);
+  // Valutazione di mercato (eBay autenticati / StockX in futuro)
+  const [valuation, setValuation] = useState<any>(null);
+  const [valLoading, setValLoading] = useState(false);
   const [editBrand, setEditBrand] = useState('');
   const [editName, setEditName] = useState('');
   const [editSize, setEditSize] = useState('');
@@ -1377,7 +1380,18 @@ export default function App() {
       const photos = group.photos ? JSON.parse(group.photos) : [];
       setEditPhotos(Array.isArray(photos) ? photos : []);
     } catch { setEditPhotos([]); }
+    setValuation(null);
     setEditModalOpen(true);
+  };
+
+  // Valutazione di mercato del prodotto (fonte reale, anti-falsi)
+  const fetchValuation = async (group: any) => {
+    const id = group?.ids?.[0];
+    if (!id) return;
+    setValLoading(true); setValuation(null);
+    const { ok, data } = await apiCall(`/products/${id}/valuation`);
+    setValLoading(false);
+    setValuation(ok ? data : { configured: false, error: true });
   };
   
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -4453,6 +4467,37 @@ export default function App() {
                     onChange={(e: any) => setEditCondition(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
                 </div>
+              </div>
+
+              {/* Valutazione di mercato (fonte reale, anti-falsi) */}
+              <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <TrendingUp size={15} className="text-[#ff4d00] shrink-0" />
+                    <span className="text-sm font-bold">Valutazione di mercato</span>
+                  </div>
+                  <button type="button" onClick={() => fetchValuation(productToEdit)} disabled={valLoading}
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#ff4d00] text-white hover:bg-[#e84400] disabled:opacity-50 transition-colors flex items-center gap-1.5">
+                    {valLoading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />} Valuta
+                  </button>
+                </div>
+                {valuation && (
+                  <div className="mt-3">
+                    {valuation.configured === false ? (
+                      <p className="text-[var(--text-soft)] text-xs">Fonte prezzi non ancora attiva. Quando colleghiamo eBay/StockX qui vedrai la valutazione reale — autenticata e anti-falsi.</p>
+                    ) : valuation.value == null ? (
+                      <p className="text-[var(--text-soft)] text-xs">Nessuna quotazione affidabile trovata per questo prodotto.</p>
+                    ) : (
+                      <div className="flex items-end justify-between gap-2">
+                        <div>
+                          <p className="text-2xl font-bold num">{valuation.value}€</p>
+                          <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{valuation.source} · {valuation.sample} comp{valuation.authenticatedOnly ? ' autenticate' : ''}</p>
+                        </div>
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${valuation.confidence === 'alta' ? 'bg-emerald-500/20 text-emerald-400' : valuation.confidence === 'media' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>confidenza {valuation.confidence}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo Acquisto €</label>

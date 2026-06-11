@@ -14,6 +14,7 @@ import { validate, createProductSchema, editProductSchema, sellProductSchema } f
 import { audit } from '../services/audit.service';
 import { logInventory } from '../services/inventory-log.service';
 import { notifyWarehouseMembers } from '../services/notification.service';
+import { getMarketValuation } from '../services/price.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -609,6 +610,27 @@ router.post('/:id/restore', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     logger.error('Errore POST /products/:id/restore', { err: err.message });
     res.status(500).json({ error: 'Errore ripristino' });
+  }
+});
+
+// ==========================================
+// GET /products/:id/valuation — valutazione di mercato (eBay autenticati, anti-falsi)
+// Risponde { configured:false } finché non sono presenti le chiavi della fonte prezzi.
+// ==========================================
+router.get('/:id/valuation', async (req: AuthRequest, res: Response) => {
+  try {
+    const { allowed, product } = await canAccessProduct(req.user!.userId, req.params.id);
+    if (!allowed || !product) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
+    if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
+
+    const val = await getMarketValuation({
+      query: `${product.brand} ${product.name}`.trim(),
+      size: product.size || undefined,
+    });
+    res.json(val);
+  } catch (err: any) {
+    logger.error('Errore GET /products/:id/valuation', { err: err.message });
+    res.status(500).json({ error: 'Errore valutazione' });
   }
 });
 
