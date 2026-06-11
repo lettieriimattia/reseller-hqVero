@@ -39,23 +39,39 @@
 
 /* ===== TEMA CHIARO ===== */
 .light {
-  --bg: #f4f4f6;
-  --surface: #ffffff;
-  --surface-2: #f1f1f4;
-  --border: rgba(0,0,0,0.08);
-  --border-2: rgba(0,0,0,0.12);
+  /* Sfondo grigio tenue (non bianco accecante), card bianco morbido:
+     così le card si distinguono bene dallo sfondo */
+  --bg: #e7e7ec;
+  --surface: #fbfbfd;
+  --surface-2: #eeeef2;
+  --border: rgba(0,0,0,0.10);
+  --border-2: rgba(0,0,0,0.14);
+  --border-3: rgba(0,0,0,0.20);
+  /* Testi più scuri per leggibilità (prezzi quasi neri) */
   --text: #18181b;
-  --text-soft: #6b7280;
-  --text-muted: #52525b;
-  --text-faint: #9ca3af;
-  --border-3: rgba(0,0,0,0.18);
+  --text-soft: #3f3f46;
+  --text-muted: #27272a;
+  --text-faint: #52525b;
   --fill: rgba(0,0,0,0.05);
   --fill-2: rgba(0,0,0,0.08);
   --fill-3: rgba(0,0,0,0.14);
-  --bg-blur: rgba(244,244,246,0.85);
-  --bg-overlay: rgba(244,244,246,0.70);
-  --surface-blur: rgba(255,255,255,0.90);
+  --bg-blur: rgba(231,231,236,0.85);
+  --bg-overlay: rgba(231,231,236,0.70);
+  --surface-blur: rgba(251,251,253,0.90);
 }
+
+/* ===== TEMA CHIARO: colori semantici accentati =====
+   Le tinte -400 di Tailwind sono troppo chiare su sfondo bianco.
+   Le scuriamo solo in light mode (override più specifico). */
+.light .text-emerald-400 { color: #047857; }
+.light .text-green-400   { color: #15803d; }
+.light .text-green-300   { color: #166534; }
+.light .text-red-400     { color: #dc2626; }
+.light .text-red-300     { color: #b91c1c; }
+.light .text-yellow-400  { color: #b45309; }
+.light .text-yellow-300  { color: #92400e; }
+.light .text-blue-400    { color: #2563eb; }
+.light .text-purple-400  { color: #7c3aed; }
 
 html, body {
   /* La schermata resta ferma: niente scorrimento o pan orizzontale */
