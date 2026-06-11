@@ -2229,22 +2229,22 @@ export default function App() {
                     : 0;
                   return (
                     <div key={cat} onClick={() => { setCurrentView('magazzino'); setFilterCat(cat); }}
-                      className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4 hover:border-white/[0.1] transition-colors cursor-pointer group">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xl">{getCategoryIcon(cat)}</span>
-                        <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-white/[0.04] text-gray-500">{catSellRate}%</span>
+                      className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl p-4 lg:p-5 hover:border-white/[0.1] transition-colors cursor-pointer group">
+                      <div className="flex items-center justify-between mb-3 lg:mb-4">
+                        <span className="text-xl lg:text-3xl">{getCategoryIcon(cat)}</span>
+                        <span className="text-[9px] lg:text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/[0.04] text-gray-400">{catSellRate}%</span>
                       </div>
-                      <p className="font-semibold text-base leading-none">{cat}</p>
-                      <p className="text-[11px] text-gray-600 mt-0.5 mb-3">{catStock.length} stock · {catSold.length} venduti</p>
-                      <div className="h-0.5 bg-white/[0.04] rounded-full overflow-hidden mb-2.5">
+                      <p className="font-bold text-base lg:text-2xl leading-none">{cat}</p>
+                      <p className="text-[11px] lg:text-sm text-gray-500 mt-1 lg:mt-1.5 mb-3 lg:mb-4">{catStock.length} stock · {catSold.length} venduti</p>
+                      <div className="h-0.5 lg:h-1 bg-white/[0.04] rounded-full overflow-hidden mb-2.5 lg:mb-3">
                         <div className="h-full bg-[#ff4d00] rounded-full" style={{ width: `${catSellRate}%` }} />
                       </div>
                       <div className="flex items-center justify-between">
-                        <p className={`text-sm font-semibold num ${catProfit > 0 ? 'text-emerald-400' : catProfit < 0 ? 'text-red-400' : 'text-gray-600'}`}>
+                        <p className={`text-sm lg:text-lg font-bold num ${catProfit > 0 ? 'text-emerald-400' : catProfit < 0 ? 'text-red-400' : 'text-gray-600'}`}>
                           {catProfit > 0 ? '+' : ''}{catProfit.toFixed(0)}€
                         </p>
                         {catAvgMargin !== 0 && (
-                          <p className="text-[11px] text-gray-600 num">avg {catAvgMargin > 0 ? '+' : ''}{catAvgMargin.toFixed(0)}%</p>
+                          <p className="text-[11px] lg:text-sm text-gray-500 num">avg {catAvgMargin > 0 ? '+' : ''}{catAvgMargin.toFixed(0)}%</p>
                         )}
                       </div>
                     </div>
@@ -2280,8 +2280,8 @@ export default function App() {
                 )}
               </div>
 
-              {/* Ricerca + reparto — inline su desktop, sotto su mobile */}
-              <div className="flex gap-2 lg:gap-3 lg:flex-1 lg:justify-end">
+              {/* Ricerca + reparto — inline su desktop, impilati su mobile */}
+              <div className="flex flex-col lg:flex-row gap-2 lg:gap-3 lg:flex-1 lg:justify-end mt-2 lg:mt-0">
                 <div className="relative flex-1 lg:max-w-md">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
                   <input type="text" placeholder="Cerca brand o modello..."
@@ -2289,7 +2289,7 @@ export default function App() {
                     className="w-full bg-[#0f0f0f] border border-white/[0.05] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#ff4d00] outline-none" />
                 </div>
                 <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
-                  className="bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-3 py-2.5 text-sm focus:border-[#ff4d00] outline-none shrink-0">
+                  className="w-full lg:w-auto bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-3 py-2.5 text-sm focus:border-[#ff4d00] outline-none shrink-0">
                   <option value="all">Tutti i reparti</option>
                   {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -2297,36 +2297,41 @@ export default function App() {
             </div>
 
             {magazzinoView === 'instock' && (
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1">
-                  <ArrowUpDown size={12} /> Ordina:
-                </span>
-                {(['date','price','name'] as const).map(f => (
-                  <button key={f} onClick={() => {
-                    if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-                    else { setSortField(f); setSortDir('desc'); }
-                  }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                      sortField === f ? 'bg-[#ff4d00] text-white' : 'bg-[#0f0f0f] border border-white/[0.05] text-gray-500 hover:text-white'
-                    }`}>
-                    {f === 'date' ? 'Data' : f === 'price' ? 'Prezzo' : f === 'name' ? 'Nome' : 'Margine'}
-                    {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
-                  </button>
-                ))}
-                <div className="ml-auto flex gap-2">
-                  <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
-                    className="bg-[#0f0f0f] border border-white/[0.05] rounded-lg px-3 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400">
-                    <option value="all">Condizione</option>
-                    <option value="DS">DS</option>
-                    <option value="VNDS">VNDS</option>
-                    <option value="Used">Used</option>
-                  </select>
+              <div className="flex flex-col lg:flex-row lg:flex-wrap gap-2 lg:items-center">
+                {/* Ordina */}
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="w-full lg:w-auto text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                    <ArrowUpDown size={12} /> Ordina:
+                  </span>
+                  {(['date','price','name'] as const).map(f => (
+                    <button key={f} onClick={() => {
+                      if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+                      else { setSortField(f); setSortDir('desc'); }
+                    }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                        sortField === f ? 'bg-[#ff4d00] text-white' : 'bg-[#0f0f0f] border border-white/[0.05] text-gray-500 hover:text-white'
+                      }`}>
+                      {f === 'date' ? 'Data' : f === 'price' ? 'Prezzo' : f === 'name' ? 'Nome' : 'Margine'}
+                      {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
+                    </button>
+                  ))}
+                </div>
+                {/* Condizione */}
+                <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
+                  className="w-full lg:w-auto lg:ml-auto bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-3 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400">
+                  <option value="all">Condizione</option>
+                  <option value="DS">DS</option>
+                  <option value="VNDS">VNDS</option>
+                  <option value="Used">Used</option>
+                </select>
+                {/* Prezzo */}
+                <div className="flex gap-2">
                   <input type="number" placeholder="Min €" value={filterPriceMin}
                     onChange={(e: any) => setFilterPriceMin(e.target.value)}
-                    className="w-20 bg-[#0f0f0f] border border-white/[0.05] rounded-lg px-3 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400" />
+                    className="flex-1 lg:flex-none lg:w-20 bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-3 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400" />
                   <input type="number" placeholder="Max €" value={filterPriceMax}
                     onChange={(e: any) => setFilterPriceMax(e.target.value)}
-                    className="w-20 bg-[#0f0f0f] border border-white/[0.05] rounded-lg px-3 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400" />
+                    className="flex-1 lg:flex-none lg:w-20 bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-3 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400" />
                 </div>
               </div>
             )}

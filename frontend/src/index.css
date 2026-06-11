@@ -3,15 +3,16 @@
 @tailwind utilities;
 
 /* ========================================
-   FONT: Inter — minimal, aesthetic, moderno
-   Usato da Linear, Vercel, Notion, Figma
+   FONT — logica iPhone/minimal:
+   1) San Francisco nativo su Apple (iPhone PWA, Mac) → look iOS autentico
+   2) Inter come fallback raffinato su Windows/Android (SF-like)
    ======================================== */
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
 :root {
   --accent: #ff4d00;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display',
-    'Helvetica Neue', system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'Inter', 'Helvetica Neue', system-ui, sans-serif;
 }
 
 body {
@@ -25,7 +26,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
   /* Testo netto su retina */
   text-rendering: optimizeLegibility;
+  /* OpenType: 'a'/'g' single-story + alternate (rende Inter più simile a SF) */
+  font-feature-settings: 'cv11' 1, 'ss01' 1, 'cv02' 1, 'cv03' 1, 'cv04' 1;
+  letter-spacing: -0.011em;
 }
+
+/* Titoli — tracking stretto stile SF Pro Display */
+h1, h2, h3, .num { letter-spacing: -0.02em; }
+h1 { letter-spacing: -0.03em; }
 
 /* Scrollbar invisibile */
 ::-webkit-scrollbar { width: 2px; height: 2px; }
