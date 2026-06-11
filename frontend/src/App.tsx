@@ -2160,6 +2160,28 @@ export default function App() {
               </div>
             </div>
 
+            {/* Welcome / primo avvio — quando non ci sono ancora prodotti */}
+            {products.length === 0 && (
+              <section className="bg-[var(--surface)] border border-[#ff4d00]/30 rounded-2xl p-6 lg:p-7 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[#ff4d00]/[0.04] pointer-events-none" />
+                <div className="relative">
+                  <p className="text-[10px] font-bold text-[#ff4d00] uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5"><Sparkles size={12} /> Benvenuto in HQ</p>
+                  <h3 className="text-xl lg:text-2xl font-bold mb-1.5">Iniziamo dal primo prodotto</h3>
+                  <p className="text-sm text-[var(--text-soft)] mb-5 max-w-md">In pochi secondi aggiungi un articolo e HQ inizia a tracciare stock, vendite, profitti e spedizioni. Tutto in automatico.</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => setIsFormOpen(true)}
+                      className="bg-[#ff4d00] hover:bg-[#e84400] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
+                      <Plus size={16} /> Aggiungi il primo prodotto
+                    </button>
+                    <button onClick={() => navigateTo('settings')}
+                      className="bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--text-soft)] hover:text-[var(--text)] px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors">
+                      <Download size={15} /> Importa da Excel
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* KPI principali */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Mio profitto */}
@@ -2483,10 +2505,35 @@ export default function App() {
             <div className="space-y-2.5">
               {magazzinoView === 'instock' ? (
                 groupedInStockArray.length === 0 ? (
-                  <div className="text-center py-16 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
-                    <Package className="mx-auto text-gray-800 mb-3" size={44} />
-                    <p className="text-[var(--text-soft)] font-bold">Nessun prodotto in stock</p>
-                  </div>
+                  inStockItems.length === 0 ? (
+                    /* Magazzino davvero vuoto → onboarding */
+                    <div className="text-center py-16 px-5 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
+                      <Package className="mx-auto text-[var(--text-faint)] mb-3" size={44} />
+                      <p className="font-bold text-lg">Il tuo magazzino è vuoto</p>
+                      <p className="text-sm text-[var(--text-soft)] mt-1 mb-5 max-w-sm mx-auto">Aggiungi il primo prodotto per iniziare a tracciare stock, vendite e profitti.</p>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        <button onClick={() => setIsFormOpen(true)}
+                          className="bg-[#ff4d00] hover:bg-[#e84400] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
+                          <Plus size={16} /> Aggiungi prodotto
+                        </button>
+                        <button onClick={() => navigateTo('settings')}
+                          className="bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--text-soft)] hover:text-[var(--text)] px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors">
+                          <Download size={15} /> Importa da Excel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Filtri/ricerca attivi → nessun risultato */
+                    <div className="text-center py-16 px-5 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
+                      <Search className="mx-auto text-[var(--text-faint)] mb-3" size={40} />
+                      <p className="font-bold">Nessun risultato</p>
+                      <p className="text-sm text-[var(--text-soft)] mt-1 mb-4">Prova a modificare ricerca o filtri.</p>
+                      <button onClick={() => { setSearchTerm(''); setFilterCat('all'); setFilterCondition('all'); setFilterPriceMin(''); setFilterPriceMax(''); setStaleOnly(false); }}
+                        className="bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--text-soft)] hover:text-[var(--text)] px-4 py-2 rounded-xl font-bold text-xs transition-colors">
+                        Azzera filtri
+                      </button>
+                    </div>
+                  )
                 ) : (
                   <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 lg:gap-3">
                   {groupedInStockArray.map((g: any) => {
