@@ -31,26 +31,28 @@
       #hq-splash .hq-mark { position: relative; width: 132px; height: 132px; }
       #hq-splash .hq-mark span {
         position: absolute; font-weight: 900; font-size: 92px; line-height: 1; letter-spacing: -4px;
-        opacity: 0; transform: translateY(10px) scale(.9);
-        animation: hqIn .7s cubic-bezier(.2,.7,.2,1) forwards;
+        opacity: 0;
       }
-      #hq-splash .hq-mark .h { top: 2px;  left: 8px;  color: #fff; }
-      #hq-splash .hq-mark .q { top: 38px; left: 52px; color: rgba(255,255,255,.42); animation-delay: .14s; }
+      /* Le due lettere arrivano da lati opposti e convergono fino a sovrapporsi */
+      #hq-splash .hq-mark .h {
+        top: 2px; left: 8px; color: #fff;
+        transform: translate(-46px, -26px) scale(.9);
+        animation: hqConv .9s cubic-bezier(.2,.75,.2,1) .2s forwards;
+      }
+      #hq-splash .hq-mark .q {
+        top: 38px; left: 52px; color: rgba(255,255,255,.42);
+        transform: translate(46px, 26px) scale(.9);
+        animation: hqConv .9s cubic-bezier(.2,.75,.2,1) .2s forwards;
+      }
       #hq-splash.hq-light .hq-mark .h { color: #18181b; }
       #hq-splash.hq-light .hq-mark .q { color: rgba(24,24,27,.40); }
-      @keyframes hqIn { to { opacity: 1; transform: translateY(0) scale(1); } }
-      #hq-splash .hq-bar {
-        margin-top: 34px; width: 88px; height: 2px; border-radius: 2px;
-        background: rgba(255,255,255,.10); overflow: hidden;
+      @keyframes hqConv {
+        0%   { opacity: 0; }
+        60%  { opacity: 1; }
+        100% { opacity: 1; transform: translate(0, 0) scale(1); }
       }
-      #hq-splash.hq-light .hq-bar { background: rgba(0,0,0,.10); }
-      #hq-splash .hq-bar::after {
-        content: ''; display: block; height: 100%; width: 0; border-radius: 2px;
-        background: #ff4d00; animation: hqBar 1.5s ease-in-out .25s forwards;
-      }
-      @keyframes hqBar { 0% { width: 0 } 70% { width: 100% } 100% { width: 100% } }
       @media (prefers-reduced-motion: reduce) {
-        #hq-splash .hq-mark span, #hq-splash .hq-bar::after { animation-duration: .01ms; opacity: 1; transform: none; width: 100%; }
+        #hq-splash .hq-mark span { animation-duration: .01ms; opacity: 1; transform: translate(0,0) scale(1); }
       }
     </style>
   </head>
@@ -58,7 +60,6 @@
     <!-- Splash istantanea: tema coerente + auto-rimozione dopo ~2s -->
     <div id="hq-splash">
       <div class="hq-mark"><span class="h">H</span><span class="q">Q</span></div>
-      <div class="hq-bar"></div>
     </div>
     <script>
       (function () {
