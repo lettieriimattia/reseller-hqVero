@@ -4306,15 +4306,15 @@ export default function App() {
             selectedGroupKeys.size > 0 ? 'border-[#ff4d00]/50' : 'border-gray-700'
           }`}>
             <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fill-2)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
+              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-300 hover:text-white transition-colors">
               <X size={16} />
             </button>
             <button onClick={selectAllGroups}
-              className="text-xs text-[var(--text-soft)] hover:text-[var(--text)] font-bold transition-colors shrink-0 px-2">
+              className="text-xs text-gray-300 hover:text-white font-bold transition-colors shrink-0 px-2">
               Tutti
             </button>
             <div className="flex-1 text-center">
-              <span className="text-sm font-bold">
+              <span className="text-sm font-bold text-white">
                 {selectedGroupKeys.size > 0
                   ? `${getBulkSelectedIds().length} pezzi selezionati`
                   : 'Tieni premuto una card per selezionare'}
@@ -4329,7 +4329,7 @@ export default function App() {
             <button
               onClick={() => setBulkSellOpen(true)}
               disabled={selectedGroupKeys.size === 0}
-              className="px-4 py-2 bg-green-600 hover:bg-green-500 text-[var(--text)] rounded-xl text-xs font-bold disabled:opacity-30 transition-colors flex items-center gap-1.5">
+              className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-bold disabled:opacity-30 transition-colors flex items-center gap-1.5">
               <DollarSign size={14} /> Vendi
             </button>
           </div>
