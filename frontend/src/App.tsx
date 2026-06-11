@@ -217,6 +217,8 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
   const [chartTimeframe, setChartTimeframe] = useState<'1D' | '1W' | '1M' | '1Y' | 'MAX'>('MAX');
+  // Report mensile (conto economico) — mese selezionato
+  const [reportMonth, setReportMonth] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   // ----- COMMAND PALETTE (Ctrl/Cmd+K) -----
   const [cmdOpen, setCmdOpen] = useState(false);
   const [cmdQuery, setCmdQuery] = useState('');
@@ -2715,6 +2717,69 @@ export default function App() {
                 <Download size={15} /> CSV
               </button>
             </div>
+
+            {/* ===== CONTO ECONOMICO MENSILE ===== */}
+            {(() => {
+              const monthSold = products.filter((p: any) => {
+                if (p.status !== 'VENDUTO' || !p.soldAt) return false;
+                const d = new Date(p.soldAt);
+                return d.getFullYear() === reportMonth.y && d.getMonth() === reportMonth.m;
+              });
+              const ricavi = monthSold.reduce((a: number, p: any) => a + (p.salePrice || 0), 0);
+              const costo = monthSold.reduce((a: number, p: any) => a + p.purchasePrice, 0);
+              const fees = monthSold.reduce((a: number, p: any) => a + (p.fees || 0), 0);
+              const netto = ricavi - costo - fees;
+              const roi = costo > 0 ? (netto / costo * 100) : 0;
+              const label = new Date(reportMonth.y, reportMonth.m, 1).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+              const shift = (delta: number) => setReportMonth(({ y, m }) => {
+                const nm = m + delta;
+                return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 };
+              });
+              const byPlat: Record<string, number> = {};
+              monthSold.forEach((p: any) => { const k = p.platform || 'Privato'; byPlat[k] = (byPlat[k] || 0) + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)); });
+              const topPlat = Object.entries(byPlat).sort((a, b) => b[1] - a[1])[0];
+              const now = new Date();
+              const isCurrent = reportMonth.y === now.getFullYear() && reportMonth.m === now.getMonth();
+              return (
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold">Conto economico</h3>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => shift(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg">‹</button>
+                      <span className="text-sm font-bold capitalize min-w-[130px] text-center">{label}</span>
+                      <button onClick={() => shift(1)} disabled={isCurrent}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg disabled:opacity-30">›</button>
+                    </div>
+                  </div>
+                  {monthSold.length === 0 ? (
+                    <p className="text-center py-8 text-sm text-[var(--text-soft)] capitalize">Nessuna vendita in {label}</p>
+                  ) : (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div className="bg-[var(--surface-2)] rounded-xl p-4">
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">Ricavi</p>
+                        <p className="text-2xl font-bold num">{ricavi.toFixed(0)}€</p>
+                        <p className="text-[11px] text-[var(--text-soft)] mt-1">{monthSold.length} {monthSold.length === 1 ? 'vendita' : 'vendite'}</p>
+                      </div>
+                      <div className="bg-[var(--surface-2)] rounded-xl p-4">
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">Costi + Fee</p>
+                        <p className="text-2xl font-bold num text-[var(--text-soft)]">-{(costo + fees).toFixed(0)}€</p>
+                        <p className="text-[11px] text-[var(--text-soft)] mt-1">{costo.toFixed(0)}€ merce · {fees.toFixed(0)}€ fee</p>
+                      </div>
+                      <div className="bg-[var(--surface-2)] rounded-xl p-4">
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">Profitto netto</p>
+                        <p className={`text-2xl font-bold num ${netto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{netto >= 0 ? '+' : ''}{netto.toFixed(0)}€</p>
+                        <p className="text-[11px] text-[var(--text-soft)] mt-1">ROI {roi >= 0 ? '+' : ''}{roi.toFixed(0)}%</p>
+                      </div>
+                      <div className="bg-[var(--surface-2)] rounded-xl p-4">
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">Top piattaforma</p>
+                        <p className="text-2xl font-bold truncate">{topPlat ? topPlat[0] : '—'}</p>
+                        {topPlat && <p className="text-[11px] text-[var(--text-soft)] mt-1 num">{topPlat[1] >= 0 ? '+' : ''}{topPlat[1].toFixed(0)}€ profitto</p>}
+                      </div>
+                    </div>
+                  )}
+                </section>
+              );
+            })()}
 
             {/* KPI row 1: principali */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
