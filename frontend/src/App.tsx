@@ -2000,12 +2000,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Ricerca globale ⌘K (solo desktop) */}
-            <button onClick={() => { setCmdQuery(''); setCmdIndex(0); setCmdOpen(true); }}
-              className="hidden lg:flex items-center gap-2 bg-[var(--surface-2)] hover:border-[var(--border-3)] border border-[var(--border-2)] text-[var(--text-soft)] px-3 py-2 rounded-xl text-sm transition-colors mr-1">
-              <Search size={15} /> Cerca
-              <kbd className="text-[10px] text-[var(--text-faint)] border border-[var(--border-2)] rounded px-1.5 py-0.5">⌘K</kbd>
-            </button>
             {/* Pulsante Aggiungi (solo desktop) */}
             <button onClick={() => setIsFormOpen(true)}
               className="hidden lg:flex items-center gap-2 bg-[#ff4d00] hover:bg-[#e84400] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
