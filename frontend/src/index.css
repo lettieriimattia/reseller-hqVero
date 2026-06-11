@@ -105,11 +105,9 @@ body {
 h1, h2, h3, .num { letter-spacing: -0.02em; }
 h1 { letter-spacing: -0.03em; }
 
-/* Scrollbar invisibile */
-::-webkit-scrollbar { width: 2px; height: 2px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: transparent; border-radius: 100px; }
-::-webkit-scrollbar-thumb:hover { background: #222; }
+/* Scrollbar completamente nascosta (anche su mobile) — lo scroll resta funzionante */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+::-webkit-scrollbar { width: 0 !important; height: 0 !important; display: none; }
 
 /* Animazioni iOS-style (spring) */
 @keyframes slide-up {
