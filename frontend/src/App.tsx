@@ -1526,13 +1526,12 @@ export default function App() {
     errors > 0 ? showToast(`Vendite con ${errors} errori`, 'warn') : showToast(`${ids.length} prodotti venduti!`);
   };
 
-  // Reso: riporta un pezzo venduto in stock (operazione inversa della vendita)
+  // Reso: riporta un pezzo venduto in stock (operazione inversa della vendita) — immediato, niente conferma
   const handleReturn = async (group: any) => {
     const id = group.ids?.[0];
     if (!id) return;
-    if (!confirm(`Segnare come reso "${group.brand} ${group.name}"? Il pezzo tornerà in stock.`)) return;
     const { ok } = await apiCall(`/products/${id}/return`, { method: 'POST' });
-    if (ok) { await fetchProducts(); showToast('Reso registrato — prodotto rientrato in stock'); }
+    if (ok) { await fetchProducts(); showToast('Reso registrato — prodotto in stock'); }
     else showToast('Errore durante il reso', 'err');
   };
 
@@ -2692,7 +2691,7 @@ export default function App() {
                               <span className="text-[10px] text-gray-700">· {g.totalFees.toFixed(0)}€ fee</span>
                             )}
                             <button onClick={() => handleReturn(g)}
-                              className="ml-auto text-[10px] font-semibold text-[var(--text-faint)] hover:text-[var(--text)] transition-colors">
+                              className="ml-auto flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-blue-400 hover:bg-blue-500/25 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
                               ↩ Reso
                             </button>
                           </div>
