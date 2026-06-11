@@ -2433,6 +2433,23 @@ export default function App() {
               </div>
             )}
             
+            {/* Barra riassuntiva del set filtrato (solo in stock) */}
+            {magazzinoView === 'instock' && groupedInStockArray.length > 0 && (() => {
+              const pezzi = groupedInStockArray.reduce((a: number, g: any) => a + g.quantity, 0);
+              const costo = groupedInStockArray.reduce((a: number, g: any) => a + g.purchasePrice * g.quantity, 0);
+              const mercato = groupedInStockArray.reduce((a: number, g: any) => a + (g.marketPriceAvg || g.purchasePrice) * g.quantity, 0);
+              const potenziale = mercato - costo;
+              return (
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-sm">
+                  <span className="text-[var(--text-soft)]"><span className="font-bold text-[var(--text)] num">{pezzi}</span> pezzi · <span className="font-bold text-[var(--text)] num">{groupedInStockArray.length}</span> modelli</span>
+                  <span className="text-[var(--text-soft)]">Valore stock <span className="font-bold text-[var(--text)] num">{costo.toFixed(0)}€</span></span>
+                  {potenziale !== 0 && (
+                    <span className="text-[var(--text-soft)] sm:ml-auto">Profitto potenziale <span className={`font-bold num ${potenziale >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{potenziale >= 0 ? '+' : ''}{potenziale.toFixed(0)}€</span></span>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Lista prodotti */}
             <div className="space-y-2.5">
               {magazzinoView === 'instock' ? (
