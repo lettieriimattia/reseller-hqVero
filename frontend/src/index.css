@@ -15,12 +15,22 @@
     'Inter', 'Helvetica Neue', system-ui, sans-serif;
 }
 
+html, body {
+  /* La schermata resta ferma: niente scorrimento o pan orizzontale */
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
   background-color: #080808;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+  /* Blocca il pan elastico laterale su iOS */
+  overscroll-behavior-x: none;
+  position: relative;
   /* Antialiasing come iOS */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

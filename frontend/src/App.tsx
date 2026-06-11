@@ -1,13 +1,14 @@
-﻿import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import * as XLSX from 'xlsx';
+﻿import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import { DynamicForm } from './components/DynamicForm';
+// xlsx caricato on-demand (import dinamico) dentro gli handler: resta fuori dal bundle iniziale
+// Grafico caricato in lazy: recharts finisce in un chunk separato, fuori dal bundle iniziale
+const TrendChart = lazy(() => import('./components/TrendChart'));
 import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
   KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail
 } from 'lucide-react';
-import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
 // ==========================================
 // CONFIGURAZIONE API
@@ -448,8 +449,9 @@ export default function App() {
     }
   };
 
-  const exportAdminExcel = () => {
+  const exportAdminExcel = async () => {
     if (!adminUsers.length) return;
+    const XLSX = await import('xlsx');
     const rows = adminUsers.map(u => ({
       'Nome': u.name,
       'Email': u.email,
@@ -1497,6 +1499,7 @@ export default function App() {
     if (!file) return;
     try {
       const data = await file.arrayBuffer();
+      const XLSX = await import('xlsx');
       const workbook = XLSX.read(data, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const raw: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
@@ -1523,7 +1526,8 @@ export default function App() {
     e.target.value = '';
   };
 
-  const downloadImportTemplate = () => {
+  const downloadImportTemplate = async () => {
+    const XLSX = await import('xlsx');
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([
       ['Brand', 'Nome', 'Taglia', 'Condizione', 'Prezzo', 'Categoria'],
@@ -2328,10 +2332,10 @@ export default function App() {
                 <div className="flex gap-2">
                   <input type="number" placeholder="Min €" value={filterPriceMin}
                     onChange={(e: any) => setFilterPriceMin(e.target.value)}
-                    className="flex-1 lg:flex-none lg:w-20 bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-3 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400" />
+                    className="w-16 bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400" />
                   <input type="number" placeholder="Max €" value={filterPriceMax}
                     onChange={(e: any) => setFilterPriceMax(e.target.value)}
-                    className="flex-1 lg:flex-none lg:w-20 bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-3 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400" />
+                    className="w-16 bg-[#0f0f0f] border border-white/[0.05] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-gray-400" />
                 </div>
               </div>
             )}
@@ -2660,27 +2664,9 @@ export default function App() {
                   <p className="text-gray-500 text-sm">Nessun dato per questo periodo</p>
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={280}>
-                  <AreaChart data={trendData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="profGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#ff4d00" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="#ff4d00" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="ricaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#22c55e" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="date" stroke="#333" fontSize={10} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#333" fontSize={10} tickLine={false} axisLine={false} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #222', borderRadius: 12, fontSize: 12 }}
-                      labelStyle={{ color: '#aaa', fontWeight: 'bold' }} />
-                    <Area type="monotone" dataKey="Ricavi" stroke="#22c55e" fill="url(#ricaGrad)" strokeWidth={2} dot={false} />
-                    <Area type="monotone" dataKey="Profitto" stroke="#ff4d00" fill="url(#profGrad)" strokeWidth={2} dot={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<div className="h-[280px] flex items-center justify-center"><Loader2 className="animate-spin text-gray-700" size={28} /></div>}>
+                  <TrendChart trendData={trendData} />
+                </Suspense>
               )}
               <div className="flex items-center gap-5 mt-3 justify-end">
                 <div className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="w-3 h-0.5 bg-green-500 rounded-full inline-block" />Ricavi</div>
