@@ -200,14 +200,14 @@ export default function App() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   
-  // ----- TEMA (chiaro/scuro) -----
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    try { return (localStorage.getItem('hq-theme') as 'dark' | 'light') || 'dark'; } catch { return 'dark'; }
+  // ----- TEMA (scuro / chiaro / glass) -----
+  const [theme, setTheme] = useState<'dark' | 'light' | 'glass'>(() => {
+    try { return (localStorage.getItem('hq-theme') as 'dark' | 'light' | 'glass') || 'dark'; } catch { return 'dark'; }
   });
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'light') root.classList.add('light');
-    else root.classList.remove('light');
+    root.classList.remove('light', 'glass');
+    if (theme === 'light' || theme === 'glass') root.classList.add(theme);
     try { localStorage.setItem('hq-theme', theme); } catch {}
   }, [theme]);
 
@@ -3102,26 +3102,32 @@ export default function App() {
 
             {/* SEZIONE: Aspetto / Tema */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  {theme === 'light' ? <Sun className="text-[#ff4d00] mt-0.5" size={22} /> : <Moon className="text-[#ff4d00] mt-0.5" size={22} />}
+                  {theme === 'light' ? <Sun className="text-[#ff4d00] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#ff4d00] mt-0.5" size={22} /> : <Moon className="text-[#ff4d00] mt-0.5" size={22} />}
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">Aspetto</h3>
-                    <p className="text-xs text-[var(--text-soft)] mt-1">Scegli il tema chiaro o scuro.</p>
+                    <p className="text-xs text-[var(--text-soft)] mt-1">Scegli il tema: scuro, chiaro o vetro.</p>
                   </div>
                 </div>
                 <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] shrink-0">
+                  <button onClick={() => setTheme('dark')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                      theme === 'dark' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
+                    }`}>
+                    <Moon size={13} /> Scuro
+                  </button>
                   <button onClick={() => setTheme('light')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
                       theme === 'light' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
                     }`}>
                     <Sun size={13} /> Chiaro
                   </button>
-                  <button onClick={() => setTheme('dark')}
+                  <button onClick={() => setTheme('glass')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'dark' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
+                      theme === 'glass' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
                     }`}>
-                    <Moon size={13} /> Scuro
+                    <Sparkles size={13} /> Glass
                   </button>
                 </div>
               </div>
