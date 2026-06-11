@@ -387,6 +387,65 @@ router.put('/:id', validate(sellProductSchema), async (req: AuthRequest, res: Re
 });
 
 // ==========================================
+// POST /products/:id/return — reso: VENDUTO → IN STOCK
+// Operazione inversa della vendita: ripulisce i dati di vendita.
+// ==========================================
+router.post('/:id/return', async (req: AuthRequest, res: Response) => {
+  try {
+    const { allowed, product } = await canAccessProduct(req.user!.userId, req.params.id);
+    if (!allowed || !product) {
+      await audit({
+        action: 'UNAUTHORIZED_ACCESS', userId: req.user!.userId, req,
+        resource: req.params.id, metadata: { type: 'product_return' },
+      });
+      return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
+    }
+    if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
+    if (product.status !== 'VENDUTO') return res.status(400).json({ error: 'Solo un prodotto venduto può essere reso.' });
+
+    const updated = await prisma.product.update({
+      where: { id: req.params.id },
+      data: {
+        status: 'IN STOCK',
+        salePrice: null, platform: null, fees: null, soldAt: null,
+        reservedBy: null, reservedAt: null,
+      },
+    });
+
+    await logInventory({
+      productId: updated.id,
+      userId: req.user!.userId,
+      action: 'STATUS_CHANGE',
+      field: 'status',
+      oldValue: 'VENDUTO',
+      newValue: 'IN STOCK',
+      note: 'Reso: prodotto rientrato in stock',
+    });
+
+    await audit({
+      action: 'PRODUCT_RETURN', userId: req.user!.userId, req,
+      resource: updated.id,
+      metadata: { brand: product.brand, name: product.name },
+    });
+
+    if (updated.warehouseId) {
+      await notifyWarehouseMembers({
+        warehouseId: updated.warehouseId,
+        excludeUserId: req.user!.userId,
+        type: 'SALE',
+        title: '↩️ Reso registrato',
+        message: `${product.brand} ${product.name} è rientrato in stock`,
+      });
+    }
+
+    res.json(updated);
+  } catch (err: any) {
+    logger.error('Errore POST /products/:id/return', { err: err.message });
+    res.status(500).json({ error: 'Errore reso' });
+  }
+});
+
+// ==========================================
 // PUT /products/:id/edit — modifica prodotto
 // ==========================================
 router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, res: Response) => {

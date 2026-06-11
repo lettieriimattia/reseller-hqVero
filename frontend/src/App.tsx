@@ -1526,6 +1526,16 @@ export default function App() {
     errors > 0 ? showToast(`Vendite con ${errors} errori`, 'warn') : showToast(`${ids.length} prodotti venduti!`);
   };
 
+  // Reso: riporta un pezzo venduto in stock (operazione inversa della vendita)
+  const handleReturn = async (group: any) => {
+    const id = group.ids?.[0];
+    if (!id) return;
+    if (!confirm(`Segnare come reso "${group.brand} ${group.name}"? Il pezzo tornerà in stock.`)) return;
+    const { ok } = await apiCall(`/products/${id}/return`, { method: 'POST' });
+    if (ok) { await fetchProducts(); showToast('Reso registrato — prodotto rientrato in stock'); }
+    else showToast('Errore durante il reso', 'err');
+  };
+
   // ==========================================
   // IMPORT EXCEL
   // ==========================================
@@ -2446,15 +2456,10 @@ export default function App() {
             {magazzinoView === 'instock' && groupedInStockArray.length > 0 && (() => {
               const pezzi = groupedInStockArray.reduce((a: number, g: any) => a + g.quantity, 0);
               const costo = groupedInStockArray.reduce((a: number, g: any) => a + g.purchasePrice * g.quantity, 0);
-              const mercato = groupedInStockArray.reduce((a: number, g: any) => a + (g.marketPriceAvg || g.purchasePrice) * g.quantity, 0);
-              const potenziale = mercato - costo;
               return (
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-sm">
                   <span className="text-[var(--text-soft)]"><span className="font-bold text-[var(--text)] num">{pezzi}</span> pezzi · <span className="font-bold text-[var(--text)] num">{groupedInStockArray.length}</span> modelli</span>
-                  <span className="text-[var(--text-soft)]">Valore stock <span className="font-bold text-[var(--text)] num">{costo.toFixed(0)}€</span></span>
-                  {potenziale !== 0 && (
-                    <span className="text-[var(--text-soft)] sm:ml-auto">Profitto potenziale <span className={`font-bold num ${potenziale >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{potenziale >= 0 ? '+' : ''}{potenziale.toFixed(0)}€</span></span>
-                  )}
+                  <span className="text-[var(--text-soft)] sm:ml-auto">Valore stock <span className="font-bold text-[var(--text)] num">{costo.toFixed(0)}€</span></span>
                 </div>
               );
             })()}
@@ -2686,6 +2691,10 @@ export default function App() {
                             {g.totalFees > 0 && (
                               <span className="text-[10px] text-gray-700">· {g.totalFees.toFixed(0)}€ fee</span>
                             )}
+                            <button onClick={() => handleReturn(g)}
+                              className="ml-auto text-[10px] font-semibold text-[var(--text-faint)] hover:text-[var(--text)] transition-colors">
+                              ↩ Reso
+                            </button>
                           </div>
                         </div>
                       );
