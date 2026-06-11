@@ -313,6 +313,7 @@ export default function App() {
   const [filterCondition, setFilterCondition] = useState('all');
   const [filterPriceMin, setFilterPriceMin] = useState('');
   const [filterPriceMax, setFilterPriceMax] = useState('');
+  const [staleOnly, setStaleOnly] = useState(false); // filtro rapido "Fermi" (in stock da +30gg)
 
   // ----- DELETE PRODOTTO -----
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -900,6 +901,7 @@ export default function App() {
       const minP = parseFloat(filterPriceMin); const maxP = parseFloat(filterPriceMax);
       if (!isNaN(minP) && p.purchasePrice < minP) return false;
       if (!isNaN(maxP) && p.purchasePrice > maxP) return false;
+      if (staleOnly && !(p.createdAt && Math.floor((Date.now() - new Date(p.createdAt).getTime()) / 86400000) > 30)) return false;
       return true;
     });
     const grouped = Object.values(base.reduce((acc, p) => {
@@ -921,7 +923,7 @@ export default function App() {
       if (sortDir === 'asc') return av > bv ? 1 : -1;
       return av < bv ? 1 : -1;
     });
-  }, [searchedProducts, filterCondition, filterPriceMin, filterPriceMax, sortField, sortDir]);
+  }, [searchedProducts, filterCondition, filterPriceMin, filterPriceMax, sortField, sortDir, staleOnly]);
 
   const groupedSoldArray = Object.values(searchedProducts.filter(p => p.status === 'VENDUTO').reduce((acc, p) => {
     const cat = p.category || 'Scarpe';
@@ -2412,6 +2414,13 @@ export default function App() {
                       {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
                     </button>
                   ))}
+                  {/* Filtro rapido: Fermi (+30gg in stock) */}
+                  <button onClick={() => setStaleOnly(s => !s)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                      staleOnly ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                    }`}>
+                    <AlertTriangle size={12} /> Fermi
+                  </button>
                 </div>
                 {/* Condizione */}
                 <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
