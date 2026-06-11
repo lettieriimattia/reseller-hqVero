@@ -2107,11 +2107,11 @@ export default function App() {
         </nav>
       </header>
       
-      <main key={currentView} className="w-full px-4 lg:px-6 py-5 lg:py-8 pb-28 lg:pb-8 animate-fade-in">
+      <main key={currentView} className="w-full px-4 lg:px-8 py-5 lg:py-12 pb-28 lg:pb-16 animate-fade-in">
 
         {/* ========== DASHBOARD ========== */}
         {currentView === 'dashboard' && (
-          <div className="space-y-5">
+          <div className="space-y-5 lg:space-y-7">
 
             {/* Greeting — 3 colonne su desktop: giorno (sx) · saluto (centro) · stat (dx) */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -2397,7 +2397,7 @@ export default function App() {
         
         {/* ========== MAGAZZINO ========== */}
         {currentView === 'magazzino' && (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:space-y-5">
             {/* Riga 1: titolo + toggle IN STOCK/VENDUTI accanto, ricerca inline su desktop */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <div className="flex items-center gap-3 shrink-0">
