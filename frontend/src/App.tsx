@@ -3355,7 +3355,7 @@ export default function App() {
                     <p className="text-xs text-[var(--text-soft)] mt-1">Scegli il tema: scuro, chiaro o vetro.</p>
                   </div>
                 </div>
-                <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] shrink-0">
+                <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] shrink-0 self-center sm:self-auto">
                   <button onClick={() => setTheme('dark')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
                       theme === 'dark' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
