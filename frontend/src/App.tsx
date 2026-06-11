@@ -2128,9 +2128,40 @@ export default function App() {
               </div>
             </div>
 
-            {/* Smart Insights */}
-            {(staleCount > 0 || weekSales.length > 0 || bestCategoryEntry?.profit > 0) && (
-              <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+            {/* Andamento (desktop) + Insights — 2/3 + 1/3 su desktop per riempire la fascia */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:items-start">
+              {/* Grafico Andamento Vendite — solo desktop */}
+              <section className="hidden lg:flex lg:flex-col lg:col-span-2 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold">Andamento Vendite</h3>
+                  <div className="flex gap-1 bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)]">
+                    {(['1D', '1W', '1M', '1Y', 'MAX'] as const).map(tf => (
+                      <button key={tf} onClick={() => setChartTimeframe(tf)}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
+                          chartTimeframe === tf ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
+                        }`}>{tf}</button>
+                    ))}
+                  </div>
+                </div>
+                {trendData.length === 0 ? (
+                  <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
+                    <BarChart3 className="text-[var(--text-faint)] mb-3" size={36} />
+                    <p className="text-[var(--text-soft)] text-sm">Nessun dato per questo periodo</p>
+                  </div>
+                ) : (
+                  <Suspense fallback={<div className="h-[280px] flex items-center justify-center"><Loader2 className="animate-spin text-[var(--text-faint)]" size={28} /></div>}>
+                    <TrendChart trendData={trendData} />
+                  </Suspense>
+                )}
+                <div className="flex items-center gap-5 mt-3 justify-end">
+                  <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-green-500 rounded-full inline-block" />Ricavi</div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#ff4d00] rounded-full inline-block" />Profitto</div>
+                </div>
+              </section>
+
+              {/* Smart Insights */}
+              {(staleCount > 0 || weekSales.length > 0 || bestCategoryEntry?.profit > 0) && (
+              <section className="lg:col-span-1 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                 <p className="text-[9px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.12em] mb-4 flex items-center gap-2">
                   <Sparkles size={10} /> Insights
                 </p>
@@ -2185,7 +2216,8 @@ export default function App() {
                   )}
                 </div>
               </section>
-            )}
+              )}
+            </div>
 
             {/* Libro Paga Soci */}
             {Object.keys(sociProfits).length > 1 && (
