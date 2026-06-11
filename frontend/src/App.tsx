@@ -3562,14 +3562,29 @@ export default function App() {
       {/* ========== COMMAND PALETTE (⌘K / Ctrl+K) ========== */}
       {cmdOpen && (() => {
         const q = cmdQuery.trim().toLowerCase();
-        const navActions = [
+        const baseActions: any[] = [
           { key: 'nav-dashboard', icon: LayoutDashboard, label: 'Vai a Dashboard', sub: '', run: () => navigateTo('dashboard') },
           { key: 'nav-magazzino', icon: Package, label: 'Vai a Magazzino', sub: '', run: () => navigateTo('magazzino') },
           { key: 'nav-analytics', icon: BarChart3, label: 'Vai ad Analytics', sub: '', run: () => navigateTo('analytics') },
           { key: 'nav-tracking', icon: Truck, label: 'Vai a Tracking', sub: '', run: () => navigateTo('tracking') },
           { key: 'nav-settings', icon: Settings, label: 'Vai a Impostazioni', sub: '', run: () => navigateTo('settings') },
           { key: 'act-add', icon: Plus, label: 'Aggiungi prodotto', sub: 'Nuovo inserimento in magazzino', run: () => setIsFormOpen(true) },
-        ].filter(a => !q || a.label.toLowerCase().includes(q));
+        ];
+        // Azioni sui selezionati (quando sei in modalità selezione)
+        if (bulkMode && getBulkSelectedIds().length > 0) {
+          const n = getBulkSelectedIds().length;
+          baseActions.push(
+            { key: 'act-bulk-sell', icon: DollarSign, label: `Vendi selezionati (${n})`, sub: '', run: () => setBulkSellOpen(true) },
+            { key: 'act-bulk-del', icon: Trash2, label: `Elimina selezionati (${n})`, sub: '', run: () => setBulkDeleteConfirmOpen(true) },
+          );
+        }
+        baseActions.push(
+          { key: 'act-theme-dark', icon: Moon, label: 'Tema scuro', sub: '', run: () => setTheme('dark') },
+          { key: 'act-theme-light', icon: Sun, label: 'Tema chiaro', sub: '', run: () => setTheme('light') },
+          { key: 'act-theme-glass', icon: Sparkles, label: 'Tema vetro (glass)', sub: '', run: () => setTheme('glass') },
+          { key: 'act-logout', icon: LogOut, label: 'Esci', sub: '', run: () => handleLogout() },
+        );
+        const navActions = baseActions.filter(a => !q || a.label.toLowerCase().includes(q));
         const prodItems = (q.length > 0
           ? products.filter((p: any) => `${p.brand} ${p.name} ${p.size || ''} ${p.category || ''}`.toLowerCase().includes(q)).slice(0, 8)
           : []
