@@ -1990,16 +1990,19 @@ export default function App() {
       {/* ========== HEADER ========== */}
       <header className="sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)]"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="w-full max-w-[1280px] mx-auto px-4 lg:px-8 py-3.5 flex justify-between items-center">
+        <div className="w-full max-w-[1280px] mx-auto px-4 lg:px-8 py-3.5 flex items-center">
+          {/* Spacer sinistro per centrare il logo */}
+          <div className="flex-1" />
+          {/* Logo HQ centrato (come la mela) */}
           <div className="flex items-center">
-            {/* Staggered HQ logo */}
-            <div className="relative w-[1.6rem] h-[1.7rem] shrink-0 mr-2">
+            <div className="relative w-[1.6rem] h-[1.7rem] shrink-0">
               <span className="absolute top-0 left-0 text-[1.15rem] font-black leading-none text-[var(--text)]">H</span>
               <span className="absolute bottom-0 right-[-2px] text-[1.15rem] font-black leading-none text-[var(--text)]/50">Q</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          {/* Azioni a destra */}
+          <div className="flex-1 flex items-center justify-end gap-1.5">
             {/* Pulsante Aggiungi (solo desktop) */}
             <button onClick={() => setIsFormOpen(true)}
               className="hidden lg:flex items-center gap-2 bg-[#ff4d00] hover:bg-[#e84400] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
@@ -2115,18 +2118,14 @@ export default function App() {
 
             {/* Greeting — 3 colonne su desktop: giorno (sx) · saluto (centro) · stat (dx) */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              {/* Sinistra: giorno */}
-              <div className="sm:flex-1 min-w-0">
-                <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">{new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-              </div>
-              {/* Centro: saluto */}
+              {/* Sinistra: spacer per bilanciare e centrare il saluto */}
+              <div className="hidden sm:block sm:flex-1" />
+              {/* Centro: saluto + data */}
               <div className="sm:flex-1 sm:text-center min-w-0">
                 <h2 className="text-3xl lg:text-4xl font-bold">
                   Ciao, <span className="text-[var(--text)]">{user.name.split(' ')[0]}</span>
                 </h2>
-                <p className="hidden lg:block text-sm text-[var(--text-soft)] mt-2">
-                  Hai <span className="font-bold text-[var(--text)] num">{inStockItems.length}</span> pezzi in stock per <span className="font-bold text-[var(--text)] num">{stockValore.toFixed(0)}€</span> · <span className="font-bold text-emerald-400 num">{soldItemsTotal.length}</span> venduti
-                </p>
+                <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1.5 capitalize">{new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
               </div>
               {/* Destra: cluster stat — riempie l'header su desktop */}
               <div className="hidden sm:flex sm:flex-1 items-stretch justify-end gap-5 lg:gap-7">
@@ -2392,9 +2391,48 @@ export default function App() {
                 })}
               </div>
             </section>
+
+            {/* Spedizioni in corso */}
+            {(() => {
+              const active = products.filter((p: any) => p.trackingCode && ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING'));
+              const stLabel = (s?: string) => {
+                if (s === 'IN_TRANSIT') return { t: 'In transito', c: 'bg-blue-500/20 text-blue-400' };
+                if (s === 'OUT_FOR_DELIVERY') return { t: 'In consegna', c: 'bg-orange-500/20 text-orange-400' };
+                if (s === 'EXCEPTION') return { t: 'Eccezione', c: 'bg-red-500/20 text-red-400' };
+                return { t: 'In attesa', c: 'bg-[var(--fill)] text-[var(--text-soft)]' };
+              };
+              return (
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-[9px] font-semibold text-[var(--text-faint)] tracking-[0.12em] uppercase flex items-center gap-2"><Truck size={12} /> Spedizioni in corso{active.length > 0 ? ` (${active.length})` : ''}</p>
+                    <button onClick={() => navigateTo('tracking')} className="text-[10px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">Vedi tutto →</button>
+                  </div>
+                  {active.length === 0 ? (
+                    <p className="text-sm text-[var(--text-soft)] text-center py-4">Nessuna spedizione in corso</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {active.slice(0, 5).map((p: any) => {
+                        const st = stLabel(p.trackingStatus);
+                        return (
+                          <div key={p.id} onClick={() => navigateTo('tracking')}
+                            className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[var(--fill)] cursor-pointer transition-colors">
+                            <span className="text-xl shrink-0">{getCategoryIcon(p.category)}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold truncate">{p.brand} {p.name}</p>
+                              <p className="text-[10px] text-[var(--text-faint)] font-mono truncate">{p.trackingCarrier || 'Corriere'} · {p.trackingCode}</p>
+                            </div>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${st.c}`}>{st.t}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              );
+            })()}
           </div>
         )}
-        
+
         {/* ========== MAGAZZINO ========== */}
         {currentView === 'magazzino' && (
           <div className="space-y-3 lg:space-y-5">
