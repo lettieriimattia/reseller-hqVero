@@ -8,7 +8,9 @@ import {
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
   KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon,
-  Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal
+  Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal,
+  Footprints, Shirt, Watch, ShoppingBag, Gem, Glasses, SprayCan, Smartphone,
+  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp
 } from 'lucide-react';
 
 // ==========================================
@@ -837,19 +839,31 @@ export default function App() {
     setSellFees(autoFees.toFixed(2));
   }, [sellPrice, sellPlatform, sellPaymentMethod, sellModalOpen]);
   
+  // Icone reparto: lucide professionali (scalano col font-size grazie a size="1em").
+  // Match per parola chiave sul nome categoria, così funziona anche per reparti custom.
   const getCategoryIcon = (cat: any) => {
-    switch (cat?.toLowerCase()) {
-      case 'scarpe': return '👟';
-      case 'vestiti': return '👕';
-      case 'orologi': return '⌚';
-      case 'pokemon': return '🃏';
-      default: {
-        // Cerca emoji dal config AI del warehouse
-        const config = getCategoryConfig(cat);
-        if (config?.emoji) return config.emoji;
-        return '📦';
-      }
-    }
+    const n = (cat || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const pairs: [string[], any][] = [
+      [['scarp', 'sneaker', 'shoe', 'calzatur'], Footprints],
+      [['vestit', 'abbigliam', 'maglia', 'felpa', 'hoodie', 'shirt', 'giacc', 'cloth'], Shirt],
+      [['orolog', 'watch'], Watch],
+      [['pokemon', 'cart', 'card', 'tcg', 'magic', 'yugioh'], Layers],
+      [['bors', 'bag', 'pochette', 'zaino', 'tracoll'], ShoppingBag],
+      [['gioiell', 'bracc', 'anell', 'collan', 'jewel', 'orecchin'], Gem],
+      [['occhial', 'sunglass', 'eyewear', 'glasses'], Glasses],
+      [['wallet', 'portafogl', 'portacart'], Wallet],
+      [['profum', 'fragran', 'perfume'], SprayCan],
+      [['cosmetic', 'makeup', 'beauty', 'trucco', 'skincare'], Palette],
+      [['elettron', 'electron', 'tech', 'phone', 'telefon', 'smartphone', 'console'], Smartphone],
+      [['vinil', 'disco', 'dischi', 'vinyl', 'record'], Disc3],
+      [['collezion', 'funko', 'lego', 'giocattol', 'toy', 'figure'], ToyBrick],
+      [['monet', 'coin', 'numismat', 'banconot'], Coins],
+      [['fumett', 'libr', 'manga', 'comic', 'book', 'rivist'], BookOpen],
+      [['strument', 'chitarr', 'guitar', 'music', 'basso', 'piano'], Guitar],
+      [['francoboll', 'stamp', 'filatel'], Stamp],
+    ];
+    const Icon = pairs.find(([keys]) => keys.some(k => n.includes(k)))?.[1] || Package;
+    return <Icon size="1em" className="inline-block align-[-0.125em]" />;
   };
   
   const shoeSizes = Array.from({ length: 25 }, (_, i) => (36 + i * 0.5).toString());
