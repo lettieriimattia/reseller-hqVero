@@ -559,22 +559,27 @@ export default function App() {
 
   const enablePush = async () => {
     if (!pushSupported) { showToast('Le notifiche non sono supportate su questo dispositivo/browser', 'warn'); return; }
+    // Evita attese infinite: ogni passo ha un timeout
+    const withTimeout = <T,>(p: Promise<T>, ms: number, label: string): Promise<T> =>
+      Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout:' + label)), ms))]);
     setPushBusy(true);
     try {
       const perm = await Notification.requestPermission();
-      if (perm !== 'granted') { showToast('Permesso notifiche negato', 'warn'); setPushBusy(false); return; }
+      if (perm !== 'granted') { showToast('Permesso notifiche negato', 'warn'); return; }
       const { ok, data } = await apiCall<any>('/api/push/vapid-public');
-      if (!ok || !data?.key) { showToast('Push non ancora pronto lato server, riprova tra poco', 'err'); setPushBusy(false); return; }
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
+      if (!ok || !data?.key) { showToast('Push non ancora pronto lato server: attendi la fine del deploy e riprova', 'err'); return; }
+      const reg = await withTimeout(navigator.serviceWorker.ready, 8000, 'sw');
+      const existing = await reg.pushManager.getSubscription();
+      const sub = existing || await withTimeout(reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(data.key) as BufferSource,
-      });
+      }), 8000, 'subscribe');
       const res = await apiCall('/api/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON() }) });
       if (res.ok) { setPushEnabled(true); localStorage.setItem('pushEnabled', '1'); showToast('Notifiche attivate ✓'); }
-      else showToast('Errore attivazione notifiche', 'err');
+      else showToast('Errore salvataggio notifiche', 'err');
     } catch (err: any) {
-      showToast('Errore attivazione notifiche', 'err');
+      const msg = String(err?.message || '');
+      showToast(msg.startsWith('timeout') ? 'Tempo scaduto: ricarica la pagina (per aggiornare l\'app) e riprova' : 'Errore attivazione notifiche', 'err');
     } finally { setPushBusy(false); }
   };
 
