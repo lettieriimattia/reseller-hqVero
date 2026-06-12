@@ -278,3 +278,24 @@ model InventoryLog {
   @@index([userId])
   @@index([createdAt])
 }
+
+// ==========================================
+// FEEDBACK / RICHIESTE — Aiuto & Assistenza
+// L'utente invia una richiesta; l'admin la vede e risponde (la risposta
+// arriva via email all'utente). Vedi routes/feedback.ts e admin.ts.
+// ==========================================
+model Feedback {
+  id         String    @id @default(cuid())
+  userId     String?   // null se l'utente è stato eliminato
+  userEmail  String
+  userName   String?
+  type       String    @default("altro") // "bug" | "idea" | "domanda" | "altro"
+  message    String
+  status     String    @default("nuova")  // "nuova" | "risposta"
+  reply      String?   // testo della risposta dell'admin
+  repliedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}

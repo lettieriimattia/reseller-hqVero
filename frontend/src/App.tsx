@@ -414,6 +414,13 @@ export default function App() {
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const adminRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ADMIN_EMAIL = 'noreply.hq.app@gmail.com';
+  // Admin: vista corrente (Utenti / Richieste) + stato richieste
+  const [adminView, setAdminView] = useState<'users' | 'feedback'>('users');
+  const [adminFeedback, setAdminFeedback] = useState<any[]>([]);
+  const [adminFbNuove, setAdminFbNuove] = useState(0);
+  const [replyingId, setReplyingId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [replySending, setReplySending] = useState(false);
 
   const fetchAdminUsers = async () => {
     setAdminLoading(true);
@@ -421,6 +428,34 @@ export default function App() {
     if (ok) { setAdminUsers(data.users || []); setAdminLoaded(true); }
     else showToast(data?.error || 'Errore caricamento utenti admin', 'err');
     setAdminLoading(false);
+  };
+
+  const fetchAdminFeedback = async () => {
+    const { ok, data } = await apiCall('/admin/feedback');
+    if (ok) { setAdminFeedback(data.feedback || []); setAdminFbNuove(data.nuove || 0); }
+    else showToast(data?.error || 'Errore caricamento richieste', 'err');
+  };
+
+  const sendAdminReply = async (id: string) => {
+    const reply = replyText.trim();
+    if (reply.length < 2) { showToast('Scrivi una risposta', 'warn'); return; }
+    setReplySending(true);
+    const { ok, data } = await apiCall(`/admin/feedback/${id}/reply`, {
+      method: 'POST', body: JSON.stringify({ reply }),
+    });
+    setReplySending(false);
+    if (ok) {
+      setAdminFeedback(prev => prev.map(f => f.id === id ? data.feedback : f));
+      setAdminFbNuove(prev => Math.max(0, prev - 1));
+      setReplyingId(null); setReplyText('');
+      showToast('Risposta inviata via email ✓');
+    } else showToast(data?.error || 'Errore invio risposta', 'err');
+  };
+
+  const deleteAdminFeedback = async (id: string) => {
+    if (!confirm('Eliminare questa richiesta?')) return;
+    const { ok } = await apiCall(`/admin/feedback/${id}`, { method: 'DELETE' });
+    if (ok) setAdminFeedback(prev => prev.filter(f => f.id !== id));
   };
 
   const sendTestEmail = async () => {
@@ -497,8 +532,9 @@ export default function App() {
     if (!adminPanelOpen) {
       setAdminPanelOpen(true);
       if (!adminLoaded) await fetchAdminUsers();
+      fetchAdminFeedback();
       // Auto-refresh ogni 5 minuti quando il pannello è aperto
-      adminRefreshRef.current = setInterval(fetchAdminUsers, 5 * 60 * 1000);
+      adminRefreshRef.current = setInterval(() => { fetchAdminUsers(); fetchAdminFeedback(); }, 5 * 60 * 1000);
     } else {
       setAdminPanelOpen(false);
       if (adminRefreshRef.current) { clearInterval(adminRefreshRef.current); adminRefreshRef.current = null; }
@@ -3536,7 +3572,22 @@ export default function App() {
                       </div>
                     </div>
 
-                    {adminLoaded && (
+                    {/* Toggle vista: Utenti / Richieste */}
+                    <div className="px-5 py-3 flex gap-2 border-b border-[var(--border)]">
+                      <button onClick={() => setAdminView('users')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${adminView === 'users' ? 'bg-[#ff4d00] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                        Utenti
+                      </button>
+                      <button onClick={() => { setAdminView('feedback'); fetchAdminFeedback(); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'feedback' ? 'bg-[#ff4d00] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                        Richieste
+                        {adminFbNuove > 0 && (
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'feedback' ? 'bg-white/25' : 'bg-[#ff4d00] text-white'}`}>{adminFbNuove}</span>
+                        )}
+                      </button>
+                    </div>
+
+                    {adminView === 'users' && adminLoaded && (
                       <>
                         {/* KPI */}
                         <div className="grid grid-cols-2 border-b border-[var(--border)]">
@@ -3580,7 +3631,66 @@ export default function App() {
                       </>
                     )}
 
-                    {!adminLoaded && adminLoading && (
+                    {/* Vista RICHIESTE */}
+                    {adminView === 'feedback' && (
+                      <div className="divide-y divide-[var(--border)] max-h-[28rem] overflow-y-auto">
+                        {adminFeedback.length === 0 ? (
+                          <p className="p-6 text-center text-xs text-[var(--text-faint)]">Nessuna richiesta al momento.</p>
+                        ) : adminFeedback.map(f => (
+                          <div key={f.id} className="px-4 py-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)]">{f.type}</span>
+                                  {f.status === 'nuova'
+                                    ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#ff4d00] text-white font-bold">nuova</span>
+                                    : <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 font-bold">risposta</span>}
+                                  <span className="text-[11px] font-semibold truncate">{f.userName || f.userEmail}</span>
+                                </div>
+                                <p className="text-[10px] text-[var(--text-faint)]">{f.userEmail} · {new Date(f.createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                              </div>
+                              <button onClick={() => deleteAdminFeedback(f.id)}
+                                className="p-1 hover:bg-red-500/10 rounded-lg transition-colors shrink-0">
+                                <Trash2 size={13} className="text-red-500/40 hover:text-red-400" />
+                              </button>
+                            </div>
+                            <p className="text-sm text-[var(--text)] mt-2 whitespace-pre-wrap break-words">{f.message}</p>
+
+                            {f.reply && (
+                              <div className="mt-2 bg-[var(--surface-2)] border-l-2 border-green-500/40 rounded-r-lg px-3 py-2">
+                                <p className="text-[9px] uppercase font-bold text-green-400 mb-1">La tua risposta</p>
+                                <p className="text-xs text-[var(--text-muted)] whitespace-pre-wrap break-words">{f.reply}</p>
+                              </div>
+                            )}
+
+                            {replyingId === f.id ? (
+                              <div className="mt-2">
+                                <textarea value={replyText} onChange={(e: any) => setReplyText(e.target.value)}
+                                  rows={3} maxLength={6000} autoFocus
+                                  placeholder={`Rispondi a ${f.userEmail}…`}
+                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm focus:border-[#ff4d00] outline-none resize-none" />
+                                <div className="flex items-center justify-end gap-2 mt-2">
+                                  <button onClick={() => { setReplyingId(null); setReplyText(''); }}
+                                    className="px-3 py-1.5 text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors">Annulla</button>
+                                  <button onClick={() => sendAdminReply(f.id)} disabled={replySending || replyText.trim().length < 2}
+                                    className="px-4 py-1.5 bg-[#ff4d00] hover:bg-[#ff6a2a] rounded-lg text-xs font-bold transition-colors disabled:opacity-40 flex items-center gap-1.5">
+                                    {replySending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
+                                    Invia via email
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button onClick={() => { setReplyingId(f.id); setReplyText(f.reply || ''); }}
+                                className="mt-2 text-xs font-bold text-[#ff4d00] hover:text-[#ff6a2a] transition-colors">
+                                {f.reply ? 'Modifica risposta' : '↩ Rispondi'}
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {adminView === 'users' && !adminLoaded && adminLoading && (
                       <div className="p-6 flex justify-center">
                         <Loader2 size={20} className="animate-spin text-[var(--text-faint)]" />
                       </div>
