@@ -3,6 +3,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
+import { sendPushToUser } from './push.service';
 
 const prisma = new PrismaClient();
 
@@ -18,7 +19,10 @@ interface NotifyInput {
 
 export async function notify(input: NotifyInput) {
   try {
-    return await prisma.notification.create({ data: input });
+    const n = await prisma.notification.create({ data: input });
+    // Push al dispositivo (best-effort, non blocca)
+    sendPushToUser(input.userId, { title: input.title, body: input.message, url: input.link }).catch(() => {});
+    return n;
   } catch (err) {
     logger.error('Errore creazione notifica', { err, input });
     return null;
@@ -51,6 +55,8 @@ export async function notifyWarehouseMembers(params: {
         ...rest,
       })),
     });
+    // Push a ogni membro (best-effort)
+    memberships.forEach(m => sendPushToUser(m.userId, { title: rest.title, body: rest.message, url: rest.link }).catch(() => {}));
   } catch (err) {
     logger.error('Errore broadcast notifiche', { err, warehouseId });
   }
@@ -90,6 +96,7 @@ export async function notifyTeam(params: {
         ...rest,
       })),
     });
+    teamMembers.forEach(m => sendPushToUser(m.userId, { title: rest.title, body: rest.message, url: rest.link }).catch(() => {}));
   } catch (err) {
     logger.error('Errore notifica team', { err, fromUserId });
   }

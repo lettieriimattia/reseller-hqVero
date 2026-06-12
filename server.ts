@@ -27,6 +27,8 @@ import analyticsRoutes from './src/routes/analytics';
 import shippingRoutes from './src/routes/shipping';
 import uploadRoutes from './src/routes/upload';
 import feedbackRoutes from './src/routes/feedback';
+import pushRoutes from './src/routes/push';
+import { initPush } from './src/services/push.service';
 import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
 import { startEmailJobs } from './src/services/email-jobs.service';
@@ -202,6 +204,7 @@ app.use('/analytics', analyticsRoutes);
 app.use('/shipping', shippingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/push', pushRoutes);
 
 // ==========================================
 // SPA FALLBACK + 404
@@ -269,8 +272,13 @@ serverInstance.listen(PORT, () => {
   if (tlsOptions) logger.info('🔒 HTTPS attivo con certificato locale');
   logger.info(`   CORS permesso da: ${allowedOrigins.join(', ')} + rete locale 192.168.x.x`);
 
-  // Job email automatiche (prodotti fermi ogni 2 settimane + consegna)
-  startEmailJobs();
+  // Web Push: carica/genera le chiavi VAPID
+  initPush();
+
+  // Email solo per cose importanti (password, account, risposte assistenza):
+  // le notifiche operative (prodotti fermi, ecc.) vanno via push/in-app, non email.
+  // (Job email ricorrente "prodotti fermi" disattivato di proposito.)
+  void startEmailJobs;
 
   // Pilastro 2: Cleanup reservation scadute ogni minuto.
   // Se una reservation non viene completata entro 15 min, il prodotto torna IN STOCK.

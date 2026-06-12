@@ -164,6 +164,16 @@ async function compressImage(file: File, maxSize = 1024, quality = 0.5): Promise
 // Sentinella "modalità automatica": l'IA rileva la categoria dalla foto
 const AUTO_CATEGORY = '__AUTO__';
 
+// Converte la chiave VAPID (base64url) in Uint8Array per pushManager.subscribe
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
 // ==========================================
 // COMPONENTE PRINCIPALE
 // ==========================================
@@ -419,6 +429,10 @@ export default function App() {
   const [feedbackMsg, setFeedbackMsg] = useState('');
   const [feedbackSending, setFeedbackSending] = useState(false);
 
+  // ----- NOTIFICHE PUSH -----
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+
   // ----- ADMIN -----
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [adminLoading, setAdminLoading] = useState(false);
@@ -538,6 +552,45 @@ export default function App() {
     } else {
       showToast(data.error || 'Invio non riuscito', 'err');
     }
+  };
+
+  // ===== NOTIFICHE PUSH =====
+  const pushSupported = typeof navigator !== 'undefined' && 'serviceWorker' in navigator && typeof window !== 'undefined' && 'PushManager' in window;
+
+  const enablePush = async () => {
+    if (!pushSupported) { showToast('Le notifiche non sono supportate su questo dispositivo/browser', 'warn'); return; }
+    setPushBusy(true);
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') { showToast('Permesso notifiche negato', 'warn'); setPushBusy(false); return; }
+      const { ok, data } = await apiCall<any>('/api/push/vapid-public');
+      if (!ok || !data?.key) { showToast('Push non ancora pronto lato server, riprova tra poco', 'err'); setPushBusy(false); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(data.key) as BufferSource,
+      });
+      const res = await apiCall('/api/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON() }) });
+      if (res.ok) { setPushEnabled(true); localStorage.setItem('pushEnabled', '1'); showToast('Notifiche attivate ✓'); }
+      else showToast('Errore attivazione notifiche', 'err');
+    } catch (err: any) {
+      showToast('Errore attivazione notifiche', 'err');
+    } finally { setPushBusy(false); }
+  };
+
+  const disablePush = async () => {
+    setPushBusy(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await apiCall('/api/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint: sub.endpoint }) });
+        await sub.unsubscribe().catch(() => {});
+      }
+      setPushEnabled(false); localStorage.removeItem('pushEnabled');
+      showToast('Notifiche disattivate');
+    } catch { showToast('Errore', 'err'); }
+    finally { setPushBusy(false); }
   };
 
   const toggleAdminPanel = async () => {
@@ -840,6 +893,16 @@ export default function App() {
       } catch { /* ignora */ }
       window.history.replaceState({}, '', '/');
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
+
+  // Rileva se le notifiche push sono già attive su questo dispositivo
+  useEffect(() => {
+    if (!isAuthenticated || !pushSupported) return;
+    navigator.serviceWorker.ready
+      .then(reg => reg.pushManager.getSubscription())
+      .then(sub => { if (sub && Notification.permission === 'granted') setPushEnabled(true); })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
@@ -3708,6 +3771,32 @@ export default function App() {
         {currentView === 'settings' && (
           <div className="space-y-5">
             <h2 className="text-3xl font-semibold">Impostazioni</h2>
+
+            {/* SEZIONE: Notifiche push */}
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <Bell className={pushEnabled ? 'text-[#ff4d00] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
+                  <div>
+                    <h3 className="text-lg font-bold tracking-tighter">Notifiche</h3>
+                    <p className="text-xs text-[var(--text-soft)] mt-1">
+                      {pushEnabled
+                        ? '✓ Attive su questo dispositivo: vendite, spedizioni e avvisi anche ad app chiusa.'
+                        : 'Ricevi avvisi (vendite, spedizioni, prodotti fermi) direttamente sul dispositivo.'}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => pushEnabled ? disablePush() : enablePush()} disabled={pushBusy || !pushSupported}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap disabled:opacity-40 ${
+                    pushEnabled ? 'bg-red-600/20 hover:bg-red-600/30 text-red-400' : 'bg-[#ff4d00] hover:bg-[#ff6a2a] text-white'
+                  }`}>
+                  {pushBusy ? <Loader2 size={14} className="animate-spin" /> : pushEnabled ? 'Disattiva' : 'Attiva'}
+                </button>
+              </div>
+              {!pushSupported && (
+                <p className="text-[10px] text-[var(--text-faint)] mt-3">Su iPhone le notifiche funzionano solo se aggiungi l'app alla schermata Home.</p>
+              )}
+            </section>
 
             {/* SEZIONE: Prodotti Fermi */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">

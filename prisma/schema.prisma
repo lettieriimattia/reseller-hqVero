@@ -299,3 +299,23 @@ model Feedback {
   @@index([status])
   @@index([createdAt])
 }
+
+// ==========================================
+// PUSH — notifiche push (Web Push) per dispositivo/browser
+// ==========================================
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Config app key/value (es. chiavi VAPID generate al primo avvio)
+model Setting {
+  key   String @id
+  value String
+}
