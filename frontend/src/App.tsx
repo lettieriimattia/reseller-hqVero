@@ -4097,7 +4097,9 @@ export default function App() {
                   <span className="text-[10px] text-[var(--text-soft)]">{productPhotos.length}/5 foto</span>
                 </div>
                 <p className="text-[10px] text-[var(--text-muted)] mb-3">
-                  Aggiungi 1–5 foto. La prima scatena l'IA che riconosce brand e modello. Puoi ri-scansionare qualsiasi foto.
+                  {category === AUTO_CATEGORY
+                    ? "Scatta o carica una foto: l'IA capisce categoria, brand e modello e prepara i campi giusti."
+                    : "Aggiungi 1–5 foto. La prima scatena l'IA che riconosce brand e modello. Puoi ri-scansionare qualsiasi foto."}
                 </p>
 
                 {/* Griglia foto */}
