@@ -4169,6 +4169,11 @@ export default function App() {
                         format: 'Formato', catalogNumber: 'Catalogo', pressing: 'Stampa',
                         itemNumber: 'Numero', series: 'Serie', exclusive: 'Esclusiva', style: 'Stile',
                         hatSize: 'Taglia',
+                        country: 'Paese', denomination: 'Valore', year: 'Anno', mintMark: 'Zecca',
+                        productType: 'Prodotto', shade: 'Tonalità', volume: 'Volume',
+                        instrumentType: 'Strumento', finish: 'Finitura',
+                        publisher: 'Editore', issueNumber: 'Numero', edition: 'Edizione',
+                        isbn: 'ISBN', stampCondition: 'Stato', catalogRef: 'Catalogo',
                       };
                       const SKIP = new Set(['notes', 'logoDescription', 'authenticityMarkers', 'rawText', 'priceRange', 'luxuryMarkers']);
                       const rows = Object.entries(d).filter(([k, v]) =>

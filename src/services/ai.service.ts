@@ -868,6 +868,36 @@ AUTENTICITÀ: fibbia pesante con logo inciso nitido, fori rifiniti, blind stamp+
     knowledge: `FUNKO POP: numero sul box (in basso a destra), nome personaggio + serie/licenza, esclusive (Funko Shop/Hot Topic/SDCC/NYCC con sticker), Chase variant (sticker verde), Vaulted (fuori produzione). LEGO: numero set (4-5 cifre), nome set/tema (Star Wars/Technic/Creator/Icons/Modular), pezzi, sigillato (MISB) vs aperto/completo. FIGURE: Bandai (S.H.Figuarts, Ichiban Kuji), Hot Toys (1/6 scale), Nendoroid, statue Prime 1/Sideswipe. Memorabilia: autografi, edizioni limitate. Leggi: nome, numero, serie, stato scatola (sigillato/danni angoli).`,
     fields: `"itemNumber": "numero Funko/set LEGO o null", "series": "serie/licenza (es Star Wars, Marvel) o null", "exclusive": "esclusiva/chase/variant se presente o null", "sealed": "true|false (sigillato in scatola)"`,
   },
+  {
+    keys: ['monet', 'coin', 'numismat', 'banconot', 'banknote', 'valuta'],
+    label: 'monete e banconote (numismatica)',
+    knowledge: `Identifica: Paese/autorità emittente, valore nominale (denominazione), ANNO/data, zecca (mint mark), metallo (oro/argento/rame-nichel), conio commemorativo vs corrente. EURO: 2€ commemorativi (Paese + tema + anno, alcuni rari es. Monaco 2007 Grace Kelly, San Marino, Vaticano), serie divisionali. Monete storiche: Lire italiane, monete antiche (romane/greche — descrivi soggetto). Banconote: serie, firma, numero di serie, condizione (UNC/FDS, SPL, BB). Grading: NGC/PCGS (slab + voto MS/PR). Condizione numismatica: FDC/FS, SPL, BB, MB.`,
+    fields: `"country": "Paese emittente o null", "denomination": "valore nominale o null", "year": "anno o null", "mintMark": "zecca o null", "metal": "metallo o null", "graded": "grading (es NGC MS65) o null"`,
+  },
+  {
+    keys: ['fumett', 'comic', 'manga', 'libr', 'book', 'rivist', 'albo'],
+    label: 'fumetti, manga e libri',
+    knowledge: `FUMETTI/COMICS: editore (Marvel/DC/Bonelli/Panini), testata + numero albo, prima apparizione/key issue (es. prime apparizioni di personaggi — molto ricercate), variant cover, anno. MANGA: serie, numero volume, editore (Star Comics/Planet Manga/J-Pop), prima edizione vs ristampa, lingua. LIBRI: titolo, autore, editore, prima edizione (controlla colophon/linea numerica "1" e anno), ISBN, copia firmata, copertina rigida/brossura. Grading fumetti: CGC/CBCS (slab + voto). Condizione: edicola/NM/VF/FN/buono.`,
+    fields: `"publisher": "editore o null", "title": "titolo/serie o null", "issueNumber": "numero albo/volume o null", "edition": "prima edizione|ristampa|null", "graded": "grading CGC/CBCS se in slab o null", "isbn": "ISBN se leggibile o null"`,
+  },
+  {
+    keys: ['cosmetic', 'makeup', 'make-up', 'skincare', 'crema', 'rossett', 'beauty', 'trucco'],
+    label: 'cosmetici, makeup e skincare',
+    knowledge: `BRAND: lusso (Chanel, Dior, La Mer, La Prairie, Tom Ford Beauty, Charlotte Tilbury, Pat McGrath), mid (MAC, Estée Lauder, Lancôme, NARS, Fenty Beauty, Rare Beauty, Drunk Elephant, The Ordinary), edizioni limitate/collab. Identifica: prodotto (fondotinta/rossetto/palette/siero/crema), tonalità/shade (numero o nome), formato/volume (ml/g), batch code (per scadenza/PAO), sigillato vs usato + % rimanente. PAO = mesi dopo apertura (simbolo vasetto aperto "12M").`,
+    fields: `"productType": "tipo (rossetto/siero/palette...) o null", "shade": "tonalità/shade o null", "volume": "ml/g o null", "sealed": "true|false", "batchCode": "batch code o null"`,
+  },
+  {
+    keys: ['strument', 'chitarr', 'guitar', 'basso', 'piano', 'tastier', 'violin', 'music', 'amplificat', 'pedal', 'synth'],
+    label: 'strumenti musicali',
+    knowledge: `CHITARRE/BASSI: brand (Fender, Gibson, Ibanez, PRS, Gretsch, Music Man), modello (Stratocaster, Telecaster, Les Paul, SG, Jazzmaster), serial number (su paletta/retro — indica anno/fabbrica: USA/Mexico/Japan), pickups, finitura/colore, anno. AMPLI: Marshall, Fender, Vox, Mesa Boogie. PEDALI: Boss, Strymon, Electro-Harmonix, Ibanez Tube Screamer. TASTIERE/SYNTH: Roland, Korg, Nord, Moog, Yamaha. Leggi: brand, modello, serial, condizione, accessori (case/manuale).`,
+    fields: `"instrumentType": "tipo (chitarra elettrica/basso/synth/pedale...) o null", "serial": "serial number o null", "year": "anno/periodo se deducibile dal serial o null", "finish": "finitura/colore o null"`,
+  },
+  {
+    keys: ['francoboll', 'stamp', 'filatel'],
+    label: 'francobolli (filatelia)',
+    knowledge: `Identifica: Paese, valore nominale, anno/emissione, soggetto, dentellatura, nuovo (MNH/linguellato) vs usato (annullato), serie/foglietto, eventuali errori di stampa (molto ricercati). Italia: Regno, Repubblica, Vaticano, San Marino. Condizione filatelica: MNH (** integro), MH (* linguellato), usato. Cataloghi: Sassone, Michel, Scott.`,
+    fields: `"country": "Paese o null", "denomination": "valore nominale o null", "year": "anno o null", "stampCondition": "MNH|MH|usato|null", "catalogRef": "riferimento catalogo (Sassone/Michel) o null"`,
+  },
 ];
 
 // Normalizza per match robusto (minuscolo, niente accenti)
