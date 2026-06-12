@@ -37,28 +37,27 @@
   --surface-blur: rgba(14,14,14,0.95);
 }
 
-/* ===== TEMA CHIARO ===== */
+/* ===== TEMA CHIARO — palette Apple ===== */
 .light {
-  /* Palette morbida, NON accecante: sfondo grigio-perla caldo, card off-white
-     (mai bianco puro) così la luminanza resta bassa e riposante per gli occhi,
-     ma le card si staccano comunque dallo sfondo grazie a bordo + leggero stacco. */
-  --bg: #e4e4ea;
-  --surface: #f0f0f4;
-  --surface-2: #e8e8ee;
-  --border: rgba(0,0,0,0.10);
-  --border-2: rgba(0,0,0,0.14);
-  --border-3: rgba(0,0,0,0.20);
-  /* Testi più scuri per leggibilità (prezzi quasi neri) */
-  --text: #18181b;
-  --text-soft: #3f3f46;
-  --text-muted: #27272a;
-  --text-faint: #52525b;
-  --fill: rgba(0,0,0,0.05);
-  --fill-2: rgba(0,0,0,0.08);
-  --fill-3: rgba(0,0,0,0.14);
-  --bg-blur: rgba(228,228,234,0.85);
-  --bg-overlay: rgba(228,228,234,0.70);
-  --surface-blur: rgba(240,240,244,0.90);
+  /* Esattamente i colori di apple.com: sfondo grigio #f5f5f7, card bianche #fff,
+     testo near-black #1d1d1f e i grigi secondari di Apple (#6e6e73 / #86868b).
+     Non "acceca" perché il bianco puro è solo sulle card, su base grigia. */
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface-2: #f5f5f7;
+  --border: rgba(0,0,0,0.08);
+  --border-2: #d2d2d7;
+  --border-3: rgba(0,0,0,0.22);
+  --text: #1d1d1f;
+  --text-soft: #6e6e73;
+  --text-muted: #424245;
+  --text-faint: #86868b;
+  --fill: rgba(0,0,0,0.04);
+  --fill-2: rgba(0,0,0,0.07);
+  --fill-3: rgba(0,0,0,0.12);
+  --bg-blur: rgba(245,245,247,0.85);
+  --bg-overlay: rgba(245,245,247,0.70);
+  --surface-blur: rgba(255,255,255,0.90);
 }
 
 /* ===== TEMA CHIARO: colori semantici accentati =====
