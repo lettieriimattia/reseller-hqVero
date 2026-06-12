@@ -4081,9 +4081,46 @@ export default function App() {
                       'bg-red-500/10 text-red-400'
                     }`}>
                       <span className="font-bold">Riconoscimento: {scanResult.confidence}</span>
+                      {scanResult.autoDetected && scanResult.detectedCategory && (
+                        <p className="opacity-90">Categoria rilevata: <b>{scanResult.detectedCategory}</b></p>
+                      )}
                       {scanResult.brand && <p>{scanResult.brand} {scanResult.model}</p>}
                       {scanResult.warnings?.map((w: any, i: number) => <p key={i}>⚠️ {w}</p>)}
                     </div>
+                    {/* Tabella dinamica: attributi estratti dall'IA */}
+                    {(() => {
+                      const d = scanResult.details || {};
+                      const LABELS: Record<string, string> = {
+                        type: 'Tipo', material: 'Materiale', color: 'Colore', size: 'Taglia/Misura',
+                        condition: 'Condizione', collaboration: 'Collab', styleCode: 'Codice',
+                        metal: 'Metallo', hallmark: 'Punzone', stones: 'Pietre', serial: 'Seriale',
+                        serialNumber: 'Seriale', lensType: 'Lenti', frameMaterial: 'Montatura',
+                        lensColor: 'Colore lenti', modelCode: 'Cod. modello', pattern: 'Pattern',
+                        dateCode: 'Data code', hardwareColor: 'Hardware', sizeName: 'Misura',
+                        buckleType: 'Fibbia', beltSize: 'Taglia', concentration: 'Concentr.',
+                        volumeMl: 'Volume', batchCode: 'Batch', storage: 'Memoria',
+                        modelNumber: 'Modello', generation: 'Gen.', game: 'Gioco', rarity: 'Rarità',
+                        graded: 'Grading', cardNumber: 'Numero', artist: 'Artista', title: 'Titolo',
+                        format: 'Formato', catalogNumber: 'Catalogo', pressing: 'Stampa',
+                        itemNumber: 'Numero', series: 'Serie', exclusive: 'Esclusiva', style: 'Stile',
+                        hatSize: 'Taglia',
+                      };
+                      const SKIP = new Set(['notes', 'logoDescription', 'authenticityMarkers', 'rawText', 'priceRange', 'luxuryMarkers']);
+                      const rows = Object.entries(d).filter(([k, v]) =>
+                        !SKIP.has(k) && (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') &&
+                        String(v).trim() && String(v).toLowerCase() !== 'null' && String(v).toLowerCase() !== 'false'
+                      ).slice(0, 8);
+                      return rows.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 p-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)]">
+                          {rows.map(([k, v]) => (
+                            <div key={k} className="flex justify-between gap-2 min-w-0">
+                              <span className="text-[var(--text-faint)] shrink-0">{LABELS[k] || k}</span>
+                              <span className="text-[var(--text-muted)] font-medium text-right truncate">{v === true ? 'Sì' : String(v)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 )}
               </div>
