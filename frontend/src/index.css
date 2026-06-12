@@ -39,11 +39,12 @@
 
 /* ===== TEMA CHIARO ===== */
 .light {
-  /* Sfondo grigio tenue (non bianco accecante), card bianco morbido:
-     così le card si distinguono bene dallo sfondo */
-  --bg: #e7e7ec;
-  --surface: #fbfbfd;
-  --surface-2: #eeeef2;
+  /* Palette morbida, NON accecante: sfondo grigio-perla caldo, card off-white
+     (mai bianco puro) così la luminanza resta bassa e riposante per gli occhi,
+     ma le card si staccano comunque dallo sfondo grazie a bordo + leggero stacco. */
+  --bg: #e4e4ea;
+  --surface: #f0f0f4;
+  --surface-2: #e8e8ee;
   --border: rgba(0,0,0,0.10);
   --border-2: rgba(0,0,0,0.14);
   --border-3: rgba(0,0,0,0.20);
@@ -55,9 +56,9 @@
   --fill: rgba(0,0,0,0.05);
   --fill-2: rgba(0,0,0,0.08);
   --fill-3: rgba(0,0,0,0.14);
-  --bg-blur: rgba(231,231,236,0.85);
-  --bg-overlay: rgba(231,231,236,0.70);
-  --surface-blur: rgba(251,251,253,0.90);
+  --bg-blur: rgba(228,228,234,0.85);
+  --bg-overlay: rgba(228,228,234,0.70);
+  --surface-blur: rgba(240,240,244,0.90);
 }
 
 /* ===== TEMA CHIARO: colori semantici accentati =====
