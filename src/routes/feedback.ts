@@ -9,6 +9,7 @@ import { aiLimiter } from '../middleware/rateLimit';
 import { sendEmail } from '../services/email.service';
 import { logger } from '../utils/logger';
 import { PrismaClient } from '@prisma/client';
+import { ADMIN_EMAIL } from './admin';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -39,9 +40,8 @@ router.post('/', async (req: AuthRequest, res: Response) => {
     });
 
     // Notifica all'admin (best-effort, non blocca la risposta)
-    const adminEmail = process.env.ADMIN_EMAIL || 'noreply.hq.app@gmail.com';
     sendEmail({
-      to: adminEmail,
+      to: ADMIN_EMAIL,
       subject: `[HQ · nuova richiesta · ${kind}] da ${userEmail}`,
       text: `Tipo: ${kind}\nDa: ${userName || ''} <${userEmail}>\n\n${msg}`,
     }).catch(() => {});

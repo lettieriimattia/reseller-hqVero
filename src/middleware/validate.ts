@@ -23,7 +23,7 @@ export const validate = (schema: ZodSchema) => (req: Request, res: Response, nex
 // SCHEMI - AUTH
 // ==========================================
 export const registerSchema = z.object({
-  email: z.string().email('Email non valida').toLowerCase().max(255),
+  email: z.string().trim().toLowerCase().email('Email non valida').max(255),
   password: z.string().min(10, 'Password troppo corta').max(128),
   name: z.string().min(2, 'Nome troppo corto').max(50)
     .regex(/^[\p{L}\s'\-\.]+$/u, 'Nome contiene caratteri non validi'),
@@ -36,7 +36,7 @@ export const registerSchema = z.object({
 );
 
 export const loginSchema = z.object({
-  email: z.string().email().toLowerCase().max(255),
+  email: z.string().trim().toLowerCase().email().max(255),
   password: z.string().min(1).max(128),
   twoFactorCode: z.string().regex(/^\d{6}$/).optional(),
 });

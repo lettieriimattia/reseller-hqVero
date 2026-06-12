@@ -10,10 +10,13 @@ import { sendEmail } from '../services/email.service';
 const router = Router();
 const prisma = new PrismaClient();
 
-// Middleware: solo admin
+// L'UNICO account admin. Hard-coded (NON modificabile via env) così nessuna
+// configurazione errata o variabile d'ambiente può concedere admin ad altri.
+export const ADMIN_EMAIL = 'noreply.hq.app@gmail.com';
+
+// Middleware: solo l'account admin
 function requireAdmin(req: AuthRequest, res: Response, next: any) {
-  const adminEmail = (process.env.ADMIN_EMAIL || 'noreply.hq.app@gmail.com').toLowerCase();
-  if (req.user?.email?.toLowerCase() !== adminEmail) {
+  if (req.user?.email?.toLowerCase() !== ADMIN_EMAIL) {
     return res.status(403).json({ error: 'Accesso riservato.' });
   }
   next();
