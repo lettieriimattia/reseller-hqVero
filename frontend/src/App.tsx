@@ -8,7 +8,7 @@ import {
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
   KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon,
-  Image as ImageIcon
+  Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal
 } from 'lucide-react';
 
 // ==========================================
@@ -216,7 +216,7 @@ export default function App() {
   }, [theme]);
 
   // ----- UI STATE -----
-  const [currentView, setCurrentView] = useState<'dashboard' | 'magazzino' | 'analytics' | 'tracking' | 'settings'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'magazzino' | 'analytics' | 'tracking' | 'settings' | 'admin'>('dashboard');
   const [magazzinoView, setMagazzinoView] = useState<'instock' | 'sold'>('instock');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
@@ -791,7 +791,15 @@ export default function App() {
     const staleInterval = setInterval(checkStaleProducts, 60 * 60 * 1000);
     return () => { clearInterval(interval); clearInterval(staleInterval); };
   }, [isAuthenticated, fetchProducts, fetchTeam, fetchNotifications, checkStaleProducts]);
-  
+
+  // Admin: badge richieste sempre aggiornato; carica dati quando si entra nella pagina Admin
+  useEffect(() => {
+    if (!isAuthenticated || user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) return;
+    fetchAdminFeedback();
+    if (currentView === 'admin' && !adminLoaded) fetchAdminUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, currentView, user]);
+
   useEffect(() => {
     if (userCategories.length > 0 && category === '') setCategory(userCategories[0]);
     if (category === 'Scarpe') setSize('42');
@@ -2199,6 +2207,16 @@ export default function App() {
               )}
             </div>
 
+            {user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+              <button onClick={() => navigateTo('admin')} title="Admin"
+                className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors relative">
+                <Shield size={18} className={currentView === 'admin' ? 'text-[#ff4d00]' : 'text-[var(--text-muted)]'} />
+                {adminFbNuove > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#ff4d00] text-white rounded-full text-[9px] font-bold flex items-center justify-center">{adminFbNuove}</span>
+                )}
+              </button>
+            )}
+
             <button onClick={() => navigateTo('settings')}
               className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors hidden sm:block">
               <Settings size={18} className="text-[var(--text-muted)]" />
@@ -3523,183 +3541,6 @@ export default function App() {
           <div className="space-y-5">
             <h2 className="text-3xl font-semibold">Impostazioni</h2>
 
-            {/* ===== PANNELLO ADMIN (collassabile) ===== */}
-            {user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
-              <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
-                {/* Header sempre visibile — click per aprire/chiudere */}
-                <button onClick={toggleAdminPanel}
-                  className="w-full p-5 flex items-center justify-between hover:bg-[var(--fill)] transition-colors">
-                  <div className="flex items-center gap-2">
-                    <Shield size={15} className="text-[var(--text-soft)]" />
-                    <span className="font-semibold text-sm">Admin</span>
-                    {adminLoaded && (
-                      <span className="text-[10px] bg-[var(--fill)] text-[var(--text-soft)] px-2 py-0.5 rounded-full">
-                        {adminUsers.length} utenti
-                      </span>
-                    )}
-                    {adminPanelOpen && adminLoaded && (
-                      <span className="text-[9px] text-green-500/60 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 inline-block" />
-                        live
-                      </span>
-                    )}
-                  </div>
-                  <ChevronDown size={16} className={`text-[var(--text-faint)] transition-transform duration-200 ${adminPanelOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Contenuto collassabile */}
-                {adminPanelOpen && (
-                  <div className="border-t border-[var(--border)]">
-                    {/* Toolbar */}
-                    <div className="px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-[var(--border)]">
-                      <p className="text-[10px] text-[var(--text-faint)]">Auto-aggiornamento ogni 5 min</p>
-                      <div className="flex flex-wrap gap-2">
-                        <button onClick={sendTestEmail}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--fill)] hover:bg-[var(--fill)] rounded-xl text-xs font-semibold transition-colors">
-                          <Mail size={12} /> Test Email
-                        </button>
-                        {adminLoaded && (
-                          <button onClick={exportAdminExcel}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--fill)] hover:bg-[var(--fill)] rounded-xl text-xs font-semibold transition-colors">
-                            <Download size={12} /> Excel
-                          </button>
-                        )}
-                        <button onClick={fetchAdminUsers} disabled={adminLoading}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--fill)] hover:bg-[var(--fill-2)] rounded-xl text-xs font-semibold transition-colors disabled:opacity-40">
-                          {adminLoading ? <Loader2 size={12} className="animate-spin" /> : <Users size={12} />}
-                          Aggiorna
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Toggle vista: Utenti / Richieste */}
-                    <div className="px-5 py-3 flex gap-2 border-b border-[var(--border)]">
-                      <button onClick={() => setAdminView('users')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${adminView === 'users' ? 'bg-[#ff4d00] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
-                        Utenti
-                      </button>
-                      <button onClick={() => { setAdminView('feedback'); fetchAdminFeedback(); }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'feedback' ? 'bg-[#ff4d00] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
-                        Richieste
-                        {adminFbNuove > 0 && (
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'feedback' ? 'bg-white/25' : 'bg-[#ff4d00] text-white'}`}>{adminFbNuove}</span>
-                        )}
-                      </button>
-                    </div>
-
-                    {adminView === 'users' && adminLoaded && (
-                      <>
-                        {/* KPI */}
-                        <div className="grid grid-cols-2 border-b border-[var(--border)]">
-                          {[
-                            { label: 'Utenti', value: adminUsers.length },
-                            { label: 'Prodotti totali', value: adminUsers.reduce((a, u) => a + u.stats.totalProducts, 0) },
-                          ].map(s => (
-                            <div key={s.label} className="p-3 text-center border-r border-[var(--border)] last:border-0">
-                              <p className="text-base font-bold num">{s.value}</p>
-                              <p className="text-[9px] text-[var(--text-faint)] mt-0.5">{s.label}</p>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Lista utenti */}
-                        <div className="divide-y divide-[var(--border)] max-h-96 overflow-y-auto">
-                          {adminUsers.map(u => (
-                            <div key={u.id} className="px-4 py-3 flex items-start gap-3">
-                              <div className="w-7 h-7 rounded-full bg-[var(--fill)] flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5">
-                                {u.name?.[0]?.toUpperCase()}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-semibold text-sm">{u.name}</span>
-                                  {u.twoFactorEnabled && <span className="text-[8px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded-full">2FA</span>}
-                                </div>
-                                <p className="text-[10px] text-[var(--text-soft)]">{u.email}</p>
-                                <p className="text-[10px] text-gray-700 mt-0.5">
-                                  {u.stats.inStock} in stock · {u.stats.sold} venduti · {u.stats.totalProducts} totali
-                                </p>
-                              </div>
-                              {u.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase() && (
-                                <button onClick={() => deleteAdminUser(u.id, u.name)}
-                                  className="p-1 hover:bg-red-500/10 rounded-lg transition-colors shrink-0">
-                                  <Trash2 size={13} className="text-red-500/40 hover:text-red-400" />
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-
-                    {/* Vista RICHIESTE */}
-                    {adminView === 'feedback' && (
-                      <div className="divide-y divide-[var(--border)] max-h-[28rem] overflow-y-auto">
-                        {adminFeedback.length === 0 ? (
-                          <p className="p-6 text-center text-xs text-[var(--text-faint)]">Nessuna richiesta al momento.</p>
-                        ) : adminFeedback.map(f => (
-                          <div key={f.id} className="px-4 py-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)]">{f.type}</span>
-                                  {f.status === 'nuova'
-                                    ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#ff4d00] text-white font-bold">nuova</span>
-                                    : <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 font-bold">risposta</span>}
-                                  <span className="text-[11px] font-semibold truncate">{f.userName || f.userEmail}</span>
-                                </div>
-                                <p className="text-[10px] text-[var(--text-faint)]">{f.userEmail} · {new Date(f.createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
-                              </div>
-                              <button onClick={() => deleteAdminFeedback(f.id)}
-                                className="p-1 hover:bg-red-500/10 rounded-lg transition-colors shrink-0">
-                                <Trash2 size={13} className="text-red-500/40 hover:text-red-400" />
-                              </button>
-                            </div>
-                            <p className="text-sm text-[var(--text)] mt-2 whitespace-pre-wrap break-words">{f.message}</p>
-
-                            {f.reply && (
-                              <div className="mt-2 bg-[var(--surface-2)] border-l-2 border-green-500/40 rounded-r-lg px-3 py-2">
-                                <p className="text-[9px] uppercase font-bold text-green-400 mb-1">La tua risposta</p>
-                                <p className="text-xs text-[var(--text-muted)] whitespace-pre-wrap break-words">{f.reply}</p>
-                              </div>
-                            )}
-
-                            {replyingId === f.id ? (
-                              <div className="mt-2">
-                                <textarea value={replyText} onChange={(e: any) => setReplyText(e.target.value)}
-                                  rows={3} maxLength={6000} autoFocus
-                                  placeholder={`Rispondi a ${f.userEmail}…`}
-                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm focus:border-[#ff4d00] outline-none resize-none" />
-                                <div className="flex items-center justify-end gap-2 mt-2">
-                                  <button onClick={() => { setReplyingId(null); setReplyText(''); }}
-                                    className="px-3 py-1.5 text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors">Annulla</button>
-                                  <button onClick={() => sendAdminReply(f.id)} disabled={replySending || replyText.trim().length < 2}
-                                    className="px-4 py-1.5 bg-[#ff4d00] hover:bg-[#ff6a2a] rounded-lg text-xs font-bold transition-colors disabled:opacity-40 flex items-center gap-1.5">
-                                    {replySending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
-                                    Invia via email
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <button onClick={() => { setReplyingId(f.id); setReplyText(f.reply || ''); }}
-                                className="mt-2 text-xs font-bold text-[#ff4d00] hover:text-[#ff6a2a] transition-colors">
-                                {f.reply ? 'Modifica risposta' : '↩ Rispondi'}
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {adminView === 'users' && !adminLoaded && adminLoading && (
-                      <div className="p-6 flex justify-center">
-                        <Loader2 size={20} className="animate-spin text-[var(--text-faint)]" />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </section>
-            )}
-
             {/* SEZIONE: Prodotti Fermi */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -3949,18 +3790,18 @@ export default function App() {
               </p>
               <div className="flex flex-wrap gap-2 mb-3">
                 {([
-                  { v: 'idea', label: '💡 Idea' },
-                  { v: 'bug', label: '🐞 Problema' },
-                  { v: 'domanda', label: '❓ Domanda' },
-                  { v: 'altro', label: '✦ Altro' },
+                  { v: 'idea', label: 'Idea', Icon: Lightbulb },
+                  { v: 'bug', label: 'Problema', Icon: Bug },
+                  { v: 'domanda', label: 'Domanda', Icon: HelpCircle },
+                  { v: 'altro', label: 'Altro', Icon: MoreHorizontal },
                 ] as const).map(o => (
                   <button key={o.v} type="button" onClick={() => setFeedbackType(o.v)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
                       feedbackType === o.v
                         ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-[var(--text)]'
                         : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
                     }`}>
-                    {o.label}
+                    <o.Icon size={14} /> {o.label}
                   </button>
                 ))}
               </div>
@@ -4026,6 +3867,164 @@ export default function App() {
               </button>
             </section>
 
+          </div>
+        )}
+
+        {/* ========== PAGINA ADMIN (dedicata, solo ADMIN_EMAIL) ========== */}
+        {currentView === 'admin' && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-2">
+              <Shield size={24} className="text-[#ff4d00]" />
+              <h2 className="text-3xl font-semibold">Admin</h2>
+            </div>
+
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
+              {/* Toolbar */}
+              <div className="px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-[var(--border)]">
+                <p className="text-[10px] text-[var(--text-faint)]">Auto-aggiornamento ogni 5 min</p>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={sendTestEmail}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--fill)] hover:bg-[var(--fill)] rounded-xl text-xs font-semibold transition-colors">
+                    <Mail size={12} /> Test Email
+                  </button>
+                  {adminLoaded && (
+                    <button onClick={exportAdminExcel}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--fill)] hover:bg-[var(--fill)] rounded-xl text-xs font-semibold transition-colors">
+                      <Download size={12} /> Excel
+                    </button>
+                  )}
+                  <button onClick={() => { fetchAdminUsers(); fetchAdminFeedback(); }} disabled={adminLoading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--fill)] hover:bg-[var(--fill-2)] rounded-xl text-xs font-semibold transition-colors disabled:opacity-40">
+                    {adminLoading ? <Loader2 size={12} className="animate-spin" /> : <Users size={12} />}
+                    Aggiorna
+                  </button>
+                </div>
+              </div>
+
+              {/* Toggle vista: Utenti / Richieste */}
+              <div className="px-5 py-3 flex gap-2 border-b border-[var(--border)]">
+                <button onClick={() => setAdminView('users')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${adminView === 'users' ? 'bg-[#ff4d00] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  Utenti
+                </button>
+                <button onClick={() => { setAdminView('feedback'); fetchAdminFeedback(); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'feedback' ? 'bg-[#ff4d00] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  Richieste
+                  {adminFbNuove > 0 && (
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'feedback' ? 'bg-white/25' : 'bg-[#ff4d00] text-white'}`}>{adminFbNuove}</span>
+                  )}
+                </button>
+              </div>
+
+              {adminView === 'users' && adminLoaded && (
+                <>
+                  {/* KPI */}
+                  <div className="grid grid-cols-2 border-b border-[var(--border)]">
+                    {[
+                      { label: 'Utenti', value: adminUsers.length },
+                      { label: 'Prodotti totali', value: adminUsers.reduce((a, u) => a + u.stats.totalProducts, 0) },
+                    ].map(s => (
+                      <div key={s.label} className="p-3 text-center border-r border-[var(--border)] last:border-0">
+                        <p className="text-base font-bold num">{s.value}</p>
+                        <p className="text-[9px] text-[var(--text-faint)] mt-0.5">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Lista utenti */}
+                  <div className="divide-y divide-[var(--border)] max-h-[28rem] overflow-y-auto">
+                    {adminUsers.map(u => (
+                      <div key={u.id} className="px-4 py-3 flex items-start gap-3">
+                        <div className="w-7 h-7 rounded-full bg-[var(--fill)] flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5">
+                          {u.name?.[0]?.toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-sm">{u.name}</span>
+                            {u.twoFactorEnabled && <span className="text-[8px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded-full">2FA</span>}
+                          </div>
+                          <p className="text-[10px] text-[var(--text-soft)]">{u.email}</p>
+                          <p className="text-[10px] text-gray-700 mt-0.5">
+                            {u.stats.inStock} in stock · {u.stats.sold} venduti · {u.stats.totalProducts} totali
+                          </p>
+                        </div>
+                        {u.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase() && (
+                          <button onClick={() => deleteAdminUser(u.id, u.name)}
+                            className="p-1 hover:bg-red-500/10 rounded-lg transition-colors shrink-0">
+                            <Trash2 size={13} className="text-red-500/40 hover:text-red-400" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Vista RICHIESTE */}
+              {adminView === 'feedback' && (
+                <div className="divide-y divide-[var(--border)] max-h-[34rem] overflow-y-auto">
+                  {adminFeedback.length === 0 ? (
+                    <p className="p-6 text-center text-xs text-[var(--text-faint)]">Nessuna richiesta al momento.</p>
+                  ) : adminFeedback.map(f => (
+                    <div key={f.id} className="px-4 py-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)]">{f.type}</span>
+                            {f.status === 'nuova'
+                              ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#ff4d00] text-white font-bold">nuova</span>
+                              : <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 font-bold">risposta</span>}
+                            <span className="text-[11px] font-semibold truncate">{f.userName || f.userEmail}</span>
+                          </div>
+                          <p className="text-[10px] text-[var(--text-faint)]">{f.userEmail} · {new Date(f.createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                        <button onClick={() => deleteAdminFeedback(f.id)}
+                          className="p-1 hover:bg-red-500/10 rounded-lg transition-colors shrink-0">
+                          <Trash2 size={13} className="text-red-500/40 hover:text-red-400" />
+                        </button>
+                      </div>
+                      <p className="text-sm text-[var(--text)] mt-2 whitespace-pre-wrap break-words">{f.message}</p>
+
+                      {f.reply && (
+                        <div className="mt-2 bg-[var(--surface-2)] border-l-2 border-green-500/40 rounded-r-lg px-3 py-2">
+                          <p className="text-[9px] uppercase font-bold text-green-400 mb-1">La tua risposta</p>
+                          <p className="text-xs text-[var(--text-muted)] whitespace-pre-wrap break-words">{f.reply}</p>
+                        </div>
+                      )}
+
+                      {replyingId === f.id ? (
+                        <div className="mt-2">
+                          <textarea value={replyText} onChange={(e: any) => setReplyText(e.target.value)}
+                            rows={3} maxLength={6000} autoFocus
+                            placeholder={`Rispondi a ${f.userEmail}…`}
+                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm focus:border-[#ff4d00] outline-none resize-none" />
+                          <div className="flex items-center justify-end gap-2 mt-2">
+                            <button onClick={() => { setReplyingId(null); setReplyText(''); }}
+                              className="px-3 py-1.5 text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors">Annulla</button>
+                            <button onClick={() => sendAdminReply(f.id)} disabled={replySending || replyText.trim().length < 2}
+                              className="px-4 py-1.5 bg-[#ff4d00] hover:bg-[#ff6a2a] rounded-lg text-xs font-bold transition-colors disabled:opacity-40 flex items-center gap-1.5">
+                              {replySending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
+                              Invia via email
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => { setReplyingId(f.id); setReplyText(f.reply || ''); }}
+                          className="mt-2 text-xs font-bold text-[#ff4d00] hover:text-[#ff6a2a] transition-colors">
+                          {f.reply ? 'Modifica risposta' : '↩ Rispondi'}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {adminView === 'users' && !adminLoaded && adminLoading && (
+                <div className="p-6 flex justify-center">
+                  <Loader2 size={20} className="animate-spin text-[var(--text-faint)]" />
+                </div>
+              )}
+            </section>
           </div>
         )}
       </main>
