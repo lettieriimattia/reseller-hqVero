@@ -281,6 +281,16 @@ export default function App() {
   // Valutazione di mercato (eBay autenticati / StockX in futuro)
   const [valuation, setValuation] = useState<any>(null);
   const [valLoading, setValLoading] = useState(false);
+  // ----- SOURCING "Quanto lo pago?" -----
+  const [sourcingOpen, setSourcingOpen] = useState(false);
+  const [sourcingBrand, setSourcingBrand] = useState('');
+  const [sourcingModel, setSourcingModel] = useState('');
+  const [sourcingSize, setSourcingSize] = useState('');
+  const [sourcingMargin, setSourcingMargin] = useState(50); // % di margine desiderato sul costo
+  const [sourcingVal, setSourcingVal] = useState<any>(null);
+  const [sourcingScanning, setSourcingScanning] = useState(false);
+  const [sourcingCalcLoading, setSourcingCalcLoading] = useState(false);
+  const sourcingCamInputRef = useRef<HTMLInputElement | null>(null);
   const [editBrand, setEditBrand] = useState('');
   const [editName, setEditName] = useState('');
   const [editSize, setEditSize] = useState('');
@@ -1592,6 +1602,47 @@ export default function App() {
     setValLoading(false);
     setValuation(ok ? data : { configured: false, error: true });
   };
+
+  // ===== SOURCING "Quanto lo pago?" =====
+  const openSourcing = () => {
+    setSourcingBrand(''); setSourcingModel(''); setSourcingSize('');
+    setSourcingVal(null); setSourcingMargin(50);
+    setSourcingOpen(true);
+  };
+
+  // Scatta/scegli foto al mercatino → l'IA riempie brand/modello
+  const sourcingPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setSourcingScanning(true);
+    setSourcingVal(null);
+    try {
+      const compressed = await compressImage(file, 1024, 0.6);
+      const { ok, data } = await apiCall('/api/ai/full-scan', {
+        method: 'POST', body: JSON.stringify({ imageBase64: compressed }),
+      });
+      if (ok && data.scan) {
+        if (data.scan.brand) setSourcingBrand(data.scan.brand);
+        if (data.scan.model) setSourcingModel(data.scan.model);
+        const d = data.scan.details || {};
+        if (d.size) setSourcingSize(d.size.toString());
+      } else showToast(data?.error || 'Non riconosciuto, scrivi a mano', 'warn');
+    } catch { showToast('Errore scansione', 'err'); }
+    finally { setSourcingScanning(false); }
+  };
+
+  // Calcola la valutazione di mercato (eBay) per il prodotto inserito
+  const sourcingCalc = async () => {
+    const query = [sourcingBrand, sourcingModel].filter(Boolean).join(' ').trim();
+    if (query.length < 2) { showToast('Inserisci brand e modello', 'warn'); return; }
+    setSourcingCalcLoading(true); setSourcingVal(null);
+    const { ok, data } = await apiCall('/api/ai/market-value', {
+      method: 'POST', body: JSON.stringify({ query, size: sourcingSize || undefined }),
+    });
+    setSourcingCalcLoading(false);
+    setSourcingVal(ok ? data : { configured: false, error: true });
+  };
   
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2375,6 +2426,13 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {/* Quanto lo pago? — strumento sourcing (prezzo max d'acquisto) */}
+            <button onClick={openSourcing}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-[#ff4d00]/30 bg-[#ff4d00]/[0.06] hover:bg-[#ff4d00]/[0.12] text-sm font-bold text-[var(--text)] transition-colors">
+              <DollarSign size={16} className="text-[#ff4d00]" />
+              Quanto lo pago? <span className="text-[var(--text-soft)] font-medium hidden sm:inline">· prezzo max d'acquisto dal mercato</span>
+            </button>
 
             {/* Welcome / primo avvio — quando non ci sono ancora prodotti */}
             {products.length === 0 && (
@@ -4149,6 +4207,7 @@ export default function App() {
           { key: 'nav-tracking', icon: Truck, label: 'Vai a Tracking', sub: '', run: () => navigateTo('tracking') },
           { key: 'nav-settings', icon: Settings, label: 'Vai a Impostazioni', sub: '', run: () => navigateTo('settings') },
           { key: 'act-add', icon: Plus, label: 'Aggiungi prodotto', sub: 'Nuovo inserimento in magazzino', run: () => openAddForm() },
+          { key: 'act-sourcing', icon: DollarSign, label: 'Quanto lo pago?', sub: 'Prezzo massimo d\'acquisto per il margine voluto', run: () => openSourcing() },
         ];
         // Azioni sui selezionati (quando sei in modalità selezione)
         if (bulkMode && getBulkSelectedIds().length > 0) {
@@ -4231,6 +4290,97 @@ export default function App() {
       {/* Input fotocamera persistente: cliccato da openAddForm() per aprire subito la camera */}
       <input ref={addCameraInputRef} type="file" accept="image/*" capture="environment" className="hidden"
         onChange={(e: any) => handlePhotoAdd(e, false)} />
+      {/* Input fotocamera per il sourcing */}
+      <input ref={sourcingCamInputRef} type="file" accept="image/*" capture="environment" className="hidden"
+        onChange={sourcingPhoto} />
+
+      {/* ========== MODALE: QUANTO LO PAGO? (sourcing) ========== */}
+      {sourcingOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
+            <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+            <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
+              <div className="flex items-center gap-2">
+                <DollarSign size={20} className="text-[#ff4d00]" />
+                <h2 className="text-xl font-semibold">Quanto lo pago?</h2>
+              </div>
+              <button onClick={() => setSourcingOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors"><X size={20} /></button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-[var(--text-soft)]">Scatta o scrivi il prodotto: ti dico il <b>prezzo massimo d'acquisto</b> per avere il margine che vuoi, basato sul mercato eBay.</p>
+
+              {/* Foto */}
+              <button type="button" onClick={() => sourcingCamInputRef.current?.click()} disabled={sourcingScanning}
+                className="w-full py-3 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
+                {sourcingScanning ? <Loader2 size={16} className="animate-spin text-purple-400" /> : <Camera size={16} className="text-purple-400" />}
+                {sourcingScanning ? 'Riconoscimento…' : 'Scatta foto (IA riconosce)'}
+              </button>
+
+              {/* Campi */}
+              <div className="grid grid-cols-2 gap-3">
+                <input value={sourcingBrand} onChange={(e: any) => setSourcingBrand(e.target.value)} placeholder="Brand"
+                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                <input value={sourcingSize} onChange={(e: any) => setSourcingSize(e.target.value)} placeholder="Taglia (opz.)"
+                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+              </div>
+              <input value={sourcingModel} onChange={(e: any) => setSourcingModel(e.target.value)} placeholder="Modello"
+                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+
+              <button onClick={sourcingCalc} disabled={sourcingCalcLoading}
+                className="w-full bg-[#ff4d00] hover:bg-[#ff6a2a] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                {sourcingCalcLoading ? <Loader2 size={18} className="animate-spin" /> : <TrendingUp size={16} />}
+                Calcola valutazione
+              </button>
+
+              {/* Risultato */}
+              {sourcingVal && (sourcingVal.configured === false ? (
+                <p className="text-xs text-[var(--text-soft)] bg-[var(--surface-2)] rounded-xl p-3 text-center">Fonte prezzi non ancora attiva (eBay in attivazione). Riprova più tardi.</p>
+              ) : sourcingVal.value == null ? (
+                <p className="text-xs text-[var(--text-soft)] bg-[var(--surface-2)] rounded-xl p-3 text-center">Nessun dato di mercato per questo prodotto. Prova a precisare brand/modello.</p>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm bg-[var(--surface-2)] rounded-xl p-3">
+                    <span className="text-[var(--text-soft)]">Valore di mercato</span>
+                    <span className="font-bold text-[var(--text)] num">{Math.round(sourcingVal.value)}€</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-[var(--text-faint)] px-1">
+                    <span>{sourcingVal.source} · {sourcingVal.sample} comp.</span>
+                    <span className={`font-bold ${sourcingVal.confidence === 'alta' ? 'text-emerald-400' : sourcingVal.confidence === 'media' ? 'text-yellow-500' : 'text-red-400'}`}>confidenza {sourcingVal.confidence}</span>
+                  </div>
+
+                  {/* Margine desiderato */}
+                  <div>
+                    <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest mb-2">Margine desiderato</p>
+                    <div className="flex gap-2">
+                      {[30, 50, 100, 200].map(m => (
+                        <button key={m} onClick={() => setSourcingMargin(m)}
+                          className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${sourcingMargin === m ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
+                          +{m}%
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Prezzo massimo d'acquisto */}
+                  {(() => {
+                    const maxBuy = sourcingVal.value / (1 + sourcingMargin / 100);
+                    const profit = sourcingVal.value - maxBuy;
+                    return (
+                      <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 text-center">
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-soft)] font-bold mb-1">Paga al massimo</p>
+                        <p className="text-3xl font-bold text-emerald-400 num">{Math.round(maxBuy)}€</p>
+                        <p className="text-[11px] text-[var(--text-soft)] mt-1">A questo prezzo guadagni ~{Math.round(profit)}€ (margine +{sourcingMargin}%)</p>
+                      </div>
+                    );
+                  })()}
+                  <p className="text-[9px] text-[var(--text-faint)] text-center">Stima orientativa lorda (prima delle fee di vendita). Verifica sempre lo stato dell'oggetto.</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========== FAB MOBILE ========== */}
       <button

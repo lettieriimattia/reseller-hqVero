@@ -6,6 +6,7 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimit';
 import { validate, aiScanSchema, priceEstimateSchema } from '../middleware/validate';
 import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, ListingPlatform } from '../services/ai.service';
+import { getMarketValuation } from '../services/price.service';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import { audit } from '../services/audit.service';
@@ -49,6 +50,22 @@ router.post('/price', validate(priceEstimateSchema), async (req: AuthRequest, re
   } catch (err: any) {
     logger.error('Errore /ai/price', { err: err.message });
     res.status(500).json({ error: 'Errore stima prezzo' });
+  }
+});
+
+// ==========================================
+// POST /api/ai/market-value - valutazione di mercato da query (sourcing, senza prodotto salvato)
+// ==========================================
+router.post('/market-value', async (req: AuthRequest, res: Response) => {
+  try {
+    const { query, size } = req.body || {};
+    const q = (query ?? '').toString().trim();
+    if (q.length < 2) return res.status(400).json({ error: 'Inserisci brand e modello.' });
+    const valuation = await getMarketValuation({ query: q, size: size ? size.toString() : undefined });
+    res.json(valuation);
+  } catch (err: any) {
+    logger.error('Errore /ai/market-value', { err: err.message });
+    res.status(500).json({ error: 'Errore valutazione' });
   }
 });
 
