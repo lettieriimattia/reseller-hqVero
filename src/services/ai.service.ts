@@ -850,6 +850,24 @@ AUTENTICITÀ: fibbia pesante con logo inciso nitido, fori rifiniti, blind stamp+
     knowledge: `BRAND: New Era (59FIFTY/9FORTY, licenze NBA/MLB, sticker autenticità), Supreme (box logo cap, camp cap), Nike, Adidas, Carhartt (beanie acrilico), Stüssy, Polo Ralph Lauren, brand di lusso (Gucci/LV/Dior/Prada/Burberry monogram bucket). Leggi taglia (S/M/L o regolabile snapback/strapback), materiale, logo ricamato vs stampato.`,
     fields: `"style": "snapback|fitted|dad cap|bucket|beanie|trucker|null", "hatSize": "taglia o regolabile o null"`,
   },
+  {
+    keys: ['cart', 'card', 'tcg', 'yugioh', 'yu-gi-oh', 'magic', 'mtg', 'lorcana', 'one piece', 'panini', 'topps', 'figurine'],
+    label: 'carte collezionabili (TCG e sportive, NON Pokémon)',
+    knowledge: `GIOCHI: Yu-Gi-Oh! (1st Edition, Ghost/Ultimate/Secret/Starlight Rare, set code es. LOB-001, lingua), Magic: The Gathering (set, rarità comune/uncommon/rare/mythic, foil, Reserved List, Alpha/Beta/Unlimited, Power Nine), One Piece Card Game (OP01..; Leader/Parallel/Manga Rare), Disney Lorcana (enchanted), Flesh and Blood, Digimon. SPORTIVE: Panini (Prizm, Select, Mosaic — numerate /xxx, refractor, RC rookie), Topps (Chrome, Bowman), Upper Deck (hockey/basket). Leggi: nome carta, numero/set, rarità, lingua, edizione (1st), numerazione seriale (/99 ecc.), eventuale grading (PSA/BGS/CGC + voto). Condizione: NM/LP/MP/HP/DMG o slab gradato.`,
+    fields: `"game": "Yu-Gi-Oh|Magic|One Piece|Lorcana|Panini|Topps|altro|null", "cardNumber": "numero/set code o null", "rarity": "rarità o null", "graded": "grading se in slab (es PSA 10) o null", "serialNumber": "numerazione (es 12/99) o null"`,
+  },
+  {
+    keys: ['vinil', 'disco', 'dischi', 'vinyl', 'lp ', 'record', '45 giri', '33 giri'],
+    label: 'vinili e dischi musicali',
+    knowledge: `Identifica: ARTISTA e TITOLO album, etichetta discografica (es. Blue Note, Motown, Sub Pop), numero di catalogo (sul retro/etichetta centrale/dorso), formato (LP 33 giri, 7" 45 giri, 12" maxi), edizione (originale prima stampa vs ristampa/reissue, colorato, limited), Paese di stampa, matrice nel dead wax. Generi e pezzi ricercati: jazz prime stampe, rock classico (Beatles/Pink Floyd/Led Zeppelin), vinili colorati limited, picture disc. Condizione standard Goldmine: M/NM/VG+/VG/G (disco e copertina separati).`,
+    fields: `"artist": "artista o null", "title": "titolo album o null", "format": "LP|7\\"|12\\"|null", "catalogNumber": "numero di catalogo o null", "pressing": "originale|ristampa|limited|colorato|null"`,
+  },
+  {
+    keys: ['collezion', 'funko', 'lego', 'statua', 'figure', 'modellino', 'giocattol', 'toy', 'memorabilia'],
+    label: 'collezionabili (Funko Pop, LEGO, figure, memorabilia)',
+    knowledge: `FUNKO POP: numero sul box (in basso a destra), nome personaggio + serie/licenza, esclusive (Funko Shop/Hot Topic/SDCC/NYCC con sticker), Chase variant (sticker verde), Vaulted (fuori produzione). LEGO: numero set (4-5 cifre), nome set/tema (Star Wars/Technic/Creator/Icons/Modular), pezzi, sigillato (MISB) vs aperto/completo. FIGURE: Bandai (S.H.Figuarts, Ichiban Kuji), Hot Toys (1/6 scale), Nendoroid, statue Prime 1/Sideswipe. Memorabilia: autografi, edizioni limitate. Leggi: nome, numero, serie, stato scatola (sigillato/danni angoli).`,
+    fields: `"itemNumber": "numero Funko/set LEGO o null", "series": "serie/licenza (es Star Wars, Marvel) o null", "exclusive": "esclusiva/chase/variant se presente o null", "sealed": "true|false (sigillato in scatola)"`,
+  },
 ];
 
 // Normalizza per match robusto (minuscolo, niente accenti)
@@ -1204,13 +1222,24 @@ ${prompt}`;
       break;
     }
     default: {
-      // Categoria personalizzata (Borse, Gioielli, ecc.)
-      if (parsed.brand || parsed.model) {
+      // Categoria personalizzata / adattiva (Occhiali, Gioielli, Borse, Wallet, ecc.)
+      result.details = { ...parsed };  // tutti i campi rilevati → tabella dinamica nel frontend
+      const hasId = parsed.brand || parsed.model || parsed.type;
+      const strongId = parsed.styleCode || parsed.serial || parsed.serialNumber || parsed.dateCode || parsed.modelCode || parsed.collaboration;
+      if (hasId) {
         result.brand = parsed.brand || category;
-        const parts = [parsed.model, parsed.material, parsed.size, parsed.color].filter(Boolean);
-        result.model = parts.join(' — ') || parsed.notes || 'N/D';
-        result.confidence = (parsed.brand && parsed.model) ? 'HIGH' : parsed.brand || parsed.model ? 'MEDIUM' : 'LOW';
-        if (parsed.size) result.details = { ...parsed };
+        // Descrittore: modello (o tipo) + colore + materiale + collab, scartando i vuoti
+        const head = parsed.model || parsed.type;
+        const parts = [head, parsed.color, parsed.material, parsed.collaboration].filter(Boolean);
+        result.model = parts.join(' — ') || parsed.logoDescription || parsed.notes || 'N/D';
+        result.confidence = (parsed.brand && parsed.model && strongId) ? 'HIGH'
+          : (parsed.brand && (parsed.model || parsed.type)) ? 'MEDIUM'
+          : 'LOW';
+      } else if (parsed.logoDescription && parsed.logoDescription.length > 8) {
+        result.brand = 'Da identificare';
+        result.model = parsed.logoDescription;
+        result.confidence = 'LOW';
+        result.warnings = ['Brand non riconosciuto — testo/logo rilevato, verifica manualmente.'];
       } else {
         result.confidence = 'LOW';
         result.warnings = [`Oggetto non identificato nella categoria "${category}". Compila i campi manualmente.`];
