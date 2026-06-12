@@ -158,6 +158,9 @@ async function compressImage(file: File, maxSize = 1024, quality = 0.5): Promise
   });
 }
 
+// Sentinella "modalità automatica": l'IA rileva la categoria dalla foto
+const AUTO_CATEGORY = '__AUTO__';
+
 // ==========================================
 // COMPONENTE PRINCIPALE
 // ==========================================
@@ -229,6 +232,8 @@ export default function App() {
   const [isSaving, setIsSaving] = useState(false);
   
   const [category, setCategory] = useState('');
+  // Categoria rilevata dall'IA in modalità Automatica ma senza un reparto corrispondente
+  const [detectedReparto, setDetectedReparto] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [brand, setBrand] = useState('');
@@ -1122,20 +1127,37 @@ export default function App() {
     if (!scan) return;
     const d = scan.details || {};
 
+    // Modalità automatica: la categoria effettiva la decide l'IA (scan.detectedCategory).
+    // Se coincide con un reparto esistente, lo seleziono; così il salvataggio funziona.
+    let effCat = cat;
+    if (!cat || cat === AUTO_CATEGORY) {
+      effCat = scan.detectedCategory || 'Generico';
+      const match = userCategories.find(
+        (uc: string) => uc.toLowerCase() === String(effCat).toLowerCase()
+      );
+      if (match) {
+        setCategory(match);
+        effCat = match;
+      } else {
+        // Reparto non ancora presente: lo mostro come suggerimento, i campi restano compilati.
+        setDetectedReparto(String(effCat));
+      }
+    }
+
     // Riempi i campi disponibili anche con confidence MEDIA/BASSA: meglio un brand
     // pre-compilato da correggere che un form vuoto.
-    if (cat === 'Pokemon') {
+    if (effCat === 'Pokemon') {
       if (scan.model) setPokeName(scan.model);
-    } else if (cat === 'Scarpe') {
+    } else if (effCat === 'Scarpe') {
       if (scan.brand) setBrand(scan.brand);
       if (scan.model) setName(scan.model);
       // Taglia rilevata dall'etichetta/scatola
       if (d.size) setSize(d.size.toString());
-    } else if (cat === 'Vestiti') {
+    } else if (effCat === 'Vestiti') {
       if (scan.brand) setBrand(scan.brand);
       if (scan.model) setName(scan.model);
       if (d.size) setSize(d.size.toString());
-    } else if (cat === 'Orologi') {
+    } else if (effCat === 'Orologi') {
       if (scan.brand) setWatchBrand(scan.brand);
       if (scan.model) setWatchModel(scan.model);
       if (d.caseSize) setWatchCase(d.caseSize.toString().replace(/[^\d.]/g, ''));
@@ -1152,9 +1174,12 @@ export default function App() {
     setIsScanning(true);
     setScanResult(null); setPriceEstimate(null);
     try {
+      // Modalità automatica (cat vuota o sentinella): non inviamo la categoria,
+      // l'IA la rileva dalla foto e adatta i campi.
+      const isAuto = !cat || cat === AUTO_CATEGORY;
       const { ok, data } = await apiCall('/api/ai/full-scan', {
         method: 'POST',
-        body: JSON.stringify({ imageBase64, category: cat }),
+        body: JSON.stringify(isAuto ? { imageBase64 } : { imageBase64, category: cat }),
       });
       if (ok) applyAIScanResult(data, cat);
       else showToast(data.error || 'Errore IA', 'err');
@@ -3963,11 +3988,22 @@ export default function App() {
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Reparto</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {/* Automatico: l'IA rileva il reparto dalla foto */}
+                  <button type="button"
+                    onClick={() => { setCategory(AUTO_CATEGORY); setDetectedReparto(''); }}
+                    className={`p-3 rounded-xl text-sm font-bold border transition-all ${
+                      category === AUTO_CATEGORY
+                        ? 'bg-purple-500/15 border-purple-500 text-[var(--text)]'
+                        : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
+                    }`}>
+                    <span className="block text-xl mb-1">✨</span>
+                    Automatico
+                  </button>
                   {userCategories.map((cat: string) => (
-                    <button key={cat} type="button" onClick={() => setCategory(cat)}
+                    <button key={cat} type="button" onClick={() => { setCategory(cat); setDetectedReparto(''); }}
                       className={`p-3 rounded-xl text-sm font-bold border transition-all ${
-                        category === cat 
-                          ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-[var(--text)]' 
+                        category === cat
+                          ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-[var(--text)]'
                           : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
                       }`}>
                       <span className="block text-xl mb-1">{getCategoryIcon(cat)}</span>
@@ -3975,6 +4011,15 @@ export default function App() {
                     </button>
                   ))}
                 </div>
+                {/* Esito modalità automatica */}
+                {category === AUTO_CATEGORY && (
+                  <p className="text-[11px] text-[var(--text-muted)] mt-2 flex items-center gap-1.5">
+                    <Sparkles size={11} className="text-purple-400" />
+                    {detectedReparto
+                      ? <>Rilevato: <b className="text-[var(--text)]">{detectedReparto}</b> — nessun reparto con questo nome. Crealo o scegline uno qui sopra.</>
+                      : <>Aggiungi una foto: l'IA capisce da sola di che prodotto si tratta.</>}
+                  </p>
+                )}
               </div>
               
               {/* FOTO + IA SCAN — multi-foto (max 5) */}
