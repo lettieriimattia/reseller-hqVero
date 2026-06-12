@@ -402,6 +402,11 @@ export default function App() {
   const [deleteCheckbox, setDeleteCheckbox] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
+  // ----- AIUTO & ASSISTENZA (feedback all'admin) -----
+  const [feedbackType, setFeedbackType] = useState<'bug' | 'idea' | 'domanda' | 'altro'>('idea');
+  const [feedbackMsg, setFeedbackMsg] = useState('');
+  const [feedbackSending, setFeedbackSending] = useState(false);
+
   // ----- ADMIN -----
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [adminLoading, setAdminLoading] = useState(false);
@@ -468,6 +473,24 @@ export default function App() {
       showToast(data.error || 'Errore eliminazione account', 'err');
     }
     setIsDeletingAccount(false);
+  };
+
+  // Invia un messaggio di aiuto/feedback: arriva all'admin via email
+  const sendFeedback = async () => {
+    const msg = feedbackMsg.trim();
+    if (msg.length < 3) { showToast('Scrivi un messaggio un po’ più lungo', 'warn'); return; }
+    setFeedbackSending(true);
+    const { ok, data } = await apiCall('/api/feedback', {
+      method: 'POST',
+      body: JSON.stringify({ message: msg, type: feedbackType }),
+    });
+    setFeedbackSending(false);
+    if (ok) {
+      setFeedbackMsg('');
+      showToast('Grazie! Il messaggio è stato inviato ✓');
+    } else {
+      showToast(data.error || 'Invio non riuscito', 'err');
+    }
   };
 
   const toggleAdminPanel = async () => {
@@ -3464,39 +3487,6 @@ export default function App() {
           <div className="space-y-5">
             <h2 className="text-3xl font-semibold">Impostazioni</h2>
 
-            {/* SEZIONE: Aspetto / Tema */}
-            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  {theme === 'light' ? <Sun className="text-[#ff4d00] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#ff4d00] mt-0.5" size={22} /> : <Moon className="text-[#ff4d00] mt-0.5" size={22} />}
-                  <div>
-                    <h3 className="text-lg font-bold tracking-tighter">Aspetto</h3>
-                    <p className="text-xs text-[var(--text-soft)] mt-1">Scegli il tema: scuro, chiaro o vetro.</p>
-                  </div>
-                </div>
-                <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] shrink-0 self-center sm:self-auto">
-                  <button onClick={() => setTheme('dark')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'dark' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
-                    }`}>
-                    <Moon size={13} /> Scuro
-                  </button>
-                  <button onClick={() => setTheme('light')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'light' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
-                    }`}>
-                    <Sun size={13} /> Chiaro
-                  </button>
-                  <button onClick={() => setTheme('glass')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'glass' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
-                    }`}>
-                    <Sparkles size={13} /> Glass
-                  </button>
-                </div>
-              </div>
-            </section>
-
             {/* ===== PANNELLO ADMIN (collassabile) ===== */}
             {user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
               <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
@@ -3835,6 +3825,79 @@ export default function App() {
                   <Download size={14} /> Importa Excel
                   <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelFile} />
                 </label>
+              </div>
+            </section>
+
+            {/* SEZIONE: Aiuto & Assistenza — il messaggio arriva all'admin via email */}
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Mail size={18} className="text-[#ff4d00]" />
+                <h3 className="text-lg font-bold tracking-tighter">Aiuto & Assistenza</h3>
+              </div>
+              <p className="text-xs text-[var(--text-soft)] mb-4">
+                Hai una domanda, un'idea o hai trovato un problema? Scrivici: il messaggio arriva direttamente a noi.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {([
+                  { v: 'idea', label: '💡 Idea' },
+                  { v: 'bug', label: '🐞 Problema' },
+                  { v: 'domanda', label: '❓ Domanda' },
+                  { v: 'altro', label: '✦ Altro' },
+                ] as const).map(o => (
+                  <button key={o.v} type="button" onClick={() => setFeedbackType(o.v)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                      feedbackType === o.v
+                        ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-[var(--text)]'
+                        : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
+                    }`}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+              <textarea value={feedbackMsg} onChange={(e: any) => setFeedbackMsg(e.target.value)}
+                maxLength={4000} rows={4}
+                placeholder="Scrivi qui il tuo messaggio…"
+                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none resize-none" />
+              <div className="flex items-center justify-between gap-3 mt-3">
+                <span className="text-[10px] text-[var(--text-faint)]">{feedbackMsg.length}/4000</span>
+                <button onClick={sendFeedback} disabled={feedbackSending || feedbackMsg.trim().length < 3}
+                  className="px-5 py-2 bg-[#ff4d00] hover:bg-[#ff6a2a] rounded-xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center gap-2">
+                  {feedbackSending ? <Loader2 className="animate-spin" size={16} /> : <Mail size={15} />}
+                  Invia
+                </button>
+              </div>
+            </section>
+
+            {/* SEZIONE: Aspetto / Tema — in fondo, poco rilevante */}
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  {theme === 'light' ? <Sun className="text-[#ff4d00] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#ff4d00] mt-0.5" size={22} /> : <Moon className="text-[#ff4d00] mt-0.5" size={22} />}
+                  <div>
+                    <h3 className="text-lg font-bold tracking-tighter">Aspetto</h3>
+                    <p className="text-xs text-[var(--text-soft)] mt-1">Scegli il tema: scuro, chiaro o vetro.</p>
+                  </div>
+                </div>
+                <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] shrink-0 self-center sm:self-auto">
+                  <button onClick={() => setTheme('dark')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                      theme === 'dark' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
+                    }`}>
+                    <Moon size={13} /> Scuro
+                  </button>
+                  <button onClick={() => setTheme('light')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                      theme === 'light' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
+                    }`}>
+                    <Sun size={13} /> Chiaro
+                  </button>
+                  <button onClick={() => setTheme('glass')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                      theme === 'glass' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
+                    }`}>
+                    <Sparkles size={13} /> Glass
+                  </button>
+                </div>
               </div>
             </section>
 
