@@ -987,6 +987,27 @@ export default function App() {
     return { cat, profit, count: sold.length };
   }).sort((a, b) => b.profit - a.profit)[0];
 
+  // ===== Limite hobbista (DAC7): le piattaforme segnalano al Fisco chi supera
+  // 30 vendite OPPURE 2.000€/anno (per piattaforma). Aiuta chi non ha P.IVA a non
+  // sforare. Non è consulenza fiscale. =====
+  const DAC7_SALES = 30, DAC7_REVENUE = 2000;
+  const hobbyYear = new Date().getFullYear();
+  const hobbyYearSold = products.filter(p => p.status === 'VENDUTO' && p.soldAt && new Date(p.soldAt).getFullYear() === hobbyYear);
+  const hobbyByPlatform = (() => {
+    const m: Record<string, { count: number; revenue: number }> = {};
+    for (const p of hobbyYearSold) {
+      const plat = p.platform || 'Privato';
+      if (!m[plat]) m[plat] = { count: 0, revenue: 0 };
+      m[plat].count += 1;
+      m[plat].revenue += p.salePrice || 0;
+    }
+    return Object.entries(m)
+      .map(([plat, v]) => ({ plat, ...v, ratio: Math.max(v.count / DAC7_SALES, v.revenue / DAC7_REVENUE) }))
+      .sort((a, b) => b.ratio - a.ratio);
+  })();
+  const hobbyTotalRevenue = hobbyYearSold.reduce((a, p) => a + (p.salePrice || 0), 0);
+  const hobbyMaxRatio = hobbyByPlatform[0]?.ratio || 0;
+
   const searchedProducts = activeProducts.filter(p => {
     const search = searchTerm.toLowerCase();
     return (p.name && p.name.toLowerCase().includes(search)) || (p.brand && p.brand.toLowerCase().includes(search));
@@ -2563,6 +2584,51 @@ export default function App() {
                 })}
               </div>
             </section>
+
+            {/* Limite hobbista (DAC7) — solo se ci sono vendite quest'anno */}
+            {hobbyYearSold.length > 0 && (
+              <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[9px] font-semibold text-[var(--text-faint)] tracking-[0.12em] uppercase flex items-center gap-2">
+                    <Shield size={12} /> Limite hobbista · {hobbyYear}
+                  </p>
+                  {hobbyMaxRatio >= 0.8 && (
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${hobbyMaxRatio >= 1 ? 'bg-red-500/15 text-red-400' : 'bg-yellow-500/15 text-yellow-500'}`}>
+                      {hobbyMaxRatio >= 1 ? 'Soglia superata' : 'Vicino alla soglia'}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-[var(--text-soft)] mb-4">
+                  Le piattaforme segnalano al Fisco chi supera <b>30 vendite</b> o <b>2.000€</b> all'anno (per piattaforma).
+                </p>
+                <div className="space-y-3">
+                  {hobbyByPlatform.slice(0, 5).map(pf => {
+                    const salesPct = Math.min(100, (pf.count / DAC7_SALES) * 100);
+                    const revPct = Math.min(100, (pf.revenue / DAC7_REVENUE) * 100);
+                    const barCol = pf.ratio >= 1 ? 'bg-red-500' : pf.ratio >= 0.8 ? 'bg-yellow-500' : 'bg-emerald-500';
+                    return (
+                      <div key={pf.plat}>
+                        <div className="flex items-center justify-between text-[11px] mb-1">
+                          <span className="font-bold text-[var(--text)]">{pf.plat}</span>
+                          <span className="text-[var(--text-soft)] num">{pf.count}/{DAC7_SALES} vendite · {Math.round(pf.revenue)}€/{DAC7_REVENUE}€</span>
+                        </div>
+                        <div className="flex gap-1">
+                          <div className="flex-1 h-1.5 rounded-full bg-[var(--fill)] overflow-hidden">
+                            <div className={`h-full ${barCol} rounded-full transition-all`} style={{ width: `${salesPct}%` }} />
+                          </div>
+                          <div className="flex-1 h-1.5 rounded-full bg-[var(--fill)] overflow-hidden">
+                            <div className={`h-full ${barCol} rounded-full transition-all`} style={{ width: `${revPct}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[9px] text-[var(--text-faint)] mt-4">
+                  Totale anno: {hobbyYearSold.length} vendite · {Math.round(hobbyTotalRevenue)}€. Indicazione orientativa, non è consulenza fiscale — in caso di dubbi senti un commercialista.
+                </p>
+              </section>
+            )}
 
             {/* Spedizioni in corso */}
             {(() => {
