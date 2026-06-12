@@ -295,6 +295,9 @@ export default function App() {
   // ----- TOAST -----
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' | 'warn'; action?: { label: string; onClick: () => void } } | null>(null);
   const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Input fotocamera sempre montato: premendo "+" lo clicchiamo nel gesto utente
+  // così su mobile la fotocamera si apre SUBITO (zero tap sprecati).
+  const addCameraInputRef = useRef<HTMLInputElement | null>(null);
   const showToast = useCallback((msg: string, type: 'ok' | 'err' | 'warn' = 'ok', action?: { label: string; onClick: () => void }) => {
     if (toastRef.current) clearTimeout(toastRef.current);
     setToast({ msg, type, action });
@@ -1094,6 +1097,11 @@ export default function App() {
     setScanResult(null);
     setPriceEstimate(null);
     setIsFormOpen(true);
+    // Apri SUBITO la fotocamera nello stesso gesto del tap su "+"
+    // (deve essere sincrono: niente setTimeout o il browser blocca la camera).
+    // Solo su dispositivi touch (mobile/tablet): su desktop eviterei un dialog file a sorpresa.
+    const isTouch = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
+    if (isTouch) addCameraInputRef.current?.click();
   };
 
   // Crea al volo il reparto rilevato dall'IA (modalità Automatica) e lo seleziona
@@ -3937,6 +3945,10 @@ export default function App() {
           </div>
         );
       })()}
+
+      {/* Input fotocamera persistente: cliccato da openAddForm() per aprire subito la camera */}
+      <input ref={addCameraInputRef} type="file" accept="image/*" capture="environment" className="hidden"
+        onChange={(e: any) => handlePhotoAdd(e, false)} />
 
       {/* ========== FAB MOBILE ========== */}
       <button
