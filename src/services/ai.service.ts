@@ -87,6 +87,8 @@ export interface ScanResult {
   confidence: 'HIGH' | 'MEDIUM' | 'LOW';
   rawText: string;
   warnings?: string[];
+  autoDetected?: boolean;     // true se la categoria è stata rilevata dall'IA (modalità automatica)
+  detectedCategory?: string;  // categoria rilevata dalla foto
 }
 
 export interface PriceEstimate {
@@ -778,31 +780,189 @@ function safeParseJSON(text: string): any | null {
 }
 
 // ==========================================
-// SCAN PRODOTTO
+// SCAN PRODOTTO — PROMPT ADATTIVO
 // ==========================================
-// Prompt generico per categorie personalizzate (Borse, Gioielli, Elettronica, ecc.)
-function buildGenericPrompt(category: string): string {
-  return `Sei un esperto rivenditore e autenticatore di ${category}. Analizza questo oggetto con attenzione maniacale a OGNI dettaglio visibile: logo, materiale, texture, hardware, etichette, colori, dimensioni, condizioni.
+// Knowledge base esperta per categorie "personalizzate" (anche inventate dall'utente).
+// Ogni voce si attiva per parole chiave sul nome categoria (italiano/inglese, accenti ignorati),
+// così una categoria nuova come "Occhiali", "Bracciali" o "Wallet" riceve comunque un esperto
+// dedicato invece di un prompt generico debole.
+interface CategoryExpert {
+  keys: string[];        // parole chiave (radici) che attivano il blocco
+  label: string;         // come l'IA deve considerarsi ("esperto di ...")
+  knowledge: string;     // conoscenza specialistica (brand, modelli, marker autenticità)
+  fields?: string;       // campi JSON extra specifici per la categoria
+}
 
-Identifica con precisione:
-- Brand: cerca loghi, testi, simboli identificativi
-- Modello: nome specifico del prodotto se visibile
-- Materiale: pelle, canvas, nylon, metallo, plastica, ecc.
-- Dimensione/Taglia: misure visibili, tag, etichette
-- Colore: colore principale e secondario
-- Condizione: stato di usura visibile
+const CATEGORY_EXPERTS: CategoryExpert[] = [
+  {
+    keys: ['occhial', 'sunglass', 'eyewear', 'glasses', 'sole', 'vista', 'shades'],
+    label: 'occhiali da sole e da vista (autenticatore Sunglass Hut + ottico)',
+    knowledge: `BRAND & MODELLI: Ray-Ban (Wayfarer, New Wayfarer, Aviator, Clubmaster, Round, Hexagonal, Justin, Erika, Jackie Ohh, State Street; codice RB#### es. RB2140/RB3025), Oakley (Holbrook, Frogskins, Sutro, Radar EV, Jawbreaker, Gascan), Persol (714 Steve McQueen pieghevole, 649, 3152, cerniera a freccia/arrow + supreme arrow), Tom Ford (FT####, T metal sull'asta — Henry/Snowdon/Marko), Gucci (GG####, web stripe, GG logo asta), Prada (logo triangolo asta), Versace (Medusa sulla cerniera/asta, VE####), Dior (DiorSoStellaire, 30Montaigne, CD lettering), Cartier (Panthère, Santos, legno+oro, vite C Décor), Saint Laurent (SL #, SL 28/SL 276 Mica), Balenciaga, Off-White (Virgil, freccia), Celine, Bottega Veneta, Maui Jim (polarizzate), Carrera, Police, Polaroid, Hugo Boss.
+LETTURA CODICE: l'asta interna riporta modello-colore-calibro, es "RB2140 901 50□22 150" (50=lente, 22=ponte, 150=asta). Trascrivilo fedelmente.
+AUTENTICITÀ: incisione "RB" sulla lente sinistra Ray-Ban, "O" Oakley sulla lente, logo nitido e ben centrato su cerniere/aste, viti rifinite, nessuna sbavatura sulle stampe.`,
+    fields: `"lensType": "da sole|da vista|polarizzato|fotocromatico|null", "frameMaterial": "acetato|metallo|titanio|misto|null", "lensColor": "colore/finitura lente (es: G-15 verde, gradient marrone, specchio blu) o null", "modelCode": "codice modello+calibro sull'asta (es RB2140 901 52-22) o null"`,
+  },
+  {
+    keys: ['gioiell', 'jewel', 'bracc', 'bracelet', 'anell', 'ring', 'collan', 'necklace', 'orecchin', 'earring', 'ciondol', 'pendant', 'charm'],
+    label: 'gioielli e alta gioielleria (gemmologo + autenticatore)',
+    knowledge: `MAISON & ICONE: Cartier (Love bracelet con viti, Juste un Clou chiodo, Trinity 3 ori, Panthère, Clash), Van Cleef & Arpels (Alhambra quadrifoglio, Perlée, Frivole), Tiffany & Co. (T, Knot, Hardwear, Return to Tiffany, Elsa Peretti Bean/Open Heart, blu Tiffany), Bvlgari (Serpenti, B.zero1, Divas' Dream, Bvlgari Bvlgari), Hermès (Clic H smalto, Kelly, Collier de Chien CDC), Chanel (CC, Camélia, Coco Crush), Pomellato (Nudo), Pandora (charm, Moments), Swarovski (cristalli, cigno logo), Chrome Hearts (croci argento gotiche, dagger), David Yurman (cavo intrecciato), Messika, Damiani, Bulgari.
+PUNZONI METALLO (fondamentali): 750/18k=oro 18kt, 585/14k=oro 14kt, 375/9k, 999/24k, 925=argento sterling, PT950=platino, "GF"=gold filled, "GP"=gold plated (placcato). Cerca anche punzone marchio di fabbrica e seriali incisi.
+PIETRE: diamante (taglio/carati se inciso), zaffiro, smeraldo, rubino, perla (akoya/tahiti/south sea), zirconia (CZ = non preziosa). Non dichiarare "diamante vero" senza certezza: descrivi e basta.
+AUTENTICITÀ: incisioni nitide del marchio+metallo, seriale Cartier/VCA, peso coerente, chiusure di qualità.`,
+    fields: `"metal": "oro 750/585|argento 925|platino|placcato|acciaio|null", "hallmark": "punzone/i inciso/i esatti (es: 750, 925, marchio) o null", "stones": "pietre visibili (es: diamanti pavé, smeraldo centrale, zirconia) o null", "serial": "seriale/incisione interna se leggibile o null"`,
+  },
+  {
+    keys: ['wallet', 'portafogl', 'portacart', 'cardhold', 'porta carte', 'slg', 'pelletteria piccola'],
+    label: 'piccola pelletteria di lusso (SLG) — portafogli e porta carte',
+    knowledge: `BRAND & MODELLI: Louis Vuitton (Zippy, Brazza, Multiple, Pocket Organizer, Slender, Sarah; tele Monogram/Damier Ebene/Damier Graphite/Taiga; data code stampato a caldo), Gucci (GG Marmont, Ophidia, web stripe), Prada (logo triangolo, Saffiano pelle a grana incrociata), Bottega Veneta (Intrecciato intreccio reale), Saint Laurent (YSL cassandre metallo), Goyard (chevron Goyardine dipinto a mano, St-Marc/Victoire), Hermès (Bearn, MC2, Calvi; pelle Epsom/Togo, punto sellaio), Montblanc (Meisterstück, fiocco di neve), Balenciaga (Cash), Dior (Saddle, Oblique), Loewe (Anagram).
+AUTENTICITÀ: punto di cucitura regolare e inclinato (LV/Hermès), hardware pesante con logo inciso, data/heat stamp leggibile, allineamento perfetto del pattern sulle pieghe, pelle che profuma di concia (non plastica). Saffiano Prada = grana incrociata uniforme.`,
+    fields: `"material": "tela monogram|pelle (Saffiano/Epsom/Togo/Epi)|Intrecciato|null", "pattern": "Monogram|Damier|GG|Oblique|chevron Goyardine|tinta unita|null", "dateCode": "data code/heat stamp se leggibile o null", "hardwareColor": "oro|palladio/argento|rutenio|null"`,
+  },
+  {
+    keys: ['bors', 'bag', 'handbag', 'pochette', 'clutch', 'zaino', 'backpack', 'tote', 'tracoll', 'shoulder', 'tasc'],
+    label: 'borse di lusso (autenticatore Vestiaire/Fashionphile)',
+    knowledge: `ICONE: Hermès (Birkin, Kelly, Constance, Picotin, Garden Party, Evelyne; pelle Togo/Clemence/Epsom/Box; punto sellaio a mano, blind stamp data+atelier), Chanel (Classic Flap 2.55, Boy, 19, WOC; pelle caviar/agnello, catena intrecciata pelle, lucchetto CC, serial sticker+card), Louis Vuitton (Neverfull, Speedy 25/30/35, Alma, Pochette Accessoires, OnTheGo, Multi Pochette, Petit Sac Plat, Keepall; Monogram/Damier/Empreinte), Dior (Lady Dior cannage+charms D-I-O-R, Saddle, Book Tote, Bobby), Gucci (Dionysus, GG Marmont matelassé, Jackie 1961, Ophidia, Bamboo), Prada (Galleria/Double sac, Re-Edition 2000/2005 nylon, Cleo), Bottega Veneta (Jodie, Cassette, Pouch, Arco; Intrecciato), Celine (Luggage, Belt Bag, Triomphe, Ava), Loewe (Puzzle, Hammock, Gate, Flamenco, Puffer), Saint Laurent (Loulou, Kate, College, Niki, Sac de Jour), Fendi (Baguette, Peekaboo, By The Way), Balenciaga (City, Hourglass, Le Cagole), Mulberry (Bayswater, Alexa), Goyard (St Louis, Anjou).
+AUTENTICITÀ: heat stamp/blind stamp e data code, seriali e microchip (LV recenti), regolarità del punto, allineamento pattern alle cuciture, hardware pesante e inciso, qualità fodera, zip (YKK/Lampo/Riri). Diffida di pattern disallineati, logo storti, hardware leggero.`,
+    fields: `"material": "pelle (tipo se identificabile)|tela monogram|nylon|canvas|null", "pattern": "Monogram|Damier|GG|cannage|Intrecciato|tinta unita|null", "hardwareColor": "oro|argento/palladio|antichizzato|null", "dateCode": "data/heat stamp/seriale se leggibile o null", "sizeName": "nome taglia se modello noto (es: Speedy 30, Birkin 35) o null"`,
+  },
+  {
+    keys: ['cintur', 'belt', 'ceintur'],
+    label: 'cinture di lusso',
+    knowledge: `ICONE FIBBIA: Hermès (fibbia H reversibile, Constance; pelle Epsom/Togo, blind stamp), Gucci (doppia G GG, Interlocking G, web stripe), Ferragamo (Gancini, Vara), Louis Vuitton (Initiales LV, Pyramide, Shape; Monogram/Damier), Versace (Medusa), Off-White (Industrial cinghia gialla testo nero), MCM (Visetos), Dior (CD, Oblique), Prada (triangolo logo), Bottega (Intrecciato), Montblanc.
+AUTENTICITÀ: fibbia pesante con logo inciso nitido, fori rifiniti, blind stamp+taglia su retro (cm o pollici), cuciture regolari, pelle di concia.`,
+    fields: `"buckleType": "descrizione fibbia (es: H reversibile, doppia G, Gancini) o null", "material": "pelle|tela monogram|null", "beltSize": "taglia/cm se leggibile o null"`,
+  },
+  {
+    keys: ['profum', 'fragran', 'perfume', 'eau de', 'cologne', 'parfum'],
+    label: 'profumi e fragranze',
+    knowledge: `CASE: maison (Tom Ford Private Blend, Creed Aventus con batch code, Dior Sauvage, Chanel Bleu/N°5, YSL, Maison Francis Kurkdjian Baccarat Rouge 540, Parfums de Marque, Xerjoff, Amouage, Le Labo Santal 33 con etichetta personalizzata). Concentrazione: Parfum/Extrait > Eau de Parfum (EDP) > Eau de Toilette (EDT) > Eau de Cologne. Formato in ml (30/50/100/200). Batch code per autenticità/lotto. Stato: sigillato/scatolato vs aperto + % rimanente.`,
+    fields: `"concentration": "Parfum|EDP|EDT|EDC|null", "volumeMl": "volume in ml o null", "sealed": "true|false", "batchCode": "batch code se leggibile o null"`,
+  },
+  {
+    keys: ['elettron', 'electron', 'tech', 'tecnolog', 'phone', 'telefon', 'smartphone', 'console', 'cuffi', 'headphone', 'earbud', 'laptop', 'computer', 'tablet', 'gpu', 'scheda'],
+    label: 'elettronica e tech',
+    knowledge: `BRAND: Apple (iPhone 12-16 / Pro / Pro Max, iPad, MacBook Air/Pro, AirPods Pro/Max, Apple Watch — leggi modello A####, capacità GB, colore ufficiale), Samsung (Galaxy S/Z Fold/Flip), Sony (PlayStation 5/Portal, WH-1000XM cuffie), Microsoft (Xbox Series X/S), Nintendo (Switch/OLED/Lite), Dyson, GoPro, DJI, schede video Nvidia RTX/AMD. Leggi capacità (GB/TB), generazione, colore ufficiale, eventuale seriale/IMEI/modello (A2342 ecc). Stato: nuovo sigillato vs usato + accessori/scatola presenti.`,
+    fields: `"storage": "capacità (es 128GB, 1TB) o null", "modelNumber": "numero modello (es A2342)/IMEI se visibile o null", "generation": "generazione/anno se identificabile o null", "boxed": "true|false (scatola/accessori presenti)"`,
+  },
+  {
+    keys: ['cappell', 'hat', 'cap', 'beanie', 'bucket'],
+    label: 'cappelli e copricapo',
+    knowledge: `BRAND: New Era (59FIFTY/9FORTY, licenze NBA/MLB, sticker autenticità), Supreme (box logo cap, camp cap), Nike, Adidas, Carhartt (beanie acrilico), Stüssy, Polo Ralph Lauren, brand di lusso (Gucci/LV/Dior/Prada/Burberry monogram bucket). Leggi taglia (S/M/L o regolabile snapback/strapback), materiale, logo ricamato vs stampato.`,
+    fields: `"style": "snapback|fitted|dad cap|bucket|beanie|trucker|null", "hatSize": "taglia o regolabile o null"`,
+  },
+];
+
+// Normalizza per match robusto (minuscolo, niente accenti)
+function normalizeCat(s: string): string {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function findCategoryExpert(category: string): CategoryExpert | null {
+  const n = normalizeCat(category);
+  return CATEGORY_EXPERTS.find(e => e.keys.some(k => n.includes(normalizeCat(k)))) || null;
+}
+
+// Prompt adattivo: si specializza sulla categoria (anche inventata dall'utente).
+function buildGenericPrompt(category: string): string {
+  const expert = findCategoryExpert(category);
+  const role = expert
+    ? `Sei il massimo esperto mondiale di ${expert.label}.`
+    : `Sei un esperto rivenditore e autenticatore di "${category}", con la competenza combinata di un buyer di luxury resale e di un autenticatore professionista.`;
+
+  const knowledgeBlock = expert
+    ? `\n\n━━━ CONOSCENZA SPECIALISTICA ━━━\n${expert.knowledge}\n`
+    : `\n\nNon esiste un database predefinito per questa categoria: ragiona da esperto generalista del lusso/resell. Identifica il TIPO di oggetto, poi brand e modello dai marker visibili.`;
+
+  const extraFields = expert?.fields ? `,\n  ${expert.fields}` : '';
+
+  return `${role} Analizza questo oggetto con attenzione MANIACALE a OGNI dettaglio visibile: logo, materiale, texture, hardware, etichette, punzoni, codici, colori, dimensioni, condizioni.${knowledgeBlock}
+
+REGOLA D'ORO: meglio brand corretto + modello null che inventare un modello. Non allucinare codici/seriali/referenze che non vedi. Se un dato non è leggibile, metti null e descrivilo in "notes" o "logoDescription".
 
 Rispondi SOLO in JSON valido (senza markdown):
 {
+  "type": "tipo preciso di oggetto (es: bracciale rigido, portafogli zip, occhiali da sole aviator) o null",
   "brand": "brand esatto o null",
-  "model": "modello o nome prodotto preciso o null",
+  "model": "modello/linea precisa o null",
   "material": "materiale principale o null",
-  "size": "dimensione/taglia se visibile (es: MM, 30cm, 42, Small) o null",
-  "color": "colore principale o null",
+  "size": "dimensione/taglia/misura visibile (es: MM, 30cm, 42, M, 17cm) o null",
+  "color": "colore principale (nome ufficiale se noto) o null",
   "condition": "DS|VNDS|Used|Worn|null",
-  "notes": "qualsiasi dettaglio identificativo visibile — testi, logo, hardware, ecc."
+  "collaboration": "collaborazione se presente o null",
+  "styleCode": "codice articolo/seriale/punzone visibile o null",
+  "authenticityMarkers": "marker di autenticità osservati (punto cucitura, incisioni, punzoni, allineamento pattern) o null",
+  "logoDescription": "descrizione FEDELE di ogni logo/testo/simbolo visibile — campo più utile se il brand non è certo"${extraFields},
+  "notes": "qualsiasi altro dettaglio identificativo utile per valutazione"
 }
-NON inventare dati. Se non riconosci metti null. Rispondi SOLO JSON.`;
+NON inventare dati. Rispondi SOLO JSON.`;
+}
+
+// Categorie "core" con prompt esperto dedicato (canoniche)
+const CORE_CATEGORIES = ['Pokemon', 'Scarpe', 'Vestiti', 'Orologi'];
+
+// Riporta una categoria rilevata alla forma canonica se è un sinonimo di una core
+function canonicalizeCategory(raw: string): string {
+  const n = normalizeCat(raw);
+  const SYN: Record<string, string> = {
+    pokemon: 'Pokemon', poke: 'Pokemon',
+    scarpe: 'Scarpe', sneaker: 'Scarpe', sneakers: 'Scarpe', shoes: 'Scarpe', calzature: 'Scarpe', scarpa: 'Scarpe',
+    vestiti: 'Vestiti', vestito: 'Vestiti', abbigliamento: 'Vestiti', clothing: 'Vestiti', clothes: 'Vestiti',
+    maglia: 'Vestiti', felpa: 'Vestiti', hoodie: 'Vestiti', tshirt: 'Vestiti', 't-shirt': 'Vestiti', giacca: 'Vestiti',
+    orologi: 'Orologi', orologio: 'Orologi', watch: 'Orologi', watches: 'Orologi',
+  };
+  if (SYN[n]) return SYN[n];
+  for (const c of CORE_CATEGORIES) if (normalizeCat(c) === n) return c;
+  // Categoria libera: capitalizza la prima lettera, tieni il resto
+  const clean = (raw || '').trim();
+  return clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : 'Generico';
+}
+
+// MODALITÀ AUTOMATICA — "vendi qualsiasi cosa": l'IA classifica l'oggetto dalla foto.
+// Restituisce la categoria (canonica se nota, altrimenti etichetta italiana specifica).
+export async function detectCategory(imageBase64: string): Promise<{ category: string; type: string }> {
+  const prompt = `Sei un classificatore merceologico per un gestionale di rivendita. Guarda l'immagine e classifica l'oggetto.
+Restituisci SOLO JSON (niente markdown): {"category":"...","type":"..."}
+- "category": macro-categoria merceologica in italiano, UNA sola etichetta breve.
+  Se rientra in una di queste usala ESATTAMENTE com'è scritta: Scarpe, Vestiti, Orologi, Pokemon.
+  Altrimenti scegli l'etichetta italiana più adatta e specifica, es: Occhiali, Borse, Gioielli, Portafogli, Cintura, Profumo, Elettronica, Cappello, Accessori.
+- "type": tipo specifico dell'oggetto (es: "sneaker alta", "bracciale rigido", "occhiali da sole aviator", "portafogli con zip").
+Se davvero non capisci, usa {"category":"Generico","type":"oggetto non identificato"}.`;
+
+  try {
+    const completion = await groqCallWithRetry(client =>
+      client.chat.completions.create({
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: imageBase64 } },
+          ],
+        }],
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct', // Scout: veloce, sufficiente per classificare
+        temperature: 0.05,
+        max_tokens: 120,
+      })
+    );
+    const parsed = safeParseJSON(completion.choices[0]?.message?.content?.trim() || '');
+    const category = canonicalizeCategory(parsed?.category || 'Generico');
+    const type = (parsed?.type || '').toString().slice(0, 80);
+    return { category, type };
+  } catch (err: any) {
+    logger.warn('detectCategory fallita, uso Generico', { err: err?.message });
+    return { category: 'Generico', type: '' };
+  }
+}
+
+// Scan automatico: rileva la categoria dalla foto, poi esegue lo scan esperto adatto.
+export async function scanProductAuto(imageBase64: string): Promise<ScanResult> {
+  const det = await detectCategory(imageBase64);
+  const result = await scanProduct(imageBase64, det.category);
+  result.autoDetected = true;
+  result.detectedCategory = det.category;
+  if (det.type && !result.details?.type) {
+    result.details = { ...(result.details || {}), type: det.type };
+  }
+  return result;
 }
 
 export async function scanProduct(imageBase64: string, category: string): Promise<ScanResult> {

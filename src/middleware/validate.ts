@@ -118,7 +118,9 @@ export const createWarehouseSchema = z.object({
 export const aiScanSchema = z.object({
   imageBase64: z.string().min(100).max(10 * 1024 * 1024) // Max 10MB base64
     .regex(/^data:image\/(jpeg|jpg|png|webp);base64,/, 'Formato immagine non valido'),
-  category: z.enum(['Pokemon', 'Scarpe', 'Vestiti', 'Orologi']),
+  // Categoria opzionale: se assente → modalità automatica (l'IA rileva dalla foto).
+  // Stringa libera (max 50): supporta categorie personalizzate oltre alle 4 core.
+  category: z.string().min(1).max(50).optional(),
 });
 
 export const priceEstimateSchema = z.object({

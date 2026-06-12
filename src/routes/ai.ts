@@ -5,7 +5,7 @@ import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimit';
 import { validate, aiScanSchema, priceEstimateSchema } from '../middleware/validate';
-import { scanProduct, estimateMarketPrice, generateListing, ListingPlatform } from '../services/ai.service';
+import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, ListingPlatform } from '../services/ai.service';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import { audit } from '../services/audit.service';
@@ -22,13 +22,16 @@ router.use(aiLimiter);
 router.post('/scan', validate(aiScanSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { imageBase64, category } = req.body;
-    const result = await scanProduct(imageBase64, category);
-    
-    await audit({ 
+    // Senza categoria → modalità automatica: l'IA rileva l'oggetto dalla foto
+    const result = category
+      ? await scanProduct(imageBase64, category)
+      : await scanProductAuto(imageBase64);
+
+    await audit({
       action: 'AI_SCAN', userId: req.user!.userId, req,
-      metadata: { category, confidence: result.confidence }
+      metadata: { category: category || result.detectedCategory || 'auto', auto: !category, confidence: result.confidence }
     });
-    
+
     res.json(result);
   } catch (err: any) {
     logger.error('Errore /ai/scan', { err: err.message });
@@ -55,11 +58,13 @@ router.post('/price', validate(priceEstimateSchema), async (req: AuthRequest, re
 router.post('/full-scan', validate(aiScanSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { imageBase64, category } = req.body;
-    const scan = await scanProduct(imageBase64, category);
+    const scan = category
+      ? await scanProduct(imageBase64, category)
+      : await scanProductAuto(imageBase64);
 
     await audit({
       action: 'AI_SCAN', userId: req.user!.userId, req,
-      metadata: { type: 'full_scan', category, confidence: scan.confidence }
+      metadata: { type: 'full_scan', category: category || scan.detectedCategory || 'auto', auto: !category, confidence: scan.confidence }
     });
 
     res.json({ scan, price: null, authenticity: null });
