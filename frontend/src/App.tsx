@@ -802,6 +802,37 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, currentView, user]);
 
+  // Condividi nell'app: arrivati da uno share (/?share=1), leggi la foto dalla
+  // cache (messa lì da sw-share.js), apri il form in Automatico e lancia lo scan.
+  useEffect(() => {
+    if (!isAuthenticated || !('caches' in window)) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('share') !== '1') return;
+    (async () => {
+      try {
+        const cache = await caches.open('hq-shared');
+        const res = await cache.match('/__shared_image');
+        if (res) {
+          const blob = await res.blob();
+          await cache.delete('/__shared_image');
+          const file = new File([blob], 'condivisa.jpg', { type: blob.type || 'image/jpeg' });
+          const compressed = await compressImage(file, 1024, 0.6);
+          // Apri il form in Automatico SENZA fotocamera (la foto ce l'abbiamo già)
+          setCategory(AUTO_CATEGORY);
+          setDetectedReparto('');
+          setShowRepartoGrid(false);
+          setScanResult(null);
+          setPriceEstimate(null);
+          setProductPhotos([compressed]);
+          setIsFormOpen(true);
+          runAIScan(compressed, AUTO_CATEGORY);
+        }
+      } catch { /* ignora */ }
+      window.history.replaceState({}, '', '/');
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (userCategories.length > 0 && category === '') setCategory(userCategories[0]);
     if (category === 'Scarpe') setSize('42');
@@ -1180,12 +1211,11 @@ export default function App() {
     });
     setIsAddingCat(false);
     if (ok) {
-      setUser(data.user);  // contiene già aiConfig con emoji
+      setUser(data.user);
       setNewCatName('');
       fetchTeam();
-      const config = data.user?.warehouses?.find((w: any) => w.name.includes(newCatName));
-      const emoji = config?.aiConfig ? (() => { try { return JSON.parse(config.aiConfig).emoji; } catch { return ''; } })() : '';
-      showToast(`${emoji} Reparto "${newCatName}" aggiunto!`);
+      // L'icona del reparto è lucide (getCategoryIcon mappa per nome) — niente emoji nel toast
+      showToast(`Reparto "${newCatName}" aggiunto!`);
     } else showToast(data.error || 'Errore', 'err');
   };
 

@@ -20,6 +20,19 @@ export default defineConfig({
         scope: '/',
         lang: 'it',
         categories: ['business', 'finance', 'productivity'],
+        // Condividi nell'app: ricevi una foto da un'altra app (Galleria, Vinted…)
+        // → la passiamo al SW (sw-share.js) che la mette in cache e apre l'app.
+        share_target: {
+          action: '/share-target',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            title: 'title',
+            text: 'text',
+            url: 'url',
+            files: [{ name: 'image', accept: ['image/*'] }],
+          },
+        },
         icons: [
           {
             src: '/logo.png',
@@ -43,6 +56,8 @@ export default defineConfig({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
+        // Gestore del share target (cattura il POST /share-target con la foto)
+        importScripts: ['sw-share.js'],
         globPatterns: ['**/*.{js,css,html,ico,svg,png,woff,woff2}'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/, /^\/auth/, /^\/products/, /^\/team/, /^\/notifications/, /^\/tracking/, /^\/health/],
