@@ -578,6 +578,13 @@ export default function App() {
     } finally { setPushBusy(false); }
   };
 
+  const sendTestPush = async () => {
+    setPushBusy(true);
+    const { ok, data } = await apiCall('/api/push/test', { method: 'POST' });
+    setPushBusy(false);
+    if (ok) showToast('Notifica di prova inviata 📲'); else showToast(data?.error || 'Errore invio', 'err');
+  };
+
   const disablePush = async () => {
     setPushBusy(true);
     try {
@@ -1673,38 +1680,40 @@ export default function App() {
     setSourcingOpen(true);
   };
 
-  // Scatta/scegli foto al mercatino → l'IA riempie brand/modello
+  // Solo foto: l'IA riconosce il prodotto dalla foto e ne calcola subito il valore.
   const sourcingPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
     setSourcingScanning(true);
-    setSourcingVal(null);
+    setSourcingVal(null); setSourcingBrand(''); setSourcingModel(''); setSourcingSize('');
     try {
       const compressed = await compressImage(file, 1024, 0.6);
-      const { ok, data } = await apiCall('/api/ai/full-scan', {
+      const { ok, data } = await apiCall<any>('/api/ai/full-scan', {
         method: 'POST', body: JSON.stringify({ imageBase64: compressed }),
       });
-      if (ok && data.scan) {
-        if (data.scan.brand) setSourcingBrand(data.scan.brand);
-        if (data.scan.model) setSourcingModel(data.scan.model);
-        const d = data.scan.details || {};
-        if (d.size) setSourcingSize(d.size.toString());
-      } else showToast(data?.error || 'Non riconosciuto, scrivi a mano', 'warn');
-    } catch { showToast('Errore scansione', 'err'); }
-    finally { setSourcingScanning(false); }
-  };
-
-  // Calcola la valutazione di mercato (eBay) per il prodotto inserito
-  const sourcingCalc = async () => {
-    const query = [sourcingBrand, sourcingModel].filter(Boolean).join(' ').trim();
-    if (query.length < 2) { showToast('Inserisci brand e modello', 'warn'); return; }
-    setSourcingCalcLoading(true); setSourcingVal(null);
-    const { ok, data } = await apiCall('/api/ai/market-value', {
-      method: 'POST', body: JSON.stringify({ query, size: sourcingSize || undefined }),
-    });
-    setSourcingCalcLoading(false);
-    setSourcingVal(ok ? data : { configured: false, error: true });
+      const brand = data?.scan?.brand || '';
+      const model = data?.scan?.model || '';
+      const size = (data?.scan?.details?.size || '').toString();
+      if (!ok || (!brand && !model)) {
+        setSourcingScanning(false);
+        showToast('Non riconosciuto — riprova con una foto più nitida del logo/etichetta', 'warn');
+        return;
+      }
+      setSourcingBrand(brand); setSourcingModel(model); setSourcingSize(size);
+      const query = [brand, model].filter(Boolean).join(' ').trim();
+      // Valuta subito
+      setSourcingScanning(false);
+      setSourcingCalcLoading(true);
+      const res = await apiCall<any>('/api/ai/market-value', {
+        method: 'POST', body: JSON.stringify({ query, size: size || undefined }),
+      });
+      setSourcingCalcLoading(false);
+      setSourcingVal(res.ok ? res.data : { configured: false, error: true });
+    } catch {
+      showToast('Errore', 'err');
+      setSourcingScanning(false); setSourcingCalcLoading(false);
+    }
   };
   
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -3793,6 +3802,12 @@ export default function App() {
                   {pushBusy ? <Loader2 size={14} className="animate-spin" /> : pushEnabled ? 'Disattiva' : 'Attiva'}
                 </button>
               </div>
+              {pushEnabled && (
+                <button onClick={sendTestPush} disabled={pushBusy}
+                  className="mt-4 w-full py-2 rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
+                  <Bell size={13} /> Invia notifica di prova
+                </button>
+              )}
               {!pushSupported && (
                 <p className="text-[10px] text-[var(--text-faint)] mt-3">Su iPhone le notifiche funzionano solo se aggiungi l'app alla schermata Home.</p>
               )}
@@ -4397,36 +4412,29 @@ export default function App() {
             </div>
 
             <div className="p-5 space-y-4">
-              <p className="text-xs text-[var(--text-soft)]">Scatta o scrivi il prodotto: ti dico il <b>prezzo massimo d'acquisto</b> per avere il margine che vuoi, basato sul mercato eBay.</p>
+              <p className="text-xs text-[var(--text-soft)]">Scatta una foto dell'oggetto: l'IA lo riconosce e ti dice il <b>valore di mercato</b> e il <b>prezzo massimo d'acquisto</b> per il margine che vuoi. Niente da scrivere.</p>
 
-              {/* Foto */}
-              <button type="button" onClick={() => sourcingCamInputRef.current?.click()} disabled={sourcingScanning}
-                className="w-full py-3 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
-                {sourcingScanning ? <Loader2 size={16} className="animate-spin text-purple-400" /> : <Camera size={16} className="text-purple-400" />}
-                {sourcingScanning ? 'Riconoscimento…' : 'Scatta foto (IA riconosce)'}
+              {/* Solo foto */}
+              <button type="button" onClick={() => sourcingCamInputRef.current?.click()} disabled={sourcingScanning || sourcingCalcLoading}
+                className="w-full py-4 rounded-2xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
+                {(sourcingScanning || sourcingCalcLoading)
+                  ? <><Loader2 size={18} className="animate-spin text-purple-400" /> {sourcingScanning ? 'Riconoscimento…' : 'Valutazione…'}</>
+                  : <><Camera size={18} className="text-purple-400" /> Scatta foto</>}
               </button>
 
-              {/* Campi */}
-              <div className="grid grid-cols-2 gap-3">
-                <input value={sourcingBrand} onChange={(e: any) => setSourcingBrand(e.target.value)} placeholder="Brand"
-                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
-                <input value={sourcingSize} onChange={(e: any) => setSourcingSize(e.target.value)} placeholder="Taglia (opz.)"
-                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
-              </div>
-              <input value={sourcingModel} onChange={(e: any) => setSourcingModel(e.target.value)} placeholder="Modello"
-                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
-
-              <button onClick={sourcingCalc} disabled={sourcingCalcLoading}
-                className="w-full bg-[#ff4d00] hover:bg-[#ff6a2a] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                {sourcingCalcLoading ? <Loader2 size={18} className="animate-spin" /> : <TrendingUp size={16} />}
-                Calcola valutazione
-              </button>
+              {/* Cosa ha riconosciuto l'IA */}
+              {(sourcingBrand || sourcingModel) && (
+                <div className="text-center">
+                  <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">Riconosciuto</p>
+                  <p className="text-sm font-bold text-[var(--text)]">{[sourcingBrand, sourcingModel].filter(Boolean).join(' ')}{sourcingSize ? ` · ${sourcingSize}` : ''}</p>
+                </div>
+              )}
 
               {/* Risultato */}
               {sourcingVal && (sourcingVal.configured === false ? (
                 <p className="text-xs text-[var(--text-soft)] bg-[var(--surface-2)] rounded-xl p-3 text-center">Fonte prezzi non ancora attiva (eBay in attivazione). Riprova più tardi.</p>
               ) : sourcingVal.value == null ? (
-                <p className="text-xs text-[var(--text-soft)] bg-[var(--surface-2)] rounded-xl p-3 text-center">Nessun dato di mercato per questo prodotto. Prova a precisare brand/modello.</p>
+                <p className="text-xs text-[var(--text-soft)] bg-[var(--surface-2)] rounded-xl p-3 text-center">Nessun dato di mercato per questo prodotto. Riprova con una foto più chiara o da un'altra angolazione.</p>
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm bg-[var(--surface-2)] rounded-xl p-3">

@@ -1,7 +1,7 @@
 // src/routes/push.ts — sottoscrizione notifiche push (Web Push)
 import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
-import { getVapidPublicKey, saveSubscription, removeSubscription } from '../services/push.service';
+import { getVapidPublicKey, saveSubscription, removeSubscription, sendPushToUser } from '../services/push.service';
 
 const router = Router();
 router.use(authenticate);
@@ -18,6 +18,16 @@ router.post('/subscribe', async (req: AuthRequest, res: Response) => {
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: 'Errore subscribe' });
+  }
+});
+
+// Invia una notifica di prova all'utente corrente
+router.post('/test', async (req: AuthRequest, res: Response) => {
+  try {
+    await sendPushToUser(req.user!.userId, { title: 'ResellerHQ', body: 'Notifica di prova ✓ Funziona!', url: '/' });
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Errore invio prova' });
   }
 });
 
