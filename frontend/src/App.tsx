@@ -7,7 +7,8 @@ import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
-  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon
+  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon,
+  Image as ImageIcon
 } from 'lucide-react';
 
 // ==========================================
@@ -4119,20 +4120,31 @@ export default function App() {
                     </div>
                   ))}
                   {productPhotos.length < 5 && (
+                    // Tile principale: apre DIRETTAMENTE la fotocamera (capture) su mobile
                     <label className={`aspect-square rounded-xl border-2 border-dashed border-purple-500/30 hover:border-purple-500 flex flex-col items-center justify-center cursor-pointer transition-colors ${isScanning ? 'pointer-events-none opacity-40' : ''}`}>
-                      <input type="file" accept="image/*" multiple className="hidden"
+                      <input type="file" accept="image/*" capture="environment" className="hidden"
                         onChange={(e: any) => handlePhotoAdd(e, false)} disabled={isScanning} />
                       {isScanning ? (
                         <Loader2 className="animate-spin text-purple-400" size={18} />
                       ) : (
                         <>
                           <Camera size={18} className="text-purple-400 mb-1" />
-                          <span className="text-[9px] text-[var(--text-soft)]">Aggiungi</span>
+                          <span className="text-[9px] text-[var(--text-soft)]">Scatta</span>
                         </>
                       )}
                     </label>
                   )}
                 </div>
+
+                {/* Alternativa: scegli dalla libreria (senza capture → galleria/file) */}
+                {productPhotos.length < 5 && !isScanning && (
+                  <label className="flex items-center justify-center gap-2 w-full mb-3 py-2 rounded-xl border border-purple-500/30 hover:border-purple-500 text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] cursor-pointer transition-colors">
+                    <input type="file" accept="image/*" multiple className="hidden"
+                      onChange={(e: any) => handlePhotoAdd(e, false)} disabled={isScanning} />
+                    <ImageIcon size={13} className="text-purple-400" />
+                    Scegli dalla libreria
+                  </label>
+                )}
 
                 {isScanning && (
                   <p className="text-xs text-purple-400 flex items-center gap-2 mb-2">
