@@ -1080,7 +1080,37 @@ export default function App() {
       showToast(`${emoji} Reparto "${newCatName}" aggiunto!`);
     } else showToast(data.error || 'Errore', 'err');
   };
-  
+
+  // Apre il form "Aggiungi prodotto" in modalità FOTO-FIRST: parte in Automatico,
+  // l'utente mette solo la foto e i campi/tabelle compaiono dopo il riconoscimento.
+  const openAddForm = () => {
+    setCategory(AUTO_CATEGORY);
+    setDetectedReparto('');
+    setProductPhotos([]);
+    setScanResult(null);
+    setPriceEstimate(null);
+    setIsFormOpen(true);
+  };
+
+  // Crea al volo il reparto rilevato dall'IA (modalità Automatica) e lo seleziona
+  const createRepartoFromDetected = async (rawName: string) => {
+    const nm = (rawName || '').trim();
+    if (!nm || isAddingCat) return;
+    setIsAddingCat(true);
+    showToast(`Creo il reparto "${nm}" con icona IA…`, 'ok');
+    const { ok, data } = await apiCall('/warehouses', {
+      method: 'POST', body: JSON.stringify({ name: nm })
+    });
+    setIsAddingCat(false);
+    if (ok) {
+      setUser(data.user);
+      fetchTeam();
+      setCategory(nm);        // seleziona il nuovo reparto (userCategories rimuove "Magazzino ")
+      setDetectedReparto('');
+      showToast(`Reparto "${nm}" creato e selezionato`);
+    } else showToast(data.error || 'Errore creazione reparto', 'err');
+  };
+
   // ==========================================
   // TEAM QUOTE
   // ==========================================
@@ -1291,7 +1321,7 @@ export default function App() {
     const unitPrice = parseFloat(price);
     
     let finalBrand = brand, finalName = name, finalSize = size, finalCondition = condition;
-    if (!category) { showToast('Seleziona un reparto', 'err'); setIsSaving(false); return; }
+    if (!category || category === AUTO_CATEGORY) { showToast('Aggiungi una foto o scegli un reparto', 'err'); setIsSaving(false); return; }
     if (isNaN(unitPrice) || unitPrice <= 0) { showToast('Inserisci un prezzo valido', 'err'); setIsSaving(false); return; }
 
     if (category === 'Pokemon') {
@@ -1496,7 +1526,7 @@ export default function App() {
       }
       if (typing) return;
       if (e.key === '/') { e.preventDefault(); setCmdQuery(''); setCmdIndex(0); setCmdOpen(true); }
-      else if (e.key === 'n' || e.key === 'N') { e.preventDefault(); setIsFormOpen(true); }
+      else if (e.key === 'n' || e.key === 'N') { e.preventDefault(); openAddForm(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -2043,7 +2073,7 @@ export default function App() {
           {/* Azioni a destra */}
           <div className="flex-1 flex items-center justify-end gap-1.5">
             {/* Pulsante Aggiungi (solo desktop) */}
-            <button onClick={() => setIsFormOpen(true)}
+            <button onClick={() => openAddForm()}
               className="hidden lg:flex items-center gap-2 bg-[#ff4d00] hover:bg-[#e84400] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
               <Plus size={15} /> Aggiungi
             </button>
@@ -2201,7 +2231,7 @@ export default function App() {
                   <h3 className="text-xl lg:text-2xl font-bold mb-1.5">Iniziamo dal primo prodotto</h3>
                   <p className="text-sm text-[var(--text-soft)] mb-5 max-w-md">In pochi secondi aggiungi un articolo e HQ inizia a tracciare stock, vendite, profitti e spedizioni. Tutto in automatico.</p>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={() => setIsFormOpen(true)}
+                    <button onClick={() => openAddForm()}
                       className="bg-[#ff4d00] hover:bg-[#e84400] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
                       <Plus size={16} /> Aggiungi il primo prodotto
                     </button>
@@ -2583,7 +2613,7 @@ export default function App() {
                       <p className="font-bold text-lg">Il tuo magazzino è vuoto</p>
                       <p className="text-sm text-[var(--text-soft)] mt-1 mb-5 max-w-sm mx-auto">Aggiungi il primo prodotto per iniziare a tracciare stock, vendite e profitti.</p>
                       <div className="flex flex-wrap gap-2 justify-center">
-                        <button onClick={() => setIsFormOpen(true)}
+                        <button onClick={() => openAddForm()}
                           className="bg-[#ff4d00] hover:bg-[#e84400] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
                           <Plus size={16} /> Aggiungi prodotto
                         </button>
@@ -3824,7 +3854,7 @@ export default function App() {
           { key: 'nav-analytics', icon: BarChart3, label: 'Vai ad Analytics', sub: '', run: () => navigateTo('analytics') },
           { key: 'nav-tracking', icon: Truck, label: 'Vai a Tracking', sub: '', run: () => navigateTo('tracking') },
           { key: 'nav-settings', icon: Settings, label: 'Vai a Impostazioni', sub: '', run: () => navigateTo('settings') },
-          { key: 'act-add', icon: Plus, label: 'Aggiungi prodotto', sub: 'Nuovo inserimento in magazzino', run: () => setIsFormOpen(true) },
+          { key: 'act-add', icon: Plus, label: 'Aggiungi prodotto', sub: 'Nuovo inserimento in magazzino', run: () => openAddForm() },
         ];
         // Azioni sui selezionati (quando sei in modalità selezione)
         if (bulkMode && getBulkSelectedIds().length > 0) {
@@ -3906,7 +3936,7 @@ export default function App() {
 
       {/* ========== FAB MOBILE ========== */}
       <button
-        onClick={() => setIsFormOpen(true)}
+        onClick={() => openAddForm()}
         className="lg:hidden fixed z-40 bg-[#ff4d00] rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-all"
         style={{ width: 54, height: 54, bottom: 'calc(5.5rem + env(safe-area-inset-bottom))', right: 16 }}
       >
@@ -4013,12 +4043,25 @@ export default function App() {
                 </div>
                 {/* Esito modalità automatica */}
                 {category === AUTO_CATEGORY && (
-                  <p className="text-[11px] text-[var(--text-muted)] mt-2 flex items-center gap-1.5">
-                    <Sparkles size={11} className="text-purple-400" />
-                    {detectedReparto
-                      ? <>Rilevato: <b className="text-[var(--text)]">{detectedReparto}</b> — nessun reparto con questo nome. Crealo o scegline uno qui sopra.</>
-                      : <>Aggiungi una foto: l'IA capisce da sola di che prodotto si tratta.</>}
-                  </p>
+                  detectedReparto ? (
+                    <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
+                      <p className="text-[11px] text-[var(--text-muted)] flex items-center gap-1.5">
+                        <Sparkles size={11} className="text-purple-400" />
+                        Rilevato: <b className="text-[var(--text)]">{detectedReparto}</b> — reparto non presente.
+                      </p>
+                      <button type="button" disabled={isAddingCat}
+                        onClick={() => createRepartoFromDetected(detectedReparto)}
+                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-purple-500/15 border border-purple-500/40 text-purple-300 hover:bg-purple-500/25 transition-colors disabled:opacity-40 flex items-center gap-1">
+                        {isAddingCat ? <Loader2 size={11} className="animate-spin" /> : <Plus size={11} />}
+                        Crea reparto "{detectedReparto}"
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-[var(--text-muted)] mt-2 flex items-center gap-1.5">
+                      <Sparkles size={11} className="text-purple-400" />
+                      Aggiungi una foto: l'IA capisce da sola di che prodotto si tratta.
+                    </p>
+                  )
                 )}
               </div>
               
@@ -4125,6 +4168,10 @@ export default function App() {
                 )}
               </div>
               
+              {/* FOTO-FIRST: i campi/tabelle compaiono solo quando la categoria è
+                  determinata (rilevata dalla foto o scelta a mano). In Automatico
+                  senza ancora una categoria si vede solo la foto. */}
+              {(category && category !== AUTO_CATEGORY) && (<>
               {/* Form campi specifici per categoria */}
               {category === 'Pokemon' ? (
                 <>
@@ -4409,6 +4456,7 @@ export default function App() {
                 className="w-full bg-[#ff4d00] hover:bg-[#ff6a2a] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
                 {isSaving ? <Loader2 className="animate-spin" size={20} /> : 'Salva Prodotto'}
               </button>
+              </>)}
             </form>
           </div>
         </div>
@@ -5042,7 +5090,7 @@ export default function App() {
                   <Layers size={16} className="text-[var(--text-muted)]" /> Crea Lotto
                 </h2>
                 <button type="button"
-                  onClick={() => { setLotOpen(false); setIsFormOpen(true); }}
+                  onClick={() => { setLotOpen(false); openAddForm(); }}
                   className="text-[11px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors mt-0.5 flex items-center gap-1">
                   <Plus size={10} /> Torna a Prodotto Singolo
                 </button>
