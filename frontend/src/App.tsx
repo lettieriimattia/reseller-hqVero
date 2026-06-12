@@ -4482,6 +4482,7 @@ export default function App() {
                         instrumentType: 'Strumento', finish: 'Finitura',
                         publisher: 'Editore', issueNumber: 'Numero', edition: 'Edizione',
                         isbn: 'ISBN', stampCondition: 'Stato', catalogRef: 'Catalogo',
+                        priceTier: 'Fascia', walletType: 'Tipo',
                       };
                       const SKIP = new Set(['notes', 'logoDescription', 'authenticityMarkers', 'rawText', 'priceRange', 'luxuryMarkers']);
                       const rows = Object.entries(d).filter(([k, v]) =>

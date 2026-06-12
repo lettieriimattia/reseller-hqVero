@@ -813,10 +813,15 @@ AUTENTICITÀ: incisioni nitide del marchio+metallo, seriale Cartier/VCA, peso co
   },
   {
     keys: ['wallet', 'portafogl', 'portacart', 'cardhold', 'porta carte', 'slg', 'pelletteria piccola'],
-    label: 'piccola pelletteria di lusso (SLG) — portafogli e porta carte',
-    knowledge: `BRAND & MODELLI: Louis Vuitton (Zippy, Brazza, Multiple, Pocket Organizer, Slender, Sarah; tele Monogram/Damier Ebene/Damier Graphite/Taiga; data code stampato a caldo), Gucci (GG Marmont, Ophidia, web stripe), Prada (logo triangolo, Saffiano pelle a grana incrociata), Bottega Veneta (Intrecciato intreccio reale), Saint Laurent (YSL cassandre metallo), Goyard (chevron Goyardine dipinto a mano, St-Marc/Victoire), Hermès (Bearn, MC2, Calvi; pelle Epsom/Togo, punto sellaio), Montblanc (Meisterstück, fiocco di neve), Balenciaga (Cash), Dior (Saddle, Oblique), Loewe (Anagram).
-AUTENTICITÀ: punto di cucitura regolare e inclinato (LV/Hermès), hardware pesante con logo inciso, data/heat stamp leggibile, allineamento perfetto del pattern sulle pieghe, pelle che profuma di concia (non plastica). Saffiano Prada = grana incrociata uniforme.`,
-    fields: `"material": "tela monogram|pelle (Saffiano/Epsom/Togo/Epi)|Intrecciato|null", "pattern": "Monogram|Damier|GG|Oblique|chevron Goyardine|tinta unita|null", "dateCode": "data code/heat stamp se leggibile o null", "hardwareColor": "oro|palladio/argento|rutenio|null"`,
+    label: 'portafogli e porta carte (di ogni fascia: dal lusso all\'economico)',
+    knowledge: `Riconosci i portafogli di OGNI fascia di prezzo, non solo il lusso: spesso valgono poco ed è giusto identificarli lo stesso.
+LUSSO: Louis Vuitton (Zippy, Brazza, Multiple, Pocket Organizer, Slender, Sarah; tele Monogram/Damier Ebene/Damier Graphite/Taiga; data code a caldo), Gucci (GG Marmont, Ophidia), Prada (logo triangolo, Saffiano), Bottega Veneta (Intrecciato), Saint Laurent (YSL cassandre), Goyard (chevron Goyardine), Hermès (Bearn, MC2, Calvi; punto sellaio), Montblanc (Meisterstück), Balenciaga (Cash), Dior (Oblique), Loewe (Anagram).
+PREMIUM/ACCESSIBILE: Coach, Michael Kors, Tory Burch, Polo Ralph Lauren, Tommy Hilfiger, Calvin Klein, Guess, Fossil, Boss, Lacoste, Armani Exchange, Burberry (check), Coccinelle, Piquadro, The Bridge, Mandarina Duck.
+FUNZIONALI/SPORT/STREET: Secrid (porta carte alluminio a leva), Bellroy, Ridge, Carhartt WIP, Dickies, Herschel, Eastpak, Vans, Nike, Adidas, Levi's (cuoio con patch), Fjällräven.
+ECONOMICI/NO BRAND: portafogli in vera pelle senza logo, similpelle, RFID-blocking generici, mercato/no-name. In questi casi indica brand null e descrivi materiale, colore, tipo (bi-fold, tri-fold, porta carte, con zip, con portamonete).
+TIPI: bifold, trifold, lungo/continental, porta carte (cardholder), zip-around, money clip, portamonete.
+AUTENTICITÀ (solo per il lusso): punto di cucitura regolare e inclinato, hardware pesante con logo inciso, data/heat stamp leggibile, allineamento pattern sulle pieghe, pelle di concia. Per i brand economici l'autenticità non è rilevante.`,
+    fields: `"walletType": "bifold|trifold|lungo|cardholder|zip-around|money clip|portamonete|null", "material": "pelle|similpelle|tela monogram|Saffiano|alluminio|tessuto|null", "pattern": "Monogram|Damier|GG|check|tinta unita|null", "priceTier": "lusso|premium|economico|null", "dateCode": "data code/heat stamp se leggibile o null"`,
   },
   {
     keys: ['bors', 'bag', 'handbag', 'pochette', 'clutch', 'zaino', 'backpack', 'tote', 'tracoll', 'shoulder', 'tasc'],
@@ -925,6 +930,8 @@ function buildGenericPrompt(category: string): string {
 
   return `${role} Analizza questo oggetto con attenzione MANIACALE a OGNI dettaglio visibile: logo, materiale, texture, hardware, etichette, punzoni, codici, colori, dimensioni, condizioni.${knowledgeBlock}
 
+OGNI FASCIA DI PREZZO: identifica l'oggetto anche se è economico o di un brand comune/poco prezioso — NON limitarti al lusso. Un portafogli Carhartt, un orologio Casio, occhiali Police o un capo Zara vanno riconosciuti esattamente come un pezzo di lusso. Se è un oggetto senza marchio, mettilo lo stesso (brand null) descrivendo tipo, materiale e colore. Indica la fascia in "priceTier".
+
 REGOLA D'ORO: meglio brand corretto + modello null che inventare un modello. Non allucinare codici/seriali/referenze che non vedi. Se un dato non è leggibile, metti null e descrivilo in "notes" o "logoDescription".
 
 Rispondi SOLO in JSON valido (senza markdown):
@@ -932,6 +939,7 @@ Rispondi SOLO in JSON valido (senza markdown):
   "type": "tipo preciso di oggetto (es: bracciale rigido, portafogli zip, occhiali da sole aviator) o null",
   "brand": "brand esatto o null",
   "model": "modello/linea precisa o null",
+  "priceTier": "lusso|premium|economico|null",
   "material": "materiale principale o null",
   "size": "dimensione/taglia/misura visibile (es: MM, 30cm, 42, M, 17cm) o null",
   "color": "colore principale (nome ufficiale se noto) o null",
