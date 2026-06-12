@@ -91,7 +91,9 @@
   --fill-3: rgba(255,255,255,0.22);
   --bg-blur: rgba(10,10,18,0.55);
   --bg-overlay: rgba(10,10,18,0.6);
-  --surface-blur: rgba(20,20,30,0.5);
+  /* Più opaco: i pannelli flottanti (tendina notifiche, modali) devono restare
+     leggibili anche in glass — col 50% il testo spariva sullo sfondo. */
+  --surface-blur: rgba(18,18,28,0.88);
 }
 /* Sfondo sfumato: serve "qualcosa dietro" perché il vetro si veda */
 html.glass, html.glass body {

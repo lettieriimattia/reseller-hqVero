@@ -2286,7 +2286,7 @@ export default function App() {
               </button>
 
               {notifPanelOpen && (
-                <div className="absolute right-0 top-12 w-80 sm:w-96 bg-[var(--surface)] border border-[var(--border-2)] rounded-2xl shadow-xl overflow-hidden z-50">
+                <div className="absolute right-0 top-12 w-80 sm:w-96 bg-[var(--surface-blur)] backdrop-blur-2xl border border-[var(--border-2)] rounded-2xl shadow-xl overflow-hidden z-50">
                   <div className="p-4 border-b border-[var(--border)] flex justify-between items-center">
                     <h3 className="font-semibold text-sm">Notifiche</h3>
                     {unreadCount > 0 && (
@@ -2431,7 +2431,7 @@ export default function App() {
             <button onClick={openSourcing}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-[#ff4d00]/30 bg-[#ff4d00]/[0.06] hover:bg-[#ff4d00]/[0.12] text-sm font-bold text-[var(--text)] transition-colors">
               <DollarSign size={16} className="text-[#ff4d00]" />
-              Quanto lo pago? <span className="text-[var(--text-soft)] font-medium hidden sm:inline">· prezzo max d'acquisto dal mercato</span>
+              Ricerca valore <span className="text-[var(--text-soft)] font-medium hidden sm:inline">· prezzo di mercato e max d'acquisto</span>
             </button>
 
             {/* Welcome / primo avvio — quando non ci sono ancora prodotti */}
@@ -4207,7 +4207,7 @@ export default function App() {
           { key: 'nav-tracking', icon: Truck, label: 'Vai a Tracking', sub: '', run: () => navigateTo('tracking') },
           { key: 'nav-settings', icon: Settings, label: 'Vai a Impostazioni', sub: '', run: () => navigateTo('settings') },
           { key: 'act-add', icon: Plus, label: 'Aggiungi prodotto', sub: 'Nuovo inserimento in magazzino', run: () => openAddForm() },
-          { key: 'act-sourcing', icon: DollarSign, label: 'Quanto lo pago?', sub: 'Prezzo massimo d\'acquisto per il margine voluto', run: () => openSourcing() },
+          { key: 'act-sourcing', icon: DollarSign, label: 'Ricerca valore', sub: 'Prezzo di mercato e max d\'acquisto per il margine voluto', run: () => openSourcing() },
         ];
         // Azioni sui selezionati (quando sei in modalità selezione)
         if (bulkMode && getBulkSelectedIds().length > 0) {
@@ -4302,7 +4302,7 @@ export default function App() {
             <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <div className="flex items-center gap-2">
                 <DollarSign size={20} className="text-[#ff4d00]" />
-                <h2 className="text-xl font-semibold">Quanto lo pago?</h2>
+                <h2 className="text-xl font-semibold">Ricerca valore</h2>
               </div>
               <button onClick={() => setSourcingOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors"><X size={20} /></button>
             </div>
