@@ -234,6 +234,8 @@ export default function App() {
   const [category, setCategory] = useState('');
   // Categoria rilevata dall'IA in modalità Automatica ma senza un reparto corrispondente
   const [detectedReparto, setDetectedReparto] = useState('');
+  // In modalità Automatica foto-first: mostra la griglia reparti solo su richiesta
+  const [showRepartoGrid, setShowRepartoGrid] = useState(false);
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [brand, setBrand] = useState('');
@@ -1086,6 +1088,7 @@ export default function App() {
   const openAddForm = () => {
     setCategory(AUTO_CATEGORY);
     setDetectedReparto('');
+    setShowRepartoGrid(false);
     setProductPhotos([]);
     setScanResult(null);
     setPriceEstimate(null);
@@ -4014,8 +4017,25 @@ export default function App() {
             
             <form onSubmit={handleSave} className="p-5 space-y-5">
               
-              {/* Tabs categoria */}
-              <div>
+              {/* Tabs categoria — in Automatico foto-first la griglia è nascosta
+                  finché non c'è una foto o non la si apre a mano (vista minimale). */}
+              {(() => {
+                const autoCollapsed = category === AUTO_CATEGORY && productPhotos.length === 0 && !scanResult && !showRepartoGrid;
+                if (autoCollapsed) {
+                  return (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-[var(--text-soft)] flex items-center gap-1.5">
+                        <Sparkles size={12} className="text-purple-400" /> Modalità automatica — aggiungi una foto
+                      </span>
+                      <button type="button" onClick={() => setShowRepartoGrid(true)}
+                        className="text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors">
+                        Scegli reparto a mano
+                      </button>
+                    </div>
+                  );
+                }
+                return (
+                <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Reparto</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {/* Automatico: l'IA rileva il reparto dalla foto */}
@@ -4064,7 +4084,9 @@ export default function App() {
                   )
                 )}
               </div>
-              
+                );
+              })()}
+
               {/* FOTO + IA SCAN — multi-foto (max 5) */}
               <div className="bg-gradient-to-br from-purple-500/10 to-[#ff4d00]/10 border border-purple-500/30 rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-2">
