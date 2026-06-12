@@ -79,37 +79,60 @@ export interface Valuation {
   authenticatedOnly: boolean;
 }
 
-// Valutazione: cerca comps su eBay, tiene solo gli autenticati, esclude repliche, mediana robusta.
-export async function getMarketValuation(opts: { query: string; size?: string; authenticatedOnly?: boolean }): Promise<Valuation> {
-  const authenticatedOnly = opts.authenticatedOnly !== false; // default: solo autenticati
-  if (!isPriceConfigured()) {
-    return { configured: false, value: null, sample: 0, confidence: 'bassa', source: 'non configurato', authenticatedOnly };
-  }
-  const token = await getEbayToken();
-  if (!token) return { configured: true, value: null, sample: 0, confidence: 'bassa', source: 'eBay (errore auth)', authenticatedOnly };
-
+// Una singola ricerca eBay Browse → array di prezzi puliti (repliche escluse).
+async function ebayPriceSearch(token: string, query: string, size: string | undefined, authenticatedOnly: boolean): Promise<number[] | null> {
   const params = new URLSearchParams({
-    q: [opts.query, opts.size].filter(Boolean).join(' '),
+    q: [query, size].filter(Boolean).join(' '),
     limit: '50',
   });
-  // Solo annunci autenticati da eBay → i falsi sono esclusi alla fonte
+  // Solo annunci autenticati da eBay (Authenticity Guarantee) → falsi esclusi alla fonte
   if (authenticatedOnly) params.set('filter', 'qualifiedPrograms:{EBAY_AUTHENTICITY_GUARANTEE}');
-
   try {
     const r = await fetch(`${EBAY_BROWSE}?${params}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': MARKETPLACE },
     });
-    if (!r.ok) { logger.error('eBay Browse error', { status: r.status }); return { configured: true, value: null, sample: 0, confidence: 'bassa', source: 'eBay (errore)', authenticatedOnly }; }
+    if (!r.ok) { logger.error('eBay Browse error', { status: r.status, authenticatedOnly }); return null; }
     const data = await r.json() as any;
     const items: any[] = data?.itemSummaries || [];
-    const prices = items
-      .filter(it => !isLikelyReplica(it.title || ''))                 // 2) esclusione repliche
+    return items
+      .filter(it => !isLikelyReplica(it.title || ''))   // esclusione repliche per parole chiave
       .map(it => parseFloat(it?.price?.value))
       .filter(p => Number.isFinite(p) && p > 0);
-    const { value, sample, confidence } = robustMedian(prices);       // 3) mediana robusta anti-outlier
-    return { configured: true, value, sample, confidence, source: authenticatedOnly ? 'eBay (autenticati)' : 'eBay', authenticatedOnly };
   } catch (err: any) {
-    logger.error('Errore getMarketValuation', { err: err.message });
-    return { configured: true, value: null, sample: 0, confidence: 'bassa', source: 'eBay (errore)', authenticatedOnly };
+    logger.error('Errore ebayPriceSearch', { err: err.message });
+    return null;
   }
+}
+
+// Valutazione: prima i comps autenticati (anti-falso massimo). Se troppo pochi
+// (su eBay IT l'Authenticity Guarantee copre solo sneaker/borse/orologi), ripiega
+// sul mercato generale ma comunque anti-falsi (keyword + taglio outlier IQR).
+export async function getMarketValuation(opts: { query: string; size?: string; authenticatedOnly?: boolean }): Promise<Valuation> {
+  const preferAuthenticated = opts.authenticatedOnly !== false; // default: prova prima gli autenticati
+  if (!isPriceConfigured()) {
+    return { configured: false, value: null, sample: 0, confidence: 'bassa', source: 'non configurato', authenticatedOnly: preferAuthenticated };
+  }
+  const token = await getEbayToken();
+  if (!token) return { configured: true, value: null, sample: 0, confidence: 'bassa', source: 'eBay (errore auth)', authenticatedOnly: preferAuthenticated };
+
+  // 1) Comps autenticati
+  let prices: number[] = [];
+  let usedAuthenticated = false;
+  if (preferAuthenticated) {
+    const authed = await ebayPriceSearch(token, opts.query, opts.size, true);
+    if (authed && authed.length > 0) { prices = authed; usedAuthenticated = true; }
+  }
+
+  // 2) Fallback al mercato generale se i comps autenticati sono pochi
+  if (prices.length < 3) {
+    const general = await ebayPriceSearch(token, opts.query, opts.size, false);
+    if (general && general.length > prices.length) { prices = general; usedAuthenticated = false; }
+  }
+
+  if (prices.length === 0) {
+    return { configured: true, value: null, sample: 0, confidence: 'bassa', source: 'eBay (nessun dato)', authenticatedOnly: usedAuthenticated };
+  }
+
+  const { value, sample, confidence } = robustMedian(prices); // mediana robusta anti-outlier (scarta i falsi sottoprezzo)
+  return { configured: true, value, sample, confidence, source: usedAuthenticated ? 'eBay (autenticati)' : 'eBay (mercato)', authenticatedOnly: usedAuthenticated };
 }
