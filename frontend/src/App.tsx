@@ -1370,12 +1370,26 @@ export default function App() {
     const me = await apiCall<any>('/api/plans/me');
     if (me.ok) { setMyPlan(me.data.plan); setMyFeatures(me.data.features || []); }
   };
-  const openPlanModal = async () => {
+  const openPlanModal = async (tab: 'plans' | 'repricing' | 'offer' | 'channels' = 'plans') => {
     setPlanModalOpen(true);
-    setProTab('plans');
+    setProTab(tab);
     const cat = await apiCall<any>('/api/plans');
     if (cat.ok) setPlanCatalog(cat.data.plans || []);
     refreshMyPlan();
+  };
+  // Apre l'assistente trattative già puntato su un prodotto (dalla card)
+  const openOfferFor = (g: any) => {
+    setOfferProductId(g.ids?.[0] || g.id || '');
+    setOfferAmount(''); setOfferResult(null);
+    openPlanModal('offer');
+  };
+  // Apre il tracker multi-canale già puntato su un prodotto (dalla card)
+  const openChannelsFor = (g: any) => {
+    setChProductId(g.ids?.[0] || g.id || '');
+    let existing: string[] = [];
+    try { existing = (g.salesChannels ? JSON.parse(g.salesChannels) : []).map((c: any) => c.platform); } catch {}
+    setChSelected(existing);
+    openPlanModal('channels');
   };
   // Solo admin: cambia il piano di un utente (qui lo usa su se stesso per testare)
   const setUserPlan = async (userId: string, plan: string) => {
@@ -2911,6 +2925,18 @@ export default function App() {
         {/* ========== MAGAZZINO ========== */}
         {currentView === 'magazzino' && (
           <div className="space-y-3 lg:space-y-5">
+            {/* Banner riprezzamento: prodotti fermi da oltre 30 giorni → apre lo strumento Pro */}
+            {magazzinoView === 'instock' && (() => {
+              const staleCount = products.filter((p: any) => p.status === 'IN STOCK' && (p.oldestDate || p.createdAt) && (Date.now() - new Date(p.oldestDate || p.createdAt).getTime()) / 86400000 > 30).length;
+              if (staleCount === 0) return null;
+              return (
+                <button onClick={() => openPlanModal('repricing')}
+                  className="w-full flex items-center justify-between gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl px-4 py-3 hover:bg-yellow-500/15 transition-colors">
+                  <span className="flex items-center gap-2 text-sm font-bold text-yellow-500"><AlertTriangle size={16} /> {staleCount} prodotti fermi da oltre 30 giorni</span>
+                  <span className="text-xs font-bold text-yellow-400 shrink-0">Riprezza →</span>
+                </button>
+              );
+            })()}
             {/* Riga 1: titolo + toggle IN STOCK/VENDUTI accanto, ricerca inline su desktop */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <div className="flex items-center gap-3 shrink-0">
@@ -3103,6 +3129,13 @@ export default function App() {
                             </div>
                           )}
                         </div>
+                        {!bulkMode && (
+                          <div className="flex border-t border-[var(--border)]">
+                            <button onClick={(e) => { e.stopPropagation(); openOfferFor(g); }} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[var(--text-soft)] hover:bg-[var(--fill)]"><Sparkles size={13} className="text-purple-400" /> Offerta</button>
+                            <div className="w-px bg-[var(--fill)]" />
+                            <button onClick={(e) => { e.stopPropagation(); openChannelsFor(g); }} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[var(--text-soft)] hover:bg-[var(--fill)]"><Store size={13} className="text-purple-400" /> Canali</button>
+                          </div>
+                        )}
                         {!bulkMode && isAdmin && (
                           <div className="flex border-t border-[var(--border)]">
                             <button onClick={() => openShipping(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-orange-400 hover:bg-orange-900/15"><Package size={13} /> Spedisci</button>
@@ -3164,6 +3197,10 @@ export default function App() {
                             ) : (
                               <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> Vendi</button>
                             )}
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <button onClick={() => openOfferFor(g)} className="py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-soft)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1"><Sparkles size={12} className="text-purple-400" /> Offerta</button>
+                              <button onClick={() => openChannelsFor(g)} className="py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-soft)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1"><Store size={12} className="text-purple-400" /> Canali</button>
+                            </div>
                           </div>
                         )}
                       </div>
