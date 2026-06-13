@@ -28,6 +28,7 @@ import shippingRoutes from './src/routes/shipping';
 import uploadRoutes from './src/routes/upload';
 import feedbackRoutes from './src/routes/feedback';
 import pushRoutes from './src/routes/push';
+import stockxRoutes from './src/routes/stockx';
 import { initPush } from './src/services/push.service';
 import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
@@ -205,6 +206,7 @@ app.use('/shipping', shippingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/stockx', stockxRoutes);
 
 // ==========================================
 // SPA FALLBACK + 404

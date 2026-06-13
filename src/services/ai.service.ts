@@ -2,6 +2,7 @@
 import Groq from 'groq-sdk';
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
+import { isGeminiConfigured, geminiVision } from './gemini.service';
 
 const prisma = new PrismaClient();
 
@@ -78,6 +79,49 @@ const groq = groqClients[0] || new Groq({ apiKey: '' });
 
 const VISION_MODEL = 'meta-llama/llama-4-maverick-17b-128e-instruct';
 const TEXT_MODEL = 'llama-3.3-70b-versatile';
+
+// ==========================================
+// VISION UNIFICATA — Gemini primario, Groq fallback
+// Gemini (Google) riconosce molto meglio brand/modello dalle foto.
+// Se non è configurato o fallisce, ripiega automaticamente su Groq (Llama).
+// Il testo (annunci, stime) resta su Groq.
+// ==========================================
+async function visionComplete(opts: {
+  prompt: string;
+  imageBase64: string;
+  temperature: number;
+  maxTokens: number;
+  groqModel: string;
+}): Promise<string> {
+  if (isGeminiConfigured()) {
+    try {
+      return await geminiVision({
+        prompt: opts.prompt,
+        imageBase64: opts.imageBase64,
+        temperature: opts.temperature,
+        maxTokens: opts.maxTokens,
+        json: true,
+      });
+    } catch (err: any) {
+      logger.warn('Gemini vision fallita, fallback a Groq', { err: err?.message });
+    }
+  }
+  const completion = await groqCallWithRetry(client =>
+    client.chat.completions.create({
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: opts.prompt },
+          { type: 'image_url', image_url: { url: opts.imageBase64 } },
+        ],
+      }],
+      model: opts.groqModel,
+      temperature: opts.temperature,
+      max_tokens: opts.maxTokens,
+    })
+  );
+  return completion.choices[0]?.message?.content?.trim() || '';
+}
 
 export interface ScanResult {
   category: string;
@@ -985,21 +1029,14 @@ Restituisci SOLO JSON (niente markdown): {"category":"...","type":"..."}
 Se davvero non capisci, usa {"category":"Generico","type":"oggetto non identificato"}.`;
 
   try {
-    const completion = await groqCallWithRetry(client =>
-      client.chat.completions.create({
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: imageBase64 } },
-          ],
-        }],
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct', // Scout: veloce, sufficiente per classificare
-        temperature: 0.05,
-        max_tokens: 120,
-      })
-    );
-    const parsed = safeParseJSON(completion.choices[0]?.message?.content?.trim() || '');
+    const text = await visionComplete({
+      prompt,
+      imageBase64,
+      temperature: 0.05,
+      maxTokens: 120,
+      groqModel: 'meta-llama/llama-4-scout-17b-16e-instruct', // Scout: veloce, sufficiente per classificare
+    });
+    const parsed = safeParseJSON(text);
     const category = canonicalizeCategory(parsed?.category || 'Generico');
     const type = (parsed?.type || '').toString().slice(0, 80);
     return { category, type };
@@ -1044,27 +1081,21 @@ ${prompt}`;
 
   const maxTok = isPokemon ? 700 : category === 'Orologi' ? 1700 : category === 'Vestiti' ? 1700 : 1800;
 
-  let completion;
+  let rawText = '';
   try {
-    completion = await groqCallWithRetry(client =>
-      client.chat.completions.create({
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: finalPrompt },
-            { type: 'image_url', image_url: { url: imageBase64 } },
-          ],
-        }],
-        model: finalModel,
-        temperature: isPokemon ? 0.02 : 0.04,  // più basso = meno allucinazioni di modelli inesistenti
-        max_tokens: maxTok,
-      })
-    );
+    // Gemini primario (se configurato), altrimenti Groq col modello scelto
+    rawText = await visionComplete({
+      prompt: finalPrompt,
+      imageBase64,
+      temperature: isPokemon ? 0.02 : 0.04,  // più basso = meno allucinazioni di modelli inesistenti
+      maxTokens: maxTok,
+      groqModel: finalModel,
+    });
   } catch (err: any) {
-    // Fallback a Scout se Maverick non disponibile
+    // Fallback a Scout se il modello Groq scelto non è disponibile
     if (err?.status === 400 || err?.status === 404) {
       try {
-        completion = await groqCallWithRetry(client =>
+        const completion = await groqCallWithRetry(client =>
           client.chat.completions.create({
             messages: [{
               role: 'user',
@@ -1078,17 +1109,17 @@ ${prompt}`;
             max_tokens: maxTok,
           })
         );
+        rawText = completion.choices[0]?.message?.content?.trim() || '';
       } catch (fallbackErr: any) {
         logger.error('Errore modello fallback vision', { fallbackErr, category });
         throw new Error('Servizio IA non disponibile. Riprova tra poco.');
       }
     } else {
-      logger.error('Errore Groq vision API', { err, category });
+      logger.error('Errore vision API', { err, category });
       throw new Error(err?.message || 'Servizio IA non disponibile. Riprova tra poco.');
     }
   }
 
-  const rawText = completion.choices[0]?.message?.content?.trim() || '';
   const parsed = safeParseJSON(rawText);
 
   if (!parsed) {
