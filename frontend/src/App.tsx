@@ -267,6 +267,7 @@ export default function App() {
   // IA scan state
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
+  const [scanMarket, setScanMarket] = useState<any>(null); // verifica eBay del riconoscimento (valore di mercato)
   const [priceEstimate, setPriceEstimate] = useState<any>(null); // rimasto per compatibilità reset, non più usato in UI
   
   // ----- FOTO PRODOTTO -----
@@ -1449,14 +1450,16 @@ export default function App() {
   // ==========================================
   // FOTO & IA — multi-photo (1-5)
   // ==========================================
-  const applyAIScanResult = (data: any, cat: string) => {
+  const applyAIScanResult = async (data: any, cat: string) => {
     const scan = data.scan;
     setScanResult(scan);
+    setScanMarket(null);
     if (!scan) return;
     const d = scan.details || {};
 
     // Modalità automatica: la categoria effettiva la decide l'IA (scan.detectedCategory).
-    // Se coincide con un reparto esistente, lo seleziono; così il salvataggio funziona.
+    // Se coincide con un reparto esistente, lo seleziono; altrimenti lo CREO da solo
+    // (niente click): il reparto rilevato viene generato e selezionato in automatico.
     let effCat = cat;
     if (!cat || cat === AUTO_CATEGORY) {
       effCat = scan.detectedCategory || 'Generico';
@@ -1467,8 +1470,10 @@ export default function App() {
         setCategory(match);
         effCat = match;
       } else {
-        // Reparto non ancora presente: lo mostro come suggerimento, i campi restano compilati.
-        setDetectedReparto(String(effCat));
+        // Auto-creazione del reparto rilevato dall'IA (elimina il click manuale)
+        const created = await createRepartoFromDetected(String(effCat));
+        if (created) effCat = created;
+        else setDetectedReparto(String(effCat)); // fallback solo se la creazione fallisce
       }
     }
 
@@ -1499,11 +1504,21 @@ export default function App() {
       if (scan.brand) setBrand(scan.brand);
       if (fallbackName) setName(fallbackName);
     }
+
+    // Verifica su eBay: conferma il riconoscimento con dati reali di mercato (valore + n. annunci).
+    // Oggi solo eBay; in futuro eBay + StockX. Non blocca: gira in background.
+    const vQuery = [scan.brand, scan.model || d.type].filter(Boolean).join(' ').trim();
+    if (vQuery.length >= 2) {
+      apiCall<any>('/api/ai/market-value', {
+        method: 'POST',
+        body: JSON.stringify({ query: vQuery, size: (d.size || '').toString() || undefined }),
+      }).then(r => { if (r.ok) setScanMarket(r.data); }).catch(() => {});
+    }
   };
 
   const runAIScan = async (imageBase64: string, cat: string) => {
     setIsScanning(true);
-    setScanResult(null); setPriceEstimate(null);
+    setScanResult(null); setScanMarket(null); setPriceEstimate(null);
     try {
       // Modalità automatica (cat vuota o sentinella): non inviamo la categoria,
       // l'IA la rileva dalla foto e adatta i campi.
@@ -1512,7 +1527,7 @@ export default function App() {
         method: 'POST',
         body: JSON.stringify(isAuto ? { imageBase64 } : { imageBase64, category: cat }),
       });
-      if (ok) applyAIScanResult(data, cat);
+      if (ok) await applyAIScanResult(data, cat);
       else showToast(data.error || 'Errore IA', 'err');
     } catch { showToast('Errore IA', 'err'); }
     finally { setIsScanning(false); }
@@ -4779,6 +4794,20 @@ export default function App() {
                       {scanResult.brand && <p>{scanResult.brand} {scanResult.model}</p>}
                       {scanResult.warnings?.map((w: any, i: number) => <p key={i}>⚠️ {w}</p>)}
                     </div>
+                    {/* Verifica eBay del riconoscimento (valore di mercato reale) */}
+                    {scanMarket && scanMarket.configured !== false && (
+                      scanMarket.value != null ? (
+                        <div className="p-2 rounded-lg bg-blue-500/10 text-blue-300 flex items-center gap-1.5">
+                          <CheckCircle size={13} className="shrink-0" />
+                          <span><b>Verificato su eBay</b> · valore ~{Math.round(scanMarket.value)}€ <span className="opacity-70">({scanMarket.sample} annunci · {scanMarket.source})</span></span>
+                        </div>
+                      ) : (
+                        <div className="p-2 rounded-lg bg-[var(--surface-2)] text-[var(--text-soft)] flex items-center gap-1.5">
+                          <Search size={13} className="shrink-0" />
+                          <span>Nessun riscontro su eBay per questo modello — ricontrolla brand/modello.</span>
+                        </div>
+                      )
+                    )}
                     {/* Tabella dinamica: attributi estratti dall'IA */}
                     {(() => {
                       const d = scanResult.details || {};
