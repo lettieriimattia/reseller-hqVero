@@ -810,6 +810,15 @@ export default function App() {
   const [isSavingTracking, setIsSavingTracking] = useState(false);
   const [carrierList, setCarrierList] = useState<{key: string; label: string}[]>([]);
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
+  // ----- ACQUISTO IN ARRIVO (crea prodotto IN STOCK + tracking INBOUND dalla pagina Tracking) -----
+  const [incomingOpen, setIncomingOpen] = useState(false);
+  const [incCategory, setIncCategory] = useState('');
+  const [incBrand, setIncBrand] = useState('');
+  const [incName, setIncName] = useState('');
+  const [incPrice, setIncPrice] = useState('');
+  const [incTrackCode, setIncTrackCode] = useState('');
+  const [incTrackCarrier, setIncTrackCarrier] = useState('Auto');
+  const [incSaving, setIncSaving] = useState(false);
   
   // ----- DERIVED -----
   const userCategories = user?.warehouses?.map(w => w.name.replace('Magazzino ', '')) || [];
@@ -2165,6 +2174,40 @@ export default function App() {
     } else {
       showToast((data as any).error || 'Errore salvataggio tracking', 'err');
     }
+  };
+
+  // Apre il form "acquisto in arrivo" (pre-seleziona il primo reparto, carica i vettori)
+  const openIncoming = async () => {
+    setIncCategory(userCategories[0] || '');
+    setIncBrand(''); setIncName(''); setIncPrice(''); setIncTrackCode(''); setIncTrackCarrier('Auto');
+    setIncomingOpen(true);
+    if (carrierList.length === 0) {
+      const { ok, data } = await apiCall('/tracking/carriers');
+      if (ok) setCarrierList(data as any);
+    }
+  };
+
+  // Crea un prodotto IN STOCK e gli attacca un tracking INBOUND (pacco in arrivo)
+  const createIncoming = async () => {
+    if (!incCategory) { showToast('Scegli un reparto', 'warn'); return; }
+    if (!incBrand.trim() || !incName.trim()) { showToast('Inserisci brand e nome', 'warn'); return; }
+    const priceNum = parseFloat(incPrice);
+    if (isNaN(priceNum) || priceNum <= 0) { showToast('Inserisci un prezzo d\'acquisto valido', 'warn'); return; }
+    if (incTrackCode.trim().length < 4) { showToast('Inserisci un codice tracking valido', 'warn'); return; }
+    setIncSaving(true);
+    const { ok, data } = await apiCall<any>('/products', {
+      method: 'POST',
+      body: JSON.stringify({ category: incCategory, brand: incBrand.trim(), name: incName.trim(), price: priceNum }),
+    });
+    if (!ok || !data?.id) { setIncSaving(false); showToast(data?.error || 'Errore creazione prodotto', 'err'); return; }
+    const t = await apiCall(`/tracking/${data.id}`, {
+      method: 'POST',
+      body: JSON.stringify({ trackingCode: incTrackCode.trim(), carrier: incTrackCarrier, direction: 'INBOUND' }),
+    });
+    setIncSaving(false);
+    await fetchProducts();
+    setIncomingOpen(false);
+    showToast(t.ok ? 'Acquisto in arrivo aggiunto e tracciato' : 'Prodotto creato, ma tracking non salvato', t.ok ? 'ok' : 'warn');
   };
 
   const handleRefreshTracking = async () => {
@@ -3815,13 +3858,19 @@ export default function App() {
                   <h2 className="text-3xl font-semibold">Tracking</h2>
                   <p className="text-[var(--text-soft)] text-sm mt-1">Monitora le tue spedizioni</p>
                 </div>
-                {active.length > 0 && (
-                  <button onClick={handleRefreshAllTrackings} disabled={isRefreshingAll}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors">
-                    {isRefreshingAll ? <Loader2 className="animate-spin" size={16} /> : <Truck size={16} />}
-                    {isRefreshingAll ? 'Aggiornamento...' : 'Aggiorna tutto'}
+                <div className="flex items-center gap-2">
+                  <button onClick={openIncoming}
+                    className="flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-colors">
+                    <Plus size={16} /> <span className="hidden sm:inline">Acquisto in arrivo</span><span className="sm:hidden">In arrivo</span>
                   </button>
-                )}
+                  {active.length > 0 && (
+                    <button onClick={handleRefreshAllTrackings} disabled={isRefreshingAll}
+                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors">
+                      {isRefreshingAll ? <Loader2 className="animate-spin" size={16} /> : <Truck size={16} />}
+                      <span className="hidden sm:inline">{isRefreshingAll ? 'Aggiornamento...' : 'Aggiorna tutto'}</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Stats */}
@@ -3844,7 +3893,7 @@ export default function App() {
                 <div className="text-center py-16 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
                   <Truck className="mx-auto text-gray-800 mb-3" size={44} />
                   <p className="text-[var(--text-muted)] font-semibold">Nessuna spedizione tracciata</p>
-                  <p className="text-[var(--text-faint)] text-sm mt-1">Aggiungi un codice tracking da Magazzino → Track</p>
+                  <p className="text-[var(--text-faint)] text-sm mt-1">Usa "Acquisto in arrivo" qui sopra, oppure traccia da Magazzino → Track</p>
                 </div>
               )}
 
@@ -6503,6 +6552,73 @@ export default function App() {
       )}
 
       {/* ========== MODALE: TRACKING SPEDIZIONE ========== */}
+      {/* ========== MODALE: ACQUISTO IN ARRIVO ========== */}
+      {incomingOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4" onClick={() => setIncomingOpen(false)}>
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[var(--accent)]/15 flex items-center justify-center"><Truck className="text-[var(--accent)]" size={20} /></div>
+                <div>
+                  <h3 className="font-semibold text-base">Acquisto in arrivo</h3>
+                  <p className="text-xs text-[var(--text-soft)]">Lo metto in stock e ne traccio l'arrivo</p>
+                </div>
+              </div>
+              <button onClick={() => setIncomingOpen(false)}><X size={20} className="text-[var(--text-soft)] hover:text-[var(--text)]" /></button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Reparto</label>
+                <select value={incCategory} onChange={(e: any) => setIncCategory(e.target.value)}
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none">
+                  {userCategories.length === 0 && <option value="">— crea prima un reparto —</option>}
+                  {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Brand</label>
+                  <input value={incBrand} onChange={(e: any) => setIncBrand(e.target.value)} placeholder="Nike"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo acquisto €</label>
+                  <input type="number" step="0.01" value={incPrice} onChange={(e: any) => setIncPrice(e.target.value)} placeholder="0"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nome / Modello</label>
+                <input value={incName} onChange={(e: any) => setIncName(e.target.value)} placeholder="Air Jordan 1 Chicago"
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Codice tracking</label>
+                  <input value={incTrackCode} onChange={(e: any) => setIncTrackCode(e.target.value)} placeholder="ABC123..."
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Vettore</label>
+                  <select value={incTrackCarrier} onChange={(e: any) => setIncTrackCarrier(e.target.value)}
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none">
+                    {(carrierList.length ? carrierList.map(c => c.key) : ['Auto','BRT','GLS','Poste Italiane','SDA','DHL','UPS','FedEx','TNT','Amazon Logistics','Nexive']).map(k => (
+                      <option key={k} value={k}>{k === 'Auto' ? 'Auto-rileva' : k}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <button onClick={createIncoming} disabled={incSaving}
+                className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                {incSaving ? <Loader2 className="animate-spin" size={18} /> : <><Plus size={16} /> Aggiungi e traccia</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {trackingModalOpen && trackingProduct && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
