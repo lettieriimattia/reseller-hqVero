@@ -1701,6 +1701,9 @@ export default function App() {
             customShares: finalShares,
             photos: productPhotos.length > 0 ? productPhotos : undefined,
             attributes: Object.keys(dynamicAttrs).length > 0 ? dynamicAttrs : undefined,
+            // Valore di mercato verificato da eBay durante lo scan: lo salviamo nel
+            // prodotto così listing generator e riprezzamento usano dati reali.
+            ...(scanMarket?.value ? { marketPriceAvg: Math.round(scanMarket.value) } : {}),
           }),
         });
         if (!ok) hasError = true;
