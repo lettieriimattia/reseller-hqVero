@@ -44,9 +44,9 @@
   /* Esattamente i colori di apple.com: sfondo grigio #f5f5f7, card bianche #fff,
      testo near-black #1d1d1f e i grigi secondari di Apple (#6e6e73 / #86868b).
      Non "acceca" perché il bianco puro è solo sulle card, su base grigia. */
-  --bg: #f5f5f7;
-  --surface: #ffffff;
-  --surface-2: #f5f5f7;
+  --bg: #e6e6eb;            /* sfondo pagina: grigino (non bianco acceso) */
+  --surface: #ffffff;       /* card bianche → staccano sul grigio */
+  --surface-2: #eeeef2;     /* inset/input: grigio leggermente più chiaro del bg */
   --border: rgba(0,0,0,0.08);
   --border-2: #d2d2d7;
   --border-3: rgba(0,0,0,0.22);
@@ -57,8 +57,8 @@
   --fill: rgba(0,0,0,0.04);
   --fill-2: rgba(0,0,0,0.07);
   --fill-3: rgba(0,0,0,0.12);
-  --bg-blur: rgba(245,245,247,0.85);
-  --bg-overlay: rgba(245,245,247,0.70);
+  --bg-blur: rgba(230,230,235,0.85);
+  --bg-overlay: rgba(230,230,235,0.72);
   --surface-blur: rgba(255,255,255,0.90);
 }
 
