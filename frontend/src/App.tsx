@@ -413,6 +413,12 @@ export default function App() {
 
   // ----- TEAM PANEL -----
   const [teamPanelOpen, setTeamPanelOpen] = useState(false);
+  // Stato del pannello Team — DEVE stare a livello di componente (non dentro la IIFE
+  // del render, altrimenti gli hook sono condizionali → crash "pagina bianca").
+  const [editQuoteWarehouse, setEditQuoteWarehouse] = useState<string | null>(null);
+  const [editQuoteValues, setEditQuoteValues] = useState<Record<string, string>>({});
+  const [kickConfirm, setKickConfirm] = useState<string | null>(null);
+  const [isRegenerating, setIsRegenerating] = useState<string | null>(null);
 
   // ----- ENTRA IN MAGAZZINO -----
   const [joinCodeInput, setJoinCodeInput] = useState('');
@@ -3113,13 +3119,6 @@ export default function App() {
                             </div>
                           )}
                         </div>
-                        {!bulkMode && (
-                          <div className="flex border-t border-[var(--border)]">
-                            <button onClick={(e) => { e.stopPropagation(); openOfferFor(g); }} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[var(--text-soft)] hover:bg-[var(--fill)]"><Sparkles size={13} className="text-orange-400" /> Offerta</button>
-                            <div className="w-px bg-[var(--fill)]" />
-                            <button onClick={(e) => { e.stopPropagation(); openChannelsFor(g); }} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[var(--text-soft)] hover:bg-[var(--fill)]"><Store size={13} className="text-orange-400" /> Canali</button>
-                          </div>
-                        )}
                         {!bulkMode && isAdmin && (
                           <div className="flex border-t border-[var(--border)]">
                             <button onClick={() => openShipping(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-orange-400 hover:bg-orange-900/15"><Package size={13} /> Spedisci</button>
@@ -3181,10 +3180,6 @@ export default function App() {
                             ) : (
                               <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> Vendi</button>
                             )}
-                            <div className="grid grid-cols-2 gap-1.5">
-                              <button onClick={() => openOfferFor(g)} className="py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-soft)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1"><Sparkles size={12} className="text-orange-400" /> Offerta</button>
-                              <button onClick={() => openChannelsFor(g)} className="py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-soft)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1"><Store size={12} className="text-orange-400" /> Canali</button>
-                            </div>
                           </div>
                         )}
                       </div>
@@ -6592,12 +6587,6 @@ export default function App() {
 
       {/* ========== TEAM PANEL ========== */}
       {teamPanelOpen && (() => {
-        // Stato locale al panel
-        const [editQuoteWarehouse, setEditQuoteWarehouse] = React.useState<string | null>(null);
-        const [editQuoteValues, setEditQuoteValues] = React.useState<Record<string, string>>({});
-        const [kickConfirm, setKickConfirm] = React.useState<string | null>(null);
-        const [isRegenerating, setIsRegenerating] = React.useState<string | null>(null);
-
         const totalSoci = new Set(teamData.flatMap((t: any) => t.members.map((m: any) => m.userId))).size;
         const totalStock = products.filter(p => p.status === 'IN STOCK').length;
         const totalSoldCount = products.filter(p => p.status === 'VENDUTO').length;
