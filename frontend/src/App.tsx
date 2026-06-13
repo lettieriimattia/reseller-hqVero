@@ -2138,9 +2138,11 @@ export default function App() {
   const handleSaveTracking = async () => {
     if (!trackingProduct || !trackingInput.trim()) return;
     setIsSavingTracking(true);
+    // Prodotto in stock = pacco in ARRIVO (acquisto). Venduto = spedizione di vendita.
+    const direction = trackingProduct.status === 'VENDUTO' ? 'OUTBOUND' : 'INBOUND';
     const { ok, data } = await apiCall(`/tracking/${trackingProduct.ids[0]}`, {
       method: 'POST',
-      body: JSON.stringify({ trackingCode: trackingInput.trim(), carrier: trackingCarrierSel }),
+      body: JSON.stringify({ trackingCode: trackingInput.trim(), carrier: trackingCarrierSel, direction }),
     });
     setIsSavingTracking(false);
     if (ok) {
@@ -6479,7 +6481,7 @@ export default function App() {
                   <Truck className="text-blue-400" size={20} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-base">Tracking Spedizione</h3>
+                  <h3 className="font-semibold text-base">{trackingProduct.status === 'VENDUTO' ? 'Spedizione di vendita' : 'Spedizione in arrivo'}</h3>
                   <p className="text-xs text-[var(--text-soft)]">{trackingProduct.brand} {trackingProduct.name}</p>
                 </div>
               </div>

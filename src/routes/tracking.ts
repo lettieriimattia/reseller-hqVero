@@ -30,7 +30,7 @@ router.get('/carriers', (_req, res: Response) => {
 // ==========================================
 router.post('/:productId', async (req: AuthRequest, res: Response) => {
   try {
-    const { trackingCode, carrier } = req.body;
+    const { trackingCode, carrier, direction } = req.body;
 
     if (!trackingCode || typeof trackingCode !== 'string' || trackingCode.trim().length < 4) {
       return res.status(400).json({ error: 'Codice tracking non valido' });
@@ -42,7 +42,8 @@ router.post('/:productId', async (req: AuthRequest, res: Response) => {
     const { allowed } = await canAccessProduct(req.user!.userId, req.params.productId);
     if (!allowed) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
 
-    const result = await addTracking(req.params.productId, trackingCode.trim().toUpperCase(), carrier);
+    const dir = direction === 'INBOUND' ? 'INBOUND' : 'OUTBOUND';
+    const result = await addTracking(req.params.productId, trackingCode.trim().toUpperCase(), carrier, dir);
 
     if (!result.success) return res.status(400).json({ error: result.error });
 

@@ -119,6 +119,7 @@ model Product {
   // Tracking spedizione
   trackingCode      String?
   trackingCarrier   String?
+  trackingDirection String?   // "INBOUND" (acquisto in arrivo in stock) | "OUTBOUND" (spedizione di vendita). Default OUTBOUND.
   trackingStatus    String?   // "PENDING"|"IN_TRANSIT"|"OUT_FOR_DELIVERY"|"DELIVERED"|"EXCEPTION"|"RETURNED"
   trackingHistory   String?   // JSON array di eventi tracking
   trackingUpdatedAt DateTime?

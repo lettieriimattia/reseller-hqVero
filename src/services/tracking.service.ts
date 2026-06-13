@@ -124,10 +124,11 @@ async function fetch17TrackStatus(trackingCode: string): Promise<TrackingInfo | 
 // ==========================================
 // AGGIUNGI TRACKING A UN PRODOTTO
 // ==========================================
-export async function addTracking(productId: string, trackingCode: string, carrier: string): Promise<{ success: boolean; error?: string }> {
+export async function addTracking(productId: string, trackingCode: string, carrier: string, direction: 'INBOUND' | 'OUTBOUND' = 'OUTBOUND'): Promise<{ success: boolean; error?: string }> {
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product) return { success: false, error: 'Prodotto non trovato' };
-  if (product.status === 'VENDUTO') return { success: false, error: 'Prodotto già venduto' };
+  // OUTBOUND (vendita) richiede prodotto non già venduto; INBOUND (acquisto in arrivo) è sempre ok.
+  if (direction === 'OUTBOUND' && product.status === 'VENDUTO') return { success: false, error: 'Prodotto già venduto' };
 
   // Registra su 17track (non bloccante se fallisce — mostriamo comunque il tracking)
   await register17Track(trackingCode, carrier);
@@ -137,6 +138,7 @@ export async function addTracking(productId: string, trackingCode: string, carri
     data: {
       trackingCode,
       trackingCarrier: carrier,
+      trackingDirection: direction,
       trackingStatus: 'PENDING',
       trackingHistory: JSON.stringify([]),
       trackingUpdatedAt: new Date(),
@@ -165,32 +167,40 @@ export async function refreshTracking(productId: string): Promise<TrackingInfo |
       },
     });
 
-    // Se consegnato → notifica + segna come venduto con dati da completare
-    if (info.status === 'DELIVERED' && product.status !== 'VENDUTO') {
-      await prisma.product.update({
-        where: { id: productId },
-        data: {
-          status: 'VENDUTO',
-          soldAt: new Date(),
-          salePrice: 0,
-          fees: 0,
-        },
-      });
-
-      if (product.warehouseId) {
-        await notifyWarehouseMembers({
-          warehouseId: product.warehouseId,
-          excludeUserId: '',
-          type: 'SALE',
-          title: '📦 Spedizione consegnata!',
-          message: `${product.brand} ${product.name} è stato consegnato. Completa la vendita con prezzo e piattaforma.`,
+    // Consegnato: il comportamento dipende dal senso della spedizione.
+    if (info.status === 'DELIVERED') {
+      if (product.trackingDirection === 'INBOUND') {
+        // Acquisto arrivato in magazzino → NON è una vendita. Solo notifica (resta IN STOCK).
+        if (product.warehouseId) {
+          await notifyWarehouseMembers({
+            warehouseId: product.warehouseId,
+            excludeUserId: '',
+            type: 'NEW_MEMBER',
+            title: '📦 Pacco arrivato in magazzino',
+            message: `${product.brand} ${product.name} è arrivato. Ora è disponibile in stock.`,
+          });
+        }
+        logger.info('Pacco INBOUND consegnato in magazzino', { productId });
+      } else if (product.status !== 'VENDUTO') {
+        // OUTBOUND (spedizione di vendita) → segna come venduto, dati da completare.
+        await prisma.product.update({
+          where: { id: productId },
+          data: { status: 'VENDUTO', soldAt: new Date(), salePrice: 0, fees: 0 },
         });
+
+        if (product.warehouseId) {
+          await notifyWarehouseMembers({
+            warehouseId: product.warehouseId,
+            excludeUserId: '',
+            type: 'SALE',
+            title: '📦 Spedizione consegnata!',
+            message: `${product.brand} ${product.name} è stato consegnato. Completa la vendita con prezzo e piattaforma.`,
+          });
+        }
+
+        sendDeliveredEmail(productId).catch(() => {});
+        logger.info('Prodotto auto-segnato come venduto dopo consegna', { productId });
       }
-
-      // Email notifica consegna (non bloccante)
-      sendDeliveredEmail(productId).catch(() => {});
-
-      logger.info('Prodotto auto-segnato come venduto dopo consegna', { productId });
     }
   }
 
