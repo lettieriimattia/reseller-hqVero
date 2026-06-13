@@ -606,7 +606,7 @@ export default function App() {
     setPushBusy(true);
     const { ok, data } = await apiCall('/api/push/test', { method: 'POST' });
     setPushBusy(false);
-    if (ok) showToast('Notifica di prova inviata 📲'); else showToast(data?.error || 'Errore invio', 'err');
+    if (ok) showToast('Notifica di prova inviata'); else showToast(data?.error || 'Errore invio', 'err');
   };
 
   const disablePush = async () => {
@@ -2664,7 +2664,7 @@ export default function App() {
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
                   <Users size={10} /> Team
                 </p>
-                <p className="text-2xl lg:text-3xl font-bold text-purple-400 num">{globalProfitto.toFixed(0)}€</p>
+                <p className="text-2xl lg:text-3xl font-bold text-orange-400 num">{globalProfitto.toFixed(0)}€</p>
                 <div className="flex items-center justify-between mt-1.5">
                   <p className="text-[11px] text-[var(--text-faint)]">Profitto totale</p>
                   <span className="text-[9px] text-[var(--text-faint)] group-hover:text-[var(--text-muted)] transition-colors">Dettaglio →</span>
@@ -3077,7 +3077,7 @@ export default function App() {
                         {...cardPressProps(groupKey)}
                         className={`lg:hidden bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
-                        } ${isSelected ? 'border-[#ff4d00] shadow-[0_0_16px_rgba(255,77,0,0.15)]' : 'border-[var(--border)]'}`}>
+                        } ${isSelected ? 'border-[#ff4d00] shadow-sm' : 'border-[var(--border)]'}`}>
                         {bulkMode && (
                           <div className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#ff4d00] border-[#ff4d00]' : 'border-gray-600 bg-[var(--surface-2)]'}`}>
                             {isSelected && <CheckCircle size={14} className="text-[var(--text)]" />}
@@ -3107,7 +3107,7 @@ export default function App() {
                             <div className="flex flex-col gap-1 shrink-0">
                               <button onClick={() => openTrackingModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">Track</button>
                               {isAdmin
-                                ? <button onClick={() => openListingModal(g)} className="px-3 py-1.5 bg-purple-500/15 text-purple-400 rounded-lg text-xs font-bold">Annuncio</button>
+                                ? <button onClick={() => openListingModal(g)} className="px-3 py-1.5 bg-orange-500/15 text-orange-400 rounded-lg text-xs font-bold">Annuncio</button>
                                 : <button onClick={() => openEditModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">Modifica</button>}
                               {!isAdmin && <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="px-3 py-1.5 bg-green-500/15 text-green-400 rounded-lg text-xs font-bold">Vendi</button>}
                             </div>
@@ -3115,9 +3115,9 @@ export default function App() {
                         </div>
                         {!bulkMode && (
                           <div className="flex border-t border-[var(--border)]">
-                            <button onClick={(e) => { e.stopPropagation(); openOfferFor(g); }} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[var(--text-soft)] hover:bg-[var(--fill)]"><Sparkles size={13} className="text-purple-400" /> Offerta</button>
+                            <button onClick={(e) => { e.stopPropagation(); openOfferFor(g); }} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[var(--text-soft)] hover:bg-[var(--fill)]"><Sparkles size={13} className="text-orange-400" /> Offerta</button>
                             <div className="w-px bg-[var(--fill)]" />
-                            <button onClick={(e) => { e.stopPropagation(); openChannelsFor(g); }} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[var(--text-soft)] hover:bg-[var(--fill)]"><Store size={13} className="text-purple-400" /> Canali</button>
+                            <button onClick={(e) => { e.stopPropagation(); openChannelsFor(g); }} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[var(--text-soft)] hover:bg-[var(--fill)]"><Store size={13} className="text-orange-400" /> Canali</button>
                           </div>
                         )}
                         {!bulkMode && isAdmin && (
@@ -3135,7 +3135,7 @@ export default function App() {
                         {...cardPressProps(groupKey)}
                         className={`hidden lg:flex flex-col bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
-                        } ${isSelected ? 'border-[#ff4d00] shadow-[0_0_16px_rgba(255,77,0,0.15)]' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
+                        } ${isSelected ? 'border-[#ff4d00] shadow-sm' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
                         <div
                           className={`relative aspect-[3/2] bg-gradient-to-br from-[#141414] to-[#0a0a0a] flex items-center justify-center overflow-hidden ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
@@ -3170,7 +3170,7 @@ export default function App() {
                             <div className="grid grid-cols-2 gap-1.5">
                               <button onClick={() => openTrackingModal(g)} className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.trackingCode ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> Track</button>
                               {isAdmin
-                                ? <button onClick={() => openListingModal(g)} className="py-2 rounded-lg text-xs font-bold bg-purple-500/15 text-purple-400 hover:bg-purple-500/25 hover:text-purple-300 transition-colors flex items-center justify-center gap-1"><Store size={12} /> Annuncio</button>
+                                ? <button onClick={() => openListingModal(g)} className="py-2 rounded-lg text-xs font-bold bg-orange-500/15 text-orange-400 hover:bg-orange-500/25 hover:text-orange-300 transition-colors flex items-center justify-center gap-1"><Store size={12} /> Annuncio</button>
                                 : <button onClick={() => openEditModal(g)} className="py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1"><Edit size={12} /> Modifica</button>}
                             </div>
                             {isAdmin ? (
@@ -3182,8 +3182,8 @@ export default function App() {
                               <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> Vendi</button>
                             )}
                             <div className="grid grid-cols-2 gap-1.5">
-                              <button onClick={() => openOfferFor(g)} className="py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-soft)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1"><Sparkles size={12} className="text-purple-400" /> Offerta</button>
-                              <button onClick={() => openChannelsFor(g)} className="py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-soft)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1"><Store size={12} className="text-purple-400" /> Canali</button>
+                              <button onClick={() => openOfferFor(g)} className="py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-soft)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1"><Sparkles size={12} className="text-orange-400" /> Offerta</button>
+                              <button onClick={() => openChannelsFor(g)} className="py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-soft)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1"><Store size={12} className="text-orange-400" /> Canali</button>
                             </div>
                           </div>
                         )}
@@ -3456,7 +3456,7 @@ export default function App() {
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <DollarSign size={10} /> Vendite
                 </p>
-                <p className="text-2xl lg:text-3xl font-bold text-purple-400 num">{soldItemsTotal.length}</p>
+                <p className="text-2xl lg:text-3xl font-bold text-orange-400 num">{soldItemsTotal.length}</p>
                 <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Totali · {sellThroughRate}% sell-through</p>
               </div>
             </div>
@@ -3464,7 +3464,7 @@ export default function App() {
             {/* KPI row 2: metriche operative */}
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
-                <p className={`text-xl font-bold num ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-purple-400' : 'text-red-400'}`}>
+                <p className={`text-xl font-bold num ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-orange-400' : 'text-red-400'}`}>
                   {avgMarginPct >= 0 ? '+' : ''}{avgMarginPct.toFixed(1)}%
                 </p>
                 <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
@@ -3473,7 +3473,7 @@ export default function App() {
                 </p>
               </div>
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
-                <p className="text-xl font-bold text-purple-400 num">{Math.round(avgDaysToSell)}</p>
+                <p className="text-xl font-bold text-orange-400 num">{Math.round(avgDaysToSell)}</p>
                 <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
                   <span className="sm:hidden">Gg/vendita</span>
                   <span className="hidden sm:inline">Giorni medi vendita</span>
@@ -3553,7 +3553,7 @@ export default function App() {
               {Object.keys(sociProfits).length > 0 && (
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
-                    <Users className="text-purple-400" size={15} />
+                    <Users className="text-orange-400" size={15} />
                     <h3 className="font-semibold">Soci</h3>
                   </div>
                   <div className="space-y-4">
@@ -3660,7 +3660,7 @@ export default function App() {
                           <tr key={r.cat} className="hover:bg-[var(--fill)] transition-colors">
                             <td className="py-2.5 pr-4 font-bold text-[var(--text)]">{getCategoryIcon(r.cat)} {r.cat}</td>
                             <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.total}</td>
-                            <td className="py-2.5 pr-4 text-purple-400 num">{r.sold}</td>
+                            <td className="py-2.5 pr-4 text-orange-400 num">{r.sold}</td>
                             <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.inStock}</td>
                             <td className="py-2.5 pr-4">
                               <div className="flex items-center gap-2">
@@ -3733,7 +3733,7 @@ export default function App() {
             if (s === 'OUT_FOR_DELIVERY') return { text: 'In consegna', cls: 'bg-orange-500/20 text-orange-400', dot: 'bg-orange-400' };
             if (s === 'DELIVERED') return { text: 'Consegnato', cls: 'bg-green-500/20 text-green-400', dot: 'bg-green-400' };
             if (s === 'EXCEPTION') return { text: 'Eccezione', cls: 'bg-red-500/20 text-red-400', dot: 'bg-red-400' };
-            if (s === 'RETURNED') return { text: 'Reso', cls: 'bg-purple-500/20 text-purple-400', dot: 'bg-purple-400' };
+            if (s === 'RETURNED') return { text: 'Reso', cls: 'bg-orange-500/20 text-orange-400', dot: 'bg-orange-400' };
             return { text: 'In attesa', cls: 'bg-[var(--fill)] text-[var(--text-soft)]', dot: 'bg-gray-600' };
           };
 
@@ -4537,10 +4537,10 @@ export default function App() {
 
               {/* Solo foto */}
               <button type="button" onClick={() => sourcingCamInputRef.current?.click()} disabled={sourcingScanning || sourcingCalcLoading}
-                className="w-full py-4 rounded-2xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
+                className="w-full py-4 rounded-2xl border border-orange-500/40 bg-orange-500/10 hover:bg-orange-500/20 text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
                 {(sourcingScanning || sourcingCalcLoading)
-                  ? <><Loader2 size={18} className="animate-spin text-purple-400" /> {sourcingScanning ? 'Riconoscimento…' : 'Valutazione…'}</>
-                  : <><Camera size={18} className="text-purple-400" /> Scatta foto</>}
+                  ? <><Loader2 size={18} className="animate-spin text-orange-400" /> {sourcingScanning ? 'Riconoscimento…' : 'Valutazione…'}</>
+                  : <><Camera size={18} className="text-orange-400" /> Scatta foto</>}
               </button>
 
               {/* Cosa ha riconosciuto l'IA */}
@@ -4688,7 +4688,7 @@ export default function App() {
                   return (
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] text-[var(--text-soft)] flex items-center gap-1.5">
-                        <Sparkles size={12} className="text-purple-400" /> Modalità automatica — aggiungi una foto
+                        <Sparkles size={12} className="text-orange-400" /> Modalità automatica — aggiungi una foto
                       </span>
                       <button type="button" onClick={() => setShowRepartoGrid(true)}
                         className="text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors">
@@ -4706,10 +4706,10 @@ export default function App() {
                     onClick={() => { setCategory(AUTO_CATEGORY); setDetectedReparto(''); }}
                     className={`p-3 rounded-xl text-sm font-bold border transition-all ${
                       category === AUTO_CATEGORY
-                        ? 'bg-purple-500/15 border-purple-500 text-[var(--text)]'
+                        ? 'bg-orange-500/15 border-orange-500 text-[var(--text)]'
                         : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
                     }`}>
-                    <span className="block text-xl mb-1">✨</span>
+                    <span className="block text-xl mb-1"><Sparkles size="1em" className="inline-block align-[-0.125em]" /></span>
                     Automatico
                   </button>
                   {userCategories.map((cat: string) => (
@@ -4729,19 +4729,19 @@ export default function App() {
                   detectedReparto ? (
                     <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
                       <p className="text-[11px] text-[var(--text-muted)] flex items-center gap-1.5">
-                        <Sparkles size={11} className="text-purple-400" />
+                        <Sparkles size={11} className="text-orange-400" />
                         Rilevato: <b className="text-[var(--text)]">{detectedReparto}</b> — reparto non presente.
                       </p>
                       <button type="button" disabled={isAddingCat}
                         onClick={() => createRepartoFromDetected(detectedReparto)}
-                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-purple-500/15 border border-purple-500/40 text-purple-300 hover:bg-purple-500/25 transition-colors disabled:opacity-40 flex items-center gap-1">
+                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-orange-500/15 border border-orange-500/40 text-orange-300 hover:bg-orange-500/25 transition-colors disabled:opacity-40 flex items-center gap-1">
                         {isAddingCat ? <Loader2 size={11} className="animate-spin" /> : <Plus size={11} />}
                         Crea reparto "{detectedReparto}"
                       </button>
                     </div>
                   ) : (
                     <p className="text-[11px] text-[var(--text-muted)] mt-2 flex items-center gap-1.5">
-                      <Sparkles size={11} className="text-purple-400" />
+                      <Sparkles size={11} className="text-orange-400" />
                       Aggiungi una foto: l'IA capisce da sola di che prodotto si tratta.
                     </p>
                   )
@@ -4751,10 +4751,10 @@ export default function App() {
               })()}
 
               {/* FOTO + IA SCAN — multi-foto (max 5) */}
-              <div className="bg-gradient-to-br from-purple-500/10 to-[#ff4d00]/10 border border-purple-500/30 rounded-2xl p-4">
+              <div className="bg-gradient-to-br from-orange-500/10 to-[#ff4d00]/10 border border-orange-500/30 rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <label className="flex items-center gap-2">
-                    <Sparkles className="text-purple-400" size={16} />
+                    <Sparkles className="text-orange-400" size={16} />
                     <span className="text-xs font-bold text-[var(--text)]">Foto + Analisi IA</span>
                   </label>
                   <span className="text-[10px] text-[var(--text-soft)]">{productPhotos.length}/5 foto</span>
@@ -4768,7 +4768,7 @@ export default function App() {
                 {/* Griglia foto */}
                 <div className="grid grid-cols-5 gap-2 mb-3">
                   {productPhotos.map((photo, i) => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border border-purple-500/30">
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border border-orange-500/30">
                       <img src={photo} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removePhoto(i)}
                         className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
@@ -4776,21 +4776,21 @@ export default function App() {
                       </button>
                       <button type="button" onClick={() => runAIScan(photo, category)}
                         disabled={isScanning}
-                        className="absolute bottom-0 left-0 right-0 bg-purple-600/80 hover:bg-purple-500/90 py-0.5 text-[9px] font-bold text-center transition-colors disabled:opacity-40">
+                        className="absolute bottom-0 left-0 right-0 bg-orange-600/80 hover:bg-orange-500/90 py-0.5 text-[9px] font-bold text-center transition-colors disabled:opacity-40">
                         Scansiona
                       </button>
                     </div>
                   ))}
                   {productPhotos.length < 5 && (
                     // Tile principale: apre DIRETTAMENTE la fotocamera (capture) su mobile
-                    <label className={`aspect-square rounded-xl border-2 border-dashed border-purple-500/30 hover:border-purple-500 flex flex-col items-center justify-center cursor-pointer transition-colors ${isScanning ? 'pointer-events-none opacity-40' : ''}`}>
+                    <label className={`aspect-square rounded-xl border-2 border-dashed border-orange-500/30 hover:border-orange-500 flex flex-col items-center justify-center cursor-pointer transition-colors ${isScanning ? 'pointer-events-none opacity-40' : ''}`}>
                       <input type="file" accept="image/*" capture="environment" className="hidden"
                         onChange={(e: any) => handlePhotoAdd(e, false)} disabled={isScanning} />
                       {isScanning ? (
-                        <Loader2 className="animate-spin text-purple-400" size={18} />
+                        <Loader2 className="animate-spin text-orange-400" size={18} />
                       ) : (
                         <>
-                          <Camera size={18} className="text-purple-400 mb-1" />
+                          <Camera size={18} className="text-orange-400 mb-1" />
                           <span className="text-[9px] text-[var(--text-soft)]">Scatta</span>
                         </>
                       )}
@@ -4800,16 +4800,16 @@ export default function App() {
 
                 {/* Alternativa: scegli dalla libreria (senza capture → galleria/file) */}
                 {productPhotos.length < 5 && !isScanning && (
-                  <label className="flex items-center justify-center gap-2 w-full mb-3 py-2 rounded-xl border border-purple-500/30 hover:border-purple-500 text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] cursor-pointer transition-colors">
+                  <label className="flex items-center justify-center gap-2 w-full mb-3 py-2 rounded-xl border border-orange-500/30 hover:border-orange-500 text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] cursor-pointer transition-colors">
                     <input type="file" accept="image/*" multiple className="hidden"
                       onChange={(e: any) => handlePhotoAdd(e, false)} disabled={isScanning} />
-                    <ImageIcon size={13} className="text-purple-400" />
+                    <ImageIcon size={13} className="text-orange-400" />
                     Scegli dalla libreria
                   </label>
                 )}
 
                 {isScanning && (
-                  <p className="text-xs text-purple-400 flex items-center gap-2 mb-2">
+                  <p className="text-xs text-orange-400 flex items-center gap-2 mb-2">
                     <Loader2 className="animate-spin" size={12} /> Analisi IA in corso...
                   </p>
                 )}
@@ -5358,7 +5358,7 @@ export default function App() {
               <div className="border-t border-[var(--border-2)] pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Camera size={14} className="text-purple-400" />
+                    <Camera size={14} className="text-orange-400" />
                     <span className="text-sm font-bold">Foto</span>
                   </div>
                   <span className="text-[10px] text-[var(--text-soft)]">{editPhotos.length}/5</span>
@@ -5374,7 +5374,7 @@ export default function App() {
                     </div>
                   ))}
                   {editPhotos.length < 5 && (
-                    <label className="aspect-square rounded-xl border-2 border-dashed border-gray-700 hover:border-purple-500 flex flex-col items-center justify-center cursor-pointer transition-colors">
+                    <label className="aspect-square rounded-xl border-2 border-dashed border-gray-700 hover:border-orange-500 flex flex-col items-center justify-center cursor-pointer transition-colors">
                       <input type="file" accept="image/*" multiple className="hidden"
                         onChange={(e: any) => handlePhotoAdd(e, true)} />
                       <Camera size={16} className="text-[var(--text-soft)] mb-0.5" />
@@ -6126,7 +6126,7 @@ export default function App() {
                         {repricingLoading ? <Loader2 size={14} className="animate-spin" /> : 'Analizza'}
                       </button>
                     </div>
-                    {repricingList && repricingList.length === 0 && <p className="text-xs text-center text-[var(--text-faint)] py-6">Nessun prodotto fermo 🎉</p>}
+                    {repricingList && repricingList.length === 0 && <p className="text-xs text-center text-[var(--text-faint)] py-6">Nessun prodotto fermo.</p>}
                     {repricingList && repricingList.map((r: any) => (
                       <div key={r.id} className="flex items-center justify-between bg-[var(--surface-2)] rounded-xl p-3">
                         <div className="min-w-0">
@@ -6641,8 +6641,8 @@ export default function App() {
               {/* Header sticky */}
               <div className="sticky top-0 bg-[var(--surface-blur)] backdrop-blur-xl border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center">
-                    <Users className="text-purple-400" size={18} />
+                  <div className="w-10 h-10 rounded-2xl bg-orange-500/15 border border-orange-500/20 flex items-center justify-center">
+                    <Users className="text-orange-400" size={18} />
                   </div>
                   <div>
                     <h2 className="font-semibold text-base leading-none">Il Tuo Team</h2>
@@ -6657,7 +6657,7 @@ export default function App() {
               {/* Stats rapide globali */}
               <div className="grid grid-cols-4 gap-2 p-4 border-b border-[var(--border)]">
                 {[
-                  { label: 'Soci', value: totalSoci, color: 'text-purple-400' },
+                  { label: 'Soci', value: totalSoci, color: 'text-orange-400' },
                   { label: 'In Stock', value: totalStock, color: 'text-[var(--text)]' },
                   { label: 'Venduti', value: totalSoldCount, color: 'text-blue-400' },
                   { label: 'Profitto', value: (totalProfit >= 0 ? '+' : '') + totalProfit.toFixed(0) + '€', color: totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' },
@@ -6745,7 +6745,7 @@ export default function App() {
                               <div className={`flex items-center gap-3 p-3.5 transition-colors ${isMe ? 'bg-[#ff4d00]/[0.04]' : 'hover:bg-[var(--fill)]'}`}>
                                 {/* Rank medal o avatar */}
                                 <div className="relative shrink-0">
-                                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center font-black text-xs shadow-sm">
+                                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-blue-600 flex items-center justify-center font-black text-xs shadow-sm">
                                     {m.name[0]?.toUpperCase()}
                                   </div>
                                   {idx < 3 && teamSold.length > 0 && (
@@ -6824,7 +6824,7 @@ export default function App() {
                               {settleAmounts.map((m: any) => (
                                 <div key={m.membershipId} className="flex items-center justify-between">
                                   <div className="flex items-center gap-1.5">
-                                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center font-black text-[7px]">
+                                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-orange-500 to-blue-600 flex items-center justify-center font-black text-[7px]">
                                       {m.name[0]?.toUpperCase()}
                                     </div>
                                     <span className="text-xs text-[var(--text-muted)]">{m.name}</span>
@@ -7134,7 +7134,7 @@ export default function App() {
                       onClick={() => setListingPlatform(p.id)}
                       className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border text-center transition-all active:scale-95 ${
                         listingPlatform === p.id
-                          ? 'bg-purple-500/15 border-purple-500/40 text-[var(--text)]'
+                          ? 'bg-orange-500/15 border-orange-500/40 text-[var(--text)]'
                           : 'bg-[#111] border-[var(--border)] text-[var(--text-soft)] hover:border-[var(--border-3)] hover:text-gray-300'
                       }`}>
                       <span className="text-lg">{p.emoji}</span>
@@ -7148,7 +7148,7 @@ export default function App() {
               <button
                 onClick={() => generateListingForProduct(listingPlatform)}
                 disabled={isGeneratingListing}
-                className="w-full py-3.5 bg-purple-600/80 hover:bg-purple-600 disabled:bg-purple-600/30 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                className="w-full py-3.5 bg-orange-600/80 hover:bg-orange-600 disabled:bg-orange-600/30 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                 {isGeneratingListing
                   ? <><Loader2 size={16} className="animate-spin" /> Generazione in corso…</>
                   : <><Sparkles size={16} /> Genera con IA</>}
@@ -7201,7 +7201,7 @@ export default function App() {
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {listingResult.hashtags.map((tag: string) => (
-                          <span key={tag} className="text-[11px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-full">{tag}</span>
+                          <span key={tag} className="text-[11px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full">{tag}</span>
                         ))}
                       </div>
                     </div>
@@ -7232,7 +7232,7 @@ export default function App() {
                     className={`w-full py-3 rounded-2xl text-sm font-bold transition-all active:scale-[0.98] ${
                       copiedField === 'all'
                         ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                        : 'bg-purple-600/70 hover:bg-purple-600 text-[var(--text)]'
+                        : 'bg-orange-600/70 hover:bg-orange-600 text-[var(--text)]'
                     }`}>
                     {copiedField === 'all' ? '✓ Tutto copiato!' : 'Copia tutto'}
                   </button>

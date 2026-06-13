@@ -10,7 +10,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
 :root {
+  /* Colore brand — cambialo QUI in un punto solo per ritoccare l'accent ovunque */
   --accent: #ff4d00;
+  --accent-hover: #ff6a2a;
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
     'Inter', 'Helvetica Neue', system-ui, sans-serif;
 
@@ -71,7 +73,8 @@
 .light .text-yellow-400  { color: #b45309; }
 .light .text-yellow-300  { color: #92400e; }
 .light .text-blue-400    { color: #2563eb; }
-.light .text-purple-400  { color: #7c3aed; }
+.light .text-orange-400  { color: #c2410c; }
+.light .text-orange-300  { color: #9a3412; }
 
 /* ===== TEMA GLASS (vetro smerigliato stile Apple) =====
    Superfici translucide + blur sopra uno sfondo sfumato che dà profondità. */
