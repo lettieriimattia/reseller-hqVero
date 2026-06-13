@@ -43,16 +43,37 @@ export function robustMedian(prices: number[]): { value: number | null; sample: 
   return { value: Math.round(median), sample: arr.length, confidence };
 }
 
+// Legge le chiavi accettando entrambe le convenzioni di nome usate per eBay:
+//   App ID  → EBAY_APP_ID  oppure EBAY_CLIENT_ID
+//   Cert ID → EBAY_CERT_ID oppure EBAY_CLIENT_SECRET
+function getEbayAppId(): string {
+  return (process.env.EBAY_APP_ID || process.env.EBAY_CLIENT_ID || '').trim();
+}
+function getEbayCertId(): string {
+  return (process.env.EBAY_CERT_ID || process.env.EBAY_CLIENT_SECRET || '').trim();
+}
+
 export function isPriceConfigured(): boolean {
-  return !!(process.env.EBAY_APP_ID && process.env.EBAY_CERT_ID);
+  return !!(getEbayAppId() && getEbayCertId());
+}
+
+// Diagnostica all'avvio (visibile nei log Railway): conferma se le chiavi sono lette.
+{
+  const id = getEbayAppId();
+  const cert = getEbayCertId();
+  if (id && cert) {
+    logger.info(`eBay valutazioni attivo — App ID (${id.length} char) e Cert ID (${cert.length} char) letti, marketplace ${MARKETPLACE}`);
+  } else {
+    logger.info(`eBay NON configurato — App ID ${id ? 'OK' : 'MANCANTE'}, Cert ID ${cert ? 'OK' : 'MANCANTE'} (attesi EBAY_APP_ID/EBAY_CLIENT_ID e EBAY_CERT_ID/EBAY_CLIENT_SECRET)`);
+  }
 }
 
 // Token OAuth (client credentials) con cache in memoria
 let tokenCache: { token: string; expiresAt: number } | null = null;
 async function getEbayToken(): Promise<string | null> {
   if (tokenCache && tokenCache.expiresAt > Date.now() + 60_000) return tokenCache.token;
-  const id = (process.env.EBAY_APP_ID || '').trim();
-  const cert = (process.env.EBAY_CERT_ID || '').trim();
+  const id = getEbayAppId();
+  const cert = getEbayCertId();
   const basic = Buffer.from(`${id}:${cert}`).toString('base64');
   try {
     const r = await fetch(EBAY_OAUTH, {

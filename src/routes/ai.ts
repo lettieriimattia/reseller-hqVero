@@ -62,6 +62,7 @@ router.post('/market-value', async (req: AuthRequest, res: Response) => {
     const q = (query ?? '').toString().trim();
     if (q.length < 2) return res.status(400).json({ error: 'Inserisci brand e modello.' });
     const valuation = await getMarketValuation({ query: q, size: size ? size.toString() : undefined });
+    logger.info('market-value esito', { query: q, source: valuation.source, value: valuation.value, sample: valuation.sample });
     res.json(valuation);
   } catch (err: any) {
     logger.error('Errore /ai/market-value', { err: err.message });
