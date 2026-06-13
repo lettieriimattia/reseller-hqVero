@@ -2283,7 +2283,7 @@ export default function App() {
                     <button type="button" onClick={() => setPrivacyOpen(true)} className="text-[var(--text)] underline underline-offset-2 hover:no-underline">
                       Privacy Policy
                     </button>
-                    {' '}e il trattamento dei dati personali ai sensi del Regolamento UE 2016/679 (GDPR).{' '}
+                    {' '}e il trattamento dei dati personali ai sensi del Regolamento UE 2016/679 (GDPR), incluso l'invio delle foto caricate a fornitori terzi di IA (Google Gemini, Groq) per il riconoscimento prodotto.{' '}
                     <span className="text-[var(--text-faint)]">Obbligatorio</span>
                   </span>
                 </label>
@@ -3807,7 +3807,7 @@ export default function App() {
                   {pushBusy ? <Loader2 size={14} className="animate-spin" /> : pushEnabled ? 'Disattiva' : 'Attiva'}
                 </button>
               </div>
-              {pushEnabled && (
+              {pushEnabled && user?.warehouses?.some(w => w.role === 'OWNER') && (
                 <button onClick={sendTestPush} disabled={pushBusy}
                   className="mt-4 w-full py-2 rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
                   <Bell size={13} /> Invia notifica di prova
@@ -6037,7 +6037,12 @@ export default function App() {
               </section>
 
               <section>
-                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">10. Modifiche alla Privacy Policy</h3>
+                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">10. Trattamento delle immagini tramite intelligenza artificiale (fornitori terzi)</h3>
+                <p>Le foto che carichi per il riconoscimento prodotto e la valutazione vengono inviate a fornitori terzi di intelligenza artificiale (attualmente <span className="text-[var(--text)]">Google Gemini</span> e <span className="text-[var(--text)]">Groq</span>), con sede anche al di fuori dell'Unione Europea, al solo scopo di analizzare l'immagine e restituire le informazioni sul prodotto. Le immagini non vengono pubblicate né condivise con altri utenti. A seconda del piano di servizio del fornitore, le immagini potrebbero essere utilizzate dal fornitore stesso per il miglioramento dei propri modelli. Ti invitiamo a non caricare immagini contenenti dati personali o riservati non necessari alla valutazione. Base giuridica: esecuzione del contratto di servizio (art. 6.1.b GDPR).</p>
+              </section>
+
+              <section>
+                <h3 className="text-[var(--text)] font-semibold text-sm mb-2">11. Modifiche alla Privacy Policy</h3>
                 <p>Questa policy può essere aggiornata. Le modifiche sostanziali saranno comunicate tramite notifica in-app.</p>
               </section>
 
