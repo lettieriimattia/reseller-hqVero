@@ -4965,6 +4965,7 @@ export default function App() {
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
                     <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
                       className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                      <option value="">— Non specificata (aggiungi dopo)</option>
                       <option value="Full Set">Full Set</option>
                       <option value="Solo Box">Solo Box</option>
                       <option value="Solo Carta">Solo Carta</option>
@@ -5013,6 +5014,7 @@ export default function App() {
                           <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
                           <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
                             className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                            <option value="">— Non specificata (aggiungi dopo)</option>
                             {(catConfig.conditionOptions || ['Nuovo','Ottimo','Buono','Usato']).map((opt: string) => (
                               <option key={opt} value={opt}>{opt}</option>
                             ))}
@@ -5070,6 +5072,7 @@ export default function App() {
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
                       <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                        <option value="">— Non specificata (aggiungi dopo)</option>
                         <option value="DS">DS (Nuovo)</option>
                         <option value="VNDS">VNDS (Quasi nuovo)</option>
                         <option value="Used">Used (Usato)</option>

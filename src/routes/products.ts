@@ -184,7 +184,9 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
 
     const newProduct = await prisma.product.create({
       data: {
-        category, brand, name, size, condition,
+        category, brand, name,
+        size: (size || '').trim() || '—',
+        condition: (condition || '').trim() || '—',
         purchasePrice: price,
         status: 'IN STOCK',
         userId: req.user!.userId,
@@ -499,7 +501,10 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
     const p = await prisma.product.update({
       where: { id: req.params.id },
       data: {
-        category, brand, name, size, condition, purchasePrice,
+        category, brand, name,
+        size: (size || '').trim() || '—',
+        condition: (condition || '').trim() || '—',
+        purchasePrice,
         customShares: parsedShares,
         photos: parsedPhotos,
         notes: notes !== undefined ? (notes || null) : undefined,
