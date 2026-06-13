@@ -21,6 +21,13 @@ export function isGeminiConfigured(): boolean {
   return GEMINI_KEYS.length > 0;
 }
 
+// Conferma all'avvio (visibile nei log Railway): se non compare, la chiave non è stata letta.
+if (GEMINI_KEYS.length > 0) {
+  logger.info(`Gemini vision attivo — ${GEMINI_KEYS.length} chiave/i, modello ${GEMINI_VISION_MODEL}`);
+} else {
+  logger.info('Gemini non configurato — vision su Groq (Llama)');
+}
+
 // Estrae mime type + dati base64 da un data URL (data:image/jpeg;base64,...) o da base64 puro.
 function parseImageData(imageBase64: string): { mimeType: string; data: string } {
   const m = imageBase64.match(/^data:([^;]+);base64,(.*)$/s);
