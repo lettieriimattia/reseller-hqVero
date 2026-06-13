@@ -5,7 +5,7 @@ import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest, canAccessProduct } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimit';
-import { addTracking, refreshTracking, removeTracking, CARRIERS } from '../services/tracking.service';
+import { addTracking, refreshTracking, removeTracking, setTrackingStatusManual, CARRIERS } from '../services/tracking.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -82,6 +82,24 @@ router.post('/:productId/refresh', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     logger.error('Errore POST /tracking/:productId/refresh', { err: err.message });
     res.status(500).json({ error: 'Errore aggiornamento tracking' });
+  }
+});
+
+// ==========================================
+// POST /tracking/:productId/status — imposta lo stato a mano (senza API esterna)
+// ==========================================
+router.post('/:productId/status', async (req: AuthRequest, res: Response) => {
+  try {
+    const { status } = req.body || {};
+    const { allowed } = await canAccessProduct(req.user!.userId, req.params.productId);
+    if (!allowed) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
+
+    const result = await setTrackingStatusManual(req.params.productId, (status || '').toString());
+    if (!result.success) return res.status(400).json({ error: result.error });
+    res.json({ success: true });
+  } catch (err: any) {
+    logger.error('Errore POST /tracking/:productId/status', { err: err.message });
+    res.status(500).json({ error: 'Errore aggiornamento stato' });
   }
 });
 

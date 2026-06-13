@@ -2224,6 +2224,23 @@ export default function App() {
     }
   };
 
+  // Stato manuale (senza API esterna): l'utente segna lo stato a mano
+  const setManualStatus = async (status: string) => {
+    if (!trackingProduct) return;
+    const { ok, data } = await apiCall(`/tracking/${trackingProduct.ids[0]}/status`, {
+      method: 'POST', body: JSON.stringify({ status }),
+    });
+    if (ok) {
+      await fetchProducts();
+      setTrackingProduct((prev: any) => prev ? { ...prev, trackingStatus: status } : prev);
+      showToast('Stato aggiornato');
+      if (status === 'DELIVERED') setTrackingModalOpen(false);
+    } else showToast(data?.error || 'Errore aggiornamento stato', 'err');
+  };
+
+  // Link pubblico di tracciamento (nessun account/API): apre un tracker universale
+  const trackingPublicUrl = (code: string) => `https://parcelsapp.com/en/tracking/${encodeURIComponent(code)}`;
+
   const handleRemoveTracking = async () => {
     if (!trackingProduct) return;
     const { ok } = await apiCall(`/tracking/${trackingProduct.ids[0]}`, { method: 'DELETE' });
@@ -6662,6 +6679,27 @@ export default function App() {
                   className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-bold bg-blue-900/30 px-3 py-2 rounded-xl disabled:opacity-50 shrink-0 transition-colors">
                   {isRefreshingTracking ? <Loader2 className="animate-spin" size={12} /> : <Truck size={12} />} Aggiorna
                 </button>
+              </div>
+            )}
+
+            {/* Tracciamento senza API: link pubblico al corriere + stato manuale */}
+            {trackingProduct.trackingCode && (
+              <div className="mb-5 space-y-3">
+                <a href={trackingPublicUrl(trackingProduct.trackingCode)} target="_blank" rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-sm font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors">
+                  <Truck size={14} /> Vedi stato sul corriere ↗
+                </a>
+                <div>
+                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest mb-2">Aggiorna stato a mano</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([['IN_TRANSIT','🚚 In transito'],['OUT_FOR_DELIVERY','📦 In consegna'],['DELIVERED','✅ Consegnato'],['EXCEPTION','⚠️ Problema']] as [string,string][]).map(([s,label]) => (
+                      <button key={s} onClick={() => setManualStatus(s)}
+                        className={`py-2 rounded-xl text-xs font-bold transition-colors ${trackingProduct.trackingStatus === s ? 'bg-[var(--accent)] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 

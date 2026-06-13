@@ -167,44 +167,63 @@ export async function refreshTracking(productId: string): Promise<TrackingInfo |
       },
     });
 
-    // Consegnato: il comportamento dipende dal senso della spedizione.
-    if (info.status === 'DELIVERED') {
-      if (product.trackingDirection === 'INBOUND') {
-        // Acquisto arrivato in magazzino → NON è una vendita. Solo notifica (resta IN STOCK).
-        if (product.warehouseId) {
-          await notifyWarehouseMembers({
-            warehouseId: product.warehouseId,
-            excludeUserId: '',
-            type: 'NEW_MEMBER',
-            title: '📦 Pacco arrivato in magazzino',
-            message: `${product.brand} ${product.name} è arrivato. Ora è disponibile in stock.`,
-          });
-        }
-        logger.info('Pacco INBOUND consegnato in magazzino', { productId });
-      } else if (product.status !== 'VENDUTO') {
-        // OUTBOUND (spedizione di vendita) → segna come venduto, dati da completare.
-        await prisma.product.update({
-          where: { id: productId },
-          data: { status: 'VENDUTO', soldAt: new Date(), salePrice: 0, fees: 0 },
-        });
-
-        if (product.warehouseId) {
-          await notifyWarehouseMembers({
-            warehouseId: product.warehouseId,
-            excludeUserId: '',
-            type: 'SALE',
-            title: '📦 Spedizione consegnata!',
-            message: `${product.brand} ${product.name} è stato consegnato. Completa la vendita con prezzo e piattaforma.`,
-          });
-        }
-
-        sendDeliveredEmail(productId).catch(() => {});
-        logger.info('Prodotto auto-segnato come venduto dopo consegna', { productId });
-      }
-    }
+    // Consegnato → applica gli effetti in base al senso della spedizione.
+    if (info.status === 'DELIVERED') await applyDeliveredEffects(product);
   }
 
   return info;
+}
+
+// ==========================================
+// EFFETTI DELLA CONSEGNA (condivisi tra polling API e stato manuale)
+//  - INBOUND (acquisto): notifica "arrivato in magazzino", resta IN STOCK
+//  - OUTBOUND (vendita): segna come venduto (dati da completare) + notifica + email
+// ==========================================
+async function applyDeliveredEffects(product: any): Promise<void> {
+  if (product.trackingDirection === 'INBOUND') {
+    if (product.warehouseId) {
+      await notifyWarehouseMembers({
+        warehouseId: product.warehouseId,
+        excludeUserId: '',
+        type: 'NEW_MEMBER',
+        title: '📦 Pacco arrivato in magazzino',
+        message: `${product.brand} ${product.name} è arrivato. Ora è disponibile in stock.`,
+      });
+    }
+    logger.info('Pacco INBOUND consegnato in magazzino', { productId: product.id });
+  } else if (product.status !== 'VENDUTO') {
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { status: 'VENDUTO', soldAt: new Date(), salePrice: 0, fees: 0 },
+    });
+    if (product.warehouseId) {
+      await notifyWarehouseMembers({
+        warehouseId: product.warehouseId,
+        excludeUserId: '',
+        type: 'SALE',
+        title: '📦 Spedizione consegnata!',
+        message: `${product.brand} ${product.name} è stato consegnato. Completa la vendita con prezzo e piattaforma.`,
+      });
+    }
+    sendDeliveredEmail(product.id).catch(() => {});
+    logger.info('Prodotto auto-segnato come venduto dopo consegna', { productId: product.id });
+  }
+}
+
+// ==========================================
+// STATO MANUALE (senza API esterna): l'utente segna lo stato a mano.
+// ==========================================
+const VALID_STATUSES = ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'EXCEPTION', 'RETURNED'];
+export async function setTrackingStatusManual(productId: string, status: string): Promise<{ success: boolean; error?: string }> {
+  if (!VALID_STATUSES.includes(status)) return { success: false, error: 'Stato non valido' };
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product) return { success: false, error: 'Prodotto non trovato' };
+  await prisma.product.update({
+    where: { id: productId },
+    data: { trackingStatus: status, trackingUpdatedAt: new Date() },
+  });
+  if (status === 'DELIVERED') await applyDeliveredEffects(product);
+  return { success: true };
 }
 
 // ==========================================
