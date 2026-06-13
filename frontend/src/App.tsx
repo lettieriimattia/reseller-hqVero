@@ -1426,7 +1426,7 @@ export default function App() {
         <Lock size={28} className="mx-auto text-[var(--text-faint)] mb-3" />
         <p className="text-sm font-bold">Funzione del piano {req?.name || 'superiore'}</p>
         <p className="text-xs text-[var(--text-soft)] mt-1">Disponibile da {req ? `${req.name} (${req.priceMonthly}€/mese)` : 'un piano superiore'}.</p>
-        <button onClick={() => setProTab('plans')} className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-[#ff4d00] hover:bg-[#ff6a2a] text-white">Vedi i piani</button>
+        <button onClick={() => setProTab('plans')} className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-[#6366f1] hover:bg-[#818cf8] text-white">Vedi i piani</button>
       </div>
     );
   };
@@ -2298,7 +2298,7 @@ export default function App() {
                     <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] mb-6">
                       <button type="button" onClick={() => setRegType('new_team')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
-                          regType === 'new_team' ? 'bg-[#ff4d00] text-[var(--text)]' : 'text-[var(--text-soft)]'
+                          regType === 'new_team' ? 'bg-[#6366f1] text-[var(--text)]' : 'text-[var(--text-soft)]'
                         }`}>Fonda un'Azienda</button>
                       <button type="button" onClick={() => setRegType('join_team')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
@@ -2309,7 +2309,7 @@ export default function App() {
                     <div>
                       <label className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Il tuo Nome</label>
                       <input type="text" required value={authName} onChange={e => setAuthName(e.target.value)}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#ff4d00] outline-none"
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#6366f1] outline-none"
                         placeholder="Es. Mario Rossi" />
                     </div>
                     
@@ -2328,7 +2328,7 @@ export default function App() {
                             }}
                               className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
                                 regCategories.includes(cat.id)
-                                  ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-[var(--text)] shadow-[0_0_15px_rgba(255,77,0,0.2)]'
+                                  ? 'bg-[#6366f1]/10 border-[#6366f1] text-[var(--text)] shadow-[0_0_15px_rgba(99,102,241,0.2)]'
                                   : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600 hover:text-gray-300'
                               }`}>
                               <span className="text-2xl">{cat.icon}</span>
@@ -2358,7 +2358,7 @@ export default function App() {
                   <label className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Email</label>
                   <input type="email" required value={authEmail}
                     onChange={e => setAuthEmail(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#ff4d00] outline-none"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#6366f1] outline-none"
                     placeholder="mario@email.com" />
                 </div>
                 
@@ -2367,7 +2367,7 @@ export default function App() {
                   <div className="relative">
                     <input type={showPassword ? 'text' : 'password'} required value={authPassword}
                       onChange={e => setAuthPassword(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 pr-12 text-[var(--text)] focus:border-[#ff4d00] outline-none"
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 pr-12 text-[var(--text)] focus:border-[#6366f1] outline-none"
                       placeholder="••••••••" />
                     <button type="button" onClick={() => setShowPassword(s => !s)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)] hover:text-[var(--text)]">
@@ -2423,7 +2423,7 @@ export default function App() {
             )}
 
             <button type="submit" disabled={authLoading}
-              className="w-full bg-[#ff4d00] hover:bg-[#ff6a2a] py-3 rounded-xl text-[var(--text)] font-bold transition-all disabled:opacity-50 mt-4 flex items-center justify-center">
+              className="w-full bg-[#6366f1] hover:bg-[#818cf8] py-3 rounded-xl text-[var(--text)] font-bold transition-all disabled:opacity-50 mt-4 flex items-center justify-center">
               {authLoading ? <Loader2 className="animate-spin" size={20} /> :
                 require2FA ? 'Verifica 2FA' : (authMode === 'login' ? 'Entra' : 'Registrati')}
             </button>
@@ -2466,7 +2466,7 @@ export default function App() {
           <div className="flex-1 flex items-center justify-end gap-1.5">
             {/* Pulsante Aggiungi (solo desktop) */}
             <button onClick={() => openAddForm()}
-              className="hidden lg:flex items-center gap-2 bg-[#ff4d00] hover:bg-[#e84400] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
+              className="hidden lg:flex items-center gap-2 bg-[#6366f1] hover:bg-[#e84400] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
               <Plus size={15} /> Aggiungi
             </button>
 
@@ -2476,7 +2476,7 @@ export default function App() {
                 className="relative p-2 rounded-xl hover:bg-[var(--fill)] transition-colors">
                 <Bell size={18} className="text-[var(--text-muted)]" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-[#ff4d00] text-[var(--text)] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 bg-[#6366f1] text-[var(--text)] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -2503,7 +2503,7 @@ export default function App() {
                             !n.read ? 'bg-[var(--fill)]' : ''
                           }`}>
                           <div className="flex items-start gap-3">
-                            {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-[#ff4d00] mt-1.5 shrink-0" />}
+                            {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-[#6366f1] mt-1.5 shrink-0" />}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-[var(--text)] truncate">{n.title}</p>
                               <p className="text-xs text-[var(--text-soft)] mt-0.5">{n.message}</p>
@@ -2523,9 +2523,9 @@ export default function App() {
             {user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
               <button onClick={() => navigateTo('admin')} title="Admin"
                 className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors relative">
-                <Shield size={18} className={currentView === 'admin' ? 'text-[#ff4d00]' : 'text-[var(--text-muted)]'} />
+                <Shield size={18} className={currentView === 'admin' ? 'text-[#6366f1]' : 'text-[var(--text-muted)]'} />
                 {adminFbNuove > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#ff4d00] text-white rounded-full text-[9px] font-bold flex items-center justify-center">{adminFbNuove}</span>
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#6366f1] text-white rounded-full text-[9px] font-bold flex items-center justify-center">{adminFbNuove}</span>
                 )}
               </button>
             )}
@@ -2565,7 +2565,7 @@ export default function App() {
                       active ? 'text-[var(--text)]' : 'text-[var(--text-soft)] hover:text-gray-300'
                     }`}>
                     {active && (
-                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-[#ff4d00] rounded-full" />
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-[#6366f1] rounded-full" />
                     )}
                     <Icon size={18} /> {tab.label}
                     {trackingBadge > 0 && (
@@ -2626,22 +2626,22 @@ export default function App() {
 
             {/* Quanto lo pago? — strumento sourcing (prezzo max d'acquisto) */}
             <button onClick={openSourcing}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-[#ff4d00]/30 bg-[#ff4d00]/[0.06] hover:bg-[#ff4d00]/[0.12] text-sm font-bold text-[var(--text)] transition-colors">
-              <DollarSign size={16} className="text-[#ff4d00]" />
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-[#6366f1]/30 bg-[#6366f1]/[0.06] hover:bg-[#6366f1]/[0.12] text-sm font-bold text-[var(--text)] transition-colors">
+              <DollarSign size={16} className="text-[#6366f1]" />
               Ricerca valore <span className="text-[var(--text-soft)] font-medium hidden sm:inline">· prezzo di mercato e max d'acquisto</span>
             </button>
 
             {/* Welcome / primo avvio — quando non ci sono ancora prodotti */}
             {products.length === 0 && (
-              <section className="bg-[var(--surface)] border border-[#ff4d00]/30 rounded-2xl p-6 lg:p-7 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[#ff4d00]/[0.04] pointer-events-none" />
+              <section className="bg-[var(--surface)] border border-[#6366f1]/30 rounded-2xl p-6 lg:p-7 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[#6366f1]/[0.04] pointer-events-none" />
                 <div className="relative">
-                  <p className="text-[10px] font-bold text-[#ff4d00] uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5"><Sparkles size={12} /> Benvenuto in HQ</p>
+                  <p className="text-[10px] font-bold text-[#6366f1] uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5"><Sparkles size={12} /> Benvenuto in HQ</p>
                   <h3 className="text-xl lg:text-2xl font-bold mb-1.5">Iniziamo dal primo prodotto</h3>
                   <p className="text-sm text-[var(--text-soft)] mb-5 max-w-md">In pochi secondi aggiungi un articolo e HQ inizia a tracciare stock, vendite, profitti e spedizioni. Tutto in automatico.</p>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => openAddForm()}
-                      className="bg-[#ff4d00] hover:bg-[#e84400] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
+                      className="bg-[#6366f1] hover:bg-[#e84400] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
                       <Plus size={16} /> Aggiungi il primo prodotto
                     </button>
                     <button onClick={() => navigateTo('settings')}
@@ -2670,7 +2670,7 @@ export default function App() {
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
                   <Users size={10} /> Team
                 </p>
-                <p className="text-2xl lg:text-3xl font-bold text-orange-400 num">{globalProfitto.toFixed(0)}€</p>
+                <p className="text-2xl lg:text-3xl font-bold text-indigo-400 num">{globalProfitto.toFixed(0)}€</p>
                 <div className="flex items-center justify-between mt-1.5">
                   <p className="text-[11px] text-[var(--text-faint)]">Profitto totale</p>
                   <span className="text-[9px] text-[var(--text-faint)] group-hover:text-[var(--text-muted)] transition-colors">Dettaglio →</span>
@@ -2708,7 +2708,7 @@ export default function App() {
                     {(['1D', '1W', '1M', '1Y', 'MAX'] as const).map(tf => (
                       <button key={tf} onClick={() => setChartTimeframe(tf)}
                         className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                          chartTimeframe === tf ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
+                          chartTimeframe === tf ? 'bg-[#6366f1] text-white' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
                         }`}>{tf}</button>
                     ))}
                   </div>
@@ -2725,7 +2725,7 @@ export default function App() {
                 )}
                 <div className="flex items-center gap-5 mt-3 justify-end">
                   <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-green-500 rounded-full inline-block" />Ricavi</div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#ff4d00] rounded-full inline-block" />Profitto</div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#6366f1] rounded-full inline-block" />Profitto</div>
                 </div>
               </section>
 
@@ -2760,7 +2760,7 @@ export default function App() {
                     </div>
                   )}
                   {bestCategoryEntry?.profit > 0 && (
-                    <div className="flex items-center gap-3 p-3 bg-[#ff4d00]/10 border border-[#ff4d00]/20 rounded-xl">
+                    <div className="flex items-center gap-3 p-3 bg-[#6366f1]/10 border border-[#6366f1]/20 rounded-xl">
                       <span className="text-xl shrink-0">{getCategoryIcon(bestCategoryEntry.cat)}</span>
                       <div>
                         <p className="text-sm font-bold">{bestCategoryEntry.cat} è il tuo reparto migliore</p>
@@ -2854,7 +2854,7 @@ export default function App() {
                       <p className="font-bold text-base lg:text-2xl leading-none">{cat}</p>
                       <p className="text-[11px] lg:text-sm text-[var(--text-soft)] mt-1 lg:mt-1.5 mb-3 lg:mb-4">{catStock.length} stock · {catSold.length} venduti</p>
                       <div className="h-0.5 lg:h-1 bg-[var(--fill)] rounded-full overflow-hidden mb-2.5 lg:mb-3">
-                        <div className="h-full bg-[#ff4d00] rounded-full" style={{ width: `${catSellRate}%` }} />
+                        <div className="h-full bg-[#6366f1] rounded-full" style={{ width: `${catSellRate}%` }} />
                       </div>
                       <div className="flex items-center justify-between">
                         <p className={`text-sm lg:text-lg font-bold num ${catProfit > 0 ? 'text-emerald-400' : catProfit < 0 ? 'text-red-400' : 'text-[var(--text-faint)]'}`}>
@@ -2876,7 +2876,7 @@ export default function App() {
               const active = products.filter((p: any) => p.trackingCode && ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING'));
               const stLabel = (s?: string) => {
                 if (s === 'IN_TRANSIT') return { t: 'In transito', c: 'bg-blue-500/20 text-blue-400' };
-                if (s === 'OUT_FOR_DELIVERY') return { t: 'In consegna', c: 'bg-orange-500/20 text-orange-400' };
+                if (s === 'OUT_FOR_DELIVERY') return { t: 'In consegna', c: 'bg-indigo-500/20 text-indigo-400' };
                 if (s === 'EXCEPTION') return { t: 'Eccezione', c: 'bg-red-500/20 text-red-400' };
                 return { t: 'In attesa', c: 'bg-[var(--fill)] text-[var(--text-soft)]' };
               };
@@ -2934,7 +2934,7 @@ export default function App() {
                 <div className="flex bg-[var(--surface)] p-1 rounded-xl border border-[var(--border-2)]">
                   <button onClick={() => { setMagazzinoView('instock'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`px-3 lg:px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      magazzinoView === 'instock' ? 'bg-[#ff4d00] text-[var(--text)]' : 'text-[var(--text-soft)]'
+                      magazzinoView === 'instock' ? 'bg-[#6366f1] text-[var(--text)]' : 'text-[var(--text-soft)]'
                     }`}>IN STOCK</button>
                   <button onClick={() => { setMagazzinoView('sold'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`px-3 lg:px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
@@ -2943,7 +2943,7 @@ export default function App() {
                 </div>
                 {bulkMode && (
                   <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-                    className="px-3 py-1.5 text-xs font-bold rounded-xl border bg-[#ff4d00] border-[#ff4d00] text-[var(--text)] transition-colors">
+                    className="px-3 py-1.5 text-xs font-bold rounded-xl border bg-[#6366f1] border-[#6366f1] text-[var(--text)] transition-colors">
                     ✕ Annulla
                   </button>
                 )}
@@ -2955,10 +2955,10 @@ export default function App() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)]" size={16} />
                   <input type="text" placeholder="Cerca brand o modello..."
                     value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
-                    className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#6366f1] outline-none" />
                 </div>
                 <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
-                  className="w-full lg:w-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#ff4d00] outline-none shrink-0">
+                  className="w-full lg:w-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#6366f1] outline-none shrink-0">
                   <option value="all">Tutti i reparti</option>
                   {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -2978,7 +2978,7 @@ export default function App() {
                       else { setSortField(f); setSortDir('desc'); }
                     }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                        sortField === f ? 'bg-[#ff4d00] text-[var(--text)]' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                        sortField === f ? 'bg-[#6366f1] text-[var(--text)]' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
                       }`}>
                       {f === 'date' ? 'Data' : f === 'price' ? 'Prezzo' : f === 'name' ? 'Nome' : 'Margine'}
                       {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
@@ -2994,7 +2994,7 @@ export default function App() {
                 </div>
                 {/* Condizione */}
                 <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
-                  className="w-full lg:w-auto lg:ml-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-[var(--text-muted)]">
+                  className="w-full lg:w-auto lg:ml-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#6366f1] outline-none text-[var(--text-muted)]">
                   <option value="all">Condizione</option>
                   <option value="DS">DS</option>
                   <option value="VNDS">VNDS</option>
@@ -3004,10 +3004,10 @@ export default function App() {
                 <div className="flex gap-2">
                   <input type="number" placeholder="Min €" value={filterPriceMin}
                     onChange={(e: any) => setFilterPriceMin(e.target.value)}
-                    className="w-16 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-[var(--text-muted)]" />
+                    className="w-16 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#6366f1] outline-none text-[var(--text-muted)]" />
                   <input type="number" placeholder="Max €" value={filterPriceMax}
                     onChange={(e: any) => setFilterPriceMax(e.target.value)}
-                    className="w-16 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#ff4d00] outline-none text-[var(--text-muted)]" />
+                    className="w-16 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#6366f1] outline-none text-[var(--text-muted)]" />
                 </div>
               </div>
             )}
@@ -3036,7 +3036,7 @@ export default function App() {
                       <p className="text-sm text-[var(--text-soft)] mt-1 mb-5 max-w-sm mx-auto">Aggiungi il primo prodotto per iniziare a tracciare stock, vendite e profitti.</p>
                       <div className="flex flex-wrap gap-2 justify-center">
                         <button onClick={() => openAddForm()}
-                          className="bg-[#ff4d00] hover:bg-[#e84400] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
+                          className="bg-[#6366f1] hover:bg-[#e84400] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
                           <Plus size={16} /> Aggiungi prodotto
                         </button>
                         <button onClick={() => navigateTo('settings')}
@@ -3083,9 +3083,9 @@ export default function App() {
                         {...cardPressProps(groupKey)}
                         className={`lg:hidden bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
-                        } ${isSelected ? 'border-[#ff4d00] shadow-sm' : 'border-[var(--border)]'}`}>
+                        } ${isSelected ? 'border-[#6366f1] shadow-sm' : 'border-[var(--border)]'}`}>
                         {bulkMode && (
-                          <div className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#ff4d00] border-[#ff4d00]' : 'border-gray-600 bg-[var(--surface-2)]'}`}>
+                          <div className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#6366f1] border-[#6366f1]' : 'border-gray-600 bg-[var(--surface-2)]'}`}>
                             {isSelected && <CheckCircle size={14} className="text-[var(--text)]" />}
                           </div>
                         )}
@@ -3097,7 +3097,7 @@ export default function App() {
                             onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-bold text-sm truncate">{g.brand} {g.name}</span>
-                              {g.quantity > 1 && <span className="text-[10px] bg-[#ff4d00]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
+                              {g.quantity > 1 && <span className="text-[10px] bg-[#6366f1]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
                               {daysBadge}{trackBadge}
                             </div>
                             <p className="text-xs text-[var(--text-soft)] mt-1">{g.size} · {g.condition} · <span className="text-gray-300 font-semibold">{g.purchasePrice.toFixed(0)}€</span></p>
@@ -3113,7 +3113,7 @@ export default function App() {
                             <div className="flex flex-col gap-1 shrink-0">
                               <button onClick={() => openTrackingModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">Track</button>
                               {isAdmin
-                                ? <button onClick={() => openListingModal(g)} className="px-3 py-1.5 bg-orange-500/15 text-orange-400 rounded-lg text-xs font-bold">Annuncio</button>
+                                ? <button onClick={() => openListingModal(g)} className="px-3 py-1.5 bg-indigo-500/15 text-indigo-400 rounded-lg text-xs font-bold">Annuncio</button>
                                 : <button onClick={() => openEditModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">Modifica</button>}
                               {!isAdmin && <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="px-3 py-1.5 bg-green-500/15 text-green-400 rounded-lg text-xs font-bold">Vendi</button>}
                             </div>
@@ -3121,7 +3121,7 @@ export default function App() {
                         </div>
                         {!bulkMode && isAdmin && (
                           <div className="flex border-t border-[var(--border)]">
-                            <button onClick={() => openShipping(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-orange-400 hover:bg-orange-900/15"><Package size={13} /> Spedisci</button>
+                            <button onClick={() => openShipping(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-indigo-400 hover:bg-indigo-900/15"><Package size={13} /> Spedisci</button>
                             <div className="w-px bg-[var(--fill)]" />
                             <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> Vendi</button>
                           </div>
@@ -3134,7 +3134,7 @@ export default function App() {
                         {...cardPressProps(groupKey)}
                         className={`hidden lg:flex flex-col bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
-                        } ${isSelected ? 'border-[#ff4d00] shadow-sm' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
+                        } ${isSelected ? 'border-[#6366f1] shadow-sm' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
                         <div
                           className={`relative aspect-[3/2] bg-gradient-to-br from-[#141414] to-[#0a0a0a] flex items-center justify-center overflow-hidden ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
@@ -3142,12 +3142,12 @@ export default function App() {
                             ? <img src={photoUrl} alt="" className="w-full h-full object-cover" />
                             : <span className="text-5xl opacity-80">{getCategoryIcon(g.category)}</span>}
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
-                            {g.quantity > 1 && <span className="text-[10px] bg-[#ff4d00] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
+                            {g.quantity > 1 && <span className="text-[10px] bg-[#6366f1] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
                             {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-[var(--text)]' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-gray-300'}`}>{days}g</span>}
                             {g.trackingStatus && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500 text-[var(--text)]' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500 text-[var(--text)]' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500 text-[var(--text)]' : 'bg-black/50 backdrop-blur text-gray-300'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? 'Transito' : g.trackingStatus === 'DELIVERED' ? 'Consegnato' : g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' : 'Track'}</span>}
                           </div>
                           {bulkMode && (
-                            <div className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#ff4d00] border-[#ff4d00]' : 'border-[var(--border-3)] bg-black/40 backdrop-blur'}`}>
+                            <div className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#6366f1] border-[#6366f1]' : 'border-[var(--border-3)] bg-black/40 backdrop-blur'}`}>
                               {isSelected && <CheckCircle size={14} className="text-[var(--text)]" />}
                             </div>
                           )}
@@ -3169,12 +3169,12 @@ export default function App() {
                             <div className="grid grid-cols-2 gap-1.5">
                               <button onClick={() => openTrackingModal(g)} className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.trackingCode ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> Track</button>
                               {isAdmin
-                                ? <button onClick={() => openListingModal(g)} className="py-2 rounded-lg text-xs font-bold bg-orange-500/15 text-orange-400 hover:bg-orange-500/25 hover:text-orange-300 transition-colors flex items-center justify-center gap-1"><Store size={12} /> Annuncio</button>
+                                ? <button onClick={() => openListingModal(g)} className="py-2 rounded-lg text-xs font-bold bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 hover:text-indigo-300 transition-colors flex items-center justify-center gap-1"><Store size={12} /> Annuncio</button>
                                 : <button onClick={() => openEditModal(g)} className="py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1"><Edit size={12} /> Modifica</button>}
                             </div>
                             {isAdmin ? (
                               <div className="grid grid-cols-2 gap-1.5">
-                                <button onClick={() => openShipping(g)} className="py-2 rounded-lg text-xs font-bold bg-orange-500/15 text-orange-400 hover:bg-orange-500/25 hover:text-orange-300 transition-colors flex items-center justify-center gap-1"><Package size={12} /> Spedisci</button>
+                                <button onClick={() => openShipping(g)} className="py-2 rounded-lg text-xs font-bold bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 hover:text-indigo-300 transition-colors flex items-center justify-center gap-1"><Package size={12} /> Spedisci</button>
                                 <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1"><DollarSign size={12} /> Vendi</button>
                               </div>
                             ) : (
@@ -3206,7 +3206,7 @@ export default function App() {
                       'Vinted': 'text-teal-300 bg-teal-500/15 border-teal-500/20',
                       'StockX': 'text-green-300 bg-green-500/15 border-green-500/20',
                       'eBay': 'text-yellow-300 bg-yellow-500/15 border-yellow-500/20',
-                      'Subito': 'text-orange-300 bg-orange-500/15 border-orange-500/20',
+                      'Subito': 'text-indigo-300 bg-indigo-500/15 border-indigo-500/20',
                       'Privato': 'text-[var(--text-muted)] bg-[var(--fill)] border-[var(--border-2)]',
                     };
                     return groupedSoldArray.map((g: any) => {
@@ -3451,7 +3451,7 @@ export default function App() {
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <DollarSign size={10} /> Vendite
                 </p>
-                <p className="text-2xl lg:text-3xl font-bold text-orange-400 num">{soldItemsTotal.length}</p>
+                <p className="text-2xl lg:text-3xl font-bold text-indigo-400 num">{soldItemsTotal.length}</p>
                 <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Totali · {sellThroughRate}% sell-through</p>
               </div>
             </div>
@@ -3459,7 +3459,7 @@ export default function App() {
             {/* KPI row 2: metriche operative */}
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
-                <p className={`text-xl font-bold num ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-orange-400' : 'text-red-400'}`}>
+                <p className={`text-xl font-bold num ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-indigo-400' : 'text-red-400'}`}>
                   {avgMarginPct >= 0 ? '+' : ''}{avgMarginPct.toFixed(1)}%
                 </p>
                 <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
@@ -3468,7 +3468,7 @@ export default function App() {
                 </p>
               </div>
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
-                <p className="text-xl font-bold text-orange-400 num">{Math.round(avgDaysToSell)}</p>
+                <p className="text-xl font-bold text-indigo-400 num">{Math.round(avgDaysToSell)}</p>
                 <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
                   <span className="sm:hidden">Gg/vendita</span>
                   <span className="hidden sm:inline">Giorni medi vendita</span>
@@ -3488,7 +3488,7 @@ export default function App() {
                   {(['1D', '1W', '1M', '1Y', 'MAX'] as const).map(tf => (
                     <button key={tf} onClick={() => setChartTimeframe(tf)}
                       className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                        chartTimeframe === tf ? 'bg-[#ff4d00] text-[var(--text)]' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
+                        chartTimeframe === tf ? 'bg-[#6366f1] text-[var(--text)]' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
                       }`}>{tf}</button>
                   ))}
                 </div>
@@ -3505,7 +3505,7 @@ export default function App() {
               )}
               <div className="flex items-center gap-5 mt-3 justify-end">
                 <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-green-500 rounded-full inline-block" />Ricavi</div>
-                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#ff4d00] rounded-full inline-block" />Profitto</div>
+                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#6366f1] rounded-full inline-block" />Profitto</div>
               </div>
             </section>
 
@@ -3531,7 +3531,7 @@ export default function App() {
                             </div>
                           </div>
                           <div className="h-2 bg-black/40 rounded-full overflow-hidden mb-1">
-                            <div className="h-full bg-gradient-to-r from-[#ff4d00] to-orange-400 rounded-full"
+                            <div className="h-full bg-gradient-to-r from-[#6366f1] to-indigo-400 rounded-full"
                               style={{ width: `${(stats.revenue / maxRev) * 100}%` }} />
                           </div>
                           <div className="flex justify-between">
@@ -3548,7 +3548,7 @@ export default function App() {
               {Object.keys(sociProfits).length > 0 && (
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
-                    <Users className="text-orange-400" size={15} />
+                    <Users className="text-indigo-400" size={15} />
                     <h3 className="font-semibold">Soci</h3>
                   </div>
                   <div className="space-y-4">
@@ -3567,7 +3567,7 @@ export default function App() {
                                 </div>
                                 <span className="text-sm font-bold">{socio.name}</span>
                                 {socio.name === user.name && (
-                                  <span className="text-[9px] bg-[#ff4d00]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full">TU</span>
+                                  <span className="text-[9px] bg-[#6366f1]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full">TU</span>
                                 )}
                               </div>
                               <span className="font-semibold text-green-400">{socio.profit.toFixed(0)}€</span>
@@ -3655,12 +3655,12 @@ export default function App() {
                           <tr key={r.cat} className="hover:bg-[var(--fill)] transition-colors">
                             <td className="py-2.5 pr-4 font-bold text-[var(--text)]">{getCategoryIcon(r.cat)} {r.cat}</td>
                             <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.total}</td>
-                            <td className="py-2.5 pr-4 text-orange-400 num">{r.sold}</td>
+                            <td className="py-2.5 pr-4 text-indigo-400 num">{r.sold}</td>
                             <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.inStock}</td>
                             <td className="py-2.5 pr-4">
                               <div className="flex items-center gap-2">
                                 <div className="w-16 h-1.5 bg-[var(--fill)] rounded-full overflow-hidden">
-                                  <div className="h-full bg-[#ff4d00] rounded-full" style={{ width: `${r.st}%` }} />
+                                  <div className="h-full bg-[#6366f1] rounded-full" style={{ width: `${r.st}%` }} />
                                 </div>
                                 <span className={`num font-semibold ${r.st >= 60 ? 'text-emerald-400' : r.st >= 30 ? 'text-yellow-400' : 'text-red-400'}`}>{r.st}%</span>
                               </div>
@@ -3725,10 +3725,10 @@ export default function App() {
 
           const statusLabel = (s?: string) => {
             if (s === 'IN_TRANSIT') return { text: 'In transito', cls: 'bg-blue-500/20 text-blue-400', dot: 'bg-blue-400' };
-            if (s === 'OUT_FOR_DELIVERY') return { text: 'In consegna', cls: 'bg-orange-500/20 text-orange-400', dot: 'bg-orange-400' };
+            if (s === 'OUT_FOR_DELIVERY') return { text: 'In consegna', cls: 'bg-indigo-500/20 text-indigo-400', dot: 'bg-indigo-400' };
             if (s === 'DELIVERED') return { text: 'Consegnato', cls: 'bg-green-500/20 text-green-400', dot: 'bg-green-400' };
             if (s === 'EXCEPTION') return { text: 'Eccezione', cls: 'bg-red-500/20 text-red-400', dot: 'bg-red-400' };
-            if (s === 'RETURNED') return { text: 'Reso', cls: 'bg-orange-500/20 text-orange-400', dot: 'bg-orange-400' };
+            if (s === 'RETURNED') return { text: 'Reso', cls: 'bg-indigo-500/20 text-indigo-400', dot: 'bg-indigo-400' };
             return { text: 'In attesa', cls: 'bg-[var(--fill)] text-[var(--text-soft)]', dot: 'bg-gray-600' };
           };
 
@@ -3875,10 +3875,10 @@ export default function App() {
             <h2 className="text-3xl font-semibold">Impostazioni</h2>
 
             {/* SEZIONE: Piani & Pro */}
-            <section className="bg-gradient-to-br from-[#ff4d00]/10 to-[var(--surface)] border border-[#ff4d00]/30 rounded-2xl p-6">
+            <section className="bg-gradient-to-br from-[#6366f1]/10 to-[var(--surface)] border border-[#6366f1]/30 rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <Sparkles className="text-[#ff4d00] mt-0.5" size={22} />
+                  <Sparkles className="text-[#6366f1] mt-0.5" size={22} />
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">Piani &amp; Strumenti Pro</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">
@@ -3887,7 +3887,7 @@ export default function App() {
                   </div>
                 </div>
                 <button onClick={() => openPlanModal()}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#ff4d00] hover:bg-[#ff6a2a] text-white transition-colors whitespace-nowrap">
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#6366f1] hover:bg-[#818cf8] text-white transition-colors whitespace-nowrap">
                   Vedi piani
                 </button>
               </div>
@@ -3897,7 +3897,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <Bell className={pushEnabled ? 'text-[#ff4d00] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
+                  <Bell className={pushEnabled ? 'text-[#6366f1] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">Notifiche</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">
@@ -3909,7 +3909,7 @@ export default function App() {
                 </div>
                 <button onClick={() => pushEnabled ? disablePush() : enablePush()} disabled={pushBusy || !pushSupported}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap disabled:opacity-40 ${
-                    pushEnabled ? 'bg-red-600/20 hover:bg-red-600/30 text-red-400' : 'bg-[#ff4d00] hover:bg-[#ff6a2a] text-white'
+                    pushEnabled ? 'bg-red-600/20 hover:bg-red-600/30 text-red-400' : 'bg-[#6366f1] hover:bg-[#818cf8] text-white'
                   }`}>
                   {pushBusy ? <Loader2 size={14} className="animate-spin" /> : pushEnabled ? 'Disattiva' : 'Attiva'}
                 </button>
@@ -3943,7 +3943,7 @@ export default function App() {
                     setStaleThreshold(v);
                     localStorage.setItem('staleThreshold', v.toString());
                   }}
-                  className="w-24 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm text-right focus:border-[#ff4d00] outline-none"
+                  className="w-24 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm text-right focus:border-[#6366f1] outline-none"
                 />
                 <span className="text-sm text-[var(--text-muted)]">giorni</span>
               </div>
@@ -3994,7 +3994,7 @@ export default function App() {
                   </button>
                 ) : (
                   <button onClick={handle2FASetupStart} disabled={twoFaLoading}
-                    className="px-4 py-2 bg-[#ff4d00] hover:bg-[#ff6a2a] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
+                    className="px-4 py-2 bg-[#6366f1] hover:bg-[#818cf8] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
                     Attiva 2FA
                   </button>
                 )}
@@ -4012,7 +4012,7 @@ export default function App() {
                   </div>
                 </div>
                 <button onClick={() => setChangePwdOpen(true)}
-                  className="px-4 py-2 bg-[#ff4d00] hover:bg-[#ff6a2a] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
+                  className="px-4 py-2 bg-[#6366f1] hover:bg-[#818cf8] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
                   Cambia
                 </button>
               </div>
@@ -4058,9 +4058,9 @@ export default function App() {
                   <input type="text" value={newCatName}
                     onChange={(e: any) => setNewCatName(e.target.value)}
                     placeholder="Nome nuovo reparto (es. Borse, Vinili...)"
-                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#6366f1] outline-none" />
                   <button type="submit" disabled={isAddingCat}
-                    className="bg-[#ff4d00] hover:bg-[#ff6a2a] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap">
+                    className="bg-[#6366f1] hover:bg-[#818cf8] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap">
                     {isAddingCat ? <Loader2 className="animate-spin" size={16} /> : '+ Aggiungi Reparto'}
                   </button>
                 </form>
@@ -4087,7 +4087,7 @@ export default function App() {
                       </div>
                       <input type="number" min="0" max="100" value={m.percentage}
                         onChange={(e: any) => updateMemberPercentage(team.warehouseId, m.membershipId, e.target.value)}
-                        className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right focus:border-[#ff4d00] outline-none" />
+                        className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right focus:border-[#6366f1] outline-none" />
                       <span className="text-[var(--text-soft)] text-xs">%</span>
                     </div>
                   ))}
@@ -4166,7 +4166,7 @@ export default function App() {
             {/* SEZIONE: Aiuto & Assistenza — il messaggio arriva all'admin via email */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-1">
-                <Mail size={18} className="text-[#ff4d00]" />
+                <Mail size={18} className="text-[#6366f1]" />
                 <h3 className="text-lg font-bold tracking-tighter">Aiuto & Assistenza</h3>
               </div>
               <p className="text-xs text-[var(--text-soft)] mb-4">
@@ -4182,7 +4182,7 @@ export default function App() {
                   <button key={o.v} type="button" onClick={() => setFeedbackType(o.v)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
                       feedbackType === o.v
-                        ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-[var(--text)]'
+                        ? 'bg-[#6366f1]/10 border-[#6366f1] text-[var(--text)]'
                         : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
                     }`}>
                     <o.Icon size={14} /> {o.label}
@@ -4192,11 +4192,11 @@ export default function App() {
               <textarea value={feedbackMsg} onChange={(e: any) => setFeedbackMsg(e.target.value)}
                 maxLength={4000} rows={4}
                 placeholder="Scrivi qui il tuo messaggio…"
-                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none resize-none" />
+                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none resize-none" />
               <div className="flex items-center justify-between gap-3 mt-3">
                 <span className="text-[10px] text-[var(--text-faint)]">{feedbackMsg.length}/4000</span>
                 <button onClick={sendFeedback} disabled={feedbackSending || feedbackMsg.trim().length < 3}
-                  className="px-5 py-2 bg-[#ff4d00] hover:bg-[#ff6a2a] rounded-xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center gap-2">
+                  className="px-5 py-2 bg-[#6366f1] hover:bg-[#818cf8] rounded-xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center gap-2">
                   {feedbackSending ? <Loader2 className="animate-spin" size={16} /> : <Mail size={15} />}
                   Invia
                 </button>
@@ -4207,7 +4207,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  {theme === 'light' ? <Sun className="text-[#ff4d00] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#ff4d00] mt-0.5" size={22} /> : <Moon className="text-[#ff4d00] mt-0.5" size={22} />}
+                  {theme === 'light' ? <Sun className="text-[#6366f1] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#6366f1] mt-0.5" size={22} /> : <Moon className="text-[#6366f1] mt-0.5" size={22} />}
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">Aspetto</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">Scegli il tema: scuro, chiaro o vetro.</p>
@@ -4216,19 +4216,19 @@ export default function App() {
                 <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] shrink-0 self-center sm:self-auto">
                   <button onClick={() => setTheme('dark')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'dark' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
+                      theme === 'dark' ? 'bg-[#6366f1] text-white' : 'text-[var(--text-soft)]'
                     }`}>
                     <Moon size={13} /> Scuro
                   </button>
                   <button onClick={() => setTheme('light')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'light' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
+                      theme === 'light' ? 'bg-[#6366f1] text-white' : 'text-[var(--text-soft)]'
                     }`}>
                     <Sun size={13} /> Chiaro
                   </button>
                   <button onClick={() => setTheme('glass')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'glass' ? 'bg-[#ff4d00] text-white' : 'text-[var(--text-soft)]'
+                      theme === 'glass' ? 'bg-[#6366f1] text-white' : 'text-[var(--text-soft)]'
                     }`}>
                     <Sparkles size={13} /> Glass
                   </button>
@@ -4237,16 +4237,16 @@ export default function App() {
             </section>
 
             {/* ===== ELIMINAZIONE ACCOUNT ===== */}
-            <section className="bg-[var(--surface)] border border-red-500/[0.12] rounded-2xl p-5">
+            <section className="bg-[var(--surface)] border border-red-500/30 rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-1">
-                <AlertTriangle size={15} className="text-red-500/60" />
-                <h3 className="font-semibold text-sm text-red-400/80">Eliminazione Account</h3>
+                <AlertTriangle size={15} className="text-red-500" />
+                <h3 className="font-semibold text-sm text-red-500">Eliminazione Account</h3>
               </div>
-              <p className="text-[11px] text-[var(--text-faint)] mb-4">
+              <p className="text-[11px] text-[var(--text-muted)] mb-4">
                 L'eliminazione dell'account è permanente e irreversibile. Tutti i tuoi prodotti, dati e accessi verranno cancellati definitivamente.
               </p>
               <button onClick={() => setDeleteAccountStep(1)}
-                className="px-4 py-2 rounded-xl border border-red-500/30 text-red-400/70 text-xs font-semibold hover:bg-red-500/10 hover:text-red-400 transition-colors">
+                className="px-4 py-2 rounded-xl border border-red-500/40 text-red-500 text-xs font-semibold hover:bg-red-500 hover:text-white transition-colors">
                 Elimina il mio account
               </button>
             </section>
@@ -4258,7 +4258,7 @@ export default function App() {
         {currentView === 'admin' && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
           <div className="space-y-5">
             <div className="flex items-center gap-2">
-              <Shield size={24} className="text-[#ff4d00]" />
+              <Shield size={24} className="text-[#6366f1]" />
               <h2 className="text-3xl font-semibold">Admin</h2>
             </div>
 
@@ -4282,14 +4282,14 @@ export default function App() {
               {/* Toggle vista: Utenti / Richieste */}
               <div className="px-5 py-3 flex gap-2 border-b border-[var(--border)]">
                 <button onClick={() => setAdminView('users')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${adminView === 'users' ? 'bg-[#ff4d00] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${adminView === 'users' ? 'bg-[#6366f1] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   Utenti
                 </button>
                 <button onClick={() => { setAdminView('feedback'); fetchAdminFeedback(); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'feedback' ? 'bg-[#ff4d00] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'feedback' ? 'bg-[#6366f1] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   Richieste
                   {adminFbNuove > 0 && (
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'feedback' ? 'bg-white/25' : 'bg-[#ff4d00] text-white'}`}>{adminFbNuove}</span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'feedback' ? 'bg-white/25' : 'bg-[#6366f1] text-white'}`}>{adminFbNuove}</span>
                   )}
                 </button>
               </div>
@@ -4328,7 +4328,7 @@ export default function App() {
                           <div className="flex items-center gap-1.5 mt-1.5">
                             <span className="text-[9px] text-[var(--text-faint)] uppercase">Piano</span>
                             <select value={u.plan || 'free'} onChange={e => setUserPlan(u.id, e.target.value)}
-                              className="text-[10px] bg-[var(--fill)] border border-[var(--border-2)] rounded-lg px-2 py-1 outline-none focus:border-[#ff4d00]">
+                              className="text-[10px] bg-[var(--fill)] border border-[var(--border-2)] rounded-lg px-2 py-1 outline-none focus:border-[#6366f1]">
                               <option value="free">Free</option>
                               <option value="starter">Starter 9.99</option>
                               <option value="pro">Pro 19.99</option>
@@ -4360,7 +4360,7 @@ export default function App() {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)]">{f.type}</span>
                             {f.status === 'nuova'
-                              ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#ff4d00] text-white font-bold">nuova</span>
+                              ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white font-bold">nuova</span>
                               : <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 font-bold">risposta</span>}
                             <span className="text-[11px] font-semibold truncate">{f.userName || f.userEmail}</span>
                           </div>
@@ -4385,12 +4385,12 @@ export default function App() {
                           <textarea value={replyText} onChange={(e: any) => setReplyText(e.target.value)}
                             rows={3} maxLength={6000} autoFocus
                             placeholder={`Rispondi a ${f.userEmail}…`}
-                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm focus:border-[#ff4d00] outline-none resize-none" />
+                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm focus:border-[#6366f1] outline-none resize-none" />
                           <div className="flex items-center justify-end gap-2 mt-2">
                             <button onClick={() => { setReplyingId(null); setReplyText(''); }}
                               className="px-3 py-1.5 text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors">Annulla</button>
                             <button onClick={() => sendAdminReply(f.id)} disabled={replySending || replyText.trim().length < 2}
-                              className="px-4 py-1.5 bg-[#ff4d00] hover:bg-[#ff6a2a] rounded-lg text-xs font-bold transition-colors disabled:opacity-40 flex items-center gap-1.5">
+                              className="px-4 py-1.5 bg-[#6366f1] hover:bg-[#818cf8] rounded-lg text-xs font-bold transition-colors disabled:opacity-40 flex items-center gap-1.5">
                               {replySending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
                               Invia via email
                             </button>
@@ -4398,7 +4398,7 @@ export default function App() {
                         </div>
                       ) : (
                         <button onClick={() => { setReplyingId(f.id); setReplyText(f.reply || ''); }}
-                          className="mt-2 text-xs font-bold text-[#ff4d00] hover:text-[#ff6a2a] transition-colors">
+                          className="mt-2 text-xs font-bold text-[#6366f1] hover:text-[#818cf8] transition-colors">
                           {f.reply ? 'Modifica risposta' : '↩ Rispondi'}
                         </button>
                       )}
@@ -4521,7 +4521,7 @@ export default function App() {
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <div className="flex items-center gap-2">
-                <DollarSign size={20} className="text-[#ff4d00]" />
+                <DollarSign size={20} className="text-[#6366f1]" />
                 <h2 className="text-xl font-semibold">Ricerca valore</h2>
               </div>
               <button onClick={() => setSourcingOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors"><X size={20} /></button>
@@ -4532,10 +4532,10 @@ export default function App() {
 
               {/* Solo foto */}
               <button type="button" onClick={() => sourcingCamInputRef.current?.click()} disabled={sourcingScanning || sourcingCalcLoading}
-                className="w-full py-4 rounded-2xl border border-orange-500/40 bg-orange-500/10 hover:bg-orange-500/20 text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
+                className="w-full py-4 rounded-2xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
                 {(sourcingScanning || sourcingCalcLoading)
-                  ? <><Loader2 size={18} className="animate-spin text-orange-400" /> {sourcingScanning ? 'Riconoscimento…' : 'Valutazione…'}</>
-                  : <><Camera size={18} className="text-orange-400" /> Scatta foto</>}
+                  ? <><Loader2 size={18} className="animate-spin text-indigo-400" /> {sourcingScanning ? 'Riconoscimento…' : 'Valutazione…'}</>
+                  : <><Camera size={18} className="text-indigo-400" /> Scatta foto</>}
               </button>
 
               {/* Cosa ha riconosciuto l'IA */}
@@ -4568,7 +4568,7 @@ export default function App() {
                     <div className="flex gap-2">
                       {[30, 50, 100, 200].map(m => (
                         <button key={m} onClick={() => setSourcingMargin(m)}
-                          className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${sourcingMargin === m ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
+                          className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${sourcingMargin === m ? 'bg-[#6366f1]/10 border-[#6366f1] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
                           +{m}%
                         </button>
                       ))}
@@ -4598,7 +4598,7 @@ export default function App() {
       {/* ========== FAB MOBILE ========== */}
       <button
         onClick={() => openAddForm()}
-        className="lg:hidden fixed z-40 bg-[#ff4d00] rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-all"
+        className="lg:hidden fixed z-40 bg-[#6366f1] rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-all"
         style={{ width: 54, height: 54, bottom: 'calc(5.5rem + env(safe-area-inset-bottom))', right: 16 }}
       >
         <Plus size={24} />
@@ -4637,7 +4637,7 @@ export default function App() {
                 <div className="relative">
                   <Icon size={22} strokeWidth={active ? 2 : 1.5} />
                   {badge > 0 && (
-                    <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 bg-[#ff4d00] text-[var(--text)] rounded-full text-[8px] font-bold flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 bg-[#6366f1] text-[var(--text)] rounded-full text-[8px] font-bold flex items-center justify-center">
                       {badge}
                     </span>
                   )}
@@ -4683,7 +4683,7 @@ export default function App() {
                   return (
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] text-[var(--text-soft)] flex items-center gap-1.5">
-                        <Sparkles size={12} className="text-orange-400" /> Modalità automatica — aggiungi una foto
+                        <Sparkles size={12} className="text-indigo-400" /> Modalità automatica — aggiungi una foto
                       </span>
                       <button type="button" onClick={() => setShowRepartoGrid(true)}
                         className="text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors">
@@ -4701,7 +4701,7 @@ export default function App() {
                     onClick={() => { setCategory(AUTO_CATEGORY); setDetectedReparto(''); }}
                     className={`p-3 rounded-xl text-sm font-bold border transition-all ${
                       category === AUTO_CATEGORY
-                        ? 'bg-orange-500/15 border-orange-500 text-[var(--text)]'
+                        ? 'bg-indigo-500/15 border-indigo-500 text-[var(--text)]'
                         : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
                     }`}>
                     <span className="block text-xl mb-1"><Sparkles size="1em" className="inline-block align-[-0.125em]" /></span>
@@ -4711,7 +4711,7 @@ export default function App() {
                     <button key={cat} type="button" onClick={() => { setCategory(cat); setDetectedReparto(''); }}
                       className={`p-3 rounded-xl text-sm font-bold border transition-all ${
                         category === cat
-                          ? 'bg-[#ff4d00]/10 border-[#ff4d00] text-[var(--text)]'
+                          ? 'bg-[#6366f1]/10 border-[#6366f1] text-[var(--text)]'
                           : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
                       }`}>
                       <span className="block text-xl mb-1">{getCategoryIcon(cat)}</span>
@@ -4724,19 +4724,19 @@ export default function App() {
                   detectedReparto ? (
                     <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
                       <p className="text-[11px] text-[var(--text-muted)] flex items-center gap-1.5">
-                        <Sparkles size={11} className="text-orange-400" />
+                        <Sparkles size={11} className="text-indigo-400" />
                         Rilevato: <b className="text-[var(--text)]">{detectedReparto}</b> — reparto non presente.
                       </p>
                       <button type="button" disabled={isAddingCat}
                         onClick={() => createRepartoFromDetected(detectedReparto)}
-                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-orange-500/15 border border-orange-500/40 text-orange-300 hover:bg-orange-500/25 transition-colors disabled:opacity-40 flex items-center gap-1">
+                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/25 transition-colors disabled:opacity-40 flex items-center gap-1">
                         {isAddingCat ? <Loader2 size={11} className="animate-spin" /> : <Plus size={11} />}
                         Crea reparto "{detectedReparto}"
                       </button>
                     </div>
                   ) : (
                     <p className="text-[11px] text-[var(--text-muted)] mt-2 flex items-center gap-1.5">
-                      <Sparkles size={11} className="text-orange-400" />
+                      <Sparkles size={11} className="text-indigo-400" />
                       Aggiungi una foto: l'IA capisce da sola di che prodotto si tratta.
                     </p>
                   )
@@ -4746,10 +4746,10 @@ export default function App() {
               })()}
 
               {/* FOTO + IA SCAN — multi-foto (max 5) */}
-              <div className="bg-gradient-to-br from-orange-500/10 to-[#ff4d00]/10 border border-orange-500/30 rounded-2xl p-4">
+              <div className="bg-gradient-to-br from-indigo-500/10 to-[#6366f1]/10 border border-indigo-500/30 rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <label className="flex items-center gap-2">
-                    <Sparkles className="text-orange-400" size={16} />
+                    <Sparkles className="text-indigo-400" size={16} />
                     <span className="text-xs font-bold text-[var(--text)]">Foto + Analisi IA</span>
                   </label>
                   <span className="text-[10px] text-[var(--text-soft)]">{productPhotos.length}/5 foto</span>
@@ -4763,7 +4763,7 @@ export default function App() {
                 {/* Griglia foto */}
                 <div className="grid grid-cols-5 gap-2 mb-3">
                   {productPhotos.map((photo, i) => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border border-orange-500/30">
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border border-indigo-500/30">
                       <img src={photo} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removePhoto(i)}
                         className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
@@ -4771,21 +4771,21 @@ export default function App() {
                       </button>
                       <button type="button" onClick={() => runAIScan(photo, category)}
                         disabled={isScanning}
-                        className="absolute bottom-0 left-0 right-0 bg-orange-600/80 hover:bg-orange-500/90 py-0.5 text-[9px] font-bold text-center transition-colors disabled:opacity-40">
+                        className="absolute bottom-0 left-0 right-0 bg-indigo-600/80 hover:bg-indigo-500/90 py-0.5 text-[9px] font-bold text-center transition-colors disabled:opacity-40">
                         Scansiona
                       </button>
                     </div>
                   ))}
                   {productPhotos.length < 5 && (
                     // Tile principale: apre DIRETTAMENTE la fotocamera (capture) su mobile
-                    <label className={`aspect-square rounded-xl border-2 border-dashed border-orange-500/30 hover:border-orange-500 flex flex-col items-center justify-center cursor-pointer transition-colors ${isScanning ? 'pointer-events-none opacity-40' : ''}`}>
+                    <label className={`aspect-square rounded-xl border-2 border-dashed border-indigo-500/30 hover:border-indigo-500 flex flex-col items-center justify-center cursor-pointer transition-colors ${isScanning ? 'pointer-events-none opacity-40' : ''}`}>
                       <input type="file" accept="image/*" capture="environment" className="hidden"
                         onChange={(e: any) => handlePhotoAdd(e, false)} disabled={isScanning} />
                       {isScanning ? (
-                        <Loader2 className="animate-spin text-orange-400" size={18} />
+                        <Loader2 className="animate-spin text-indigo-400" size={18} />
                       ) : (
                         <>
-                          <Camera size={18} className="text-orange-400 mb-1" />
+                          <Camera size={18} className="text-indigo-400 mb-1" />
                           <span className="text-[9px] text-[var(--text-soft)]">Scatta</span>
                         </>
                       )}
@@ -4795,16 +4795,16 @@ export default function App() {
 
                 {/* Alternativa: scegli dalla libreria (senza capture → galleria/file) */}
                 {productPhotos.length < 5 && !isScanning && (
-                  <label className="flex items-center justify-center gap-2 w-full mb-3 py-2 rounded-xl border border-orange-500/30 hover:border-orange-500 text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] cursor-pointer transition-colors">
+                  <label className="flex items-center justify-center gap-2 w-full mb-3 py-2 rounded-xl border border-indigo-500/30 hover:border-indigo-500 text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] cursor-pointer transition-colors">
                     <input type="file" accept="image/*" multiple className="hidden"
                       onChange={(e: any) => handlePhotoAdd(e, false)} disabled={isScanning} />
-                    <ImageIcon size={13} className="text-orange-400" />
+                    <ImageIcon size={13} className="text-indigo-400" />
                     Scegli dalla libreria
                   </label>
                 )}
 
                 {isScanning && (
-                  <p className="text-xs text-orange-400 flex items-center gap-2 mb-2">
+                  <p className="text-xs text-indigo-400 flex items-center gap-2 mb-2">
                     <Loader2 className="animate-spin" size={12} /> Analisi IA in corso...
                   </p>
                 )}
@@ -4893,13 +4893,13 @@ export default function App() {
                     <input type="text" required value={pokeName}
                       onChange={(e: any) => setPokeName(e.target.value)}
                       placeholder="Es. Charizard 4/102"
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Gradata?</label>
                       <select value={pokeGraded} onChange={(e: any) => setPokeGraded(e.target.value)}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none">
                         <option value="No">No (Raw)</option>
                         <option value="Si">Sì</option>
                       </select>
@@ -4910,7 +4910,7 @@ export default function App() {
                         <input type="text" value={pokeGrade}
                           onChange={(e: any) => setPokeGrade(e.target.value)}
                           placeholder="10, 9.5..."
-                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                       </div>
                     )}
                   </div>
@@ -4923,14 +4923,14 @@ export default function App() {
                       <input type="text" required value={watchBrand}
                         onChange={(e: any) => setWatchBrand(e.target.value)}
                         placeholder="Rolex" 
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Modello</label>
                       <input type="text" required value={watchModel}
                         onChange={(e: any) => setWatchModel(e.target.value)}
                         placeholder="Submariner"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
@@ -4939,27 +4939,27 @@ export default function App() {
                       <input type="text" value={watchCase}
                         onChange={(e: any) => setWatchCase(e.target.value)}
                         placeholder="41mm"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Cinturino</label>
                       <input type="text" value={watchStrap}
                         onChange={(e: any) => setWatchStrap(e.target.value)}
                         placeholder="Oyster"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Materiale</label>
                       <input type="text" value={watchMaterial}
                         onChange={(e: any) => setWatchMaterial(e.target.value)}
                         placeholder="Acciaio"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                     </div>
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
                     <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none">
                       <option value="">— Non specificata (aggiungi dopo)</option>
                       <option value="Full Set">Full Set</option>
                       <option value="Solo Box">Solo Box</option>
@@ -4990,7 +4990,7 @@ export default function App() {
                               {f.type === 'select' ? (
                                 <select value={val} onChange={(e: any) => setVal(e.target.value)}
                                   required={f.required}
-                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none">
                                   <option value="">Seleziona...</option>
                                   {(f.options || []).map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
@@ -4999,7 +4999,7 @@ export default function App() {
                                   value={val} onChange={(e: any) => setVal(e.target.value)}
                                   required={f.required}
                                   placeholder={f.placeholder || ''}
-                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                               )}
                             </div>
                           );
@@ -5008,7 +5008,7 @@ export default function App() {
                         <div>
                           <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
                           <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
-                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none">
                             <option value="">— Non specificata (aggiungi dopo)</option>
                             {(catConfig.conditionOptions || ['Nuovo','Ottimo','Buono','Usato']).map((opt: string) => (
                               <option key={opt} value={opt}>{opt}</option>
@@ -5028,14 +5028,14 @@ export default function App() {
                       <input type="text" required value={brand}
                         onChange={(e: any) => setBrand(e.target.value)}
                         placeholder={category === 'Scarpe' ? 'Nike' : category === 'Vestiti' ? 'Supreme' : 'Louis Vuitton'}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Modello</label>
                       <input type="text" required value={name}
                         onChange={(e: any) => setName(e.target.value)}
                         placeholder={category === 'Scarpe' ? 'Air Jordan 1 Chicago' : category === 'Vestiti' ? 'Box Logo Hoodie' : 'Neverfull MM'}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -5049,7 +5049,7 @@ export default function App() {
                         value={size}
                         onChange={(e: any) => setSize(e.target.value)}
                         placeholder={category === 'Scarpe' ? 'es. 42, 42.5, US 9' : category === 'Vestiti' ? 'es. M, L, XL' : 'es. MM, 30cm, Small'}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none"
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none"
                       />
                       <datalist id={`size-suggestions-${category}`}>
                         {category === 'Scarpe'
@@ -5066,7 +5066,7 @@ export default function App() {
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
                       <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none">
                         <option value="">— Non specificata (aggiungi dopo)</option>
                         <option value="DS">DS (Nuovo)</option>
                         <option value="VNDS">VNDS (Quasi nuovo)</option>
@@ -5095,13 +5095,13 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo Acquisto €</label>
                   <input type="number" step="0.01" required value={price}
                     onChange={(e: any) => setPrice(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Quantità</label>
                   <input type="number" min="1" required value={quantity}
                     onChange={(e: any) => setQuantity(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                 </div>
               </div>
               
@@ -5119,7 +5119,7 @@ export default function App() {
                       {!isSharedPurchase ? (
                         <button type="button"
                           onClick={() => setIsSharedPurchase(true)}
-                          className="text-xs text-[var(--text)] hover:text-[#ff6a2a] font-bold transition-colors">
+                          className="text-xs text-[var(--text)] hover:text-[#818cf8] font-bold transition-colors">
                           Cambia percentuali
                         </button>
                       ) : (
@@ -5169,7 +5169,7 @@ export default function App() {
               })()}
               
               <button type="submit" disabled={isSaving}
-                className="w-full bg-[#ff4d00] hover:bg-[#ff6a2a] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
+                className="w-full bg-[#6366f1] hover:bg-[#818cf8] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
                 {isSaving ? <Loader2 className="animate-spin" size={20} /> : 'Salva Prodotto'}
               </button>
               </>)}
@@ -5200,21 +5200,21 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Quantità</label>
                   <input type="number" min="1" max={productToSell.maxQty}
                     value={sellQuantity} onChange={(e: any) => setSellQuantity(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                   <p className="text-[10px] text-[var(--text-soft)] mt-1">Max disponibile: {productToSell.maxQty}</p>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo Totale €</label>
                   <input type="number" step="0.01" required value={sellPrice}
                     onChange={(e: any) => setSellPrice(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                 </div>
               </div>
               
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Piattaforma</label>
                 <select value={sellPlatform} onChange={(e: any) => setSellPlatform(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none">
                   <option value="Vinted">Vinted</option>
                   <option value="Subito">Subito</option>
                   <option value="StockX">StockX (12% fee)</option>
@@ -5226,7 +5226,7 @@ export default function App() {
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Metodo Pagamento</label>
                 <select value={sellPaymentMethod} onChange={(e: any) => setSellPaymentMethod(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none">
                   <option>Nessuna Fee (Contanti/Bonifico)</option>
                   <option>PayPal Beni e Servizi</option>
                 </select>
@@ -5291,13 +5291,13 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Brand</label>
                   <input type="text" required value={editBrand}
                     onChange={(e: any) => setEditBrand(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nome</label>
                   <input type="text" required value={editName}
                     onChange={(e: any) => setEditName(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -5305,13 +5305,13 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Taglia</label>
                   <input type="text" value={editSize}
                     onChange={(e: any) => setEditSize(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
                   <input type="text" value={editCondition}
                     onChange={(e: any) => setEditCondition(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                 </div>
               </div>
 
@@ -5319,11 +5319,11 @@ export default function App() {
               <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <TrendingUp size={15} className="text-[#ff4d00] shrink-0" />
+                    <TrendingUp size={15} className="text-[#6366f1] shrink-0" />
                     <span className="text-sm font-bold">Valutazione di mercato</span>
                   </div>
                   <button type="button" onClick={() => fetchValuation(productToEdit)} disabled={valLoading}
-                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#ff4d00] text-white hover:bg-[#e84400] disabled:opacity-50 transition-colors flex items-center gap-1.5">
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#6366f1] text-white hover:bg-[#e84400] disabled:opacity-50 transition-colors flex items-center gap-1.5">
                     {valLoading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />} Valuta
                   </button>
                 </div>
@@ -5349,14 +5349,14 @@ export default function App() {
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo Acquisto €</label>
                 <input type="number" step="0.01" required value={editPrice}
                   onChange={(e: any) => setEditPrice(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
               </div>
 
               {/* Foto prodotto nel modale modifica */}
               <div className="border-t border-[var(--border-2)] pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Camera size={14} className="text-orange-400" />
+                    <Camera size={14} className="text-indigo-400" />
                     <span className="text-sm font-bold">Foto</span>
                   </div>
                   <span className="text-[10px] text-[var(--text-soft)]">{editPhotos.length}/5</span>
@@ -5372,7 +5372,7 @@ export default function App() {
                     </div>
                   ))}
                   {editPhotos.length < 5 && (
-                    <label className="aspect-square rounded-xl border-2 border-dashed border-gray-700 hover:border-orange-500 flex flex-col items-center justify-center cursor-pointer transition-colors">
+                    <label className="aspect-square rounded-xl border-2 border-dashed border-gray-700 hover:border-indigo-500 flex flex-col items-center justify-center cursor-pointer transition-colors">
                       <input type="file" accept="image/*" multiple className="hidden"
                         onChange={(e: any) => handlePhotoAdd(e, true)} />
                       <Camera size={16} className="text-[var(--text-soft)] mb-0.5" />
@@ -5401,7 +5401,7 @@ export default function App() {
                               userId: m.userId, name: m.name, percentage: m.percentage,
                             })));
                           }}
-                          className="text-xs text-[var(--text)] hover:text-[#ff6a2a] font-bold transition-colors">
+                          className="text-xs text-[var(--text)] hover:text-[#818cf8] font-bold transition-colors">
                           Cambia percentuali
                         </button>
                       ) : (
@@ -5451,7 +5451,7 @@ export default function App() {
 
               <div className="flex gap-3">
                 <button type="submit" disabled={isSaving}
-                  className="flex-1 bg-[#ff4d00] hover:bg-[#ff6a2a] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
+                  className="flex-1 bg-[#6366f1] hover:bg-[#818cf8] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
                   {isSaving ? <Loader2 className="animate-spin" size={20} /> : 'Salva Modifiche'}
                 </button>
                 <button type="button"
@@ -5499,11 +5499,11 @@ export default function App() {
                     <input type="text" inputMode="numeric" value={twoFaCode}
                       onChange={(e: any) => setTwoFaCode(e.target.value)}
                       placeholder="000000" maxLength={6}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-center font-mono text-2xl tracking-widest focus:border-[#ff4d00] outline-none" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-center font-mono text-2xl tracking-widest focus:border-[#6366f1] outline-none" />
                   </div>
                   
                   <button onClick={handle2FAVerify} disabled={twoFaLoading || twoFaCode.length !== 6}
-                    className="w-full bg-[#ff4d00] hover:bg-[#ff6a2a] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
+                    className="w-full bg-[#6366f1] hover:bg-[#818cf8] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
                     {twoFaLoading ? <Loader2 className="animate-spin" size={20} /> : 'Attiva 2FA'}
                   </button>
                 </>
@@ -5537,7 +5537,7 @@ export default function App() {
                   </p>
                   
                   <button onClick={() => { setTwoFaSetupOpen(false); setTwoFaBackupCodes(null); setTwoFaCode(''); }}
-                    className="w-full bg-[#ff4d00] hover:bg-[#ff6a2a] py-3 rounded-xl font-bold transition-colors">
+                    className="w-full bg-[#6366f1] hover:bg-[#818cf8] py-3 rounded-xl font-bold transition-colors">
                     Ho salvato i codici
                   </button>
                 </>
@@ -5590,7 +5590,7 @@ export default function App() {
         <div className="fixed left-0 right-0 z-40 px-4 transition-all"
           style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom) + 8px)' }}>
           <div className={`bg-[#1a1a1a] border rounded-2xl p-3 flex items-center gap-2 shadow-2xl transition-all ${
-            selectedGroupKeys.size > 0 ? 'border-[#ff4d00]/50' : 'border-gray-700'
+            selectedGroupKeys.size > 0 ? 'border-[#6366f1]/50' : 'border-gray-700'
           }`}>
             <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
               className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-300 hover:text-white transition-colors">
@@ -5638,19 +5638,19 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo unitario €</label>
                   <input type="number" step="0.01" required value={bulkSellPrice}
                     onChange={e => setBulkSellPrice(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Fees unitarie €</label>
                   <input type="number" step="0.01" value={bulkSellFees}
                     onChange={e => setBulkSellFees(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
                 </div>
               </div>
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Piattaforma</label>
                 <select value={bulkSellPlatform} onChange={e => setBulkSellPlatform(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#ff4d00] outline-none">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none">
                   <option>Vinted</option><option>Subito</option><option>StockX</option>
                   <option>eBay</option><option>Privato</option>
                 </select>
@@ -5725,7 +5725,7 @@ export default function App() {
                   Reparto di default <span className="text-[var(--text-faint)]">(per righe senza colonna Categoria)</span>
                 </label>
                 <select value={importCategory} onChange={e => setImportCategory(e.target.value)}
-                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm focus:border-[#ff4d00] outline-none">
+                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm focus:border-[#6366f1] outline-none">
                   {userCategories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -5784,7 +5784,7 @@ export default function App() {
                   Annulla
                 </button>
                 <button onClick={confirmImport} disabled={isImporting || importRows.length === 0}
-                  className="flex-1 bg-[#ff4d00] hover:bg-[#ff6a2a] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2">
+                  className="flex-1 bg-[#6366f1] hover:bg-[#818cf8] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2">
                   {isImporting
                     ? <><Loader2 className="animate-spin" size={16} /> Importazione...</>
                     : `Importa ${importRows.filter(r => r.brand && r.name && r.price > 0).length} prodotti`}
@@ -6067,7 +6067,7 @@ export default function App() {
           <div className="bg-[var(--surface)] border border-[var(--border)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-2xl max-h-[92vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-5 border-b border-[var(--border)] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <Sparkles className="text-[#ff4d00]" size={20} />
+                <Sparkles className="text-[#6366f1]" size={20} />
                 <h2 className="font-semibold text-base">Piani &amp; Strumenti Pro</h2>
                 <span className="text-[10px] uppercase font-bold bg-[var(--fill)] px-2 py-0.5 rounded-full">{myPlan}</span>
               </div>
@@ -6078,7 +6078,7 @@ export default function App() {
             <div className="flex gap-1.5 p-3 border-b border-[var(--border)] overflow-x-auto shrink-0">
               {([['plans','Piani'],['repricing','Stock fermo'],['offer','Trattative'],['channels','Multi-canale']] as [typeof proTab,string][]).map(([id,label]) => (
                 <button key={id} onClick={() => setProTab(id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${proTab === id ? 'bg-[#ff4d00] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${proTab === id ? 'bg-[#6366f1] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   {label}
                 </button>
               ))}
@@ -6089,7 +6089,7 @@ export default function App() {
               {proTab === 'plans' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {planCatalog.map(p => (
-                    <div key={p.id} className={`rounded-2xl border p-4 ${p.id === myPlan ? 'border-[#ff4d00] bg-[#ff4d00]/5' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
+                    <div key={p.id} className={`rounded-2xl border p-4 ${p.id === myPlan ? 'border-[#6366f1] bg-[#6366f1]/5' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
                       <div className="flex items-baseline justify-between">
                         <h3 className="font-bold text-lg">{p.name}</h3>
                         <span className="font-bold num">{p.priceMonthly === 0 ? 'Gratis' : `${p.priceMonthly}€`}<span className="text-[10px] text-[var(--text-faint)] font-normal">{p.priceMonthly === 0 ? '' : '/mese'}</span></span>
@@ -6098,11 +6098,11 @@ export default function App() {
                       <ul className="mt-3 space-y-1.5">
                         {p.highlights.map((h: string, i: number) => (
                           <li key={i} className="flex items-start gap-2 text-[11px] text-[var(--text-soft)]">
-                            <CheckCircle size={13} className="text-[#ff4d00] mt-0.5 shrink-0" /> <span>{h}</span>
+                            <CheckCircle size={13} className="text-[#6366f1] mt-0.5 shrink-0" /> <span>{h}</span>
                           </li>
                         ))}
                       </ul>
-                      {p.id === myPlan && <p className="mt-3 text-center text-[10px] font-bold text-[#ff4d00] uppercase">Piano attuale</p>}
+                      {p.id === myPlan && <p className="mt-3 text-center text-[10px] font-bold text-[#6366f1] uppercase">Piano attuale</p>}
                     </div>
                   ))}
                   {user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
@@ -6120,7 +6120,7 @@ export default function App() {
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-[var(--text-soft)]">Prodotti fermi da oltre 30 giorni con prezzo consigliato.</p>
                       <button onClick={loadRepricing} disabled={repricingLoading}
-                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#ff4d00] hover:bg-[#ff6a2a] text-white disabled:opacity-40">
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#6366f1] hover:bg-[#818cf8] text-white disabled:opacity-40">
                         {repricingLoading ? <Loader2 size={14} className="animate-spin" /> : 'Analizza'}
                       </button>
                     </div>
@@ -6132,7 +6132,7 @@ export default function App() {
                           <p className="text-[10px] text-[var(--text-faint)]">{r.daysInStock} giorni · taglia {r.size}</p>
                         </div>
                         <div className="text-right shrink-0 ml-3">
-                          <p className="text-sm font-bold text-[#ff4d00] num">{r.suggestedPrice}€</p>
+                          <p className="text-sm font-bold text-[#6366f1] num">{r.suggestedPrice}€</p>
                           <p className="text-[10px] text-yellow-500">-{r.suggestedDiscount}%</p>
                         </div>
                       </div>
@@ -6148,7 +6148,7 @@ export default function App() {
                 ) : (
                   <div className="space-y-3">
                     <select value={offerProductId} onChange={e => setOfferProductId(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#ff4d00]">
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#6366f1]">
                       <option value="">Scegli un prodotto in stock…</option>
                       {products.filter((p: any) => p.status === 'IN STOCK').map((p: any) => (
                         <option key={p.id} value={p.id}>{p.brand} {p.name} ({p.size})</option>
@@ -6156,12 +6156,12 @@ export default function App() {
                     </select>
                     <div className="flex gap-2">
                       <input type="number" inputMode="decimal" value={offerAmount} onChange={e => setOfferAmount(e.target.value)} placeholder="Offerta ricevuta €"
-                        className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#ff4d00]" />
+                        className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#6366f1]" />
                       <input type="number" inputMode="decimal" value={offerMargin} onChange={e => setOfferMargin(e.target.value)} placeholder="Margine % min"
-                        className="w-28 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#ff4d00]" />
+                        className="w-28 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#6366f1]" />
                     </div>
                     <button onClick={runOffer} disabled={offerLoading}
-                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#ff4d00] hover:bg-[#ff6a2a] text-white disabled:opacity-40 flex items-center justify-center gap-2">
+                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#6366f1] hover:bg-[#818cf8] text-white disabled:opacity-40 flex items-center justify-center gap-2">
                       {offerLoading ? <Loader2 size={16} className="animate-spin" /> : 'Cosa rispondo?'}
                     </button>
                     {offerResult && (
@@ -6176,7 +6176,7 @@ export default function App() {
                         <div className="flex items-center justify-between">
                           <p className="text-[10px] text-[var(--text-faint)] italic">{offerResult.reasoning}</p>
                           <button onClick={() => { navigator.clipboard?.writeText(offerResult.message); showToast('Messaggio copiato'); }}
-                            className="flex items-center gap-1 text-[10px] font-bold text-[#ff4d00]"><Copy size={12} /> Copia</button>
+                            className="flex items-center gap-1 text-[10px] font-bold text-[#6366f1]"><Copy size={12} /> Copia</button>
                         </div>
                       </div>
                     )}
@@ -6192,7 +6192,7 @@ export default function App() {
                   <div className="space-y-3">
                     <p className="text-xs text-[var(--text-soft)]">Segna su quali canali hai pubblicato il prodotto. Quando si vende, ti ricordi di ritirarlo dagli altri.</p>
                     <select value={chProductId} onChange={e => setChProductId(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#ff4d00]">
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#6366f1]">
                       <option value="">Scegli un prodotto in stock…</option>
                       {products.filter((p: any) => p.status === 'IN STOCK').map((p: any) => (
                         <option key={p.id} value={p.id}>{p.brand} {p.name} ({p.size})</option>
@@ -6203,14 +6203,14 @@ export default function App() {
                         const on = chSelected.includes(pl);
                         return (
                           <button key={pl} onClick={() => setChSelected(prev => on ? prev.filter(x => x !== pl) : [...prev, pl])}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${on ? 'bg-[#ff4d00] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${on ? 'bg-[#6366f1] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                             {pl}
                           </button>
                         );
                       })}
                     </div>
                     <button onClick={saveChannels} disabled={chSaving}
-                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#ff4d00] hover:bg-[#ff6a2a] text-white disabled:opacity-40 flex items-center justify-center gap-2">
+                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#6366f1] hover:bg-[#818cf8] text-white disabled:opacity-40 flex items-center justify-center gap-2">
                       {chSaving ? <Loader2 size={16} className="animate-spin" /> : <><Store size={15} /> Salva canali</>}
                     </button>
                   </div>
@@ -6434,14 +6434,14 @@ export default function App() {
                 <input type="password" required value={changePwdCurrent}
                   onChange={e => setChangePwdCurrent(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#ff4d00]" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#6366f1]" />
               </div>
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nuova password</label>
                 <input type="password" required value={changePwdNew}
                   onChange={e => setChangePwdNew(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#ff4d00]" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#6366f1]" />
                 <p className="text-[10px] text-[var(--text-soft)] mt-1">Min. 10 caratteri, maiuscola, numero e carattere speciale.</p>
               </div>
               <div>
@@ -6449,7 +6449,7 @@ export default function App() {
                 <input type="password" required value={changePwdConfirm}
                   onChange={e => setChangePwdConfirm(e.target.value)}
                   placeholder="••••••••"
-                  className={`w-full bg-[var(--surface-2)] border rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#ff4d00] ${
+                  className={`w-full bg-[var(--surface-2)] border rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#6366f1] ${
                     changePwdConfirm && changePwdNew !== changePwdConfirm ? 'border-red-500' : 'border-[var(--border-2)]'
                   }`} />
               </div>
@@ -6459,7 +6459,7 @@ export default function App() {
                   Annulla
                 </button>
                 <button type="submit" disabled={changePwdLoading || (!!changePwdConfirm && changePwdNew !== changePwdConfirm)}
-                  className="flex-1 bg-[#ff4d00] hover:bg-[#ff6a2a] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center">
+                  className="flex-1 bg-[#6366f1] hover:bg-[#818cf8] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center">
                   {changePwdLoading ? <Loader2 className="animate-spin" size={16} /> : 'Salva'}
                 </button>
               </div>
@@ -6492,7 +6492,7 @@ export default function App() {
             {trackingProduct.trackingCode && (
               <div className={`mb-5 p-4 rounded-2xl border flex items-center justify-between gap-3 ${
                 trackingProduct.trackingStatus === 'DELIVERED' ? 'border-green-800 bg-green-900/20' :
-                trackingProduct.trackingStatus === 'OUT_FOR_DELIVERY' ? 'border-orange-800 bg-orange-900/20' :
+                trackingProduct.trackingStatus === 'OUT_FOR_DELIVERY' ? 'border-indigo-800 bg-indigo-900/20' :
                 trackingProduct.trackingStatus === 'IN_TRANSIT' ? 'border-blue-800 bg-blue-900/20' :
                 trackingProduct.trackingStatus === 'EXCEPTION' ? 'border-red-800 bg-red-900/20' :
                 'border-[var(--border-2)] bg-[var(--fill)]/30'
@@ -6633,8 +6633,8 @@ export default function App() {
               {/* Header sticky */}
               <div className="sticky top-0 bg-[var(--surface-blur)] backdrop-blur-xl border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-orange-500/15 border border-orange-500/20 flex items-center justify-center">
-                    <Users className="text-orange-400" size={18} />
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center">
+                    <Users className="text-indigo-400" size={18} />
                   </div>
                   <div>
                     <h2 className="font-semibold text-base leading-none">Il Tuo Team</h2>
@@ -6649,7 +6649,7 @@ export default function App() {
               {/* Stats rapide globali */}
               <div className="grid grid-cols-4 gap-2 p-4 border-b border-[var(--border)]">
                 {[
-                  { label: 'Soci', value: totalSoci, color: 'text-orange-400' },
+                  { label: 'Soci', value: totalSoci, color: 'text-indigo-400' },
                   { label: 'In Stock', value: totalStock, color: 'text-[var(--text)]' },
                   { label: 'Venduti', value: totalSoldCount, color: 'text-blue-400' },
                   { label: 'Profitto', value: (totalProfit >= 0 ? '+' : '') + totalProfit.toFixed(0) + '€', color: totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' },
@@ -6722,7 +6722,7 @@ export default function App() {
 
                         {/* Mini progress sell-through */}
                         <div className="h-1 bg-[var(--fill)] rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-[#ff4d00] to-orange-400 rounded-full transition-all" style={{ width: `${sellThrough}%` }} />
+                          <div className="h-full bg-gradient-to-r from-[#6366f1] to-indigo-400 rounded-full transition-all" style={{ width: `${sellThrough}%` }} />
                         </div>
                       </div>
 
@@ -6734,10 +6734,10 @@ export default function App() {
                           const canKick = isOwnerHere && !isMe && m.role !== 'OWNER';
                           return (
                             <div key={m.membershipId}>
-                              <div className={`flex items-center gap-3 p-3.5 transition-colors ${isMe ? 'bg-[#ff4d00]/[0.04]' : 'hover:bg-[var(--fill)]'}`}>
+                              <div className={`flex items-center gap-3 p-3.5 transition-colors ${isMe ? 'bg-[#6366f1]/[0.04]' : 'hover:bg-[var(--fill)]'}`}>
                                 {/* Rank medal o avatar */}
                                 <div className="relative shrink-0">
-                                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-blue-600 flex items-center justify-center font-black text-xs shadow-sm">
+                                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center font-black text-xs shadow-sm">
                                     {m.name[0]?.toUpperCase()}
                                   </div>
                                   {idx < 3 && teamSold.length > 0 && (
@@ -6749,8 +6749,8 @@ export default function App() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-bold text-sm">{m.name}</span>
-                                    {isMe && <span className="text-[8px] bg-[#ff4d00]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-semibold">TU</span>}
-                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${m.role === 'OWNER' ? 'bg-[#ff4d00]/15 text-[var(--text)]/80' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                                    {isMe && <span className="text-[8px] bg-[#6366f1]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-semibold">TU</span>}
+                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${m.role === 'OWNER' ? 'bg-[#6366f1]/15 text-[var(--text)]/80' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                                       {m.role === 'OWNER' ? 'Owner' : 'Socio'}
                                     </span>
                                   </div>
@@ -6767,7 +6767,7 @@ export default function App() {
                                       type="number" min="0" max="100" step="1"
                                       value={editQuoteValues[m.membershipId] ?? m.percentage}
                                       onChange={e => setEditQuoteValues(prev => ({ ...prev, [m.membershipId]: e.target.value }))}
-                                      className="w-14 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-1 text-xs text-center text-[var(--text)] outline-none focus:border-[#ff4d00]"
+                                      className="w-14 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-1 text-xs text-center text-[var(--text)] outline-none focus:border-[#6366f1]"
                                     />
                                   ) : (
                                     <span className="text-[10px] text-[var(--text-soft)] font-semibold bg-[var(--fill)] px-2 py-1 rounded-lg">{m.percentage}%</span>
@@ -6816,7 +6816,7 @@ export default function App() {
                               {settleAmounts.map((m: any) => (
                                 <div key={m.membershipId} className="flex items-center justify-between">
                                   <div className="flex items-center gap-1.5">
-                                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-orange-500 to-blue-600 flex items-center justify-center font-black text-[7px]">
+                                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center font-black text-[7px]">
                                       {m.name[0]?.toUpperCase()}
                                     </div>
                                     <span className="text-xs text-[var(--text-muted)]">{m.name}</span>
@@ -6849,7 +6849,7 @@ export default function App() {
                                   Annulla
                                 </button>
                                 <button onClick={() => saveEditedQuotes(team)} disabled={isSavingTeam}
-                                  className="flex-1 py-2 text-xs font-bold text-[var(--text)] bg-[#ff4d00]/80 hover:bg-[#ff4d00] rounded-xl transition-colors disabled:opacity-40">
+                                  className="flex-1 py-2 text-xs font-bold text-[var(--text)] bg-[#6366f1]/80 hover:bg-[#6366f1] rounded-xl transition-colors disabled:opacity-40">
                                   {isSavingTeam ? 'Salvo...' : 'Salva Quote'}
                                 </button>
                               </div>
@@ -6936,7 +6936,7 @@ export default function App() {
             {/* Header */}
             <div className="sticky top-0 bg-[var(--surface-blur)] backdrop-blur-xl border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <div>
-                <h2 className="font-semibold flex items-center gap-2"><Package size={16} className="text-orange-400" /> Spedizione</h2>
+                <h2 className="font-semibold flex items-center gap-2"><Package size={16} className="text-indigo-400" /> Spedizione</h2>
                 <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{shippingProduct.brand} {shippingProduct.name} · {shippingProduct.size}</p>
               </div>
               <button onClick={() => setShippingProduct(null)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
@@ -6966,7 +6966,7 @@ export default function App() {
                           value={shipFrom[f.key] || ''}
                           onChange={e => setShipFrom((p: any) => ({ ...p, [f.key]: e.target.value }))}
                           placeholder={f.placeholder}
-                          className="w-full bg-[#111] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-orange-500/50"
+                          className="w-full bg-[#111] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-indigo-500/50"
                         />
                       </div>
                     ))}
@@ -6990,7 +6990,7 @@ export default function App() {
                           value={shipTo[f.key as keyof typeof shipTo] || ''}
                           onChange={e => setShipTo(p => ({ ...p, [f.key]: e.target.value }))}
                           placeholder={f.placeholder}
-                          className="w-full bg-[#111] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-orange-500/50"
+                          className="w-full bg-[#111] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-indigo-500/50"
                         />
                       </div>
                     ))}
@@ -7005,7 +7005,7 @@ export default function App() {
                       <button key={p.label} onClick={() => setShipPreset(p)}
                         className={`p-2.5 rounded-xl border text-center transition-all ${
                           shipPreset.label === p.label
-                            ? 'bg-orange-500/15 border-orange-500/40 text-[var(--text)]'
+                            ? 'bg-indigo-500/15 border-indigo-500/40 text-[var(--text)]'
                             : 'bg-[#111] border-[var(--border)] text-[var(--text-soft)] hover:border-[var(--border-3)]'
                         }`}>
                         <p className="text-xs font-bold">{p.label}</p>
@@ -7017,7 +7017,7 @@ export default function App() {
                 </div>
 
                 <button onClick={fetchRates} disabled={isLoadingRates}
-                  className="w-full py-3.5 bg-orange-600/80 hover:bg-orange-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                  className="w-full py-3.5 bg-indigo-600/80 hover:bg-indigo-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                   {isLoadingRates ? <><Loader2 size={15} className="animate-spin" /> Cerco tariffe…</> : <><Package size={15} /> Vedi tariffe corrieri</>}
                 </button>
               </>)}
@@ -7032,14 +7032,14 @@ export default function App() {
                     <button key={r.id} onClick={() => setSelectedRate(r)}
                       className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all text-left ${
                         selectedRate?.id === r.id
-                          ? 'bg-orange-500/10 border-orange-500/40'
+                          ? 'bg-indigo-500/10 border-indigo-500/40'
                           : 'bg-[#111] border-[var(--border)] hover:border-[var(--border-3)]'
                       }`}>
                       <div>
                         <p className="font-bold text-sm text-[var(--text)]">{r.carrier}</p>
                         <p className="text-[11px] text-[var(--text-soft)]">{r.name}{r.transitHours ? ` · ${r.transitHours}h` : ''}</p>
                       </div>
-                      <p className={`font-bold text-base num ${selectedRate?.id === r.id ? 'text-orange-400' : 'text-[var(--text)]'}`}>
+                      <p className={`font-bold text-base num ${selectedRate?.id === r.id ? 'text-indigo-400' : 'text-[var(--text)]'}`}>
                         {r.price.toFixed(2)}€
                       </p>
                     </button>
@@ -7047,7 +7047,7 @@ export default function App() {
                 </div>
                 {selectedRate && (
                   <button onClick={bookShipment} disabled={isBooking}
-                    className="w-full py-3.5 bg-orange-600/80 hover:bg-orange-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                    className="w-full py-3.5 bg-indigo-600/80 hover:bg-indigo-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                     {isBooking
                       ? <><Loader2 size={15} className="animate-spin" /> Generazione…</>
                       : selectedRate.demo
@@ -7126,7 +7126,7 @@ export default function App() {
                       onClick={() => setListingPlatform(p.id)}
                       className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border text-center transition-all active:scale-95 ${
                         listingPlatform === p.id
-                          ? 'bg-orange-500/15 border-orange-500/40 text-[var(--text)]'
+                          ? 'bg-indigo-500/15 border-indigo-500/40 text-[var(--text)]'
                           : 'bg-[#111] border-[var(--border)] text-[var(--text-soft)] hover:border-[var(--border-3)] hover:text-gray-300'
                       }`}>
                       <span className="text-lg">{p.emoji}</span>
@@ -7140,7 +7140,7 @@ export default function App() {
               <button
                 onClick={() => generateListingForProduct(listingPlatform)}
                 disabled={isGeneratingListing}
-                className="w-full py-3.5 bg-orange-600/80 hover:bg-orange-600 disabled:bg-orange-600/30 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                className="w-full py-3.5 bg-indigo-600/80 hover:bg-indigo-600 disabled:bg-indigo-600/30 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                 {isGeneratingListing
                   ? <><Loader2 size={16} className="animate-spin" /> Generazione in corso…</>
                   : <><Sparkles size={16} /> Genera con IA</>}
@@ -7193,7 +7193,7 @@ export default function App() {
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {listingResult.hashtags.map((tag: string) => (
-                          <span key={tag} className="text-[11px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full">{tag}</span>
+                          <span key={tag} className="text-[11px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full">{tag}</span>
                         ))}
                       </div>
                     </div>
@@ -7224,7 +7224,7 @@ export default function App() {
                     className={`w-full py-3 rounded-2xl text-sm font-bold transition-all active:scale-[0.98] ${
                       copiedField === 'all'
                         ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                        : 'bg-orange-600/70 hover:bg-orange-600 text-[var(--text)]'
+                        : 'bg-indigo-600/70 hover:bg-indigo-600 text-[var(--text)]'
                     }`}>
                     {copiedField === 'all' ? '✓ Tutto copiato!' : 'Copia tutto'}
                   </button>
