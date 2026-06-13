@@ -6,6 +6,7 @@ import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { sendEmail } from '../services/email.service';
+import { isPlanId } from '../config/plans';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -44,6 +45,7 @@ router.get('/users', async (req: AuthRequest, res: Response) => {
         id: u.id,
         name: u.name,
         email: u.email,
+        plan: u.plan,
         createdAt: u.createdAt,
         lastLoginAt: u.lastLoginAt,
         twoFactorEnabled: u.twoFactorEnabled,
@@ -77,6 +79,23 @@ router.delete('/users/:id', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     logger.error('Errore DELETE /admin/users/:id', { err: err.message });
     res.status(500).json({ error: 'Errore eliminazione' });
+  }
+});
+
+// POST /admin/users/:id/plan — cambia il piano di un utente (per test/gestione)
+router.post('/users/:id/plan', async (req: AuthRequest, res: Response) => {
+  try {
+    const plan = (req.body?.plan ?? '').toString();
+    if (!isPlanId(plan)) return res.status(400).json({ error: 'Piano non valido.' });
+    const user = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { plan },
+      select: { id: true, email: true, plan: true },
+    });
+    res.json({ success: true, user });
+  } catch (err: any) {
+    logger.error('Errore POST /admin/users/:id/plan', { err: err.message });
+    res.status(500).json({ error: 'Errore aggiornamento piano' });
   }
 });
 

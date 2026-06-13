@@ -1729,3 +1729,95 @@ Rispondi SOLO con JSON valido, nessun testo prima o dopo:
     deepLink: deepLinks[params.platform],
   };
 }
+
+// ==========================================
+// ASSISTENTE TRATTATIVE — valuta un'offerta ricevuta
+// Calcolo margine deterministico + risposta/contro-offerta scritta dall'IA.
+// ==========================================
+export interface OfferAssessment {
+  decision: 'accept' | 'counter' | 'reject';
+  counterPrice: number | null;  // se decision = counter
+  offerMargin: number;          // margine € se accettassi l'offerta
+  minPrice: number;             // prezzo minimo per rispettare il margine voluto
+  message: string;              // messaggio pronto da inviare all'acquirente
+  reasoning: string;            // 1 riga per il venditore
+}
+
+export async function assessOffer(params: {
+  brand: string; name: string; size: string; condition?: string;
+  purchasePrice: number;
+  marketPriceAvg?: number | null;
+  listPrice?: number | null;     // prezzo a cui è in vendita (se noto)
+  offer: number;                 // offerta ricevuta
+  minMarginPct?: number;         // margine minimo voluto in % sul costo (default 20)
+  platform?: string;
+}): Promise<OfferAssessment> {
+  const minMarginPct = params.minMarginPct ?? 20;
+  const minPrice = Math.round(params.purchasePrice * (1 + minMarginPct / 100));
+  const offerMargin = Math.round(params.offer - params.purchasePrice);
+  const market = params.marketPriceAvg && params.marketPriceAvg > 0 ? params.marketPriceAvg : null;
+  const list = params.listPrice && params.listPrice > 0 ? params.listPrice : (market || minPrice);
+
+  // Decisione deterministica (l'IA scrive solo il messaggio, niente allucinazioni sui numeri)
+  let decision: OfferAssessment['decision'];
+  let counterPrice: number | null = null;
+  if (params.offer >= list) {
+    decision = 'accept';
+  } else if (params.offer >= minPrice) {
+    // sopra il minimo: accetta se è vicino al prezzo, altrimenti piccola contro-offerta
+    if (params.offer >= Math.round(list * 0.92)) decision = 'accept';
+    else { decision = 'counter'; counterPrice = Math.round((params.offer + list) / 2); }
+  } else {
+    decision = 'reject';
+    // contro-offerta minima sensata: il maggiore tra minPrice e un punto medio col mercato
+    counterPrice = Math.max(minPrice, Math.round((params.offer + (market || list)) / 2));
+    if (counterPrice <= params.offer) counterPrice = minPrice;
+  }
+
+  const prompt = `Sei un venditore esperto di reselling che risponde a un'offerta su ${params.platform || 'una piattaforma di vendita'}.
+Scrivi in italiano, tono cordiale ma fermo, breve (max 2 frasi), come un messaggio reale di chat.
+
+PRODOTTO: ${params.brand} ${params.name} ${params.size ? '(' + params.size + ')' : ''}${params.condition ? ', ' + params.condition : ''}
+PREZZO IN VENDITA: ${Math.round(list)}€${market ? ` · valore di mercato ~${Math.round(market)}€` : ''}
+OFFERTA RICEVUTA: ${params.offer}€
+DECISIONE PRESA: ${decision === 'accept' ? 'ACCETTO' : decision === 'counter' ? `CONTRO-OFFERTA a ${counterPrice}€` : `RIFIUTO ma propongo ${counterPrice}€`}
+
+Scrivi SOLO il messaggio da inviare all'acquirente coerente con la decisione presa (non citare costi/margini interni).
+Rispondi SOLO con JSON valido: {"message":"...","reasoning":"motivo in 1 riga per me venditore"}`;
+
+  let message = '';
+  let reasoning = '';
+  try {
+    const completion = await groqCallWithRetry(client =>
+      client.chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: TEXT_MODEL,
+        temperature: 0.5,
+        max_tokens: 300,
+      })
+    );
+    const parsed = safeParseJSON(completion.choices[0]?.message?.content?.trim() || '') as { message?: string; reasoning?: string } | null;
+    message = (parsed?.message || '').toString();
+    reasoning = (parsed?.reasoning || '').toString();
+  } catch (err: any) {
+    logger.warn('assessOffer: IA non disponibile, uso messaggio di default', { err: err?.message });
+  }
+
+  // Fallback se l'IA non risponde
+  if (!message) {
+    message = decision === 'accept'
+      ? `Perfetto, per me ${params.offer}€ va bene! Procediamo pure 🙌`
+      : decision === 'counter'
+        ? `Grazie per l'offerta! Non riesco a ${params.offer}€, ma chiudiamo a ${counterPrice}€?`
+        : `Grazie ma ${params.offer}€ è troppo basso. Il meglio che posso fare è ${counterPrice}€.`;
+  }
+  if (!reasoning) {
+    reasoning = decision === 'accept'
+      ? `Offerta ≥ prezzo di vendita, margine €${offerMargin}.`
+      : decision === 'counter'
+        ? `Sopra il minimo (€${minPrice}) ma sotto prezzo: contro-offerta.`
+        : `Sotto il minimo per il margine del ${minMarginPct}% (€${minPrice}).`;
+  }
+
+  return { decision, counterPrice, offerMargin, minPrice, message, reasoning };
+}

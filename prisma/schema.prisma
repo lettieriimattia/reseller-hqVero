@@ -27,6 +27,9 @@ model User {
   // Consenso comunicazioni email (opzionale, revocabile)
   marketingConsent  Boolean        @default(false)
 
+  // Piano di abbonamento: "free" | "starter" | "pro" | "business" (vedi config/plans.ts)
+  plan              String         @default("free")
+
   // Sicurezza
   failedLoginCount  Int            @default(0)
   lockedUntil       DateTime?      // Account temporaneamente bloccato dopo X tentativi
@@ -122,6 +125,10 @@ model Product {
 
   // Note libere
   notes          String?    // Note operative (es: cinturino usurato, scatola mancante)
+
+  // Multi-canale (feature Pro): JSON array [{platform, status:"listed"|"sold"|"removed", url?}]
+  // Quando il prodotto si vende, serve a ricordare di ritirarlo dagli altri canali.
+  salesChannels  String?
 
   // Pilastro 1: Campi dinamici dalla CategoryTemplate (JSONB)
   attributes     Json?      // Record<string, any> — popolato dal DynamicForm

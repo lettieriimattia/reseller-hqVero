@@ -29,6 +29,8 @@ import uploadRoutes from './src/routes/upload';
 import feedbackRoutes from './src/routes/feedback';
 import pushRoutes from './src/routes/push';
 import stockxRoutes from './src/routes/stockx';
+import plansRoutes from './src/routes/plans';
+import proRoutes from './src/routes/pro';
 import { initPush } from './src/services/push.service';
 import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
@@ -207,6 +209,8 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/stockx', stockxRoutes);
+app.use('/api/plans', plansRoutes);
+app.use('/api/pro', proRoutes);
 
 // ==========================================
 // SPA FALLBACK + 404
