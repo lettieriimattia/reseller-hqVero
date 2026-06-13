@@ -440,6 +440,24 @@ export default function App() {
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const adminRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ADMIN_EMAIL = 'noreply.hq.app@gmail.com';
+
+  // ── PIANI & STRUMENTI PRO ──
+  const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [planCatalog, setPlanCatalog] = useState<any[]>([]);
+  const [myPlan, setMyPlan] = useState<string>('free');
+  const [myFeatures, setMyFeatures] = useState<string[]>([]);
+  const [proTab, setProTab] = useState<'plans' | 'repricing' | 'offer' | 'channels'>('plans');
+  const [repricingList, setRepricingList] = useState<any[] | null>(null);
+  const [repricingLoading, setRepricingLoading] = useState(false);
+  const [offerProductId, setOfferProductId] = useState('');
+  const [offerAmount, setOfferAmount] = useState('');
+  const [offerMargin, setOfferMargin] = useState('20');
+  const [offerResult, setOfferResult] = useState<any>(null);
+  const [offerLoading, setOfferLoading] = useState(false);
+  const [chProductId, setChProductId] = useState('');
+  const [chSelected, setChSelected] = useState<string[]>([]);
+  const [chSaving, setChSaving] = useState(false);
+  const hasFeature = (f: string) => myFeatures.includes(f);
   // Admin: vista corrente (Utenti / Richieste) + stato richieste
   const [adminView, setAdminView] = useState<'users' | 'feedback'>('users');
   const [adminFeedback, setAdminFeedback] = useState<any[]>([]);
@@ -861,6 +879,7 @@ export default function App() {
     fetchTeam();
     fetchNotifications();
     checkStaleProducts();
+    refreshMyPlan();
     
     // Polling notifiche ogni 30 secondi
     const interval = setInterval(fetchNotifications, 30000);
@@ -1342,6 +1361,73 @@ export default function App() {
     }
     showToast(data.error || 'Errore creazione reparto', 'err');
     return null;
+  };
+
+  // ==========================================
+  // PIANI & STRUMENTI PRO
+  // ==========================================
+  const refreshMyPlan = async () => {
+    const me = await apiCall<any>('/api/plans/me');
+    if (me.ok) { setMyPlan(me.data.plan); setMyFeatures(me.data.features || []); }
+  };
+  const openPlanModal = async () => {
+    setPlanModalOpen(true);
+    setProTab('plans');
+    const cat = await apiCall<any>('/api/plans');
+    if (cat.ok) setPlanCatalog(cat.data.plans || []);
+    refreshMyPlan();
+  };
+  // Solo admin: cambia il piano di un utente (qui lo usa su se stesso per testare)
+  const setUserPlan = async (userId: string, plan: string) => {
+    const { ok, data } = await apiCall(`/admin/users/${userId}/plan`, {
+      method: 'POST', body: JSON.stringify({ plan }),
+    });
+    if (ok) {
+      showToast(`Piano impostato: ${plan}`);
+      if (adminLoaded) fetchAdminUsers();
+      refreshMyPlan();
+    } else showToast(data?.error || 'Errore cambio piano', 'err');
+  };
+  const loadRepricing = async () => {
+    setRepricingLoading(true); setRepricingList(null);
+    const { ok, data } = await apiCall<any>('/api/pro/repricing?days=30');
+    setRepricingLoading(false);
+    if (ok) setRepricingList(data.products || []);
+    else showToast(data?.error || 'Non disponibile nel tuo piano', 'err');
+  };
+  const runOffer = async () => {
+    if (!offerProductId || !offerAmount) { showToast('Scegli prodotto e offerta', 'warn'); return; }
+    setOfferLoading(true); setOfferResult(null);
+    const { ok, data } = await apiCall<any>('/api/pro/offer', {
+      method: 'POST',
+      body: JSON.stringify({ productId: offerProductId, offer: parseFloat(offerAmount), minMarginPct: parseFloat(offerMargin) || 20 }),
+    });
+    setOfferLoading(false);
+    if (ok) setOfferResult(data);
+    else showToast(data?.error || 'Non disponibile nel tuo piano', 'err');
+  };
+  const saveChannels = async () => {
+    if (!chProductId) { showToast('Scegli un prodotto', 'warn'); return; }
+    setChSaving(true);
+    const channels = chSelected.map(p => ({ platform: p, status: 'listed' }));
+    const { ok, data } = await apiCall<any>(`/api/pro/channels/${chProductId}`, {
+      method: 'PUT', body: JSON.stringify({ channels }),
+    });
+    setChSaving(false);
+    if (ok) showToast('Canali salvati ✓');
+    else showToast(data?.error || 'Non disponibile nel tuo piano', 'err');
+  };
+  // Schermata "bloccato": mostra il piano minimo che include la feature
+  const proLocked = (feature: string) => {
+    const req = planCatalog.find((p: any) => (p.features || []).includes(feature));
+    return (
+      <div className="text-center py-8 px-4">
+        <Lock size={28} className="mx-auto text-[var(--text-faint)] mb-3" />
+        <p className="text-sm font-bold">Funzione del piano {req?.name || 'superiore'}</p>
+        <p className="text-xs text-[var(--text-soft)] mt-1">Disponibile da {req ? `${req.name} (${req.priceMonthly}€/mese)` : 'un piano superiore'}.</p>
+        <button onClick={() => setProTab('plans')} className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-[#ff4d00] hover:bg-[#ff6a2a] text-white">Vedi i piani</button>
+      </div>
+    );
   };
 
   // ==========================================
@@ -3803,6 +3889,25 @@ export default function App() {
           <div className="space-y-5">
             <h2 className="text-3xl font-semibold">Impostazioni</h2>
 
+            {/* SEZIONE: Piani & Pro */}
+            <section className="bg-gradient-to-br from-[#ff4d00]/10 to-[var(--surface)] border border-[#ff4d00]/30 rounded-2xl p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="text-[#ff4d00] mt-0.5" size={22} />
+                  <div>
+                    <h3 className="text-lg font-bold tracking-tighter">Piani &amp; Strumenti Pro</h3>
+                    <p className="text-xs text-[var(--text-soft)] mt-1">
+                      Piano attuale: <b className="text-[var(--text)] uppercase">{myPlan}</b> · sblocca riprezzamento, assistente trattative e multi-canale.
+                    </p>
+                  </div>
+                </div>
+                <button onClick={openPlanModal}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#ff4d00] hover:bg-[#ff6a2a] text-white transition-colors whitespace-nowrap">
+                  Vedi piani
+                </button>
+              </div>
+            </section>
+
             {/* SEZIONE: Notifiche push */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
@@ -4241,6 +4346,16 @@ export default function App() {
                           <p className="text-[10px] text-gray-700 mt-0.5">
                             {u.stats.inStock} in stock · {u.stats.sold} venduti · {u.stats.totalProducts} totali
                           </p>
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <span className="text-[9px] text-[var(--text-faint)] uppercase">Piano</span>
+                            <select value={u.plan || 'free'} onChange={e => setUserPlan(u.id, e.target.value)}
+                              className="text-[10px] bg-[var(--fill)] border border-[var(--border-2)] rounded-lg px-2 py-1 outline-none focus:border-[#ff4d00]">
+                              <option value="free">Free</option>
+                              <option value="starter">Starter 9.99</option>
+                              <option value="pro">Pro 19.99</option>
+                              <option value="business">Business 39.99</option>
+                            </select>
+                          </div>
                         </div>
                         {u.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase() && (
                           <button onClick={() => deleteAdminUser(u.id, u.name)}
@@ -5945,6 +6060,166 @@ export default function App() {
                 className="flex-1 py-2 rounded-xl bg-white text-black text-xs font-semibold hover:bg-gray-200 transition-colors">
                 Accetta e Continua
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== MODALE: PIANI & STRUMENTI PRO ========== */}
+      {planModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setPlanModalOpen(false)}>
+          <div className="bg-[var(--surface)] border border-[var(--border)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-2xl max-h-[92vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b border-[var(--border)] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="text-[#ff4d00]" size={20} />
+                <h2 className="font-semibold text-base">Piani &amp; Strumenti Pro</h2>
+                <span className="text-[10px] uppercase font-bold bg-[var(--fill)] px-2 py-0.5 rounded-full">{myPlan}</span>
+              </div>
+              <button onClick={() => setPlanModalOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors"><X size={18} /></button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1.5 p-3 border-b border-[var(--border)] overflow-x-auto shrink-0">
+              {([['plans','Piani'],['repricing','Stock fermo'],['offer','Trattative'],['channels','Multi-canale']] as [typeof proTab,string][]).map(([id,label]) => (
+                <button key={id} onClick={() => setProTab(id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${proTab === id ? 'bg-[#ff4d00] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="p-4 overflow-y-auto">
+              {/* TAB: PIANI */}
+              {proTab === 'plans' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {planCatalog.map(p => (
+                    <div key={p.id} className={`rounded-2xl border p-4 ${p.id === myPlan ? 'border-[#ff4d00] bg-[#ff4d00]/5' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
+                      <div className="flex items-baseline justify-between">
+                        <h3 className="font-bold text-lg">{p.name}</h3>
+                        <span className="font-bold num">{p.priceMonthly === 0 ? 'Gratis' : `${p.priceMonthly}€`}<span className="text-[10px] text-[var(--text-faint)] font-normal">{p.priceMonthly === 0 ? '' : '/mese'}</span></span>
+                      </div>
+                      <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{p.tagline}</p>
+                      <ul className="mt-3 space-y-1.5">
+                        {p.highlights.map((h: string, i: number) => (
+                          <li key={i} className="flex items-start gap-2 text-[11px] text-[var(--text-soft)]">
+                            <CheckCircle size={13} className="text-[#ff4d00] mt-0.5 shrink-0" /> <span>{h}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {p.id === myPlan && <p className="mt-3 text-center text-[10px] font-bold text-[#ff4d00] uppercase">Piano attuale</p>}
+                    </div>
+                  ))}
+                  {user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+                    <p className="sm:col-span-2 text-[10px] text-[var(--text-faint)] text-center mt-1">Modalità admin: cambia il piano (anche il tuo) dal Pannello Admin → Utenti per testare le funzioni.</p>
+                  )}
+                </div>
+              )}
+
+              {/* TAB: RIPREZZAMENTO STOCK FERMO */}
+              {proTab === 'repricing' && (
+                !hasFeature('repricing') ? (
+                  proLocked('repricing')
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-[var(--text-soft)]">Prodotti fermi da oltre 30 giorni con prezzo consigliato.</p>
+                      <button onClick={loadRepricing} disabled={repricingLoading}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#ff4d00] hover:bg-[#ff6a2a] text-white disabled:opacity-40">
+                        {repricingLoading ? <Loader2 size={14} className="animate-spin" /> : 'Analizza'}
+                      </button>
+                    </div>
+                    {repricingList && repricingList.length === 0 && <p className="text-xs text-center text-[var(--text-faint)] py-6">Nessun prodotto fermo 🎉</p>}
+                    {repricingList && repricingList.map((r: any) => (
+                      <div key={r.id} className="flex items-center justify-between bg-[var(--surface-2)] rounded-xl p-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold truncate">{r.brand} {r.name}</p>
+                          <p className="text-[10px] text-[var(--text-faint)]">{r.daysInStock} giorni · taglia {r.size}</p>
+                        </div>
+                        <div className="text-right shrink-0 ml-3">
+                          <p className="text-sm font-bold text-[#ff4d00] num">{r.suggestedPrice}€</p>
+                          <p className="text-[10px] text-yellow-500">-{r.suggestedDiscount}%</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {/* TAB: ASSISTENTE TRATTATIVE */}
+              {proTab === 'offer' && (
+                !hasFeature('offer_assistant') ? (
+                  proLocked('offer_assistant')
+                ) : (
+                  <div className="space-y-3">
+                    <select value={offerProductId} onChange={e => setOfferProductId(e.target.value)}
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#ff4d00]">
+                      <option value="">Scegli un prodotto in stock…</option>
+                      {products.filter((p: any) => p.status === 'IN STOCK').map((p: any) => (
+                        <option key={p.id} value={p.id}>{p.brand} {p.name} ({p.size})</option>
+                      ))}
+                    </select>
+                    <div className="flex gap-2">
+                      <input type="number" inputMode="decimal" value={offerAmount} onChange={e => setOfferAmount(e.target.value)} placeholder="Offerta ricevuta €"
+                        className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#ff4d00]" />
+                      <input type="number" inputMode="decimal" value={offerMargin} onChange={e => setOfferMargin(e.target.value)} placeholder="Margine % min"
+                        className="w-28 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#ff4d00]" />
+                    </div>
+                    <button onClick={runOffer} disabled={offerLoading}
+                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#ff4d00] hover:bg-[#ff6a2a] text-white disabled:opacity-40 flex items-center justify-center gap-2">
+                      {offerLoading ? <Loader2 size={16} className="animate-spin" /> : 'Cosa rispondo?'}
+                    </button>
+                    {offerResult && (
+                      <div className="space-y-2 bg-[var(--surface-2)] rounded-xl p-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${offerResult.decision === 'accept' ? 'bg-green-500/15 text-green-400' : offerResult.decision === 'counter' ? 'bg-yellow-500/15 text-yellow-500' : 'bg-red-500/15 text-red-400'}`}>
+                            {offerResult.decision === 'accept' ? 'Accetta' : offerResult.decision === 'counter' ? `Contro-offerta ${offerResult.counterPrice}€` : `Rifiuta (proponi ${offerResult.counterPrice}€)`}
+                          </span>
+                          <span className="text-[10px] text-[var(--text-faint)]">min {offerResult.minPrice}€ · margine {offerResult.offerMargin}€</span>
+                        </div>
+                        <p className="text-sm text-[var(--text)] bg-[var(--fill)] rounded-lg p-2.5">{offerResult.message}</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-[10px] text-[var(--text-faint)] italic">{offerResult.reasoning}</p>
+                          <button onClick={() => { navigator.clipboard?.writeText(offerResult.message); showToast('Messaggio copiato'); }}
+                            className="flex items-center gap-1 text-[10px] font-bold text-[#ff4d00]"><Copy size={12} /> Copia</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              )}
+
+              {/* TAB: MULTI-CANALE */}
+              {proTab === 'channels' && (
+                !hasFeature('crossposting') ? (
+                  proLocked('crossposting')
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-xs text-[var(--text-soft)]">Segna su quali canali hai pubblicato il prodotto. Quando si vende, ti ricordi di ritirarlo dagli altri.</p>
+                    <select value={chProductId} onChange={e => setChProductId(e.target.value)}
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#ff4d00]">
+                      <option value="">Scegli un prodotto in stock…</option>
+                      {products.filter((p: any) => p.status === 'IN STOCK').map((p: any) => (
+                        <option key={p.id} value={p.id}>{p.brand} {p.name} ({p.size})</option>
+                      ))}
+                    </select>
+                    <div className="flex flex-wrap gap-2">
+                      {['Vinted','eBay','Depop','Subito','Wallapop','StockX'].map(pl => {
+                        const on = chSelected.includes(pl);
+                        return (
+                          <button key={pl} onClick={() => setChSelected(prev => on ? prev.filter(x => x !== pl) : [...prev, pl])}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${on ? 'bg-[#ff4d00] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                            {pl}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button onClick={saveChannels} disabled={chSaving}
+                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#ff4d00] hover:bg-[#ff6a2a] text-white disabled:opacity-40 flex items-center justify-center gap-2">
+                      {chSaving ? <Loader2 size={16} className="animate-spin" /> : <><Store size={15} /> Salva canali</>}
+                    </button>
+                  </div>
+                )
+              )}
             </div>
           </div>
         </div>
