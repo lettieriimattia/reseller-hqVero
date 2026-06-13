@@ -823,6 +823,26 @@ export default function App() {
   
   // ----- DERIVED -----
   const userCategories = user?.warehouses?.map(w => w.name.replace('Magazzino ', '')) || [];
+
+  // Match tollerante tra la categoria rilevata dall'IA e i reparti esistenti:
+  // gestisce maiuscole, accenti, spazi e SINONIMI (es. "Sneakers"/"Calzature" → reparto "Scarpe").
+  // Così se un reparto esiste già, il prodotto ci finisce dentro invece di crearne un duplicato.
+  const REPARTO_SYNONYMS: Record<string, string> = {
+    scarpe: 'scarpe', scarpa: 'scarpe', sneakers: 'scarpe', sneaker: 'scarpe', calzature: 'scarpe', calzatura: 'scarpe', shoes: 'scarpe', shoe: 'scarpe', ginnastica: 'scarpe',
+    vestiti: 'vestiti', vestito: 'vestiti', abbigliamento: 'vestiti', clothes: 'vestiti', clothing: 'vestiti', felpa: 'vestiti', felpe: 'vestiti', maglia: 'vestiti', maglietta: 'vestiti', magliette: 'vestiti', tshirt: 'vestiti', pantaloni: 'vestiti', giacca: 'vestiti', giacche: 'vestiti',
+    orologi: 'orologi', orologio: 'orologi', watch: 'orologi', watches: 'orologi',
+    pokemon: 'pokemon', carte: 'pokemon', carta: 'pokemon', tcg: 'pokemon',
+    borse: 'borse', borsa: 'borse', bag: 'borse', bags: 'borse',
+    accessori: 'accessori', accessorio: 'accessori', accessories: 'accessori',
+  };
+  const normCat = (s: string) => (s || '').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, '').trim();
+  const canonGroup = (s: string) => { const n = normCat(s); return REPARTO_SYNONYMS[n] || n; };
+  const findMatchingReparto = (detected: string): string | null => {
+    const direct = userCategories.find((uc: string) => normCat(uc) === normCat(detected));
+    if (direct) return direct;
+    const g = canonGroup(detected);
+    return userCategories.find((uc: string) => canonGroup(uc) === g) || null;
+  };
   const userInviteCodes = user?.warehouses?.filter(w => w.role === 'OWNER' && w.inviteCode) || [];
   const teamFounderName = teamData.length > 0 
     ? teamData[0].members.find((m: any) => m.role === 'OWNER')?.name 
@@ -1463,9 +1483,8 @@ export default function App() {
     let effCat = cat;
     if (!cat || cat === AUTO_CATEGORY) {
       effCat = scan.detectedCategory || 'Generico';
-      const match = userCategories.find(
-        (uc: string) => uc.toLowerCase() === String(effCat).toLowerCase()
-      );
+      // Match tollerante: se un reparto compatibile esiste già (anche sinonimo), ci finisce dentro
+      const match = findMatchingReparto(String(effCat));
       if (match) {
         setCategory(match);
         effCat = match;
