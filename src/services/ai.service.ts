@@ -86,6 +86,10 @@ const TEXT_MODEL = 'llama-3.3-70b-versatile';
 // Se non è configurato o fallisce, ripiega automaticamente su Groq (Llama).
 // Il testo (annunci, stime) resta su Groq.
 // ==========================================
+// Gemini è SPENTO di default: la vision gira su Groq come prima.
+// Per riprovare Gemini in futuro: USE_GEMINI_VISION=true su Railway.
+const USE_GEMINI_VISION = process.env.USE_GEMINI_VISION === 'true';
+
 async function visionComplete(opts: {
   prompt: string;
   imageBase64: string;
@@ -93,7 +97,7 @@ async function visionComplete(opts: {
   maxTokens: number;
   groqModel: string;
 }): Promise<string> {
-  if (isGeminiConfigured()) {
+  if (USE_GEMINI_VISION && isGeminiConfigured()) {
     try {
       return await geminiVision({
         prompt: opts.prompt,
