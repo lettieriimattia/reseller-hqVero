@@ -56,6 +56,8 @@ export default defineConfig({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
+        // Margine di sicurezza: un asset grande (es. logo pesante) non deve far fallire la build.
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // Gestori custom: share target (foto condivisa) + notifiche push
         importScripts: ['sw-share.js', 'sw-push.js'],
         globPatterns: ['**/*.{js,css,html,ico,svg,png,woff,woff2}'],
