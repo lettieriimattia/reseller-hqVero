@@ -24,7 +24,7 @@ router.post('/subscribe', async (req: AuthRequest, res: Response) => {
 // Invia una notifica di prova all'utente corrente
 router.post('/test', async (req: AuthRequest, res: Response) => {
   try {
-    await sendPushToUser(req.user!.userId, { title: 'ResellerHQ', body: 'Notifica di prova ✓ Funziona!', url: '/' });
+    await sendPushToUser(req.user!.userId, { title: 'HQ', body: 'Notifica di prova ✓ Funziona!', url: '/' });
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: 'Errore invio prova' });

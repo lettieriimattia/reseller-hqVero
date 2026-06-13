@@ -61,7 +61,11 @@ export async function sendPushToUser(userId: string, payload: { title: string; b
   if (!initialized) return;
   const subs = await prisma.pushSubscription.findMany({ where: { userId } }).catch(() => []);
   if (!subs.length) return;
-  const data = JSON.stringify(payload);
+  // Titolo sempre "HQ"; l'eventuale titolo dell'evento va nel corpo (sotto).
+  const body = payload.title && payload.title !== 'HQ'
+    ? (payload.body ? `${payload.title} — ${payload.body}` : payload.title)
+    : (payload.body || '');
+  const data = JSON.stringify({ title: 'HQ', body, url: payload.url });
   await Promise.all(subs.map(async s => {
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, data);
