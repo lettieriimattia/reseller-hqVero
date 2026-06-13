@@ -286,6 +286,9 @@ export default function App() {
   const [sellPlatform, setSellPlatform] = useState('Vinted');
   const [sellPaymentMethod, setSellPaymentMethod] = useState('Nessuna Fee (Contanti/Bonifico)');
   const [sellFees, setSellFees] = useState('0');
+  // Tracking opzionale della spedizione di vendita (OUTBOUND) direttamente nel flusso Vendi
+  const [sellTrackingCode, setSellTrackingCode] = useState('');
+  const [sellTrackingCarrier, setSellTrackingCarrier] = useState('Auto');
   
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<any>(null);
@@ -1742,6 +1745,7 @@ export default function App() {
     });
     setSellQuantity(ids.length.toString());
     setSellPrice('');
+    setSellTrackingCode(''); setSellTrackingCarrier('Auto');
     setSellModalOpen(true);
   };
   
@@ -1761,6 +1765,15 @@ export default function App() {
         body: JSON.stringify({ salePrice: unitSalePrice, platform: sellPlatform, fees: unitFees }),
       });
       if (!ok) hasError = true;
+    }
+    // Tracking spedizione di vendita (OUTBOUND), se inserito
+    if (!hasError && sellTrackingCode.trim().length >= 4) {
+      for (const id of idsToProcess) {
+        await apiCall(`/tracking/${id}`, {
+          method: 'POST',
+          body: JSON.stringify({ trackingCode: sellTrackingCode.trim(), carrier: sellTrackingCarrier, direction: 'OUTBOUND' }),
+        });
+      }
     }
     if (hasError) showToast('Errore nella vendita', 'err');
     else {
@@ -5263,6 +5276,25 @@ export default function App() {
                     </>
                   );
                 })()}
+              </div>
+
+              {/* Tracking spedizione (opzionale) — la spedizione al compratore */}
+              <div className="border-t border-[var(--border-2)] pt-4">
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex items-center gap-1.5 mb-2">
+                  <Truck size={12} /> Tracking spedizione <span className="text-[var(--text-faint)] normal-case font-normal">(opzionale)</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <input type="text" value={sellTrackingCode} onChange={(e: any) => setSellTrackingCode(e.target.value)}
+                    placeholder="Codice tracking"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none" />
+                  <select value={sellTrackingCarrier} onChange={(e: any) => setSellTrackingCarrier(e.target.value)}
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6366f1] outline-none">
+                    {['Auto','BRT','GLS','Poste Italiane','SDA','DHL','UPS','FedEx','TNT','Amazon Logistics','Nexive'].map(c => (
+                      <option key={c} value={c}>{c === 'Auto' ? 'Auto-rileva' : c}</option>
+                    ))}
+                  </select>
+                </div>
+                <p className="text-[10px] text-[var(--text-faint)] mt-1.5">Lascia vuoto se spedisci dopo: potrai aggiungerlo dalla card del venduto.</p>
               </div>
 
               <button type="submit"

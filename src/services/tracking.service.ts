@@ -127,8 +127,8 @@ async function fetch17TrackStatus(trackingCode: string): Promise<TrackingInfo | 
 export async function addTracking(productId: string, trackingCode: string, carrier: string, direction: 'INBOUND' | 'OUTBOUND' = 'OUTBOUND'): Promise<{ success: boolean; error?: string }> {
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product) return { success: false, error: 'Prodotto non trovato' };
-  // OUTBOUND (vendita) richiede prodotto non già venduto; INBOUND (acquisto in arrivo) è sempre ok.
-  if (direction === 'OUTBOUND' && product.status === 'VENDUTO') return { success: false, error: 'Prodotto già venduto' };
+  // Nessun blocco per stato: INBOUND si usa su prodotti in stock (acquisto in arrivo),
+  // OUTBOUND su prodotti venduti (spedizione al compratore). Entrambi validi.
 
   // Registra su 17track (non bloccante se fallisce — mostriamo comunque il tracking)
   await register17Track(trackingCode, carrier);
