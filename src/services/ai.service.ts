@@ -1084,7 +1084,9 @@ ${prompt}`;
     ? 'meta-llama/llama-4-scout-17b-16e-instruct'  // Scout: più veloce per OCR carta
     : VISION_MODEL;                                  // Maverick: più preciso per oggetti
 
-  const maxTok = isPokemon ? 700 : category === 'Orologi' ? 1700 : category === 'Vestiti' ? 1700 : 1800;
+  // Tetto token risposta: il JSON dello scan raramente supera ~500-700 token.
+  // Cap più basso = nessuna generazione "a vuoto" oltre il necessario (meno latenza).
+  const maxTok = isPokemon ? 600 : category === 'Orologi' ? 1100 : category === 'Vestiti' ? 1100 : 1100;
 
   let rawText = '';
   try {

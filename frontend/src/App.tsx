@@ -1321,10 +1321,11 @@ export default function App() {
     if (isTouch) addCameraInputRef.current?.click();
   };
 
-  // Crea al volo il reparto rilevato dall'IA (modalità Automatica) e lo seleziona
-  const createRepartoFromDetected = async (rawName: string) => {
+  // Crea al volo il reparto rilevato dall'IA (modalità Automatica) e lo seleziona.
+  // Restituisce il nome del reparto creato (o null), così il salvataggio può usarlo subito.
+  const createRepartoFromDetected = async (rawName: string): Promise<string | null> => {
     const nm = (rawName || '').trim();
-    if (!nm || isAddingCat) return;
+    if (!nm || isAddingCat) return null;
     setIsAddingCat(true);
     showToast(`Creo il reparto "${nm}" con icona IA…`, 'ok');
     const { ok, data } = await apiCall('/warehouses', {
@@ -1337,7 +1338,10 @@ export default function App() {
       setCategory(nm);        // seleziona il nuovo reparto (userCategories rimuove "Magazzino ")
       setDetectedReparto('');
       showToast(`Reparto "${nm}" creato e selezionato`);
-    } else showToast(data.error || 'Errore creazione reparto', 'err');
+      return nm;
+    }
+    showToast(data.error || 'Errore creazione reparto', 'err');
+    return null;
   };
 
   // ==========================================
@@ -1405,27 +1409,30 @@ export default function App() {
 
     // Riempi i campi disponibili anche con confidence MEDIA/BASSA: meglio un brand
     // pre-compilato da correggere che un form vuoto.
+    // Se l'IA non dà un modello preciso (prompt: meglio null che inventare), uso come
+    // nome il tipo/colorway rilevato → il campo nome non resta mai vuoto (sbloccca il salvataggio).
+    const fallbackName = (scan.model || d.type || d.colorway || '').toString();
     if (effCat === 'Pokemon') {
       if (scan.model) setPokeName(scan.model);
     } else if (effCat === 'Scarpe') {
       if (scan.brand) setBrand(scan.brand);
-      if (scan.model) setName(scan.model);
+      if (fallbackName) setName(fallbackName);
       // Taglia rilevata dall'etichetta/scatola
       if (d.size) setSize(d.size.toString());
     } else if (effCat === 'Vestiti') {
       if (scan.brand) setBrand(scan.brand);
-      if (scan.model) setName(scan.model);
+      if (fallbackName) setName(fallbackName);
       if (d.size) setSize(d.size.toString());
     } else if (effCat === 'Orologi') {
       if (scan.brand) setWatchBrand(scan.brand);
-      if (scan.model) setWatchModel(scan.model);
+      if (scan.model || d.type) setWatchModel((scan.model || d.type).toString());
       if (d.caseSize) setWatchCase(d.caseSize.toString().replace(/[^\d.]/g, ''));
       if (d.bracelet) setWatchStrap(d.bracelet);
       if (d.caseMaterial) setWatchMaterial(d.caseMaterial);
     } else {
       // Categoria personalizzata: riempi brand/model se presenti
       if (scan.brand) setBrand(scan.brand);
-      if (scan.model) setName(scan.model);
+      if (fallbackName) setName(fallbackName);
     }
   };
 
@@ -1550,14 +1557,24 @@ export default function App() {
     const unitPrice = parseFloat(price);
     
     let finalBrand = brand, finalName = name, finalSize = size, finalCondition = condition;
-    if (!category || category === AUTO_CATEGORY) { showToast('Aggiungi una foto o scegli un reparto', 'err'); setIsSaving(false); return; }
+    // Categoria effettiva: se non è selezionata ma l'IA ha rilevato un reparto, lo creo al volo e lo uso.
+    let effCategory = category;
+    if (!effCategory || effCategory === AUTO_CATEGORY) {
+      if (detectedReparto) {
+        const created = await createRepartoFromDetected(detectedReparto);
+        if (!created) { setIsSaving(false); return; }
+        effCategory = created;
+      } else {
+        showToast('Aggiungi una foto o scegli un reparto', 'err'); setIsSaving(false); return;
+      }
+    }
     if (isNaN(unitPrice) || unitPrice <= 0) { showToast('Inserisci un prezzo valido', 'err'); setIsSaving(false); return; }
 
-    if (category === 'Pokemon') {
+    if (effCategory === 'Pokemon') {
       if (!pokeName) { showToast('Inserisci il nome della carta', 'err'); setIsSaving(false); return; }
       finalBrand = 'Pokémon'; finalName = pokeName; finalSize = 'Unisize';
       finalCondition = pokeGraded === 'Si' ? `Gradata ${pokeGrade}` : 'Raw (Non Gradata)';
-    } else if (category === 'Orologi') {
+    } else if (effCategory === 'Orologi') {
       if (!watchBrand || !watchModel) { showToast('Compila brand e modello orologio', 'err'); setIsSaving(false); return; }
       finalBrand = watchBrand; finalName = watchModel;
       finalSize = watchCase ? `${watchCase}mm${watchStrap ? ', ' + watchStrap : ''}` : (watchStrap || '-');
@@ -1565,7 +1582,7 @@ export default function App() {
     } else {
       if (!brand || !name) { showToast('Compila brand e nome prodotto', 'err'); setIsSaving(false); return; }
       // Per categorie custom, arricchisci il nome con materiale/colore se compilati
-      if (category !== 'Scarpe' && category !== 'Vestiti') {
+      if (effCategory !== 'Scarpe' && effCategory !== 'Vestiti') {
         const extras = [watchMaterial, watchStrap].filter(Boolean);
         if (extras.length > 0) finalName = `${name} — ${extras.join(', ')}`;
       }
@@ -1573,7 +1590,7 @@ export default function App() {
     
     // Snapshot delle percentuali attuali del team: rende ogni prodotto indipendente
     // dalle future modifiche alle quote nelle impostazioni
-    const currentTeam = teamData.find(t => t.warehouseName.replace('Magazzino ', '') === category);
+    const currentTeam = teamData.find(t => t.warehouseName.replace('Magazzino ', '') === effCategory);
     const snapshotShares = currentTeam?.members?.length > 0
       ? currentTeam.members.map((m: any) => ({ userId: m.userId, name: m.name, percentage: m.percentage }))
       : undefined;
@@ -1585,7 +1602,7 @@ export default function App() {
         const { ok } = await apiCall('/products', {
           method: 'POST',
           body: JSON.stringify({
-            category, brand: finalBrand, name: finalName,
+            category: effCategory, brand: finalBrand, name: finalName,
             size: finalSize, condition: finalCondition, price: unitPrice,
             customShares: finalShares,
             photos: productPhotos.length > 0 ? productPhotos : undefined,
