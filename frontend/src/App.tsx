@@ -3888,7 +3888,7 @@ export default function App() {
                     </p>
                   </div>
                 </div>
-                <button onClick={openPlanModal}
+                <button onClick={() => openPlanModal()}
                   className="px-4 py-2 rounded-xl text-xs font-bold bg-[#ff4d00] hover:bg-[#ff6a2a] text-white transition-colors whitespace-nowrap">
                   Vedi piani
                 </button>
