@@ -228,6 +228,7 @@ NIKE / AIR JORDAN:
 - Air Jordan 1 High: Chicago (rosso/bianco/nero), Bred Banned/Toe/Reimagined (nero/rosso), Royal/Reimagined (blu/nero), Shadow (grigio/nero), Mocha (marrone/bianco), Lost & Found (marrone vintage), Satin Snake, Midnight Navy, Trophy Room, Rookie of the Year, Spider-Man, Volt Gold, Electro Orange, Dark Mocha, University Blue, Hyper Royal, Canary Yellow, Tie-Dye, Seafoam, Washed Heritage
 - Air Jordan 1 Mid: colore + materiale
 - Air Jordan 1 Low: colore + eventuali collab
+- TRAVIS SCOTT (Cactus Jack): SEGNALE CHIAVE = swoosh ROVESCIATO/AL CONTRARIO (reverse swoosh) e/o logo "Cactus Jack". Se vedi il reverse swoosh è quasi certamente una Travis Scott. Modelli: AJ1 High Mocha (marrone/beige), AJ1 Low Mocha / Reverse Mocha, AJ1 Low Olive, AJ1 Low Black Phantom, AJ1 Low Velvet Brown (tomaia in velluto/suede marrone), AJ1 Low Canary (giallo), Fragment x Travis Scott. Anche su AF1 e Dunk Low SB esistono le Travis Scott.
 - Air Jordan 3: White Cement Reimagined, Fire Red, Black Cement, True Blue, Wizards, A Ma Maniére
 - Air Jordan 4: Military Black, Bred Reimagined, White Thunder, Red Thunder, Cool Grey, University Blue, Taupe Haze, Canyon Purple, Neon, Off-White Sail
 - Air Jordan 11: Concord, Bred, Space Jam, Legend Blue, Win Like 96, Jubilee

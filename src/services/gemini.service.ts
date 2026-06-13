@@ -13,6 +13,10 @@ const GEMINI_KEYS: string[] = (process.env.GEMINI_API_KEY || '')
   .filter(Boolean);
 
 const GEMINI_VISION_MODEL = process.env.GEMINI_VISION_MODEL || 'gemini-2.5-flash';
+// 0 = thinking disattivato (più veloce). Solo per i modelli 2.5.
+const THINKING_BUDGET = Number.isFinite(Number(process.env.GEMINI_THINKING_BUDGET))
+  ? Number(process.env.GEMINI_THINKING_BUDGET)
+  : 0;
 
 // Indice corrente — ruota round-robin sulle chiavi (ognuna ha il suo limite gratuito)
 let geminiKeyIndex = 0;
@@ -58,6 +62,12 @@ export async function geminiVision(opts: GeminiVisionOpts): Promise<string> {
       temperature: opts.temperature ?? 0.05,
       maxOutputTokens: opts.maxTokens ?? 1024,
       ...(opts.json ? { responseMimeType: 'application/json' } : {}),
+      // I modelli 2.5 di default "ragionano" prima di rispondere: aggiunge molti
+      // secondi. Per lo scan (classificazione visiva) il thinking non serve → lo
+      // disattiviamo (budget 0). Override via GEMINI_THINKING_BUDGET se necessario.
+      ...(GEMINI_VISION_MODEL.includes('2.5')
+        ? { thinkingConfig: { thinkingBudget: THINKING_BUDGET } }
+        : {}),
     },
   };
 
