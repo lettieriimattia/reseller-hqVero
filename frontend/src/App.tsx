@@ -637,25 +637,6 @@ export default function App() {
     }
   };
 
-  const exportAdminExcel = async () => {
-    if (!adminUsers.length) return;
-    const XLSX = await import('xlsx');
-    const rows = adminUsers.map(u => ({
-      'Nome': u.name,
-      'Email': u.email,
-      'Registrato il': new Date(u.createdAt).toLocaleDateString('it-IT'),
-      'Ultimo accesso': u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString('it-IT') : '—',
-      '2FA': u.twoFactorEnabled ? 'Sì' : 'No',
-      'Reparti': u.warehouses.map((w: any) => `${w.name}(${w.role})`).join(', '),
-      'Prodotti Totali': u.stats.totalProducts,
-      'In Stock': u.stats.inStock,
-      'Venduti': u.stats.sold,
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Utenti');
-    XLSX.writeFile(wb, `HQ_Utenti_${new Date().toISOString().slice(0,10)}.xlsx`);
-  };
 
   const deleteAdminUser = async (userId: string, userName: string) => {
     if (!confirm(`Eliminare definitivamente l'utente "${userName}" e tutti i suoi dati?`)) return;
@@ -4292,12 +4273,6 @@ export default function App() {
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--fill)] hover:bg-[var(--fill)] rounded-xl text-xs font-semibold transition-colors">
                     <Mail size={12} /> Test Email
                   </button>
-                  {adminLoaded && (
-                    <button onClick={exportAdminExcel}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--fill)] hover:bg-[var(--fill)] rounded-xl text-xs font-semibold transition-colors">
-                      <Download size={12} /> Excel
-                    </button>
-                  )}
                   <button onClick={() => { fetchAdminUsers(); fetchAdminFeedback(); }} disabled={adminLoading}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--fill)] hover:bg-[var(--fill-2)] rounded-xl text-xs font-semibold transition-colors disabled:opacity-40">
                     {adminLoading ? <Loader2 size={12} className="animate-spin" /> : <Users size={12} />}
