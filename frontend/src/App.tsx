@@ -1544,7 +1544,7 @@ export default function App() {
       const isAuto = !cat || cat === AUTO_CATEGORY;
       const { ok, data } = await apiCall('/api/ai/full-scan', {
         method: 'POST',
-        body: JSON.stringify(isAuto ? { imageBase64 } : { imageBase64, category: cat }),
+        body: JSON.stringify(isAuto ? { imageBase64, existingCategories: userCategories } : { imageBase64, category: cat }),
       });
       if (ok) await applyAIScanResult(data, cat);
       else showToast(data.error || 'Errore IA', 'err');

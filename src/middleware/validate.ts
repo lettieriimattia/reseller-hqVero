@@ -121,6 +121,8 @@ export const aiScanSchema = z.object({
   // Categoria opzionale: se assente → modalità automatica (l'IA rileva dalla foto).
   // Stringa libera (max 50): supporta categorie personalizzate oltre alle 4 core.
   category: z.string().min(1).max(50).optional(),
+  // Reparti già esistenti dell'utente: l'IA li preferisce invece di crearne di nuovi (match dinamico).
+  existingCategories: z.array(z.string().max(60)).max(80).optional(),
 });
 
 export const priceEstimateSchema = z.object({

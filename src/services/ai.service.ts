@@ -1024,14 +1024,20 @@ function canonicalizeCategory(raw: string): string {
 
 // MODALITÀ AUTOMATICA — "vendi qualsiasi cosa": l'IA classifica l'oggetto dalla foto.
 // Restituisce la categoria (canonica se nota, altrimenti etichetta italiana specifica).
-export async function detectCategory(imageBase64: string): Promise<{ category: string; type: string }> {
+export async function detectCategory(imageBase64: string, existingCategories: string[] = []): Promise<{ category: string; type: string; canonical: string }> {
+  // Reparti già esistenti dell'utente: l'IA li riconosce e ci fa ricadere l'oggetto (dinamico, niente sinonimi scritti a mano).
+  const existing = (existingCategories || []).filter(Boolean).map(s => s.toString().trim()).slice(0, 80);
+  const existingBlock = existing.length
+    ? `\n\nIMPORTANTE — l'utente ha GIÀ questi reparti: ${existing.join(', ')}.
+Se l'oggetto appartiene a uno di questi reparti, restituisci in "category" ESATTAMENTE quel nome (stesso spelling). Inventa una categoria nuova SOLO se nessuno dei reparti esistenti è adatto.`
+    : '';
   const prompt = `Sei un classificatore merceologico per un gestionale di rivendita. Guarda l'immagine e classifica l'oggetto.
 Restituisci SOLO JSON (niente markdown): {"category":"...","type":"..."}
 - "category": macro-categoria merceologica in italiano, UNA sola etichetta breve.
   Se rientra in una di queste usala ESATTAMENTE com'è scritta: Scarpe, Vestiti, Orologi, Pokemon.
   Altrimenti scegli l'etichetta italiana più adatta e specifica, es: Occhiali, Borse, Gioielli, Portafogli, Cintura, Profumo, Elettronica, Cappello, Accessori.
 - "type": tipo specifico dell'oggetto (es: "sneaker alta", "bracciale rigido", "occhiali da sole aviator", "portafogli con zip").
-Se davvero non capisci, usa {"category":"Generico","type":"oggetto non identificato"}.`;
+Se davvero non capisci, usa {"category":"Generico","type":"oggetto non identificato"}.${existingBlock}`;
 
   try {
     const text = await visionComplete({
@@ -1042,21 +1048,30 @@ Se davvero non capisci, usa {"category":"Generico","type":"oggetto non identific
       groqModel: 'meta-llama/llama-4-scout-17b-16e-instruct', // Scout: veloce, sufficiente per classificare
     });
     const parsed = safeParseJSON(text);
-    const category = canonicalizeCategory(parsed?.category || 'Generico');
+    const rawCategory = (parsed?.category || 'Generico').toString().trim();
+    const canonical = canonicalizeCategory(rawCategory); // per scegliere il prompt esperto (Scarpe/Vestiti/Orologi/Pokemon)
+    // Reparto in cui archiviare: preferisci un reparto esistente compatibile (per nome o per categoria canonica),
+    // così non si creano duplicati. Altrimenti la categoria canonica/specifica.
+    const matchExisting = existing.find(e => {
+      const en = normalizeCat(e);
+      return en === normalizeCat(rawCategory) || en === normalizeCat(canonical) || canonicalizeCategory(e) === canonical;
+    });
+    const category = matchExisting || canonical;
     const type = (parsed?.type || '').toString().slice(0, 80);
-    return { category, type };
+    return { category, type, canonical };
   } catch (err: any) {
     logger.warn('detectCategory fallita, uso Generico', { err: err?.message });
-    return { category: 'Generico', type: '' };
+    return { category: 'Generico', type: '', canonical: 'Generico' };
   }
 }
 
 // Scan automatico: rileva la categoria dalla foto, poi esegue lo scan esperto adatto.
-export async function scanProductAuto(imageBase64: string): Promise<ScanResult> {
-  const det = await detectCategory(imageBase64);
-  const result = await scanProduct(imageBase64, det.category);
+// `existingCategories`: reparti dell'utente, per far ricadere l'oggetto in uno esistente.
+export async function scanProductAuto(imageBase64: string, existingCategories: string[] = []): Promise<ScanResult> {
+  const det = await detectCategory(imageBase64, existingCategories);
+  const result = await scanProduct(imageBase64, det.canonical); // prompt esperto sulla categoria canonica
   result.autoDetected = true;
-  result.detectedCategory = det.category;
+  result.detectedCategory = det.category;                       // reparto (nome utente) per il frontend
   if (det.type && !result.details?.type) {
     result.details = { ...(result.details || {}), type: det.type };
   }

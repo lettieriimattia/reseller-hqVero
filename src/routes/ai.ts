@@ -22,11 +22,11 @@ router.use(aiLimiter);
 // ==========================================
 router.post('/scan', validate(aiScanSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const { imageBase64, category } = req.body;
+    const { imageBase64, category, existingCategories } = req.body;
     // Senza categoria → modalità automatica: l'IA rileva l'oggetto dalla foto
     const result = category
       ? await scanProduct(imageBase64, category)
-      : await scanProductAuto(imageBase64);
+      : await scanProductAuto(imageBase64, existingCategories || []);
 
     await audit({
       action: 'AI_SCAN', userId: req.user!.userId, req,
@@ -75,10 +75,10 @@ router.post('/market-value', async (req: AuthRequest, res: Response) => {
 // ==========================================
 router.post('/full-scan', validate(aiScanSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const { imageBase64, category } = req.body;
+    const { imageBase64, category, existingCategories } = req.body;
     const scan = category
       ? await scanProduct(imageBase64, category)
-      : await scanProductAuto(imageBase64);
+      : await scanProductAuto(imageBase64, existingCategories || []);
 
     await audit({
       action: 'AI_SCAN', userId: req.user!.userId, req,
