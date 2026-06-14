@@ -110,7 +110,14 @@ app.use(helmet({
 // ==========================================
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000')
   .split(',')
-  .map(s => s.trim());
+  .map(s => s.trim())
+  .filter(Boolean);
+// Auto-autorizza l'origine pubblica dell'app (Render/dominio proprio): col monolite
+// frontend e API stanno sullo stesso dominio, ma il browser invia comunque l'Origin
+// sulle POST → senza questo, login/refresh venivano bloccati come "Origin non autorizzata".
+if (process.env.APP_URL) {
+  try { allowedOrigins.push(new URL(process.env.APP_URL).origin); } catch { /* APP_URL malformato: ignora */ }
+}
 
 app.use(cors({
   origin: (origin, callback) => {
