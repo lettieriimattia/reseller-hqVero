@@ -2546,7 +2546,7 @@ export default function App() {
       {/* ========== HEADER ========== */}
       <header className="sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)]"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="w-full max-w-[1280px] mx-auto px-4 lg:px-8 py-3.5 flex items-center">
+        <div className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-3.5 flex items-center">
           {/* Spacer sinistro per centrare il logo */}
           <div className="flex-1" />
           {/* Logo HQ centrato (come la mela) */}
@@ -2643,7 +2643,7 @@ export default function App() {
         
         {/* Tabs */}
         <nav className="border-t border-[var(--border)] hidden lg:block">
-          <div className="w-full max-w-[1280px] mx-auto px-8">
+          <div className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-8">
             <div className="flex gap-0 justify-center">
               {[
                 { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -2679,7 +2679,7 @@ export default function App() {
         </nav>
       </header>
       
-      <main key={currentView} className="w-full max-w-[1280px] mx-auto px-4 lg:px-8 py-5 lg:py-12 pb-28 lg:pb-16 animate-fade-in">
+      <main key={currentView} className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-5 lg:py-12 pb-28 lg:pb-16 animate-fade-in">
 
         {/* ========== DASHBOARD ========== */}
         {currentView === 'dashboard' && (
@@ -3230,11 +3230,11 @@ export default function App() {
                       <div
                         onClick={() => cardClick(groupKey)}
                         {...cardPressProps(groupKey)}
-                        className={`hidden lg:flex flex-col bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all relative ${
+                        className={`hidden lg:flex flex-col bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all duration-200 relative hover:-translate-y-1 hover:shadow-xl hover:shadow-black/25 ${
                           bulkMode ? 'cursor-pointer select-none' : ''
                         } ${isSelected ? 'border-[#8b5cf6] shadow-sm' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
                         <div
-                          className={`relative aspect-[3/2] bg-gradient-to-br from-[#141414] to-[#0a0a0a] flex items-center justify-center overflow-hidden ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
+                          className={`relative aspect-[3/2] bg-[var(--surface-2)] flex items-center justify-center overflow-hidden ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                           {photoUrl
                             ? <img src={photoUrl} alt="" className="w-full h-full object-cover" />
@@ -3250,14 +3250,14 @@ export default function App() {
                             </div>
                           )}
                         </div>
-                        <div className="p-4 flex-1 flex flex-col items-center text-center">
-                          <p className="font-bold text-lg leading-tight line-clamp-2">{g.brand} {g.name}</p>
+                        <div className="p-4 flex-1 flex flex-col items-start text-left">
+                          <p className="font-bold text-base leading-tight line-clamp-2 w-full">{g.brand} {g.name}</p>
                           <p className="text-sm text-[var(--text-muted)] mt-1.5">{g.size} · {g.condition}</p>
-                          <p className="text-2xl font-bold text-[var(--text)] mt-2 num">{g.purchasePrice.toFixed(0)}€</p>
+                          <p className="text-2xl font-bold text-[var(--text)] mt-auto pt-2 num">{g.purchasePrice.toFixed(0)}€</p>
                           {shares?.length > 0 && <p className="text-[11px] text-blue-400/70 mt-1.5 truncate max-w-full">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                           {!bulkMode && (
                             <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
-                              className={`mt-2 text-xs flex items-center justify-center gap-1 ${g.notes ? 'text-[var(--text-soft)] hover:text-gray-300' : 'text-gray-700 hover:text-[var(--text-soft)]'}`}>
+                              className={`mt-2 text-xs flex items-center justify-start gap-1 max-w-full ${g.notes ? 'text-[var(--text-soft)] hover:text-gray-300' : 'text-gray-700 hover:text-[var(--text-soft)]'}`}>
                               <StickyNote size={11} className="shrink-0" /><span className="truncate">{g.notes || 'Aggiungi nota…'}</span>
                             </button>
                           )}
@@ -3307,7 +3307,7 @@ export default function App() {
                       'Subito': 'text-violet-300 bg-violet-500/15 border-violet-500/20',
                       'Privato': 'text-[var(--text-muted)] bg-[var(--fill)] border-[var(--border-2)]',
                     };
-                    return groupedSoldArray.map((g: any) => {
+                    return <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-2.5 lg:gap-3">{groupedSoldArray.map((g: any) => {
                       const marginPct = g.totalRevenue > 0 && g.purchasePrice > 0
                         ? ((g.totalProfit / (g.purchasePrice * g.quantity)) * 100)
                         : null;
@@ -3385,7 +3385,7 @@ export default function App() {
                           </div>
                         </div>
                       );
-                    });
+                    })}</div>;
                   })()
                 )
               )}
