@@ -324,6 +324,7 @@ export default function App() {
   // Input fotocamera sempre montato: premendo "+" lo clicchiamo nel gesto utente
   // così su mobile la fotocamera si apre SUBITO (zero tap sprecati).
   const addCameraInputRef = useRef<HTMLInputElement | null>(null);
+  const notifRef = useRef<HTMLDivElement | null>(null);
   const showToast = useCallback((msg: string, type: 'ok' | 'err' | 'warn' = 'ok', action?: { label: string; onClick: () => void }) => {
     if (toastRef.current) clearTimeout(toastRef.current);
     setToast({ msg, type, action });
@@ -956,6 +957,18 @@ export default function App() {
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
+
+  // Chiudi la tendina notifiche al tap fuori dal riquadro.
+  // (Un backdrop in overlay non basta: l'header ha backdrop-blur, che "intrappola"
+  //  il position:fixed dentro l'header — quindi usiamo un listener globale + ref.)
+  useEffect(() => {
+    if (!notifPanelOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifPanelOpen(false);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [notifPanelOpen]);
 
   useEffect(() => {
     if (userCategories.length > 0 && category === '') setCategory(userCategories[0]);
@@ -2553,7 +2566,7 @@ export default function App() {
             </button>
 
             {/* Notifiche */}
-            <div className="relative">
+            <div className="relative" ref={notifRef}>
               <button onClick={() => setNotifPanelOpen(!notifPanelOpen)}
                 className="relative p-2 rounded-xl hover:bg-[var(--fill)] transition-colors">
                 <Bell size={18} className="text-[var(--text-muted)]" />
@@ -2564,11 +2577,10 @@ export default function App() {
                 )}
               </button>
 
-              {notifPanelOpen && (<>
-                {/* Backdrop: tap fuori dal riquadro → chiude le notifiche (mobile e desktop) */}
-                <div className="fixed inset-0 z-40" onClick={() => setNotifPanelOpen(false)} aria-hidden />
-                {/* Mobile: pannello centrato in alto, largo quasi quanto lo schermo.
-                    Desktop (sm+): dropdown ancorato a destra sotto la campanella. */}
+              {notifPanelOpen && (
+                /* Mobile: pannello centrato in alto, largo quasi quanto lo schermo.
+                   Desktop (sm+): dropdown ancorato a destra sotto la campanella.
+                   Chiusura al tap-fuori gestita dal listener globale (vedi useEffect). */
                 <div className="fixed sm:absolute left-1/2 sm:left-auto right-auto sm:right-0 -translate-x-1/2 sm:translate-x-0 top-16 sm:top-12 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 bg-[var(--surface-blur)] backdrop-blur-2xl border border-[var(--border-2)] rounded-2xl shadow-xl overflow-hidden z-50">
                   <div className="p-4 border-b border-[var(--border)] flex justify-between items-center">
                     <h3 className="font-semibold text-sm">Notifiche</h3>
@@ -2603,7 +2615,7 @@ export default function App() {
                     )}
                   </div>
                 </div>
-              </>)}
+              )}
             </div>
 
             {user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
