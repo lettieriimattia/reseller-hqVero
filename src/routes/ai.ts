@@ -58,10 +58,14 @@ router.post('/price', validate(priceEstimateSchema), async (req: AuthRequest, re
 // ==========================================
 router.post('/market-value', async (req: AuthRequest, res: Response) => {
   try {
-    const { query, size } = req.body || {};
+    const { query, size, condition } = req.body || {};
     const q = (query ?? '').toString().trim();
     if (q.length < 2) return res.status(400).json({ error: 'Inserisci brand e modello.' });
-    const valuation = await getMarketValuation({ query: q, size: size ? size.toString() : undefined });
+    const valuation = await getMarketValuation({
+      query: q,
+      size: size ? size.toString() : undefined,
+      condition: condition ? condition.toString() : undefined,
+    });
     logger.info('market-value esito', { query: q, source: valuation.source, value: valuation.value, sample: valuation.sample });
     res.json(valuation);
   } catch (err: any) {

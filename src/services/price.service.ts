@@ -26,6 +26,19 @@ export function isLikelyReplica(title: string): boolean {
   return REPLICA_TERMS.some(k => t.includes(k));
 }
 
+// Mappa la condizione interna (DS/VNDS/usato…) al filtro condizione di eBay Browse.
+// DS/deadstock/nuovo → NEW ; tutto il resto che indica usato → USED.
+// Se la condizione non è chiara, niente filtro (così non si svuotano i comps).
+function ebayConditionFilter(condition?: string): string | null {
+  const c = (condition || '').toLowerCase().trim();
+  if (!c) return null;
+  const isNew = ['ds', 'deadstock', 'nuovo', 'new', 'nib', 'sealed', 'sigillat', 'mai indossat', 'con cartellino', 'con scatola'].some(k => c.includes(k));
+  if (isNew) return 'conditions:{NEW|UNSPECIFIED}';
+  const isUsed = ['vnds', 'usato', 'used', 'ottimo', 'buono', 'discreto', 'indossat', 'pre-owned', 'preowned', 'second'].some(k => c.includes(k));
+  if (isUsed) return 'conditions:{USED}';
+  return null;
+}
+
 export type Confidence = 'alta' | 'media' | 'bassa';
 
 // Mediana robusta con taglio IQR (scarta gli outlier, tipicamente i falsi sottoprezzo)
@@ -101,13 +114,19 @@ export interface Valuation {
 }
 
 // Una singola ricerca eBay Browse → array di prezzi puliti (repliche escluse).
-async function ebayPriceSearch(token: string, query: string, size: string | undefined, authenticatedOnly: boolean): Promise<number[] | null> {
+async function ebayPriceSearch(token: string, query: string, size: string | undefined, authenticatedOnly: boolean, condition?: string): Promise<number[] | null> {
   const params = new URLSearchParams({
     q: [query, size].filter(Boolean).join(' '),
     limit: '50',
   });
+  // Filtri combinabili (separati da virgola): autenticazione + condizione.
+  const filters: string[] = [];
   // Solo annunci autenticati da eBay (Authenticity Guarantee) → falsi esclusi alla fonte
-  if (authenticatedOnly) params.set('filter', 'qualifiedPrograms:{EBAY_AUTHENTICITY_GUARANTEE}');
+  if (authenticatedOnly) filters.push('qualifiedPrograms:{EBAY_AUTHENTICITY_GUARANTEE}');
+  // Condizione (nuovo/usato) per allineare la valutazione allo stato reale del prodotto
+  const condFilter = ebayConditionFilter(condition);
+  if (condFilter) filters.push(condFilter);
+  if (filters.length) params.set('filter', filters.join(','));
   try {
     const r = await fetch(`${EBAY_BROWSE}?${params}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': MARKETPLACE },
@@ -128,7 +147,7 @@ async function ebayPriceSearch(token: string, query: string, size: string | unde
 // Valutazione: prima i comps autenticati (anti-falso massimo). Se troppo pochi
 // (su eBay IT l'Authenticity Guarantee copre solo sneaker/borse/orologi), ripiega
 // sul mercato generale ma comunque anti-falsi (keyword + taglio outlier IQR).
-export async function getMarketValuation(opts: { query: string; size?: string; authenticatedOnly?: boolean }): Promise<Valuation> {
+export async function getMarketValuation(opts: { query: string; size?: string; condition?: string; authenticatedOnly?: boolean }): Promise<Valuation> {
   const preferAuthenticated = opts.authenticatedOnly !== false; // default: prova prima gli autenticati
   if (!isPriceConfigured()) {
     return { configured: false, value: null, sample: 0, confidence: 'bassa', source: 'non configurato', authenticatedOnly: preferAuthenticated };
@@ -140,14 +159,21 @@ export async function getMarketValuation(opts: { query: string; size?: string; a
   let prices: number[] = [];
   let usedAuthenticated = false;
   if (preferAuthenticated) {
-    const authed = await ebayPriceSearch(token, opts.query, opts.size, true);
+    const authed = await ebayPriceSearch(token, opts.query, opts.size, true, opts.condition);
     if (authed && authed.length > 0) { prices = authed; usedAuthenticated = true; }
   }
 
   // 2) Fallback al mercato generale se i comps autenticati sono pochi
   if (prices.length < 3) {
-    const general = await ebayPriceSearch(token, opts.query, opts.size, false);
+    const general = await ebayPriceSearch(token, opts.query, opts.size, false, opts.condition);
     if (general && general.length > prices.length) { prices = general; usedAuthenticated = false; }
+  }
+
+  // 3) Ultima rete: se anche col filtro condizione i comps restano pochissimi,
+  //    riprova senza condizione (meglio una stima un po' meno precisa che nessun dato).
+  if (prices.length < 3 && opts.condition) {
+    const noCond = await ebayPriceSearch(token, opts.query, opts.size, false);
+    if (noCond && noCond.length > prices.length) { prices = noCond; usedAuthenticated = false; }
   }
 
   if (prices.length === 0) {

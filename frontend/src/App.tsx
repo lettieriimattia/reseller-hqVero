@@ -959,8 +959,12 @@ export default function App() {
 
   useEffect(() => {
     if (userCategories.length > 0 && category === '') setCategory(userCategories[0]);
-    if (category === 'Scarpe') setSize('42');
-    else if (category === 'Vestiti') setSize('M');
+    // NB: niente reset di `size` qui. `userCategories` è un array ricreato a ogni render,
+    // quindi questo effect gira di continuo: forzare la taglia qui la riazzerava a ogni
+    // battitura (impossibile modificarla) e cancellava la taglia rilevata dall'IA.
+    // Il default di taglia si imposta SOLO quando l'utente sceglie il reparto a mano
+    // (vedi defaultSizeForCategory nei bottoni Reparto) e all'apertura del form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, userCategories]);
 
   // Carica il template dinamico dal backend quando la categoria cambia nel form
@@ -1023,6 +1027,8 @@ export default function App() {
   
   const shoeSizes = Array.from({ length: 25 }, (_, i) => (36 + i * 0.5).toString());
   const clothingSizes = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  // Taglia di default suggerita quando si sceglie un reparto a mano (modificabile liberamente).
+  const defaultSizeForCategory = (cat: string) => cat === 'Scarpe' ? '42' : cat === 'Vestiti' ? 'M' : '';
   
   // ==========================================
   // CALCOLI FINANZIARI
@@ -1331,6 +1337,7 @@ export default function App() {
     setProductPhotos([]);
     setScanResult(null);
     setPriceEstimate(null);
+    setSize('42'); // default comodo (taglia scarpa più comune) — sempre modificabile
     setIsFormOpen(true);
     // Apri SUBITO la fotocamera nello stesso gesto del tap su "+"
     // (deve essere sincrono: niente setTimeout o il browser blocca la camera).
@@ -1543,7 +1550,7 @@ export default function App() {
     if (vQuery.length >= 2) {
       apiCall<any>('/api/ai/market-value', {
         method: 'POST',
-        body: JSON.stringify({ query: vQuery, size: (d.size || '').toString() || undefined }),
+        body: JSON.stringify({ query: vQuery, size: (d.size || '').toString() || undefined, condition: condition || undefined }),
       }).then(r => { if (r.ok) setScanMarket(r.data); }).catch(() => {});
     }
   };
@@ -2557,8 +2564,12 @@ export default function App() {
                 )}
               </button>
 
-              {notifPanelOpen && (
-                <div className="absolute right-0 top-12 w-80 sm:w-96 bg-[var(--surface-blur)] backdrop-blur-2xl border border-[var(--border-2)] rounded-2xl shadow-xl overflow-hidden z-50">
+              {notifPanelOpen && (<>
+                {/* Backdrop: tap fuori dal riquadro → chiude le notifiche (mobile e desktop) */}
+                <div className="fixed inset-0 z-40" onClick={() => setNotifPanelOpen(false)} aria-hidden />
+                {/* Mobile: pannello centrato in alto, largo quasi quanto lo schermo.
+                    Desktop (sm+): dropdown ancorato a destra sotto la campanella. */}
+                <div className="fixed sm:absolute left-1/2 sm:left-auto right-auto sm:right-0 -translate-x-1/2 sm:translate-x-0 top-16 sm:top-12 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 bg-[var(--surface-blur)] backdrop-blur-2xl border border-[var(--border-2)] rounded-2xl shadow-xl overflow-hidden z-50">
                   <div className="p-4 border-b border-[var(--border)] flex justify-between items-center">
                     <h3 className="font-semibold text-sm">Notifiche</h3>
                     {unreadCount > 0 && (
@@ -2592,7 +2603,7 @@ export default function App() {
                     )}
                   </div>
                 </div>
-              )}
+              </>)}
             </div>
 
             {user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
@@ -4789,7 +4800,7 @@ export default function App() {
                     Automatico
                   </button>
                   {userCategories.map((cat: string) => (
-                    <button key={cat} type="button" onClick={() => { setCategory(cat); setDetectedReparto(''); }}
+                    <button key={cat} type="button" onClick={() => { setCategory(cat); setSize(defaultSizeForCategory(cat)); setDetectedReparto(''); }}
                       className={`p-3 rounded-xl text-sm font-bold border transition-all ${
                         category === cat
                           ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]'
