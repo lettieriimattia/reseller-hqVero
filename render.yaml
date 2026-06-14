@@ -37,8 +37,11 @@ services:
     region: frankfurt          # data center piu' vicino all'Italia
     branch: main
     autoDeploy: true           # deploy automatico a ogni push su main
-    # prisma generate prima di tsc (servono i tipi del client) + build frontend + tsc
-    buildCommand: npx prisma generate && npm run build
+    # IMPORTANTE: --include=dev forza l'installazione delle devDependencies
+    # (prisma, typescript, tsx, vite) anche con NODE_ENV=production, altrimenti
+    # Render le salta e 'npx prisma' scarica Prisma 7 (che rompe lo schema).
+    # 'npm run build' fa: prisma generate (locale) + install/build frontend + tsc.
+    buildCommand: npm install --include=dev && npm run build
     # 'npm start' = prisma db push (crea/allinea le tabelle su Neon) + node dist/server.js
     startCommand: npm start
     healthCheckPath: /health
