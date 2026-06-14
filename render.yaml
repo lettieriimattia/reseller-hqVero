@@ -1,30 +1,103 @@
+# ==========================================================================
+# Render Blueprint — ResellerHQ (HQ)
+# ==========================================================================
+# UN SOLO servizio: Express serve sia l'API che il frontend buildato
+# (monolite). Le foto sono su Cloudinary, quindi non c'e' nessun file da
+# migrare: si spostano solo l'app (qui su Render) e il database (su Neon).
+#
+# COME SI USA:
+#   1) render.com → New → "Blueprint" → collega la repo GitHub.
+#      Render legge questo file e crea il servizio con build/start gia' pronti.
+#   2) Render ti chiedera' di inserire le variabili marcate "sync: false"
+#      (sono i segreti: NON stanno nel file, li metti a mano nella dashboard).
+#      Copiale UGUALI da Railway → scheda Variables, cambiando solo DATABASE_URL
+#      con la connection string di Neon.
+#   3) Dopo il primo deploy conosci l'URL (es. https://resellerhq.onrender.com):
+#      mettilo nella variabile APP_URL.
+#   4) Da li' in poi ogni "git push" su main rifa' il deploy da solo (come Railway).
+#
+# TENERLA SVEGLIA (piano free):
+#   Render mette in standby dopo 15 min di inattivita' (prima apertura ~50s).
+#   Imposta un ping ogni 10 min su UptimeRobot/cron-job.org verso
+#   https://<tuo-url>.onrender.com/health → l'app resta sempre attiva. Gratis.
+#
+# NOTE:
+#   - PORT lo imposta Render in automatico (server.ts legge process.env.PORT).
+#   - Le chiavi VAPID delle notifiche push stanno nel database: migrando i dati
+#     su Neon le notifiche continuano a funzionare senza riconfigurare nulla.
+#   - ADMIN_EMAIL e' fisso nel codice, non serve come variabile.
+#   - Essendo monolite (stesso dominio per app e API) NON serve configurare CORS.
+# ==========================================================================
+
 services:
   - type: web
-    name: reseller-hq-api
+    name: resellerhq
     runtime: node
-    buildCommand: npm install && npm run build
-    startCommand: node dist/server.js
+    plan: free
+    region: frankfurt          # data center piu' vicino all'Italia
+    branch: main
+    autoDeploy: true           # deploy automatico a ogni push su main
+    # prisma generate prima di tsc (servono i tipi del client) + build frontend + tsc
+    buildCommand: npx prisma generate && npm run build
+    # 'npm start' = prisma db push (crea/allinea le tabelle su Neon) + node dist/server.js
+    startCommand: npm start
     healthCheckPath: /health
+
     envVars:
+      # --- Fisse (valore in chiaro, non sono segreti) ---
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3000
-      # Le seguenti vanno aggiunte manualmente nel dashboard Render:
-      # DATABASE_URL        → stringa Neon PostgreSQL
-      # JWT_ACCESS_SECRET   → copia da Railway
-      # JWT_REFRESH_SECRET  → copia da Railway
-      # ENCRYPTION_KEY      → copia da Railway
-      # ALLOWED_ORIGINS     → https://reseller-hq.vercel.app (il tuo dominio Vercel)
-      # COOKIE_SAME_SITE    → none
-      # COOKIE_SECURE       → true
-      # GROQ_API_KEY        → copia da Railway
-      # BREVO_API_KEY       → copia da Railway
-      # ADMIN_EMAIL         → noreply.hq.app@gmail.com
-      # PACKLINK_API_KEY    → copia da Railway (se presente)
-      # SENDCLOUD_API_KEY   → quando disponibile
-      # SENDCLOUD_API_SECRET→ quando disponibile
-      # CLOUDINARY_CLOUD_NAME  → da cloudinary.com (Dashboard → Cloud Name)
-      # CLOUDINARY_API_KEY     → da cloudinary.com (Settings → API Keys)
-      # CLOUDINARY_API_SECRET  → da cloudinary.com (Settings → API Keys)
-      # APP_URL             → https://reseller-hq-api.onrender.com (il tuo URL Render)
+      - key: EBAY_MARKETPLACE
+        value: EBAY_IT
+
+      # --- Database (Neon) ---
+      - key: DATABASE_URL
+        sync: false
+
+      # --- Sicurezza (obbligatorie: l'avvio si blocca se mancano) ---
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: ENCRYPTION_KEY      # esattamente 64 caratteri esadecimali
+        sync: false
+
+      # --- IA (riconoscimento prodotti) ---
+      - key: GROQ_API_KEY
+        sync: false
+
+      # --- Valutazione di mercato (eBay) ---
+      - key: EBAY_APP_ID
+        sync: false
+      - key: EBAY_CERT_ID
+        sync: false
+
+      # --- Immagini (Cloudinary) ---
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+      # --- Email (Brevo) ---
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+      # --- Notifiche push ---
+      - key: VAPID_SUBJECT       # es. mailto:lettieriimattia@gmail.com
+        sync: false
+
+      # --- URL pubblico del servizio (per il self-ping a /health) ---
+      # Da compilare DOPO il primo deploy, quando conosci l'indirizzo onrender.com
+      - key: APP_URL
+        sync: false
+
+      # --- Opzionali: aggiungile in dashboard SOLO se le usi ---
+      #   STOCKX_CLIENT_ID / STOCKX_CLIENT_SECRET / STOCKX_API_KEY / STOCKX_REDIRECT_URI
+      #   SENDCLOUD_API_KEY / SENDCLOUD_API_SECRET
+      #   TRACKING_17TRACK_KEY
+      #   GEMINI_API_KEY (+ USE_GEMINI_VISION) — di default si usa Groq
+      #   ALLOWED_ORIGINS — non serve col monolite (stesso dominio)
