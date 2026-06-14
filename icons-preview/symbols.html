@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HQ — Concept icone (simboli / core system)</title>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#0a0a0c; color:#eee; font-family:'Segoe UI',system-ui,-apple-system,Inter,Arial,sans-serif; padding:40px 24px 80px; }
+  h1 { font-weight:800; letter-spacing:-0.03em; font-size:30px; margin:0 0 6px; }
+  p.sub { color:#9ca3af; margin:0 0 36px; font-size:14px; max-width:720px; line-height:1.5; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:22px; max-width:1200px; }
+  .card { background:#141418; border:1px solid #26262e; border-radius:18px; padding:22px; }
+  .card h2 { font-size:15px; margin:0 0 4px; font-weight:700; }
+  .card .desc { color:#9ca3af; font-size:12px; margin:0 0 18px; min-height:46px; line-height:1.4; }
+  .row { display:flex; align-items:center; gap:18px; }
+  .ico { border-radius:22.5%; overflow:hidden; flex:none; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+  .ico.big { width:128px; height:128px; }
+  .ico.mid { width:64px; height:64px; }
+  .ico.sm  { width:40px; height:40px; }
+  .ico svg { display:block; width:100%; height:100%; }
+  .label { color:#6b7280; font-size:11px; }
+  .onlight { margin-top:16px; padding:14px; background:#e6e6eb; border-radius:12px; display:flex; align-items:center; gap:14px; }
+  .onlight .t { color:#444; font-size:11px; }
+</style>
+</head>
+<body>
+  <h1>HQ — Simboli / core system</h1>
+  <p class="sub">Concept con un <b>disegno</b> che richiama l'idea di "centro / sistema connesso" (HQ = quartier generale, nucleo da cui parte tutto). Dimmi il <b>numero</b> che ti piace, o cosa cambiare.</p>
+  <div class="grid" id="grid"></div>
+
+<script>
+const F="font-family:'Segoe UI',system-ui,-apple-system,Inter,Arial,sans-serif";
+const defs=`
+<linearGradient id="gv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#6d28d9"/></linearGradient>
+<radialGradient id="glow" cx="50%" cy="50%" r="55%"><stop offset="0" stop-color="#7c3aed" stop-opacity=".6"/><stop offset="1" stop-color="#0d0d12" stop-opacity="0"/></radialGradient>`;
+
+// nodi su un cerchio
+function nodes(cx,cy,r,count,nr,stroke,fill){
+  let s='';
+  for(let i=0;i<count;i++){
+    const a=(-90+i*360/count)*Math.PI/180;
+    const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+    s+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="${stroke}" stroke-width="9"/>`;
+  }
+  for(let i=0;i<count;i++){
+    const a=(-90+i*360/count)*Math.PI/180;
+    const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+    s+=`<circle cx="${x}" cy="${y}" r="${nr}" fill="${fill}"/>`;
+  }
+  return s;
+}
+
+const icons=[
+ {n:1, name:"1 · Hub & nodi (sistema connesso)",
+  desc:"Un nucleo centrale con nodi collegati: l'idea di 'centro operativo' da cui tutto parte. Look tech.",
+  svg:`<rect width="512" height="512" fill="#0d0d12"/><rect width="512" height="512" fill="url(#glow)"/>
+       ${nodes(256,256,150,6,26,"#7c3aed","#a78bfa")}
+       <circle cx="256" cy="256" r="58" fill="url(#gv)"/><circle cx="256" cy="256" r="58" fill="none" stroke="#e9d5ff" stroke-opacity=".5" stroke-width="5"/>`},
+
+ {n:2, name:"2 · Hub su sfondo viola",
+  desc:"Stessa idea del nucleo connesso ma su squircle viola pieno, nodi bianchi. Più 'app store'.",
+  svg:`<rect width="512" height="512" fill="url(#gv)"/>
+       ${nodes(256,256,150,6,24,"rgba(255,255,255,.55)","#ffffff")}
+       <circle cx="256" cy="256" r="58" fill="#fff"/>`},
+
+ {n:3, name:"3 · H con orbita (HQ + sistema)",
+  desc:"La lettera H con un anello in orbita e un nodo: insieme leggono 'HQ' e danno il senso di core/sistema.",
+  svg:`<rect width="512" height="512" fill="#0d0d12"/><rect width="512" height="512" fill="url(#glow)"/>
+       <ellipse cx="256" cy="256" rx="170" ry="170" fill="none" stroke="#7c3aed" stroke-width="12" stroke-opacity=".85"/>
+       <circle cx="376" cy="376" r="26" fill="#a78bfa"/>
+       <g fill="#fff"><rect x="188" y="170" width="34" height="172" rx="6"/><rect x="290" y="170" width="34" height="172" rx="6"/><rect x="188" y="239" width="136" height="34" rx="6"/></g>`},
+
+ {n:4, name:"4 · Cubo magazzino + nucleo",
+  desc:"Una scatola/cubo (lo stock del reseller) con un nucleo luminoso al centro: HQ = base del magazzino.",
+  svg:`<rect width="512" height="512" fill="url(#gv)"/>
+       <g fill="none" stroke="#fff" stroke-width="16" stroke-linejoin="round" stroke-linecap="round" opacity=".95">
+         <path d="M256 110 L396 188 L396 330 L256 408 L116 330 L116 188 Z"/>
+         <path d="M116 188 L256 266 L396 188"/><path d="M256 266 L256 408"/></g>
+       <circle cx="256" cy="266" r="34" fill="#fff"/>`},
+
+ {n:5, name:"5 · Radar / nucleo a cerchi",
+  desc:"Cerchi concentrici con punto centrale: 'centro di controllo'. Pulito, si legge anche piccolissimo.",
+  svg:`<rect width="512" height="512" fill="#0d0d12"/><rect width="512" height="512" fill="url(#glow)"/>
+       <circle cx="256" cy="256" r="150" fill="none" stroke="#7c3aed" stroke-width="10" stroke-opacity=".5"/>
+       <circle cx="256" cy="256" r="100" fill="none" stroke="#8b5cf6" stroke-width="10" stroke-opacity=".75"/>
+       <circle cx="256" cy="256" r="52" fill="url(#gv)"/>`},
+
+ {n:6, name:"6 · Esagono-nucleo + HQ piccolo",
+  desc:"Esagono (struttura/quartier generale) con nucleo e la sigla HQ piccola sotto. Simbolo + testo.",
+  svg:`<rect width="512" height="512" fill="#0d0d12"/>
+       <path d="M256 96 L398 178 L398 300 L256 382 L114 300 L114 178 Z" fill="none" stroke="url(#gv)" stroke-width="16" stroke-linejoin="round"/>
+       <circle cx="256" cy="239" r="46" fill="url(#gv)"/>
+       <text x="256" y="430" text-anchor="middle" style="${F}" font-weight="800" font-size="78" letter-spacing="2" fill="#fff">HQ</text>`},
+];
+
+const grid=document.getElementById('grid');
+const wrap=(inner)=>`<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs>${inner}</svg>`;
+icons.forEach(ic=>{
+  const el=document.createElement('div'); el.className='card';
+  el.innerHTML=`<h2>${ic.name}</h2><div class="desc">${ic.desc}</div>
+    <div class="row">
+      <div class="ico big">${wrap(ic.svg)}</div>
+      <div class="ico mid">${wrap(ic.svg)}</div>
+      <div class="ico sm">${wrap(ic.svg)}</div>
+      <div class="label">grande · media · piccola</div>
+    </div>
+    <div class="onlight"><div class="ico mid">${wrap(ic.svg)}</div><div class="t">su sfondo chiaro</div></div>`;
+  grid.appendChild(el);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HQ — Concept icone app</title>
+<style>
+  :root { --fs: 'Segoe UI', system-ui, -apple-system, 'Inter', Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#0a0a0c; color:#eee; font-family:var(--fs); padding:40px 24px 80px; }
+  h1 { font-weight:800; letter-spacing:-0.03em; font-size:30px; margin:0 0 6px; }
+  p.sub { color:#9ca3af; margin:0 0 36px; font-size:14px; max-width:680px; line-height:1.5; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:22px; max-width:1200px; }
+  .card { background:#141418; border:1px solid #26262e; border-radius:18px; padding:22px; }
+  .card h2 { font-size:15px; margin:0 0 4px; font-weight:700; }
+  .card .desc { color:#9ca3af; font-size:12px; margin:0 0 18px; min-height:32px; line-height:1.4; }
+  .row { display:flex; align-items:center; gap:18px; }
+  /* squircle mask come iOS */
+  .ico { border-radius:22.5%; overflow:hidden; flex:none; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+  .ico.big { width:128px; height:128px; }
+  .ico.mid { width:64px; height:64px; }
+  .ico.sm  { width:40px; height:40px; }
+  .ico svg { display:block; width:100%; height:100%; }
+  .label { color:#6b7280; font-size:11px; margin-top:10px; }
+  .onlight { margin-top:16px; padding:14px; background:#e6e6eb; border-radius:12px; display:flex; align-items:center; gap:14px; }
+  .onlight .t { color:#444; font-size:11px; }
+</style>
+</head>
+<body>
+  <h1>HQ — Concept icone app</h1>
+  <p class="sub">Sei proposte per l'icona dell'app. Ognuna è mostrata grande, media e piccola (come si vede sulla schermata Home), più una prova su sfondo chiaro. Dimmi il <b>numero</b> che preferisci — oppure cosa cambiare (colore, stile, più minimale, ecc.) e te le rifaccio.</p>
+  <div class="grid" id="grid"></div>
+
+<script>
+const F = "font-family:'Segoe UI',system-ui,-apple-system,Inter,Arial,sans-serif";
+
+// --- definizioni icone (SVG 512x512) ---
+const icons = [
+  {
+    n:1, name:"1 · Gradient viola + HQ pieno",
+    desc:"Stile iOS classico: squircle con sfumatura viola e monogramma bianco grassetto.",
+    svg:`
+      <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#6d28d9"/></linearGradient></defs>
+      <rect width="512" height="512" fill="url(#g1)"/>
+      <text x="256" y="272" text-anchor="middle" dominant-baseline="central" style="${F}"
+        font-weight="800" font-size="250" letter-spacing="-18" fill="#fff">HQ</text>`
+  },
+  {
+    n:2, name:"2 · Scuro + bagliore, H bianca / Q viola",
+    desc:"Richiama il logo attuale (H piena, Q sfumata) ma più curato, su fondo scuro con glow.",
+    svg:`
+      <defs><radialGradient id="g2" cx="50%" cy="32%" r="75%">
+        <stop offset="0" stop-color="#7c3aed" stop-opacity="0.55"/><stop offset="1" stop-color="#0d0d12" stop-opacity="0"/></radialGradient></defs>
+      <rect width="512" height="512" fill="#0d0d12"/>
+      <rect width="512" height="512" fill="url(#g2)"/>
+      <text x="256" y="272" text-anchor="middle" dominant-baseline="central" style="${F}"
+        font-weight="800" font-size="250" letter-spacing="-16">
+        <tspan fill="#ffffff">H</tspan><tspan fill="#a78bfa">Q</tspan></text>`
+  },
+  {
+    n:3, name:"3 · Viola pieno, HQ ultra-bold serrato",
+    desc:"Minimal e d'impatto: fondo viola unico, lettere molto vicine. Si legge benissimo da piccola.",
+    svg:`
+      <rect width="512" height="512" fill="#7c3aed"/>
+      <text x="256" y="274" text-anchor="middle" dominant-baseline="central" style="${F}"
+        font-weight="900" font-size="270" letter-spacing="-30" fill="#fff">HQ</text>`
+  },
+  {
+    n:4, name:"4 · Chiaro, HQ viola",
+    desc:"Versione luminosa: squircle bianco-ghiaccio con HQ viola. Bella se tieni il tema chiaro.",
+    svg:`
+      <defs><linearGradient id="g4" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#ece9f6"/></linearGradient></defs>
+      <rect width="512" height="512" fill="url(#g4)"/>
+      <text x="256" y="272" text-anchor="middle" dominant-baseline="central" style="${F}"
+        font-weight="800" font-size="250" letter-spacing="-18" fill="#6d28d9">HQ</text>`
+  },
+  {
+    n:5, name:"5 · Badge esagono (headquarters)",
+    desc:"HQ = quartier generale. Scudo esagonale con sfumatura viola: dà un senso 'professionale/base'.",
+    svg:`
+      <defs><linearGradient id="g5" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#5b21b6"/></linearGradient></defs>
+      <rect width="512" height="512" fill="#0d0d12"/>
+      <path d="M256 56 L430 156 L430 356 L256 456 L82 356 L82 156 Z" fill="url(#g5)"/>
+      <path d="M256 56 L430 156 L430 356 L256 456 L82 356 L82 156 Z" fill="none" stroke="#c4b5fd" stroke-opacity="0.35" stroke-width="6"/>
+      <text x="256" y="268" text-anchor="middle" dominant-baseline="central" style="${F}"
+        font-weight="800" font-size="180" letter-spacing="-10" fill="#fff">HQ</text>`
+  },
+  {
+    n:6, name:"6 · Contorno minimal su scuro",
+    desc:"Elegante e sobrio: lettere a contorno viola chiaro su nero, tanto spazio negativo. Look 'luxury'.",
+    svg:`
+      <rect width="512" height="512" fill="#0b0b0e"/>
+      <text x="256" y="272" text-anchor="middle" dominant-baseline="central" style="${F}"
+        font-weight="700" font-size="230" letter-spacing="-10"
+        fill="none" stroke="#a78bfa" stroke-width="7">HQ</text>`
+  },
+];
+
+const grid = document.getElementById('grid');
+const wrap = (inner) => `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+icons.forEach(ic => {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.innerHTML = `
+    <h2>${ic.name}</h2>
+    <div class="desc">${ic.desc}</div>
+    <div class="row">
+      <div class="ico big">${wrap(ic.svg)}</div>
+      <div class="ico mid">${wrap(ic.svg)}</div>
+      <div class="ico sm">${wrap(ic.svg)}</div>
+      <div class="label">grande · media · piccola</div>
+    </div>
+    <div class="onlight">
+      <div class="ico mid">${wrap(ic.svg)}</div>
+      <div class="t">come appare su sfondo chiaro</div>
+    </div>`;
+  grid.appendChild(el);
+});
+</script>
+</body>
+</html>

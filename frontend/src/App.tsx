@@ -2561,7 +2561,7 @@ export default function App() {
           <div className="flex-1 flex items-center justify-end gap-1.5">
             {/* Pulsante Aggiungi (solo desktop) */}
             <button onClick={() => openAddForm()}
-              className="hidden lg:flex items-center gap-2 bg-[#8b5cf6] hover:bg-[#e84400] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
+              className="hidden lg:flex items-center gap-2 bg-[#8b5cf6] hover:bg-[#7c3aed] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
               <Plus size={15} /> Aggiungi
             </button>
 
@@ -2739,7 +2739,7 @@ export default function App() {
                   <p className="text-sm text-[var(--text-soft)] mb-5 max-w-md">In pochi secondi aggiungi un articolo e HQ inizia a tracciare stock, vendite, profitti e spedizioni. Tutto in automatico.</p>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => openAddForm()}
-                      className="bg-[#8b5cf6] hover:bg-[#e84400] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
+                      className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
                       <Plus size={16} /> Aggiungi il primo prodotto
                     </button>
                     <button onClick={() => navigateTo('settings')}
@@ -3134,7 +3134,7 @@ export default function App() {
                       <p className="text-sm text-[var(--text-soft)] mt-1 mb-5 max-w-sm mx-auto">Aggiungi il primo prodotto per iniziare a tracciare stock, vendite e profitti.</p>
                       <div className="flex flex-wrap gap-2 justify-center">
                         <button onClick={() => openAddForm()}
-                          className="bg-[#8b5cf6] hover:bg-[#e84400] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
+                          className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
                           <Plus size={16} /> Aggiungi prodotto
                         </button>
                         <button onClick={() => navigateTo('settings')}
@@ -5446,7 +5446,7 @@ export default function App() {
                     <span className="text-sm font-bold">Valutazione di mercato</span>
                   </div>
                   <button type="button" onClick={() => fetchValuation(productToEdit)} disabled={valLoading}
-                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#8b5cf6] text-white hover:bg-[#e84400] disabled:opacity-50 transition-colors flex items-center gap-1.5">
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#8b5cf6] text-white hover:bg-[#7c3aed] disabled:opacity-50 transition-colors flex items-center gap-1.5">
                     {valLoading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />} Valuta
                   </button>
                 </div>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HQ — Palette colori (scuro + chiaro)</title>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#0a0a0c; color:#eee; font-family:'Segoe UI',system-ui,-apple-system,Inter,Arial,sans-serif; padding:40px 24px 90px; }
+  h1 { font-weight:800; letter-spacing:-.03em; font-size:30px; margin:0 0 6px; }
+  p.sub { color:#9ca3af; margin:0 0 34px; font-size:14px; max-width:740px; line-height:1.5; }
+  .pal { display:flex; flex-direction:column; gap:16px; max-width:1100px; }
+  .palrow { display:grid; grid-template-columns:200px 1fr 1fr; gap:0; border:1px solid #26262e; border-radius:16px; overflow:hidden; }
+  .meta { padding:18px; background:#141418; display:flex; flex-direction:column; gap:8px; justify-content:center; }
+  .meta .name { font-weight:700; font-size:15px; }
+  .swcol { display:flex; gap:8px; }
+  .sw { width:26px; height:26px; border-radius:7px; border:1px solid rgba(255,255,255,.15); }
+  .hex { font-size:11px; color:#9ca3af; font-family:ui-monospace,Consolas,monospace; }
+  .panel { padding:20px; display:flex; flex-direction:column; gap:12px; justify-content:center; }
+  .panel.dark { background:#080808; }
+  .panel.light { background:#e6e6eb; }
+  .tag { font-size:10px; text-transform:uppercase; letter-spacing:.12em; opacity:.6; }
+  .panel.dark .tag { color:#9ca3af; } .panel.light .tag { color:#6e6e73; }
+  .btn { border:none; border-radius:11px; padding:11px 16px; font-weight:700; font-size:14px; color:#fff; width:fit-content; cursor:default; }
+  .ttl { font-weight:800; font-size:20px; letter-spacing:-.02em; }
+  .chip { font-size:12px; font-weight:600; padding:5px 11px; border-radius:999px; width:fit-content; }
+  .panel.dark .muted { color:#fff; } .panel.light .muted { color:#1d1d1f; }
+  .line { font-size:13px; }
+</style>
+</head>
+<body>
+  <h1>HQ — Palette colori</h1>
+  <p class="sub">Colori "accent" candidati. Per ognuno: la tonalità <b>scura</b> (usata sul tema nero) e quella <b>chiara/profonda</b> (sul tema bianco, per restare leggibile). A sinistra i campioni, poi come appare un <b>pulsante</b>, un <b>titolo</b> e un <b>chip</b> su nero e su bianco. Dimmi quale ti piace (anche più di uno) o se vuoi ritocchi.</p>
+  <div class="pal" id="pal"></div>
+
+<script>
+// [nome, hexScuro (su nero), hexChiaro (su bianco), nota]
+const palette = [
+  ["Viola (attuale)", "#8b5cf6", "#7c3aed", "equilibrato, premium"],
+  ["Indaco",          "#6366f1", "#4f46e5", "serio, fintech"],
+  ["Blu",             "#3b82f6", "#2563eb", "fidato, classico"],
+  ["Ciano / Teal",    "#22d3ee", "#0891b2", "fresco, tech"],
+  ["Verde smeraldo",  "#10b981", "#059669", "soldi/crescita"],
+  ["Lime",            "#a3e635", "#65a30d", "energico, sportivo"],
+  ["Ambra",           "#f59e0b", "#b45309", "caldo, oro"],
+  ["Arancione",       "#fb923c", "#ea580c", "vivace (sneaker)"],
+  ["Rosa / Rose",     "#fb7185", "#e11d48", "moderno, hype"],
+  ["Fucsia",          "#e879f9", "#c026d3", "audace, street"],
+  ["Rosso",           "#f87171", "#dc2626", "forte, urgenza"],
+];
+
+const pal = document.getElementById('pal');
+palette.forEach(([name, dark, light, note]) => {
+  const row = document.createElement('div');
+  row.className = 'palrow';
+  row.innerHTML = `
+    <div class="meta">
+      <div class="name">${name}</div>
+      <div class="line" style="color:#9ca3af;font-size:12px">${note}</div>
+      <div class="swcol">
+        <div><div class="sw" style="background:${dark}"></div><div class="hex">${dark}</div></div>
+        <div><div class="sw" style="background:${light}"></div><div class="hex">${light}</div></div>
+      </div>
+    </div>
+    <div class="panel dark">
+      <div class="tag">tema scuro</div>
+      <button class="btn" style="background:${dark}">Aggiungi prodotto</button>
+      <div class="ttl" style="color:${dark}">1.250 €</div>
+      <div class="chip" style="background:${dark}22;color:${dark}">In stock</div>
+      <div class="line muted">Testo normale con <span style="color:${dark};font-weight:700">link colorato</span>.</div>
+    </div>
+    <div class="panel light">
+      <div class="tag">tema chiaro</div>
+      <button class="btn" style="background:${light}">Aggiungi prodotto</button>
+      <div class="ttl" style="color:${light}">1.250 €</div>
+      <div class="chip" style="background:${light}1f;color:${light}">In stock</div>
+      <div class="line muted">Testo normale con <span style="color:${light};font-weight:700">link colorato</span>.</div>
+    </div>`;
+  pal.appendChild(row);
+});
+</script>
+</body>
+</html>
