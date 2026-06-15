@@ -65,7 +65,7 @@ interface Product {
 }
 
 interface AppUser {
-  id: string; name: string; email: string; twoFactorEnabled?: boolean;
+  id: string; name: string; email: string; twoFactorEnabled?: boolean; plan?: string;
   warehouses: Array<{ id: string; name: string; role: string; inviteCode: string | null; percentage: number; aiConfig: string | null }>;
 }
 
@@ -185,6 +185,7 @@ export default function App() {
   const [cookieConsent, setCookieConsent] = useState<boolean>(() => !!localStorage.getItem('hq_cookie_consent'));
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [repartiOpen, setRepartiOpen] = useState(false); // lista reparti a tendina nelle impostazioni
   const [marketingConsent, setMarketingConsent] = useState(false);
   
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -845,6 +846,11 @@ export default function App() {
     return userCategories.find((uc: string) => canonGroup(uc) === g) || null;
   };
   const userInviteCodes = user?.warehouses?.filter(w => w.role === 'OWNER' && w.inviteCode) || [];
+  // Piano dell'utente → gating feature. 'advanced_analytics' è incluso da Pro in su.
+  const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, business: 3 };
+  const planRank = PLAN_RANK[(user?.plan as string) || 'free'] ?? 0;
+  const isAdminUser = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  const hasAdvancedAnalytics = planRank >= 2 || isAdminUser; // Pro/Business (admin sempre)
   const teamFounderName = teamData.length > 0 
     ? teamData[0].members.find((m: any) => m.role === 'OWNER')?.name 
     : null;
@@ -2862,7 +2868,8 @@ export default function App() {
 
             {/* Andamento (desktop) + Insights — 2/3 + 1/3 su desktop per riempire la fascia */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:items-start">
-              {/* Grafico Andamento Vendite — solo desktop */}
+              {/* Grafico Andamento Vendite — solo desktop, Pro+ (altrimenti teaser) */}
+              {hasAdvancedAnalytics ? (
               <section className="hidden lg:flex lg:flex-col lg:col-span-2 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold">Andamento Vendite</h3>
@@ -2890,6 +2897,14 @@ export default function App() {
                   <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#8b5cf6] rounded-full inline-block" />Profitto</div>
                 </div>
               </section>
+              ) : (
+              <section className="hidden lg:flex lg:flex-col lg:col-span-2 items-center justify-center text-center bg-[var(--surface)] border border-[#8b5cf6]/30 rounded-2xl p-5">
+                <div className="w-12 h-12 rounded-2xl bg-[#8b5cf6]/15 flex items-center justify-center mb-3"><BarChart3 size={22} className="text-[#8b5cf6]" /></div>
+                <h3 className="font-bold mb-1">Andamento e analisi avanzate</h3>
+                <p className="text-sm text-[var(--text-soft)] mb-4 max-w-xs">ROI, trend storico e performance per categoria/piattaforma sono inclusi nel piano Pro.</p>
+                <button onClick={() => openPlanModal()} className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-colors">Sblocca con Pro</button>
+              </section>
+              )}
 
               {/* Smart Insights */}
               {(staleCount > 0 || weekSales.length > 0 || bestCategoryEntry?.profit > 0) && (
@@ -3458,7 +3473,28 @@ export default function App() {
         )}
         
         {/* ========== ANALYTICS ========== */}
-        {currentView === 'analytics' && (
+        {/* Gating: ROI, trend e performance sono incluse dal piano Pro in su. */}
+        {currentView === 'analytics' && !hasAdvancedAnalytics && (
+          <div className="space-y-5">
+            <h2 className="text-3xl font-semibold">Analytics</h2>
+            <section className="bg-[var(--surface)] border border-[#8b5cf6]/30 rounded-2xl p-8 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-[#8b5cf6]/[0.05] pointer-events-none" />
+              <div className="relative max-w-md mx-auto">
+                <div className="w-14 h-14 rounded-2xl bg-[#8b5cf6]/15 flex items-center justify-center mx-auto mb-4"><BarChart3 size={26} className="text-[#8b5cf6]" /></div>
+                <h3 className="text-xl font-bold mb-2">Analisi avanzate — piano Pro</h3>
+                <p className="text-sm text-[var(--text-soft)] mb-5">Scopri quanto guadagni davvero: ROI, andamento nel tempo, performance per categoria e piattaforma, sell-through e giorni medi di vendita.</p>
+                <ul className="text-sm text-[var(--text-muted)] text-left space-y-2 mb-6 inline-block">
+                  {['ROI e margine reali', 'Grafico andamento (trend storico)', 'Performance per categoria e piattaforma', 'Sell-through % e giorni medi di vendita', 'Report e analisi per socio (Business)'].map(x => (
+                    <li key={x} className="flex items-center gap-2"><CheckCircle size={15} className="text-[#8b5cf6] shrink-0" /> {x}</li>
+                  ))}
+                </ul>
+                <button onClick={() => openPlanModal()} className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-6 py-3 rounded-xl font-bold text-sm transition-colors">Sblocca con Pro</button>
+                <p className="text-[11px] text-[var(--text-faint)] mt-4">I tuoi numeri principali (profitto, stock, vendite) restano sempre nella Dashboard.</p>
+              </div>
+            </section>
+          </div>
+        )}
+        {currentView === 'analytics' && hasAdvancedAnalytics && (
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="text-3xl font-semibold">Analytics</h2>
@@ -4186,14 +4222,21 @@ export default function App() {
               </div>
             </section>
 
-            {/* SEZIONE: Reparti & Codici Invito */}
+            {/* SEZIONE: Reparti & Codici Invito — lista a tendina (non spinge giù le impostazioni) */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
-              <div className="flex items-center gap-2 mb-5">
+              <button type="button" onClick={() => setRepartiOpen(o => !o)}
+                className="w-full flex items-center gap-2 mb-1 group">
                 <Layers className="text-[var(--text)]" size={18} />
                 <h3 className="text-lg font-bold tracking-tighter">I tuoi Reparti</h3>
-              </div>
-              
-              <div className="space-y-3 mb-6">
+                <span className="text-xs font-bold text-[var(--text-soft)] bg-[var(--fill)] px-2 py-0.5 rounded-full">{user.warehouses.length}</span>
+                <ChevronDown size={18} className={`ml-auto text-[var(--text-soft)] transition-transform ${repartiOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {!repartiOpen && (
+                <p className="text-xs text-[var(--text-faint)] mb-1">Tocca per vedere reparti e codici invito</p>
+              )}
+
+              {repartiOpen && (<>
+              <div className="space-y-3 mb-6 mt-4">
                 {user.warehouses.map((w: any) => (
                   <div key={w.id} className="bg-[var(--surface-2)] p-4 rounded-xl border border-[var(--border-2)]">
                     <div className="flex items-center justify-between flex-wrap gap-3">
@@ -4233,8 +4276,9 @@ export default function App() {
                   </button>
                 </form>
               )}
+              </>)}
             </section>
-            
+
             {/* SEZIONE: Team & Quote */}
             {teamData.map((team: any) => (
               <section key={team.warehouseId} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">

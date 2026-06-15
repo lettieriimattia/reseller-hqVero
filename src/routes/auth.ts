@@ -285,6 +285,7 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
         name: user.name,
         email: user.email,
         twoFactorEnabled: user.twoFactorEnabled,
+        plan: user.plan,
         warehouses: user.memberships.map((m: any) => ({
           id: m.warehouse.id,
           name: m.warehouse.name,
@@ -380,6 +381,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
         name: user.name,
         email: user.email,
         twoFactorEnabled: user.twoFactorEnabled,
+        plan: user.plan,
         warehouses: user.memberships.map((m: any) => ({
           id: m.warehouse.id,
           name: m.warehouse.name,
