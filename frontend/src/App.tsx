@@ -2577,7 +2577,6 @@ export default function App() {
             <span className="absolute top-0 left-0 text-[1.25rem] font-black leading-none text-[var(--text)]">H</span>
             <span className="absolute bottom-0 right-[-2px] text-[1.25rem] font-black leading-none text-[var(--text)]/50">Q</span>
           </div>
-          <span className="ml-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-faint)]">Reseller</span>
         </div>
         {/* Nav */}
         <nav className="flex flex-col gap-1">
