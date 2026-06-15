@@ -3953,6 +3953,7 @@ export default function App() {
             let photos: string[] = [];
             try { photos = p.photos ? JSON.parse(p.photos) : []; } catch {}
             const st = statusLabel(p.trackingStatus);
+            const dir = (p as any).trackingDirection || (p.status === 'VENDUTO' ? 'OUTBOUND' : 'INBOUND');
             const updatedAgo = p.trackingUpdatedAt
               ? (() => {
                   const mins = Math.floor((Date.now() - new Date(p.trackingUpdatedAt).getTime()) / 60000);
@@ -3978,6 +3979,9 @@ export default function App() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-bold text-sm">{p.brand} {p.name}</p>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${dir === 'OUTBOUND' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-blue-500/15 text-blue-400'}`}>
+                        {dir === 'OUTBOUND' ? '📤 Vendita' : '📥 In arrivo'}
+                      </span>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0 ${st.cls}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
                         {st.text}
@@ -6891,53 +6895,53 @@ export default function App() {
               </button>
             </div>
 
-            {/* Stato corrente */}
-            {trackingProduct.trackingCode && (
-              <div className={`mb-5 p-4 rounded-2xl border flex items-center justify-between gap-3 ${
-                trackingProduct.trackingStatus === 'DELIVERED' ? 'border-green-800 bg-green-900/20' :
-                trackingProduct.trackingStatus === 'OUT_FOR_DELIVERY' ? 'border-violet-800 bg-violet-900/20' :
-                trackingProduct.trackingStatus === 'IN_TRANSIT' ? 'border-blue-800 bg-blue-900/20' :
-                trackingProduct.trackingStatus === 'EXCEPTION' ? 'border-red-800 bg-red-900/20' :
-                'border-[var(--border-2)] bg-[var(--fill)]/30'
-              }`}>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest">Stato attuale</p>
-                  <p className="font-bold text-sm mt-0.5">
-                    {trackingProduct.trackingStatus === 'IN_TRANSIT' ? '🚚 In transito' :
-                     trackingProduct.trackingStatus === 'OUT_FOR_DELIVERY' ? '📦 In consegna oggi' :
-                     trackingProduct.trackingStatus === 'DELIVERED' ? '✅ Consegnato' :
-                     trackingProduct.trackingStatus === 'EXCEPTION' ? '⚠️ Eccezione' :
-                     '⏳ In attesa'}
-                  </p>
-                  <p className="text-[10px] text-[var(--text-soft)] mt-0.5 truncate">{trackingProduct.trackingCarrier} • {trackingProduct.trackingCode}</p>
-                </div>
-                <button onClick={handleRefreshTracking} disabled={isRefreshingTracking}
-                  className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-bold bg-blue-900/30 px-3 py-2 rounded-xl disabled:opacity-50 shrink-0 transition-colors">
-                  {isRefreshingTracking ? <Loader2 className="animate-spin" size={12} /> : <Truck size={12} />} Aggiorna
-                </button>
-              </div>
-            )}
-
-            {/* Tracciamento senza API: link pubblico al corriere + stato manuale */}
-            {trackingProduct.trackingCode && (
-              <div className="mb-5 space-y-3">
-                <a href={trackingPublicUrl(trackingProduct.trackingCode)} target="_blank" rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-sm font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors">
-                  <Truck size={14} /> Vedi stato sul corriere ↗
-                </a>
-                <div>
-                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest mb-2">Aggiorna stato a mano</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {([['IN_TRANSIT','🚚 In transito'],['OUT_FOR_DELIVERY','📦 In consegna'],['DELIVERED','✅ Consegnato'],['EXCEPTION','⚠️ Problema']] as [string,string][]).map(([s,label]) => (
-                      <button key={s} onClick={() => setManualStatus(s)}
-                        className={`py-2 rounded-xl text-xs font-bold transition-colors ${trackingProduct.trackingStatus === s ? 'bg-[var(--accent)] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
-                        {label}
-                      </button>
-                    ))}
+            {/* Stato spedizione — stepper tappabile: mostra l'avanzamento e si aggiorna con un tap */}
+            {trackingProduct.trackingCode && (() => {
+              const steps = [
+                { key: 'PENDING', label: 'In attesa', icon: '⏳' },
+                { key: 'IN_TRANSIT', label: 'In transito', icon: '🚚' },
+                { key: 'OUT_FOR_DELIVERY', label: 'In consegna', icon: '📦' },
+                { key: 'DELIVERED', label: 'Consegnato', icon: '✅' },
+              ];
+              const cur = trackingProduct.trackingStatus || 'PENDING';
+              const isException = cur === 'EXCEPTION';
+              const curIdx = steps.findIndex(s => s.key === cur);
+              return (
+                <div className="mb-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest">Stato spedizione</p>
+                    <button onClick={handleRefreshTracking} disabled={isRefreshingTracking}
+                      className="flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 font-bold disabled:opacity-50">
+                      {isRefreshingTracking ? <Loader2 className="animate-spin" size={11} /> : <Truck size={11} />} Aggiorna
+                    </button>
                   </div>
+                  {/* Progressione a 4 step: pieni fino allo stato corrente. Tap = imposta lo stato. */}
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {steps.map((s, i) => {
+                      const done = !isException && i <= curIdx;
+                      return (
+                        <button key={s.key} onClick={() => setManualStatus(s.key)}
+                          className={`py-2.5 rounded-xl text-center transition-colors ${done ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
+                          <div className="text-base leading-none">{s.icon}</div>
+                          <div className="text-[9px] font-bold mt-1 leading-tight">{s.label}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-2 mt-2.5">
+                    <button onClick={() => setManualStatus('EXCEPTION')}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${isException ? 'bg-red-500 text-white' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'}`}>
+                      ⚠️ Problema
+                    </button>
+                    <a href={trackingPublicUrl(trackingProduct.trackingCode)} target="_blank" rel="noopener noreferrer"
+                      className="flex-1 py-2 rounded-xl text-xs font-bold bg-[var(--surface-2)] border border-[var(--border-2)] text-[var(--text-soft)] hover:text-[var(--text)] flex items-center justify-center gap-1 transition-colors">
+                      Vedi sul corriere ↗
+                    </a>
+                  </div>
+                  <p className="text-[10px] text-[var(--text-faint)] mt-2 text-center">Tocca uno step per aggiornare · {trackingProduct.trackingCarrier} • {trackingProduct.trackingCode}</p>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Storico eventi */}
             {trackingDetail?.history?.length > 0 && (
