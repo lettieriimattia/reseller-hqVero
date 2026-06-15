@@ -2541,7 +2541,52 @@ export default function App() {
   // RENDER PRINCIPALE - APP AUTENTICATA
   // ========================================
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] lg:pl-60" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
+
+      {/* ========== SIDEBAR (solo desktop) ========== */}
+      <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-60 z-40 bg-[var(--surface)] border-r border-[var(--border)] px-3 pt-6 pb-6">
+        {/* Brand */}
+        <div className="px-3 mb-7 flex items-center">
+          <div className="relative w-[1.7rem] h-[1.8rem] shrink-0">
+            <span className="absolute top-0 left-0 text-[1.25rem] font-black leading-none text-[var(--text)]">H</span>
+            <span className="absolute bottom-0 right-[-2px] text-[1.25rem] font-black leading-none text-[var(--text)]/50">Q</span>
+          </div>
+          <span className="ml-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-faint)]">Reseller</span>
+        </div>
+        {/* Nav */}
+        <nav className="flex flex-col gap-1">
+          {[
+            { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+            { id: 'magazzino', label: 'Magazzino', icon: Package },
+            { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+            { id: 'tracking', label: 'Tracking', icon: Truck },
+            { id: 'settings', label: 'Impostazioni', icon: Settings },
+          ].map(tab => {
+            const Icon = tab.icon;
+            const active = currentView === tab.id;
+            const badge = tab.id === 'tracking'
+              ? products.filter(p => p.trackingCode && ['PENDING','IN_TRANSIT','OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING')).length
+              : 0;
+            return (
+              <button key={tab.id} onClick={() => navigateTo(tab.id as any)}
+                className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                  active ? 'bg-[#8b5cf6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
+                }`}>
+                {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#8b5cf6] rounded-r-full" />}
+                <Icon size={18} /> {tab.label}
+                {badge > 0 && <span className="ml-auto min-w-[20px] h-5 px-1 bg-blue-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">{badge}</span>}
+              </button>
+            );
+          })}
+        </nav>
+        {/* Spazio + esci in fondo */}
+        <div className="mt-auto pt-4 border-t border-[var(--border)]">
+          <button onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
+            <LogOut size={18} /> Esci
+          </button>
+        </div>
+      </aside>
 
       {/* ========== HEADER ========== */}
       <header className="sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)]"
@@ -2549,8 +2594,8 @@ export default function App() {
         <div className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-3.5 flex items-center">
           {/* Spacer sinistro per centrare il logo */}
           <div className="flex-1" />
-          {/* Logo HQ centrato (come la mela) */}
-          <div className="flex items-center">
+          {/* Logo HQ centrato (come la mela) — nascosto su desktop: c'è nella sidebar */}
+          <div className="flex items-center lg:hidden">
             <div className="relative w-[1.6rem] h-[1.7rem] shrink-0">
               <span className="absolute top-0 left-0 text-[1.15rem] font-black leading-none text-[var(--text)]">H</span>
               <span className="absolute bottom-0 right-[-2px] text-[1.15rem] font-black leading-none text-[var(--text)]/50">Q</span>
@@ -2629,20 +2674,20 @@ export default function App() {
             )}
 
             <button onClick={() => navigateTo('settings')}
-              className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors hidden sm:block">
+              className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors hidden sm:block lg:hidden">
               <Settings size={18} className="text-[var(--text-muted)]" />
             </button>
 
             <button onClick={handleLogout} title="Esci"
-              className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors">
+              className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors lg:hidden">
               <LogOut size={18} className="text-[var(--text-muted)]" />
             </button>
             
           </div>
         </div>
         
-        {/* Tabs */}
-        <nav className="border-t border-[var(--border)] hidden lg:block">
+        {/* Tabs orizzontali rimosse: su desktop c'è la sidebar, sotto la barra in basso */}
+        <nav className="border-t border-[var(--border)] hidden">
           <div className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-8">
             <div className="flex gap-0 justify-center">
               {[
@@ -3234,7 +3279,7 @@ export default function App() {
                           bulkMode ? 'cursor-pointer select-none' : ''
                         } ${isSelected ? 'border-[#8b5cf6] shadow-sm' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
                         <div
-                          className={`relative aspect-[3/2] bg-[var(--surface-2)] flex items-center justify-center overflow-hidden ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
+                          className={`relative aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                           {photoUrl
                             ? <img src={photoUrl} alt="" className="w-full h-full object-cover" />
