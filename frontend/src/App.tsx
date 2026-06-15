@@ -257,6 +257,10 @@ export default function App() {
   const [name, setName] = useState('');
   const [size, setSize] = useState('42');
   const [condition, setCondition] = useState('DS');
+  // Conto vendita (consignment): prodotto di un terzo. Nome obbligatorio, % facoltativa.
+  const [isConsignment, setIsConsignment] = useState(false);
+  const [consignmentName, setConsignmentName] = useState('');
+  const [consignmentPercent, setConsignmentPercent] = useState('');
   const [pokeName, setPokeName] = useState('');
   const [pokeGraded, setPokeGraded] = useState('No');
   const [pokeGrade, setPokeGrade] = useState('10');
@@ -1358,6 +1362,7 @@ export default function App() {
     setScanResult(null);
     setPriceEstimate(null);
     setSize('42'); // default comodo (taglia scarpa più comune) — sempre modificabile
+    setIsConsignment(false); setConsignmentName(''); setConsignmentPercent('');
     setIsFormOpen(true);
     // Apri SUBITO la fotocamera nello stesso gesto del tap su "+"
     // (deve essere sincrono: niente setTimeout o il browser blocca la camera).
@@ -1708,6 +1713,7 @@ export default function App() {
       }
     }
     if (isNaN(unitPrice) || unitPrice <= 0) { showToast('Inserisci un prezzo valido', 'err'); setIsSaving(false); return; }
+    if (isConsignment && !consignmentName.trim()) { showToast('Inserisci il nome del conto vendita', 'err'); setIsSaving(false); return; }
 
     if (effCategory === 'Pokemon') {
       if (!pokeName) { showToast('Inserisci il nome della carta', 'err'); setIsSaving(false); return; }
@@ -1744,6 +1750,10 @@ export default function App() {
             category: effCategory, brand: finalBrand, name: finalName,
             size: finalSize, condition: finalCondition, price: unitPrice,
             customShares: finalShares,
+            ...(isConsignment && consignmentName.trim() ? {
+              consignmentName: consignmentName.trim(),
+              ...(consignmentPercent && !isNaN(parseFloat(consignmentPercent)) ? { consignmentPercent: parseFloat(consignmentPercent) } : {}),
+            } : {}),
             photos: productPhotos.length > 0 ? productPhotos : undefined,
             attributes: Object.keys(dynamicAttrs).length > 0 ? dynamicAttrs : undefined,
             // Valore di mercato verificato da eBay durante lo scan: lo salviamo nel
@@ -1766,6 +1776,7 @@ export default function App() {
       setPokeName(''); setWatchBrand(''); setWatchModel('');
       setWatchCase(''); setWatchStrap(''); setWatchMaterial('');
       setIsSharedPurchase(false); setProductShares([]);
+      setIsConsignment(false); setConsignmentName(''); setConsignmentPercent('');
       setScanResult(null); setPriceEstimate(null);
       setProductPhotos([]);
       setDynamicAttrs({});
@@ -5316,7 +5327,36 @@ export default function App() {
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                 </div>
               </div>
-              
+
+              {/* Conto vendita — prodotto di un terzo */}
+              <div className="border-t border-[var(--border-2)] pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Store size={14} className="text-[#8b5cf6]" />
+                    <span className="text-sm font-bold">Conto vendita</span>
+                  </div>
+                  <button type="button" onClick={() => setIsConsignment(v => !v)}
+                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${isConsignment ? 'bg-[#8b5cf6]' : 'bg-[var(--fill-3)]'}`}>
+                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${isConsignment ? 'translate-x-5' : ''}`} />
+                  </button>
+                </div>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1">Attivalo se il prodotto è di un'altra persona e lo vendi per conto suo</p>
+                {isConsignment && (
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nome <span className="text-red-400">*</span></label>
+                      <input type="text" value={consignmentName} onChange={(e: any) => setConsignmentName(e.target.value)} placeholder="es. Marco R."
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Percentuale % <span className="text-[var(--text-faint)] normal-case font-medium">(facolt.)</span></label>
+                      <input type="number" min="0" max="100" step="1" value={consignmentPercent} onChange={(e: any) => setConsignmentPercent(e.target.value)} placeholder="es. 20"
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Quote del team */}
               {(() => {
                 const currentTeam = teamData.find((t: any) => t.warehouseName.replace('Magazzino ', '') === category);

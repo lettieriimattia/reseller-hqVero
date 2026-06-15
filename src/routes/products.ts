@@ -153,7 +153,7 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
     const {
       category, brand, name, size, condition, price, customShares, photos,
       marketPriceMin, marketPriceMax, marketPriceAvg, authenticityScore, notes,
-      attributes,
+      attributes, consignmentName, consignmentPercent,
     } = req.body;
 
     const memberships = await prisma.membership.findMany({
@@ -196,6 +196,8 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
         marketPriceMin, marketPriceMax, marketPriceAvg, authenticityScore,
         notes: notes || null,
         attributes: attributes && typeof attributes === 'object' ? attributes : Prisma.JsonNull,
+        consignmentName: (consignmentName || '').trim() || null,
+        consignmentPercent: typeof consignmentPercent === 'number' ? consignmentPercent : null,
       },
     });
 
@@ -463,7 +465,7 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
     }
     if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
 
-    const { category, brand, name, size, condition, purchasePrice, customShares, photos, notes, attributes } = req.body;
+    const { category, brand, name, size, condition, purchasePrice, customShares, photos, notes, attributes, consignmentName, consignmentPercent } = req.body;
 
     // Log variazione prezzo d'acquisto (dato sensibile)
     if (purchasePrice !== undefined && purchasePrice !== product.purchasePrice) {
@@ -511,6 +513,8 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
         attributes: attributes !== undefined
           ? (attributes && typeof attributes === 'object' ? attributes : Prisma.JsonNull)
           : undefined,
+        consignmentName: consignmentName !== undefined ? ((consignmentName || '').trim() || null) : undefined,
+        consignmentPercent: consignmentPercent !== undefined ? (typeof consignmentPercent === 'number' ? consignmentPercent : null) : undefined,
       },
     });
 

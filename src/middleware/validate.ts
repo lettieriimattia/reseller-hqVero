@@ -68,6 +68,9 @@ export const createProductSchema = z.object({
   price: z.number().positive().max(1000000),
   customShares: sharesSchema,
   photos: photosSchema,
+  // Conto vendita: nome del conto vendita (obbligatorio se attivo) + % facoltativa
+  consignmentName: z.string().max(120).optional(),
+  consignmentPercent: z.number().min(0).max(100).optional(),
   // Campi opzionali dall'IA
   marketPriceMin: z.number().nonnegative().optional(),
   marketPriceMax: z.number().nonnegative().optional(),
@@ -84,6 +87,8 @@ export const editProductSchema = z.object({
   purchasePrice: z.number().positive().max(1000000),
   customShares: sharesSchema,
   photos: photosSchema,
+  consignmentName: z.string().max(120).nullable().optional(),
+  consignmentPercent: z.number().min(0).max(100).nullable().optional(),
 });
 
 export const sellProductSchema = z.object({

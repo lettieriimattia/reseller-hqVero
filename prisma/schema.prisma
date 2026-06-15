@@ -106,6 +106,11 @@ model Product {
   
   status         String     @default("IN STOCK") // "IN STOCK" | "VENDUTO"
   customShares   String?    // JSON string con quote dei soci
+
+  // Conto vendita: il prodotto è di un terzo (consignor). Nome obbligatorio se attivo,
+  // percentuale facoltativa (quota che spetta al conto vendita sul ricavo).
+  consignmentName    String?
+  consignmentPercent Float?
   
   // Foto prodotto (JSON array di base64 compressi, max 5)
   photos         String?
