@@ -17,20 +17,14 @@ if ('serviceWorker' in navigator) {
   });
 
   const checkForUpdates = () => {
-    navigator.serviceWorker.getRegistration().then(r => r?.update());
+    navigator.serviceWorker.getRegistration().then(r => r?.update()).catch(() => {});
   };
 
-  // Controlla 2 secondi dopo l'avvio (SW già registrato a quel punto)
-  setTimeout(checkForUpdates, 2000);
-
-  // Controlla ogni 5 minuti
-  setInterval(checkForUpdates, 5 * 60 * 1000);
-
-  // Controlla quando l'app torna visibile (chiave per Safari PWA)
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') checkForUpdates();
-  });
-  window.addEventListener('focus', checkForUpdates);
+  // Controlla aggiornamenti una volta all'avvio e poi ogni 60 minuti.
+  // NB: NON ricontrolliamo ad ogni ritorno sull'app (focus/visibilitychange):
+  // causava ricaricamenti continui che sembravano un "primo accesso" ogni volta.
+  setTimeout(checkForUpdates, 3000);
+  setInterval(checkForUpdates, 60 * 60 * 1000);
 }
 
 createRoot(document.getElementById('root')!).render(

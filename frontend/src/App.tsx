@@ -183,9 +183,12 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 // ==========================================
 export default function App() {
   // ----- AUTH STATE -----
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [bootLoading, setBootLoading] = useState(true);
+  // Idratazione ottimistica: se c'è un utente in cache, mostriamo SUBITO l'app
+  // (niente schermata "primo accesso"/spinner), poi validiamo in background con /auth/me.
+  const cachedUser = (() => { try { const c = localStorage.getItem('hq_user'); return c ? JSON.parse(c) as AppUser : null; } catch { return null; } })();
+  const [isAuthenticated, setIsAuthenticated] = useState(!!cachedUser);
+  const [user, setUser] = useState<AppUser | null>(cachedUser);
+  const [bootLoading, setBootLoading] = useState(!cachedUser);
   const [cookieConsent, setCookieConsent] = useState<boolean>(() => !!localStorage.getItem('hq_cookie_consent'));
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -874,18 +877,31 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        const { ok, data } = await apiCall<{ user: AppUser }>('/auth/me');
+        const { ok, data, status } = await apiCall<{ user: AppUser }>('/auth/me');
         if (ok && data.user) {
-          setUser(data.user);
+          setUser(data.user);          // aggiorna i dati (piano, reparti…) e la cache
           setIsAuthenticated(true);
+        } else if (status === 401 || status === 403) {
+          // Sessione davvero scaduta (anche dopo il refresh): torna al login e svuota la cache.
+          setUser(null);
+          setIsAuthenticated(false);
         }
+        // Altri errori (rete/cold start): teniamo l'utente in cache, non sloggare.
       } catch {
-        // errore di rete o certificato non attendibile: mostra comunque il login
+        // errore di rete: manteniamo la sessione ottimistica (non sloggare per un timeout)
       } finally {
         setBootLoading(false);
       }
     })();
   }, []);
+
+  // Persisti l'utente in cache così al riavvio l'app parte già loggata (no flicker "primo accesso").
+  useEffect(() => {
+    try {
+      if (user) localStorage.setItem('hq_user', JSON.stringify(user));
+      else localStorage.removeItem('hq_user');
+    } catch { /* storage pieno/non disponibile: ignora */ }
+  }, [user]);
   
   // ==========================================
   // FETCH DATI
