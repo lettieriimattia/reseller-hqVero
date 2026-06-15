@@ -2582,6 +2582,10 @@ export default function App() {
         {/* Sezione "Generale" — tutto cio' che sta "fuori" dal gestionale, in fondo */}
         <div className="mt-auto pt-3 border-t border-[var(--border)] flex flex-col gap-0.5">
           <p className="px-3.5 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-faint)]">Generale</p>
+          <button onClick={() => openPlanModal()}
+            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-semibold text-[#8b5cf6] hover:bg-[#8b5cf6]/10 transition-colors">
+            <Sparkles size={17} /> Piani
+          </button>
           <button onClick={() => navigateTo('settings')}
             className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
               currentView === 'settings' ? 'bg-[#8b5cf6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
