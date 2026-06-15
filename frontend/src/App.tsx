@@ -1365,7 +1365,7 @@ export default function App() {
     // Reset COMPLETO dei campi: evita che restino dati del prodotto precedente
     // (bug: scansionavi un nuovo paio e teneva brand/nome di quello prima).
     setBrand(''); setName(''); setPrice(''); setQuantity('1');
-    setCondition('DS'); setSize('42');
+    setCondition('DS'); setSize(''); // taglia vuota: la riempie l'IA o l'utente (niente piu' "42" imposto)
     setPokeName(''); setPokeGraded('No'); setPokeGrade('');
     setWatchBrand(''); setWatchModel(''); setWatchCase(''); setWatchStrap(''); setWatchMaterial('');
     setDynamicAttrs({});
