@@ -6111,13 +6111,27 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Nome lotto */}
-              <div>
-                <label className="text-[10px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.1em] block mb-2">Nome Lotto</label>
-                <input required value={lotName} onChange={e => setLotName(e.target.value)}
-                  placeholder="Es: Bundle Pokemon Giugno, Lotto Scarpe Verano..."
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] placeholder-gray-600 focus:border-[var(--border-3)] outline-none" />
-              </div>
+              {/* Nome lotto — con elenco dei lotti esistenti per aggiungerci pezzi */}
+              {(() => {
+                const existingLots = Array.from(new Set(products.filter((p: any) => p.lotName).map((p: any) => p.lotName as string)));
+                const isAppending = existingLots.includes(lotName.trim());
+                return (
+                  <div>
+                    <label className="text-[10px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.1em] block mb-2">Nome Lotto</label>
+                    <input required list="lotti-esistenti" value={lotName} onChange={e => setLotName(e.target.value)}
+                      placeholder="Es: Bundle Pokemon Giugno, Lotto Scarpe Estate..."
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] placeholder-gray-600 focus:border-[var(--border-3)] outline-none" />
+                    <datalist id="lotti-esistenti">
+                      {existingLots.map(l => <option key={l} value={l} />)}
+                    </datalist>
+                    {isAppending ? (
+                      <p className="text-[11px] text-[#8b5cf6] font-semibold mt-1.5 flex items-center gap-1"><Layers size={11} /> Lotto esistente: i pezzi verranno aggiunti (numerazione continua)</p>
+                    ) : existingLots.length > 0 ? (
+                      <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Suggerimento: scegli un lotto esistente per aggiungerci altri pezzi</p>
+                    ) : null}
+                  </div>
+                );
+              })()}
 
               {/* Prezzo totale + numero pezzi */}
               <div className="grid grid-cols-2 gap-3">

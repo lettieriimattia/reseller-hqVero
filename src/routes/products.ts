@@ -90,13 +90,19 @@ router.post('/lot', async (req: AuthRequest, res: Response) => {
     const pricePerUnit = Math.round((totalPrice / quantity) * 100) / 100;
     const lotNote = `Lotto: "${lotName}" — ${quantity} pezzi × ${pricePerUnit.toFixed(2)}€`;
 
+    // Se il lotto esiste già (stesso nome + reparto), continuo la numerazione (#11, #12…):
+    // così si possono AGGIUNGERE pezzi a un lotto esistente usando lo stesso nome.
+    const existingInLot = await prisma.product.count({
+      where: { warehouseId: targetMembership.warehouseId, lotName, deletedAt: null },
+    });
+
     const created = await prisma.$transaction(
       Array.from({ length: quantity }, (_, i) =>
         prisma.product.create({
           data: {
             category,
             brand: brand || lotName,
-            name: `${lotName} #${i + 1}`,
+            name: `${lotName} #${existingInLot + i + 1}`,
             size: size || '-',
             condition: condition || 'N/D',
             purchasePrice: pricePerUnit,
@@ -105,6 +111,7 @@ router.post('/lot', async (req: AuthRequest, res: Response) => {
             warehouseId: targetMembership.warehouseId,
             notes: notes ? `${lotNote} — ${notes}` : lotNote,
             attributes: attributes || Prisma.JsonNull,
+            lotName,
           },
         })
       )

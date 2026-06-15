@@ -111,6 +111,10 @@ model Product {
   // percentuale facoltativa (quota che spetta al conto vendita sul ricavo).
   consignmentName    String?
   consignmentPercent Float?
+
+  // Lotto d'acquisto: nome del lotto da cui proviene il prodotto (per raggruppare e
+  // poter aggiungere altri pezzi a un lotto esistente). Null se prodotto singolo.
+  lotName        String?
   
   // Foto prodotto (JSON array di base64 compressi, max 5)
   photos         String?
