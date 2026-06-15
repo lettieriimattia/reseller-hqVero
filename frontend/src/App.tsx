@@ -1360,8 +1360,16 @@ export default function App() {
     setShowRepartoGrid(false);
     setProductPhotos([]);
     setScanResult(null);
+    setScanMarket(null);
     setPriceEstimate(null);
-    setSize('42'); // default comodo (taglia scarpa più comune) — sempre modificabile
+    // Reset COMPLETO dei campi: evita che restino dati del prodotto precedente
+    // (bug: scansionavi un nuovo paio e teneva brand/nome di quello prima).
+    setBrand(''); setName(''); setPrice(''); setQuantity('1');
+    setCondition('DS'); setSize('42');
+    setPokeName(''); setPokeGraded('No'); setPokeGrade('');
+    setWatchBrand(''); setWatchModel(''); setWatchCase(''); setWatchStrap(''); setWatchMaterial('');
+    setDynamicAttrs({});
+    setIsSharedPurchase(false); setProductShares([]);
     setIsConsignment(false); setConsignmentName(''); setConsignmentPercent('');
     setIsFormOpen(true);
     // Apri SUBITO la fotocamera nello stesso gesto del tap su "+"
