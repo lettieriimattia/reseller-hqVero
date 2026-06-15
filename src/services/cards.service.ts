@@ -83,3 +83,70 @@ export async function getPokemonCardValue(opts: { name?: string; number?: string
     return empty();
   }
 }
+
+// ==========================================
+// MAGIC: The Gathering — Scryfall (gratis, nessuna chiave). Prezzi EUR (Cardmarket).
+// ==========================================
+export async function getMagicCardValue(opts: { name?: string; number?: string; setName?: string }): Promise<CardValuation> {
+  if (!opts.name) return { ...empty(), source: 'Scryfall (Magic)' };
+  try {
+    const r = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(opts.name)}`, {
+      headers: { 'Accept': 'application/json', 'User-Agent': 'ResellerHQ/1.0' },
+    });
+    if (!r.ok) { logger.error('Scryfall error', { status: r.status, name: opts.name }); return { ...empty(), source: 'Scryfall (Magic)' }; }
+    const c = await r.json() as any;
+    const eur = c?.prices?.eur ? parseFloat(c.prices.eur) : null;
+    return {
+      configured: true,
+      value: eur != null ? Math.round(eur * 100) / 100 : null,
+      low: null,
+      currency: 'EUR',
+      source: 'Cardmarket (Magic)',
+      cardName: c?.name,
+      setName: c?.set_name,
+      image: c?.image_uris?.small,
+      sample: 1,
+    };
+  } catch (err: any) {
+    logger.error('Errore getMagicCardValue', { err: err.message });
+    return { ...empty(), source: 'Scryfall (Magic)' };
+  }
+}
+
+// ==========================================
+// YU-GI-OH! — YGOPRODeck (gratis, nessuna chiave). Prezzo Cardmarket (EUR).
+// ==========================================
+export async function getYugiohCardValue(opts: { name?: string }): Promise<CardValuation> {
+  if (!opts.name) return { ...empty(), source: 'YGOPRODeck (Yu-Gi-Oh)' };
+  try {
+    const r = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(opts.name)}`);
+    if (!r.ok) { logger.error('YGOPRODeck error', { status: r.status, name: opts.name }); return { ...empty(), source: 'YGOPRODeck (Yu-Gi-Oh)' }; }
+    const data = await r.json() as any;
+    const card = data?.data?.[0];
+    const cm = card?.card_prices?.[0]?.cardmarket_price ? parseFloat(card.card_prices[0].cardmarket_price) : null;
+    return {
+      configured: true,
+      value: cm != null && cm > 0 ? Math.round(cm * 100) / 100 : null,
+      low: null,
+      currency: 'EUR',
+      source: 'Cardmarket (Yu-Gi-Oh)',
+      cardName: card?.name,
+      setName: card?.card_sets?.[0]?.set_name,
+      image: card?.card_images?.[0]?.image_url_small,
+      sample: 1,
+    };
+  } catch (err: any) {
+    logger.error('Errore getYugiohCardValue', { err: err.message });
+    return { ...empty(), source: 'YGOPRODeck (Yu-Gi-Oh)' };
+  }
+}
+
+// ==========================================
+// DISPATCHER: instrada al servizio giusto in base al gioco.
+// ==========================================
+export async function getCardValue(opts: { game?: string; name?: string; number?: string; setName?: string }): Promise<CardValuation> {
+  const g = (opts.game || 'pokemon').toLowerCase();
+  if (g.includes('magic') || g.includes('mtg')) return getMagicCardValue(opts);
+  if (g.includes('yugi') || g.includes('yu-gi') || g.includes('ygo')) return getYugiohCardValue(opts);
+  return getPokemonCardValue(opts);
+}

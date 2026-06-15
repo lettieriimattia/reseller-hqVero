@@ -266,6 +266,10 @@ export default function App() {
   const [consignmentName, setConsignmentName] = useState('');
   const [consignmentPercent, setConsignmentPercent] = useState('');
   const [pokeName, setPokeName] = useState('');
+  // Numero collezione carta (es. 4/102) — rilevato dall'IA, modificabile a mano.
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardGame, setCardGame] = useState('pokemon'); // pokemon | magic | yugioh (rilevato dall'IA)
+  const [revaluingCard, setRevaluingCard] = useState(false);
   const [pokeGraded, setPokeGraded] = useState('No');
   const [pokeGrade, setPokeGrade] = useState('10');
   const [watchBrand, setWatchBrand] = useState('');
@@ -1370,7 +1374,7 @@ export default function App() {
     // (bug: scansionavi un nuovo paio e teneva brand/nome di quello prima).
     setBrand(''); setName(''); setPrice(''); setQuantity('1');
     setCondition('DS'); setSize(''); // taglia vuota: la riempie l'IA o l'utente (niente piu' "42" imposto)
-    setPokeName(''); setPokeGraded('No'); setPokeGrade('');
+    setPokeName(''); setPokeGraded('No'); setPokeGrade(''); setCardNumber(''); setCardGame('pokemon');
     setWatchBrand(''); setWatchModel(''); setWatchCase(''); setWatchStrap(''); setWatchMaterial('');
     setDynamicAttrs({});
     setIsSharedPurchase(false); setProductShares([]);
@@ -1560,13 +1564,17 @@ export default function App() {
     const fallbackName = (scan.model || d.type || d.colorway || '').toString();
     if (effCat === 'Pokemon') {
       if (scan.model) setPokeName(scan.model);
-      // Valutazione carta da Cardmarket (EUR) — fonte affidabile per le carte.
-      const cardName = (scan.model || d.type || '').toString();
-      const cardNumber = (d.number || d.cardNumber || d.collectorNumber || '').toString();
+      // Numero/set/gioco rilevati dall'IA → valutazione carta (Cardmarket EUR).
+      const detectedNum = (d.cardNumber || d.number || d.collectorNumber || '').toString();
+      const detectedSet = (d.setName || d.set || '').toString();
+      const detectedGame = (d.game || 'pokemon').toString().toLowerCase();
+      setCardNumber(detectedNum);
+      setCardGame(detectedGame);
+      const cardName = (d.name || scan.model || '').toString();
       if (cardName.length >= 2) {
         apiCall<any>('/api/ai/card-value', {
           method: 'POST',
-          body: JSON.stringify({ name: cardName, number: cardNumber || undefined, setName: (d.set || d.setName || '').toString() || undefined }),
+          body: JSON.stringify({ game: detectedGame, name: cardName, number: detectedNum || undefined, setName: detectedSet || undefined }),
         }).then(r => { if (r.ok) setScanMarket(r.data); }).catch(() => {});
       }
     } else if (effCat === 'Scarpe') {
@@ -1599,6 +1607,19 @@ export default function App() {
         body: JSON.stringify({ query: vQuery, size: (d.size || '').toString() || undefined, condition: condition || undefined }),
       }).then(r => { if (r.ok) setScanMarket(r.data); }).catch(() => {});
     }
+  };
+
+  // Ricalcola il prezzo carta quando l'utente corregge nome/numero a mano.
+  const revalueCard = async () => {
+    const name = pokeName.trim();
+    if (name.length < 2 && !cardNumber.trim()) return;
+    setRevaluingCard(true);
+    const { ok, data } = await apiCall<any>('/api/ai/card-value', {
+      method: 'POST',
+      body: JSON.stringify({ game: cardGame, name: name || undefined, number: cardNumber.trim() || undefined }),
+    });
+    setRevaluingCard(false);
+    if (ok) setScanMarket(data);
   };
 
   const runAIScan = async (imageBase64: string, cat: string) => {
@@ -1738,7 +1759,7 @@ export default function App() {
 
     if (effCategory === 'Pokemon') {
       if (!pokeName) { showToast('Inserisci il nome della carta', 'err'); setIsSaving(false); return; }
-      finalBrand = 'Pokémon'; finalName = pokeName; finalSize = 'Unisize';
+      finalBrand = 'Pokémon'; finalName = `${pokeName}${cardNumber.trim() ? ` ${cardNumber.trim()}` : ''}`; finalSize = cardNumber.trim() || 'Unisize';
       finalCondition = pokeGraded === 'Si' ? `Gradata ${pokeGrade}` : 'Raw (Non Gradata)';
     } else if (effCategory === 'Orologi') {
       if (!watchBrand || !watchModel) { showToast('Compila brand e modello orologio', 'err'); setIsSaving(false); return; }
@@ -1794,6 +1815,7 @@ export default function App() {
 
       // Reset
       setBrand(''); setName(''); setPrice(''); setQuantity('1');
+      setCardNumber(''); setCardGame('pokemon');
       setPokeName(''); setWatchBrand(''); setWatchModel('');
       setWatchCase(''); setWatchStrap(''); setWatchMaterial('');
       setIsSharedPurchase(false); setProductShares([]);
@@ -5143,8 +5165,24 @@ export default function App() {
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nome Carta</label>
                     <input type="text" required value={pokeName}
                       onChange={(e: any) => setPokeName(e.target.value)}
-                      placeholder="Es. Charizard 4/102"
+                      placeholder="Es. Charizard"
                       className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                  </div>
+                  {/* Numero carta — rilevato dall'IA, correggibile: serve per il prezzo esatto */}
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">
+                      Numero carta <span className="text-[var(--text-faint)] normal-case font-medium">(per il prezzo esatto)</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <input type="text" value={cardNumber} onChange={(e: any) => setCardNumber(e.target.value)}
+                        placeholder="es. 4/102, SWSH076"
+                        className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm font-mono focus:border-[#8b5cf6] outline-none" />
+                      <button type="button" onClick={revalueCard} disabled={revaluingCard}
+                        className="px-4 rounded-xl bg-[#8b5cf6]/15 text-[#8b5cf6] text-xs font-bold hover:bg-[#8b5cf6]/25 disabled:opacity-50 transition-colors flex items-center gap-1.5 whitespace-nowrap">
+                        {revaluingCard ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />} Prezzo
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-[var(--text-faint)] mt-1">Lo legge l'IA dalla carta. Se sbagliato, correggilo e premi "Prezzo".</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
