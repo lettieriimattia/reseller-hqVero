@@ -8,6 +8,7 @@ import { validate, aiScanSchema, priceEstimateSchema } from '../middleware/valid
 import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, ListingPlatform } from '../services/ai.service';
 import { getMarketValuation } from '../services/price.service';
 import { getCardValue } from '../services/cards.service';
+import { getValuation } from '../services/valuation.service';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import { audit } from '../services/audit.service';
@@ -71,6 +72,30 @@ router.post('/market-value', async (req: AuthRequest, res: Response) => {
     res.json(valuation);
   } catch (err: any) {
     logger.error('Errore /ai/market-value', { err: err.message });
+    res.status(500).json({ error: 'Errore valutazione' });
+  }
+});
+
+// ==========================================
+// POST /api/ai/value - valutazione UNIFICATA (instrada per categoria)
+// ==========================================
+router.post('/value', async (req: AuthRequest, res: Response) => {
+  try {
+    const { category, game, brand, name, size, number, setName, condition } = req.body || {};
+    const val = await getValuation({
+      category: category?.toString(),
+      game: game?.toString(),
+      brand: brand?.toString(),
+      name: name?.toString(),
+      size: size?.toString(),
+      number: number?.toString(),
+      setName: setName?.toString(),
+      condition: condition?.toString(),
+    });
+    logger.info('value esito', { category, game, value: val.value, reliable: val.reliable, source: val.source });
+    res.json(val);
+  } catch (err: any) {
+    logger.error('Errore /ai/value', { err: err.message });
     res.status(500).json({ error: 'Errore valutazione' });
   }
 });

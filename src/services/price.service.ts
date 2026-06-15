@@ -26,6 +26,23 @@ export function isLikelyReplica(title: string): boolean {
   return REPLICA_TERMS.some(k => t.includes(k));
 }
 
+// Parti/accessori/ricambi: per oggetti di valore (orologi, sneaker, borse) gli annunci
+// di cinturini/scatole/ricambi inquinano la mediana verso il basso (es. Rolex a 110€).
+// Li escludiamo per avere una stima più sensata.
+const PARTS_TERMS = [
+  'cinturino', 'cinturini', 'strap', 'bracelet', 'band ', ' bands', 'bezel', 'ghiera',
+  'quadrante', 'dial only', 'movimento', 'movement', 'fibbia', 'buckle', 'clasp',
+  'solo scatola', 'box only', 'just box', 'empty box', 'scatola vuota', 'astuccio',
+  'ricambio', 'ricambi', 'spare', 'parts', 'part ', 'for parts', 'lacci', 'laces',
+  'lace ', 'keychain', 'portachiavi', 'sticker', 'adesiv', 'poster', 'catalog',
+  'magazine', 'rivista', 'manuale', 'libretto', 'garanzia', 'warranty card',
+  'display', 'stand ', 'supporto', 'protector', 'protezione', 'custodia',
+];
+export function isAccessoryOrPart(title: string): boolean {
+  const t = ' ' + (title || '').toLowerCase() + ' ';
+  return PARTS_TERMS.some(k => t.includes(k));
+}
+
 // Mappa la condizione interna (DS/VNDS/usato…) al filtro condizione di eBay Browse.
 // DS/deadstock/nuovo → NEW ; tutto il resto che indica usato → USED.
 // Se la condizione non è chiara, niente filtro (così non si svuotano i comps).
@@ -136,6 +153,7 @@ async function ebayPriceSearch(token: string, query: string, size: string | unde
     const items: any[] = data?.itemSummaries || [];
     return items
       .filter(it => !isLikelyReplica(it.title || ''))   // esclusione repliche per parole chiave
+      .filter(it => !isAccessoryOrPart(it.title || ''))  // esclusione parti/accessori/ricambi
       .map(it => parseFloat(it?.price?.value))
       .filter(p => Number.isFinite(p) && p > 0);
   } catch (err: any) {

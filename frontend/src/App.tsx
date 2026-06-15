@@ -1580,19 +1580,9 @@ export default function App() {
     const fallbackName = (scan.model || d.type || d.colorway || '').toString();
     if (effCat === 'Pokemon') {
       if (scan.model) setPokeName(scan.model);
-      // Numero/set/gioco rilevati dall'IA → valutazione carta (Cardmarket EUR).
-      const detectedNum = (d.cardNumber || d.number || d.collectorNumber || '').toString();
-      const detectedSet = (d.setName || d.set || '').toString();
-      const detectedGame = (d.game || 'pokemon').toString().toLowerCase();
-      setCardNumber(detectedNum);
-      setCardGame(detectedGame);
-      const cardName = (d.name || scan.model || '').toString();
-      if (cardName.length >= 2) {
-        apiCall<any>('/api/ai/card-value', {
-          method: 'POST',
-          body: JSON.stringify({ game: detectedGame, name: cardName, number: detectedNum || undefined, setName: detectedSet || undefined }),
-        }).then(r => { if (r.ok) setScanMarket(r.data); }).catch(() => {});
-      }
+      // Numero/set/gioco rilevati dall'IA (per la valutazione carta esatta).
+      setCardNumber((d.cardNumber || d.number || d.collectorNumber || '').toString());
+      setCardGame((d.game || 'pokemon').toString().toLowerCase());
     } else if (effCat === 'Scarpe') {
       if (scan.brand) setBrand(scan.brand);
       if (fallbackName) setName(fallbackName);
@@ -1614,13 +1604,22 @@ export default function App() {
       if (fallbackName) setName(fallbackName);
     }
 
-    // Verifica su eBay: conferma il riconoscimento con dati reali di mercato (valore + n. annunci).
-    // Oggi solo eBay; in futuro eBay + StockX. Non blocca: gira in background.
-    const vQuery = [scan.brand, scan.model || d.type].filter(Boolean).join(' ').trim();
-    if (VALUATION_ENABLED && vQuery.length >= 2) {
-      apiCall<any>('/api/ai/market-value', {
+    // === Valutazione UNIFICATA (il server instrada per categoria: carte→catalogo,
+    // vinili→Discogs, resto→eBay indicativo). Non blocca: gira in background. ===
+    const valName = (effCat === 'Pokemon' ? (d.name || scan.model) : (scan.model || fallbackName)) || '';
+    if (valName.toString().length >= 2 || scan.brand) {
+      apiCall<any>('/api/ai/value', {
         method: 'POST',
-        body: JSON.stringify({ query: vQuery, size: (d.size || '').toString() || undefined, condition: condition || undefined }),
+        body: JSON.stringify({
+          category: effCat,
+          game: effCat === 'Pokemon' ? (d.game || 'pokemon') : undefined,
+          brand: scan.brand || undefined,
+          name: valName.toString() || undefined,
+          size: (d.size || '').toString() || undefined,
+          number: (d.cardNumber || d.number || '').toString() || undefined,
+          setName: (d.setName || d.set || '').toString() || undefined,
+          condition: condition || undefined,
+        }),
       }).then(r => { if (r.ok) setScanMarket(r.data); }).catch(() => {});
     }
   };
@@ -1630,9 +1629,9 @@ export default function App() {
     const name = pokeName.trim();
     if (name.length < 2 && !cardNumber.trim()) return;
     setRevaluingCard(true);
-    const { ok, data } = await apiCall<any>('/api/ai/card-value', {
+    const { ok, data } = await apiCall<any>('/api/ai/value', {
       method: 'POST',
-      body: JSON.stringify({ game: cardGame, name: name || undefined, number: cardNumber.trim() || undefined }),
+      body: JSON.stringify({ category: 'Pokemon', game: cardGame, name: name || undefined, number: cardNumber.trim() || undefined }),
     });
     setRevaluingCard(false);
     if (ok) setScanMarket(data);
@@ -1816,7 +1815,7 @@ export default function App() {
             attributes: Object.keys(dynamicAttrs).length > 0 ? dynamicAttrs : undefined,
             // Valore di mercato verificato da eBay durante lo scan: lo salviamo nel
             // prodotto così listing generator e riprezzamento usano dati reali.
-            ...(scanMarket?.value ? { marketPriceAvg: Math.round(scanMarket.value) } : {}),
+            ...(scanMarket?.value && scanMarket?.reliable ? { marketPriceAvg: Math.round(scanMarket.value) } : {}),
           }),
         });
         if (!ok) hasError = true;
@@ -5112,17 +5111,20 @@ export default function App() {
                       {scanResult.warnings?.map((w: any, i: number) => <p key={i}>⚠️ {w}</p>)}
                     </div>
                     {/* Verifica eBay del riconoscimento (valore di mercato reale) */}
-                    {scanMarket && scanMarket.configured !== false && (
+                    {scanMarket && (
                       scanMarket.value != null ? (
-                        <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-300 flex items-center gap-1.5">
-                          <CheckCircle size={13} className="shrink-0" />
-                          <span><b>{scanMarket.source || 'Valore di mercato'}</b> · ~{Math.round(scanMarket.value)}{(scanMarket.currency && scanMarket.currency !== 'EUR') ? ' ' + scanMarket.currency : '€'}
-                            {scanMarket.cardName ? <span className="opacity-70"> · {scanMarket.cardName}{scanMarket.setName ? ` (${scanMarket.setName})` : ''}</span> : null}</span>
+                        <div className={`p-2 rounded-lg flex items-center gap-1.5 ${scanMarket.reliable ? 'bg-emerald-500/10 text-emerald-300' : 'bg-amber-500/10 text-amber-300'}`}>
+                          {scanMarket.reliable ? <CheckCircle size={13} className="shrink-0" /> : <AlertTriangle size={13} className="shrink-0" />}
+                          <span>
+                            <b>~{Math.round(scanMarket.value)}{(scanMarket.currency && scanMarket.currency !== 'EUR') ? ' ' + scanMarket.currency : '€'}</b>
+                            {scanMarket.itemName ? <span className="opacity-80"> · {scanMarket.itemName}{scanMarket.extra ? ` (${scanMarket.extra})` : ''}</span> : null}
+                            <span className="opacity-60"> · {scanMarket.source}</span>
+                          </span>
                         </div>
                       ) : (
                         <div className="p-2 rounded-lg bg-[var(--surface-2)] text-[var(--text-soft)] flex items-center gap-1.5">
                           <Search size={13} className="shrink-0" />
-                          <span>Carta non trovata nel listino — controlla nome/numero.</span>
+                          <span>Nessun valore trovato — controlla nome/modello.</span>
                         </div>
                       )
                     )}
