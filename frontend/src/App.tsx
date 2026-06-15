@@ -184,6 +184,7 @@ export default function App() {
   const [bootLoading, setBootLoading] = useState(true);
   const [cookieConsent, setCookieConsent] = useState<boolean>(() => !!localStorage.getItem('hq_cookie_consent'));
   const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
   
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -2560,7 +2561,6 @@ export default function App() {
             { id: 'magazzino', label: 'Magazzino', icon: Package },
             { id: 'analytics', label: 'Analytics', icon: BarChart3 },
             { id: 'tracking', label: 'Tracking', icon: Truck },
-            { id: 'settings', label: 'Impostazioni', icon: Settings },
           ].map(tab => {
             const Icon = tab.icon;
             const active = currentView === tab.id;
@@ -2579,11 +2579,26 @@ export default function App() {
             );
           })}
         </nav>
-        {/* Spazio + esci in fondo */}
-        <div className="mt-auto pt-4 border-t border-[var(--border)]">
+        {/* Sezione "Generale" — tutto cio' che sta "fuori" dal gestionale, in fondo */}
+        <div className="mt-auto pt-3 border-t border-[var(--border)] flex flex-col gap-0.5">
+          <p className="px-3.5 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-faint)]">Generale</p>
+          <button onClick={() => navigateTo('settings')}
+            className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+              currentView === 'settings' ? 'bg-[#8b5cf6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
+            }`}>
+            <Settings size={17} /> Impostazioni
+          </button>
+          <button onClick={() => setGuideOpen(true)}
+            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
+            <BookOpen size={17} /> Guida
+          </button>
+          <button onClick={() => setPrivacyOpen(true)}
+            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
+            <Lock size={17} /> Privacy e consensi
+          </button>
           <button onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
-            <LogOut size={18} /> Esci
+            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-red-500/10 hover:text-red-400 transition-colors">
+            <LogOut size={17} /> Esci
           </button>
         </div>
       </aside>
@@ -6390,6 +6405,49 @@ export default function App() {
       )}
 
       {/* ========== MODALE: PRIVACY POLICY ========== */}
+      {/* ===== MODALE GUIDA RAPIDA ===== */}
+      {guideOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4" onClick={() => setGuideOpen(false)}>
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-[var(--border)] shrink-0">
+              <div>
+                <h2 className="font-semibold text-base flex items-center gap-2"><BookOpen size={18} className="text-[#8b5cf6]" /> Guida rapida</h2>
+                <p className="text-[11px] text-[var(--text-soft)] mt-0.5">Come sfruttare HQ in pochi passi</p>
+              </div>
+              <button onClick={() => setGuideOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
+                <X size={18} className="text-[var(--text-muted)]" />
+              </button>
+            </div>
+            <div className="overflow-y-auto p-5 space-y-4">
+              {[
+                { icon: Plus, t: 'Aggiungi un prodotto', d: 'Premi "+" e scatta una foto: l\'IA riconosce brand e modello e compila i campi. Controlla taglia/condizione e salva.' },
+                { icon: Search, t: 'Ricerca valore', d: 'Dalla dashboard, "Ricerca valore" ti dà il prezzo di mercato (comps eBay) e il massimo consigliato d\'acquisto. Basta una foto.' },
+                { icon: DollarSign, t: 'Vendi e traccia il profitto', d: 'Sul prodotto premi "Vendi": inserisci prezzo, piattaforma e fee. HQ calcola profitto e margine in automatico.' },
+                { icon: Truck, t: 'Spedizioni', d: 'Aggiungi il tracking sia per i pacchi in arrivo (entrano in stock alla consegna) sia per le vendite. Stato aggiornabile a mano + link al corriere.' },
+                { icon: Users, t: 'Team e magazzini', d: 'Crea magazzini/reparti e invita i soci col codice: i profitti si dividono con le percentuali impostate.' },
+                { icon: Bell, t: 'Notifiche', d: 'Attiva le notifiche push dalle Impostazioni per vendite, consegne e prodotti fermi da troppo tempo.' },
+              ].map(s => {
+                const I = s.icon;
+                return (
+                  <div key={s.t} className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#8b5cf6]/15 flex items-center justify-center shrink-0"><I size={16} className="text-[#8b5cf6]" /></div>
+                    <div>
+                      <p className="font-semibold text-sm text-[var(--text)]">{s.t}</p>
+                      <p className="text-[13px] text-[var(--text-muted)] leading-relaxed mt-0.5">{s.d}</p>
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="pt-1 text-center">
+                <button onClick={() => { setGuideOpen(false); navigateTo('settings'); }} className="text-xs text-[#8b5cf6] font-semibold hover:underline">
+                  Serve aiuto? Impostazioni → Aiuto &amp; Assistenza
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {privacyOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4">
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col">
