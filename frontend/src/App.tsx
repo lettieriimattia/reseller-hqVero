@@ -163,6 +163,10 @@ async function compressImage(file: File, maxSize = 1024, quality = 0.5): Promise
 
 // Sentinella "modalità automatica": l'IA rileva la categoria dalla foto
 const AUTO_CATEGORY = '__AUTO__';
+// Valutazione di mercato: DISATTIVATA. La ricerca eBay generica dava prezzi falsi
+// (es. Rolex a 110€ perché pescava cinturini/parti/repliche). Riattivare SOLO con
+// fonti affidabili per categoria (StockX sneaker, Chrono24 orologi, ecc.).
+const VALUATION_ENABLED = false;
 
 // Converte la chiave VAPID (base64url) in Uint8Array per pushManager.subscribe
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -1580,7 +1584,7 @@ export default function App() {
     // Verifica su eBay: conferma il riconoscimento con dati reali di mercato (valore + n. annunci).
     // Oggi solo eBay; in futuro eBay + StockX. Non blocca: gira in background.
     const vQuery = [scan.brand, scan.model || d.type].filter(Boolean).join(' ').trim();
-    if (vQuery.length >= 2) {
+    if (VALUATION_ENABLED && vQuery.length >= 2) {
       apiCall<any>('/api/ai/market-value', {
         method: 'POST',
         body: JSON.stringify({ query: vQuery, size: (d.size || '').toString() || undefined, condition: condition || undefined }),
@@ -2810,12 +2814,15 @@ export default function App() {
               </div>
             </div>
 
-            {/* Quanto lo pago? — strumento sourcing (prezzo max d'acquisto) */}
+            {/* Quanto lo pago? — strumento sourcing (prezzo max d'acquisto). DISATTIVATO finché
+                non colleghiamo fonti affidabili per categoria (eBay generico dava prezzi falsi). */}
+            {VALUATION_ENABLED && (
             <button onClick={openSourcing}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-[#8b5cf6]/30 bg-[#8b5cf6]/[0.06] hover:bg-[#8b5cf6]/[0.12] text-sm font-bold text-[var(--text)] transition-colors">
               <DollarSign size={16} className="text-[#8b5cf6]" />
               Ricerca valore <span className="text-[var(--text-soft)] font-medium hidden sm:inline">· prezzo di mercato e max d'acquisto</span>
             </button>
+            )}
 
             {/* Welcome / primo avvio — quando non ci sono ancora prodotti */}
             {products.length === 0 && (
@@ -4661,7 +4668,7 @@ export default function App() {
           { key: 'nav-tracking', icon: Truck, label: 'Vai a Tracking', sub: '', run: () => navigateTo('tracking') },
           { key: 'nav-settings', icon: Settings, label: 'Vai a Impostazioni', sub: '', run: () => navigateTo('settings') },
           { key: 'act-add', icon: Plus, label: 'Aggiungi prodotto', sub: 'Nuovo inserimento in magazzino', run: () => openAddForm() },
-          { key: 'act-sourcing', icon: DollarSign, label: 'Ricerca valore', sub: 'Prezzo di mercato e max d\'acquisto per il margine voluto', run: () => openSourcing() },
+          ...(VALUATION_ENABLED ? [{ key: 'act-sourcing', icon: DollarSign, label: 'Ricerca valore', sub: 'Prezzo di mercato e max d\'acquisto per il margine voluto', run: () => openSourcing() }] : []),
         ];
         // Azioni sui selezionati (quando sei in modalità selezione)
         if (bulkMode && getBulkSelectedIds().length > 0) {
@@ -5058,7 +5065,7 @@ export default function App() {
                       {scanResult.warnings?.map((w: any, i: number) => <p key={i}>⚠️ {w}</p>)}
                     </div>
                     {/* Verifica eBay del riconoscimento (valore di mercato reale) */}
-                    {scanMarket && scanMarket.configured !== false && (
+                    {VALUATION_ENABLED && scanMarket && scanMarket.configured !== false && (
                       scanMarket.value != null ? (
                         <div className="p-2 rounded-lg bg-blue-500/10 text-blue-300 flex items-center gap-1.5">
                           <CheckCircle size={13} className="shrink-0" />
@@ -6534,7 +6541,6 @@ export default function App() {
             <div className="overflow-y-auto p-5 space-y-4">
               {[
                 { icon: Plus, t: 'Aggiungi un prodotto', d: 'Premi "+" e scatta una foto: l\'IA riconosce brand e modello e compila i campi. Controlla taglia/condizione e salva.' },
-                { icon: Search, t: 'Ricerca valore', d: 'Dalla dashboard, "Ricerca valore" ti dà il prezzo di mercato (comps eBay) e il massimo consigliato d\'acquisto. Basta una foto.' },
                 { icon: DollarSign, t: 'Vendi e traccia il profitto', d: 'Sul prodotto premi "Vendi": inserisci prezzo, piattaforma e fee. HQ calcola profitto e margine in automatico.' },
                 { icon: Truck, t: 'Spedizioni', d: 'Aggiungi il tracking sia per i pacchi in arrivo (entrano in stock alla consegna) sia per le vendite. Stato aggiornabile a mano + link al corriere.' },
                 { icon: Users, t: 'Team e magazzini', d: 'Crea magazzini/reparti e invita i soci col codice: i profitti si dividono con le percentuali impostate.' },
