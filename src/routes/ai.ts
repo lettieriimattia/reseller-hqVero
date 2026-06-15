@@ -7,6 +7,7 @@ import { aiLimiter } from '../middleware/rateLimit';
 import { validate, aiScanSchema, priceEstimateSchema } from '../middleware/validate';
 import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, ListingPlatform } from '../services/ai.service';
 import { getMarketValuation } from '../services/price.service';
+import { getPokemonCardValue } from '../services/cards.service';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import { audit } from '../services/audit.service';
@@ -71,6 +72,26 @@ router.post('/market-value', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     logger.error('Errore /ai/market-value', { err: err.message });
     res.status(500).json({ error: 'Errore valutazione' });
+  }
+});
+
+// ==========================================
+// POST /api/ai/card-value - valutazione carte Pokémon (Cardmarket EUR)
+// ==========================================
+router.post('/card-value', async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, number, setName } = req.body || {};
+    if (!name && !number) return res.status(400).json({ error: 'Serve almeno il nome della carta.' });
+    const val = await getPokemonCardValue({
+      name: name ? name.toString() : undefined,
+      number: number ? number.toString() : undefined,
+      setName: setName ? setName.toString() : undefined,
+    });
+    logger.info('card-value esito', { name, number, value: val.value, sample: val.sample });
+    res.json(val);
+  } catch (err: any) {
+    logger.error('Errore /ai/card-value', { err: err.message });
+    res.status(500).json({ error: 'Errore valutazione carta' });
   }
 });
 

@@ -1560,6 +1560,15 @@ export default function App() {
     const fallbackName = (scan.model || d.type || d.colorway || '').toString();
     if (effCat === 'Pokemon') {
       if (scan.model) setPokeName(scan.model);
+      // Valutazione carta da Cardmarket (EUR) — fonte affidabile per le carte.
+      const cardName = (scan.model || d.type || '').toString();
+      const cardNumber = (d.number || d.cardNumber || d.collectorNumber || '').toString();
+      if (cardName.length >= 2) {
+        apiCall<any>('/api/ai/card-value', {
+          method: 'POST',
+          body: JSON.stringify({ name: cardName, number: cardNumber || undefined, setName: (d.set || d.setName || '').toString() || undefined }),
+        }).then(r => { if (r.ok) setScanMarket(r.data); }).catch(() => {});
+      }
     } else if (effCat === 'Scarpe') {
       if (scan.brand) setBrand(scan.brand);
       if (fallbackName) setName(fallbackName);
@@ -5065,16 +5074,17 @@ export default function App() {
                       {scanResult.warnings?.map((w: any, i: number) => <p key={i}>⚠️ {w}</p>)}
                     </div>
                     {/* Verifica eBay del riconoscimento (valore di mercato reale) */}
-                    {VALUATION_ENABLED && scanMarket && scanMarket.configured !== false && (
+                    {scanMarket && scanMarket.configured !== false && (
                       scanMarket.value != null ? (
-                        <div className="p-2 rounded-lg bg-blue-500/10 text-blue-300 flex items-center gap-1.5">
+                        <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-300 flex items-center gap-1.5">
                           <CheckCircle size={13} className="shrink-0" />
-                          <span><b>Verificato su eBay</b> · valore ~{Math.round(scanMarket.value)}€ <span className="opacity-70">({scanMarket.sample} annunci · {scanMarket.source})</span></span>
+                          <span><b>{scanMarket.source || 'Valore di mercato'}</b> · ~{Math.round(scanMarket.value)}{(scanMarket.currency && scanMarket.currency !== 'EUR') ? ' ' + scanMarket.currency : '€'}
+                            {scanMarket.cardName ? <span className="opacity-70"> · {scanMarket.cardName}{scanMarket.setName ? ` (${scanMarket.setName})` : ''}</span> : null}</span>
                         </div>
                       ) : (
                         <div className="p-2 rounded-lg bg-[var(--surface-2)] text-[var(--text-soft)] flex items-center gap-1.5">
                           <Search size={13} className="shrink-0" />
-                          <span>Nessun riscontro su eBay per questo modello — ricontrolla brand/modello.</span>
+                          <span>Carta non trovata nel listino — controlla nome/numero.</span>
                         </div>
                       )
                     )}
