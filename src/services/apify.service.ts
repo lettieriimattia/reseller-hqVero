@@ -89,12 +89,19 @@ export async function getBagValue(opts: { query: string }): Promise<BagValuation
 
   try {
     await bumpMonthlyCount(); // conta PRIMA (prudente: non sforare anche con errori)
-    const url = `https://api.apify.com/v2/acts/${encodeURIComponent(ACTOR)}/run-sync-get-dataset-items?token=${TOKEN}&maxItems=15&timeout=60`;
+    // L'actor parseforge/vestiairecollective-scraper vuole uno startUrl (URL di ricerca
+    // Vestiaire). Uso il dominio it. per avere i prezzi in EURO.
+    const startUrl = `https://it.vestiairecollective.com/search/?q=${encodeURIComponent(opts.query)}`;
+    const url = `https://api.apify.com/v2/acts/${encodeURIComponent(ACTOR)}/run-sync-get-dataset-items?token=${TOKEN}&maxItems=10&timeout=90`;
     const r = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // Input generico; si adatta in base all'actor scelto (campo "search"/"keyword").
-      body: JSON.stringify({ search: opts.query, keyword: opts.query, query: opts.query, maxItems: 15 }),
+      body: JSON.stringify({
+        startUrl,
+        maxItems: 10,
+        includeDetails: false,
+        proxyConfiguration: { useApifyProxy: true, apifyProxyGroups: ['RESIDENTIAL'] },
+      }),
     });
     if (!r.ok) { logger.error('Apify run error', { status: r.status }); return null; }
     const items = await r.json() as any[];
@@ -107,8 +114,8 @@ export async function getBagValue(opts: { query: string }): Promise<BagValuation
       value: median(prices),
       currency: 'EUR',
       source: 'Vestiaire (Apify)',
-      itemName: first.name || first.title || first.brand,
-      image: first.image || first.photo || (Array.isArray(first.images) ? first.images[0] : undefined),
+      itemName: first.title || first.name || first.brand,
+      image: first.imageUrl || first.image || first.photo || (Array.isArray(first.images) ? first.images[0] : undefined),
       sample: prices.length,
     };
   } catch (err: any) {
