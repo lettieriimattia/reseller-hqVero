@@ -58,13 +58,24 @@ model Warehouse {
   inviteCode  String       @unique
   inviteCodeExpiresAt DateTime?  // I codici invito scadono dopo 30 giorni
   aiConfig    String?            // JSON con fields, scanPrompt, conditionOptions generati da IA
-  
+
+  // Gerarchia: parentId null = reparto top-level; valorizzato = sotto-magazzino del reparto.
+  // Ogni sotto-magazzino è un Warehouse a sé (propri soci, %, codice invito, prodotti).
+  parentId    String?
+  parent      Warehouse?   @relation("WarehouseHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Warehouse[]  @relation("WarehouseHierarchy")
+
+  // Categoria IA del reparto (per template/riconoscimento): i sotto-magazzini ereditano
+  // quella del genitore. Null per i reparti = si usa il nome (compat).
+  category    String?
+
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  
+
   members     Membership[]
-  
+
   @@index([inviteCode])
+  @@index([parentId])
 }
 
 // ==========================================

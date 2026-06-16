@@ -77,7 +77,7 @@ interface Product {
 
 interface AppUser {
   id: string; name: string; email: string; twoFactorEnabled?: boolean; plan?: string;
-  warehouses: Array<{ id: string; name: string; role: string; inviteCode: string | null; percentage: number; aiConfig: string | null }>;
+  warehouses: Array<{ id: string; name: string; role: string; inviteCode: string | null; percentage: number; aiConfig: string | null; parentId?: string | null; category?: string | null }>;
 }
 
 interface AINotification {

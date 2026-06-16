@@ -158,7 +158,7 @@ router.post('/lot', async (req: AuthRequest, res: Response) => {
 router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Response) => {
   try {
     const {
-      category, brand, name, size, condition, price, customShares, photos,
+      category, warehouseId: bodyWarehouseId, brand, name, size, condition, price, customShares, photos,
       marketPriceMin, marketPriceMax, marketPriceAvg, authenticityScore, notes,
       attributes, consignmentName, consignmentPercent,
     } = req.body;
@@ -167,9 +167,12 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
       where: { userId: req.user!.userId },
       include: { warehouse: true },
     });
-    const targetMembership = memberships.find(m =>
-      m.warehouse.name === `Magazzino ${category}`
-    );
+    // Se è passato un warehouseId (sotto-magazzino), il prodotto va lì; altrimenti per categoria (reparto).
+    const targetMembership = bodyWarehouseId
+      ? memberships.find(m => m.warehouseId === bodyWarehouseId)
+      : memberships.find(m => m.warehouse.name === `Magazzino ${category}`);
+    // Categoria IA: quella del reparto. Per i sotto-magazzini eredita da warehouse.category.
+    const effectiveCategory = (targetMembership?.warehouse as any)?.category || category;
     if (!targetMembership) {
       await audit({
         action: 'UNAUTHORIZED_ACCESS', userId: req.user!.userId, req,
@@ -191,7 +194,7 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
 
     const newProduct = await prisma.product.create({
       data: {
-        category, brand, name,
+        category: effectiveCategory, brand, name,
         size: (size || '').trim() || '—',
         condition: (condition || '').trim() || '—',
         purchasePrice: price,

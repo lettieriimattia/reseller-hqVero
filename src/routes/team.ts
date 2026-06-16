@@ -56,6 +56,8 @@ router.get('/', async (req: AuthRequest, res: Response) => {
     const teamData = user?.memberships?.map((m: any) => ({
       warehouseName: m.warehouse.name,
       warehouseId: m.warehouse.id,
+      parentId: m.warehouse.parentId || null,
+      category: m.warehouse.category || m.warehouse.name.replace('Magazzino ', ''),
       inviteCode: m.role === 'OWNER' ? m.warehouse.inviteCode : null,
       inviteCodeExpiresAt: m.role === 'OWNER' ? m.warehouse.inviteCodeExpiresAt : null,
       myRole: m.role,
@@ -208,6 +210,7 @@ router.post('/warehouses/join', validate(joinWarehouseSchema), async (req: AuthR
           role: m.role,
           inviteCode: m.role === 'OWNER' ? m.warehouse.inviteCode : null,
             aiConfig: m.warehouse.aiConfig || null,
+          parentId: m.warehouse.parentId || null, category: m.warehouse.category || null,
           percentage: m.percentage,
         })),
       },
@@ -288,6 +291,7 @@ router.post('/warehouses', validate(createWarehouseSchema), async (req: AuthRequ
           id: m.warehouse.id, name: m.warehouse.name, role: m.role,
           inviteCode: m.role === 'OWNER' ? m.warehouse.inviteCode : null,
             aiConfig: m.warehouse.aiConfig || null,
+          parentId: m.warehouse.parentId || null, category: m.warehouse.category || null,
           percentage: m.percentage,
         })),
       },
@@ -295,6 +299,65 @@ router.post('/warehouses', validate(createWarehouseSchema), async (req: AuthRequ
   } catch (err: any) {
     logger.error('Errore POST /warehouses', { err: err.message });
     res.status(500).json({ error: 'Errore creazione reparto' });
+  }
+});
+
+// ==========================================
+// POST /warehouses/sub - crea un sotto-magazzino dentro un reparto
+// (è un Warehouse a sé: propri soci, %, codice invito, prodotti)
+// ==========================================
+router.post('/warehouses/sub', async (req: AuthRequest, res: Response) => {
+  try {
+    const { parentId, name } = req.body || {};
+    if (!parentId || !name || typeof name !== 'string' || name.trim().length < 1) {
+      return res.status(400).json({ error: 'parentId e nome richiesti.' });
+    }
+    // Solo l'OWNER del reparto genitore può creare sotto-magazzini
+    const parentMembership = await prisma.membership.findFirst({
+      where: { userId: req.user!.userId, warehouseId: parentId, role: 'OWNER' },
+      include: { warehouse: true },
+    });
+    if (!parentMembership) return res.status(403).json({ error: 'Solo il fondatore del reparto può creare sotto-magazzini.' });
+    const parent = parentMembership.warehouse;
+    if (parent.parentId) return res.status(400).json({ error: 'Un sotto-magazzino non può contenere altri sotto-magazzini.' });
+
+    const repartoCategory = parent.category || parent.name.replace('Magazzino ', '');
+    const sub = await prisma.warehouse.create({
+      data: {
+        name: name.trim(),
+        parentId: parent.id,
+        category: repartoCategory,
+        aiConfig: parent.aiConfig,
+        inviteCode: generateInviteCode(),
+        inviteCodeExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        members: { create: [{ userId: req.user!.userId, role: 'OWNER', percentage: 100 }] },
+      },
+    });
+
+    await audit({ action: 'WAREHOUSE_CREATE', userId: req.user!.userId, req, resource: sub.id, metadata: { parentId, name: name.trim(), sub: true } });
+
+    const updated = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      include: { memberships: { include: { warehouse: true } } },
+    });
+    res.json({
+      message: 'Sotto-magazzino creato',
+      user: {
+        id: updated!.id, name: updated!.name, email: updated!.email,
+        twoFactorEnabled: updated!.twoFactorEnabled, plan: updated!.plan,
+        warehouses: updated!.memberships.map((m: any) => ({
+          id: m.warehouse.id, name: m.warehouse.name, role: m.role,
+          parentId: m.warehouse.parentId || null,
+          category: m.warehouse.category || null,
+          inviteCode: m.role === 'OWNER' ? m.warehouse.inviteCode : null,
+          aiConfig: m.warehouse.aiConfig || null,
+          percentage: m.percentage,
+        })),
+      },
+    });
+  } catch (err: any) {
+    logger.error('Errore POST /warehouses/sub', { err: err.message });
+    res.status(500).json({ error: 'Errore creazione sotto-magazzino' });
   }
 });
 
