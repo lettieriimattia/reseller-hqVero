@@ -47,24 +47,21 @@ export async function getValuation(opts: {
     return { value: null, currency: 'EUR', source: v.source, reliable: true, sample: 0 };
   }
 
-  // 1b) BORSE → Apify/Vestiaire (copre i brand contemporary). Tetto mensile nel servizio.
+  // 1b) BORSE → Apify/Vestiaire. È la fonte di verità: se l'actor GIRA (v != null)
+  // restituiamo il suo esito — trovato (prezzo+modello = conferma) o non trovato
+  // (value null → "controlla modello"). Solo se è stato saltato per il tetto (v null)
+  // cadiamo su eBay sotto.
   if (matches(cat, BAG_KEYS) && isVestiaireConfigured()) {
     const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
     const v = await getBagValue({ query: q });
-    if (v && v.value != null) {
-      return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
-    }
-    // niente risultato o tetto raggiunto → eBay indicativo sotto
+    if (v) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
   }
 
-  // 1c) OROLOGI → Apify/Chrono24. Stesso tetto mensile condiviso.
+  // 1c) OROLOGI → Apify/Chrono24 (stessa logica, tetto condiviso).
   if (matches(cat, WATCH_KEYS) && isChrono24Configured()) {
     const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
     const v = await getWatchValue({ query: q });
-    if (v && v.value != null) {
-      return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
-    }
-    // niente risultato o tetto raggiunto → eBay indicativo sotto
+    if (v) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
   }
 
   // 2) VINILI → Discogs (affidabile)
