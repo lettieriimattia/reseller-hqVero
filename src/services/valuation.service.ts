@@ -7,7 +7,7 @@
 
 import { getCardValue } from './cards.service';
 import { getVinylValue } from './discogs.service';
-import { getBagValue, isApifyConfigured } from './apify.service';
+import { getBagValue, getWatchValue, isVestiaireConfigured, isChrono24Configured } from './apify.service';
 import { getMarketValuation } from './price.service';
 
 export interface UnifiedValuation {
@@ -24,6 +24,7 @@ export interface UnifiedValuation {
 const CARD_KEYS = ['pokemon', 'pokémon', 'carte', 'card', 'tcg', 'magic', 'mtg', 'yugioh', 'yu-gi-oh', 'ygo'];
 const VINYL_KEYS = ['vinil', 'disco', 'dischi', 'vinyl', 'record', 'lp', '33 giri', '45 giri'];
 const BAG_KEYS = ['bors', 'bag', 'pochette', 'zaino', 'tracoll', 'clutch', 'handbag', 'shopper'];
+const WATCH_KEYS = ['orolog', 'watch', 'chrono'];
 
 function matches(cat: string, keys: string[]): boolean {
   const c = (cat || '').toLowerCase();
@@ -46,11 +47,20 @@ export async function getValuation(opts: {
     return { value: null, currency: 'EUR', source: v.source, reliable: true, sample: 0 };
   }
 
-  // 1b) BORSE → Apify/Vestiaire (affidabile, copre i brand contemporary). A consumo
-  // ma con tetto mensile nel servizio: oltre il limite cade su eBay qui sotto.
-  if (matches(cat, BAG_KEYS) && isApifyConfigured()) {
+  // 1b) BORSE → Apify/Vestiaire (copre i brand contemporary). Tetto mensile nel servizio.
+  if (matches(cat, BAG_KEYS) && isVestiaireConfigured()) {
     const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
     const v = await getBagValue({ query: q });
+    if (v && v.value != null) {
+      return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
+    }
+    // niente risultato o tetto raggiunto → eBay indicativo sotto
+  }
+
+  // 1c) OROLOGI → Apify/Chrono24. Stesso tetto mensile condiviso.
+  if (matches(cat, WATCH_KEYS) && isChrono24Configured()) {
+    const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
+    const v = await getWatchValue({ query: q });
     if (v && v.value != null) {
       return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
     }
