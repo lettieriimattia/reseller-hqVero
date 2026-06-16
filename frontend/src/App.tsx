@@ -231,6 +231,9 @@ export default function App() {
   
   // ----- DATA STATE -----
   const [products, setProducts] = useState<Product[]>([]);
+  // true dopo il primo caricamento prodotti: evita il flash "Benvenuto, primo articolo"
+  // ad ogni apertura mentre i dati stanno ancora caricando.
+  const [productsLoaded, setProductsLoaded] = useState(false);
   const [teamData, setTeamData] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<AINotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -919,7 +922,7 @@ export default function App() {
   // ==========================================
   const fetchProducts = useCallback(async () => {
     const { ok, data } = await apiCall<Product[]>('/products');
-    if (ok && Array.isArray(data)) setProducts(data);
+    if (ok && Array.isArray(data)) { setProducts(data); setProductsLoaded(true); }
   }, []);
   
   const fetchTeam = useCallback(async () => {
@@ -2881,8 +2884,8 @@ export default function App() {
             </button>
             )}
 
-            {/* Welcome / primo avvio — quando non ci sono ancora prodotti */}
-            {products.length === 0 && (
+            {/* Welcome / primo avvio — solo DOPO il caricamento, se davvero vuoto (niente flash ad ogni apertura) */}
+            {productsLoaded && products.length === 0 && (
               <section className="bg-[var(--surface)] border border-[#8b5cf6]/30 rounded-2xl p-6 lg:p-7 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[#8b5cf6]/[0.04] pointer-events-none" />
                 <div className="relative">
