@@ -43,8 +43,8 @@ async function issueTokens(res: Response, user: { id: string; email: string }, r
   const refreshPlain = generateRefreshToken();
   const refreshHashed = hashRefreshToken(refreshPlain);
   
-  // Salva nel DB
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // Salva nel DB (sessione lunga: 30 giorni, così non si rilogga di continuo)
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await prisma.refreshToken.create({
     data: {
       token: refreshHashed,
@@ -77,7 +77,7 @@ async function issueTokens(res: Response, user: { id: string; email: string }, r
   
   res.cookie('refresh_token', refreshPlain, {
     ...cookieOpts,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 giorni
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 giorni
     path: '/auth/refresh', // Limitiamo il refresh token al solo endpoint refresh
   });
 }
@@ -320,13 +320,10 @@ router.post('/refresh', async (req: Request, res: Response) => {
     if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
       return res.status(401).json({ error: 'Refresh token non valido o scaduto.' });
     }
-    
-    // Rotation: revoca quello vecchio, emetti nuovo
-    await prisma.refreshToken.update({
-      where: { id: stored.id },
-      data: { revokedAt: new Date() },
-    });
-    
+
+    // NIENTE rotazione: il vecchio refresh token resta valido. Evita il logout quando
+    // l'app fa più refresh in parallelo all'avvio (race) e regge anche se un cookie
+    // ruotato non si salva (PWA iOS). issueTokens crea comunque un token aggiornato.
     await issueTokens(res, stored.user, req);
     await audit({ action: 'TOKEN_REFRESH', userId: stored.userId, req });
     

@@ -20,8 +20,21 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Tutte le chiamate API usano credentials: 'include' per inviare i cookies httpOnly
+// Single-flight del refresh: se più chiamate scadono insieme all'avvio, parte UN SOLO
+// /auth/refresh e tutte aspettano lo stesso esito (niente race che sloggava l'utente).
+let refreshInFlight: Promise<boolean> | null = null;
+function refreshSession(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = fetch(`${API_URL}/auth/refresh`, { method: 'POST', credentials: 'include' })
+      .then(r => r.ok)
+      .catch(() => false)
+      .finally(() => { refreshInFlight = null; });
+  }
+  return refreshInFlight;
+}
+
 async function apiCall<T = any>(
-  path: string, 
+  path: string,
   opts: RequestInit = {}
 ): Promise<{ ok: boolean; data: T; status: number }> {
   const res = await fetch(`${API_URL}${path}`, {
@@ -29,14 +42,12 @@ async function apiCall<T = any>(
     headers: { 'Content-Type': 'application/json', ...opts.headers },
     ...opts,
   });
-  
-  // Auto-refresh token se scaduto
-  if (res.status === 401) {
-    const refreshRes = await fetch(`${API_URL}/auth/refresh`, { 
-      method: 'POST', credentials: 'include' 
-    });
-    if (refreshRes.ok) {
-      // Ritenta la richiesta originale
+
+  // Auto-refresh token se scaduto (un solo refresh condiviso tra chiamate concorrenti)
+  if (res.status === 401 && path !== '/auth/refresh') {
+    const ok = await refreshSession();
+    if (ok) {
+      // Ritenta la richiesta originale col token aggiornato
       const retry = await fetch(`${API_URL}${path}`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...opts.headers },
@@ -46,7 +57,7 @@ async function apiCall<T = any>(
       return { ok: retry.ok, data, status: retry.status };
     }
   }
-  
+
   const data = await res.json().catch(() => ({}));
   return { ok: res.ok, data, status: res.status };
 }
