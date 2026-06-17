@@ -192,6 +192,11 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
     }
     const parsedPhotos = finalPhotos ? JSON.stringify(finalPhotos) : null;
 
+    // Gestione profitShareOverride
+    const parsedProfitOverride = req.body.profitShareOverride && Array.isArray(req.body.profitShareOverride) && req.body.profitShareOverride.length > 0
+      ? JSON.stringify(req.body.profitShareOverride.map((s: any) => ({ ...s, percentage: Number(s.percentage) || 0 })))
+      : null;
+
     const newProduct = await prisma.product.create({
       data: {
         category: effectiveCategory, brand, name,
@@ -202,10 +207,11 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
         userId: req.user!.userId,
         warehouseId: targetMembership.warehouseId,
         customShares: parsedShares,
+        profitShareOverride: parsedProfitOverride,
         photos: parsedPhotos,
         marketPriceMin, marketPriceMax, marketPriceAvg, authenticityScore,
         notes: notes || null,
-        attributes: attributes && typeof attributes === 'object' ? attributes : Prisma.JsonNull,
+        attributes: attributes && typeof attributes === 'object' ? JSON.stringify(attributes) : null,
         consignmentName: (consignmentName || '').trim() || null,
         consignmentPercent: typeof consignmentPercent === 'number' ? consignmentPercent : null,
       },
@@ -510,6 +516,11 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
     }
     const parsedPhotos = finalEditPhotos ? JSON.stringify(finalEditPhotos) : null;
 
+    // Gestione profitShareOverride
+    const parsedProfitOverride = req.body.profitShareOverride && Array.isArray(req.body.profitShareOverride) && req.body.profitShareOverride.length > 0
+      ? JSON.stringify(req.body.profitShareOverride.map((s: any) => ({ ...s, percentage: Number(s.percentage) || 0 })))
+      : null;
+
     const p = await prisma.product.update({
       where: { id: req.params.id },
       data: {
@@ -518,10 +529,11 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
         condition: (condition || '').trim() || '—',
         purchasePrice,
         customShares: parsedShares,
+        profitShareOverride: parsedProfitOverride,
         photos: parsedPhotos,
         notes: notes !== undefined ? (notes || null) : undefined,
         attributes: attributes !== undefined
-          ? (attributes && typeof attributes === 'object' ? attributes : Prisma.JsonNull)
+          ? (attributes && typeof attributes === 'object' ? JSON.stringify(attributes) : null)
           : undefined,
         consignmentName: consignmentName !== undefined ? ((consignmentName || '').trim() || null) : undefined,
         consignmentPercent: consignmentPercent !== undefined ? (typeof consignmentPercent === 'number' ? consignmentPercent : null) : undefined,

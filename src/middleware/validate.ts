@@ -71,6 +71,8 @@ export const createProductSchema = z.object({
   // Conto vendita: nome del conto vendita (obbligatorio se attivo) + % facoltativa
   consignmentName: z.string().max(120).optional(),
   consignmentPercent: z.number().min(0).max(100).optional(),
+  // Override divisione profitti per questo prodotto specifico
+  profitShareOverride: sharesSchema,
   // Campi opzionali dall'IA
   marketPriceMin: z.number().nonnegative().optional(),
   marketPriceMax: z.number().nonnegative().optional(),
@@ -89,6 +91,7 @@ export const editProductSchema = z.object({
   photos: photosSchema,
   consignmentName: z.string().max(120).nullable().optional(),
   consignmentPercent: z.number().min(0).max(100).nullable().optional(),
+  profitShareOverride: sharesSchema,
 });
 
 export const sellProductSchema = z.object({
@@ -116,6 +119,12 @@ export const joinWarehouseSchema = z.object({
 export const createWarehouseSchema = z.object({
   name: z.string().min(1).max(50)
     .regex(/^[\p{L}\p{N}\s'\-]+$/u, 'Nome reparto contiene caratteri non validi'),
+  defaultProfitShares: sharesSchema,
+});
+
+export const updateWarehouseProfitSharesSchema = z.object({
+  warehouseId: z.string().cuid(),
+  defaultProfitShares: sharesSchema,
 });
 
 // ==========================================

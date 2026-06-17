@@ -226,7 +226,7 @@ router.post('/warehouses/join', validate(joinWarehouseSchema), async (req: AuthR
 // ==========================================
 router.post('/warehouses', validate(createWarehouseSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const { name } = req.body;
+    const { name, defaultProfitShares } = req.body;
     
     // Solo gli OWNER possono creare nuovi reparti
     const isOwner = await prisma.membership.findFirst({
@@ -237,12 +237,18 @@ router.post('/warehouses', validate(createWarehouseSchema), async (req: AuthRequ
       return res.status(403).json({ error: 'Solo i fondatori possono creare nuovi reparti.' });
     }
 
+    // Serializza defaultProfitShares se presente
+    const parsedProfitShares = defaultProfitShares && Array.isArray(defaultProfitShares) && defaultProfitShares.length > 0
+      ? JSON.stringify(defaultProfitShares.map((s: any) => ({ ...s, percentage: Number(s.percentage) || 0 })))
+      : null;
+
     // Il nuovo reparto parte solo col fondatore — ogni reparto ha i propri soci via codice invito
     const newWarehouse = await prisma.warehouse.create({
       data: {
         name: `Magazzino ${name}`,
         inviteCode: generateInviteCode(),
         inviteCodeExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        defaultProfitShares: parsedProfitShares,
         members: {
           create: [
             { userId: req.user!.userId, role: 'OWNER', percentage: 100 },
@@ -308,7 +314,7 @@ router.post('/warehouses', validate(createWarehouseSchema), async (req: AuthRequ
 // ==========================================
 router.post('/warehouses/sub', async (req: AuthRequest, res: Response) => {
   try {
-    const { parentId, name } = req.body || {};
+    const { parentId, name, defaultProfitShares } = req.body || {};
     if (!parentId || !name || typeof name !== 'string' || name.trim().length < 1) {
       return res.status(400).json({ error: 'parentId e nome richiesti.' });
     }
@@ -321,6 +327,11 @@ router.post('/warehouses/sub', async (req: AuthRequest, res: Response) => {
     const parent = parentMembership.warehouse;
     if (parent.parentId) return res.status(400).json({ error: 'Un sotto-magazzino non può contenere altri sotto-magazzini.' });
 
+    // Serializza defaultProfitShares se presente, altrimenti eredita dal parent
+    const parsedProfitShares = defaultProfitShares && Array.isArray(defaultProfitShares) && defaultProfitShares.length > 0
+      ? JSON.stringify(defaultProfitShares.map((s: any) => ({ ...s, percentage: Number(s.percentage) || 0 })))
+      : parent.defaultProfitShares;
+
     const repartoCategory = parent.category || parent.name.replace('Magazzino ', '');
     const sub = await prisma.warehouse.create({
       data: {
@@ -328,6 +339,7 @@ router.post('/warehouses/sub', async (req: AuthRequest, res: Response) => {
         parentId: parent.id,
         category: repartoCategory,
         aiConfig: parent.aiConfig,
+        defaultProfitShares: parsedProfitShares,
         inviteCode: generateInviteCode(),
         inviteCodeExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         members: { create: [{ userId: req.user!.userId, role: 'OWNER', percentage: 100 }] },
@@ -464,6 +476,54 @@ router.delete('/warehouses/:id', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     logger.error('Errore DELETE /warehouses/:id', { err: err.message });
     res.status(500).json({ error: 'Errore eliminazione reparto' });
+  }
+});
+
+// ==========================================
+// PUT /warehouses/:id/profit-shares - aggiorna divisione profitti predefinita del warehouse
+// Solo OWNER può modificare
+// ==========================================
+router.put('/warehouses/:id/profit-shares', async (req: AuthRequest, res: Response) => {
+  try {
+    const { defaultProfitShares } = req.body;
+    
+    const isOwner = await prisma.membership.findFirst({
+      where: { userId: req.user!.userId, warehouseId: req.params.id, role: 'OWNER' },
+    });
+    
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Solo il fondatore può modificare la divisione profitti.' });
+    }
+
+    // Valida che le percentuali sommino a 100
+    if (defaultProfitShares && Array.isArray(defaultProfitShares)) {
+      const total = defaultProfitShares.reduce((s: number, share: any) => s + (Number(share.percentage) || 0), 0);
+      if (Math.round(total) !== 100) {
+        return res.status(400).json({ error: 'Le percentuali devono sommare a 100.' });
+      }
+    }
+
+    const parsedProfitShares = defaultProfitShares && Array.isArray(defaultProfitShares) && defaultProfitShares.length > 0
+      ? JSON.stringify(defaultProfitShares.map((s: any) => ({ ...s, percentage: Number(s.percentage) || 0 })))
+      : null;
+
+    await prisma.warehouse.update({
+      where: { id: req.params.id },
+      data: { defaultProfitShares: parsedProfitShares },
+    });
+
+    await audit({
+      action: 'WAREHOUSE_PROFIT_SHARES_UPDATE',
+      userId: req.user!.userId,
+      req,
+      resource: req.params.id,
+      metadata: { defaultProfitShares },
+    });
+
+    res.json({ success: true });
+  } catch (err: any) {
+    logger.error('Errore PUT /warehouses/:id/profit-shares', { err: err.message });
+    res.status(500).json({ error: 'Errore aggiornamento divisione profitti' });
   }
 });
 

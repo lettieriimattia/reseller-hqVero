@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -69,6 +69,10 @@ model Warehouse {
   // quella del genitore. Null per i reparti = si usa il nome (compat).
   category    String?
 
+  // Divisione profitti predefinita per questo warehouse (JSON string con array di {userId, percentage})
+  // Può essere sovrascritto a livello di singolo prodotto tramite customShares
+  defaultProfitShares String?
+
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -123,6 +127,10 @@ model Product {
   consignmentName    String?
   consignmentPercent Float?
 
+  // Override divisione profitti per questo specifico prodotto
+  // Se null, usa defaultProfitShares del warehouse
+  profitShareOverride String?
+
   // Lotto d'acquisto: nome del lotto da cui proviene il prodotto (per raggruppare e
   // poter aggiungere altri pezzi a un lotto esistente). Null se prodotto singolo.
   lotName        String?
@@ -152,7 +160,7 @@ model Product {
   salesChannels  String?
 
   // Pilastro 1: Campi dinamici dalla CategoryTemplate (JSONB)
-  attributes     Json?      // Record<string, any> — popolato dal DynamicForm
+  attributes     String?      // Record<string, any> — popolato dal DynamicForm (JSON string per SQLite)
 
   // Pilastro 1: Soft delete — mai DELETE fisico dal DB
   deletedAt      DateTime?  // Non null = cancellato logicamente
@@ -275,7 +283,7 @@ model CategoryTemplate {
   id        String   @id @default(cuid())
   name      String   @unique   // Deve corrispondere a Product.category
   icon      String?
-  fields    Json               // FieldDef[] — vedi types/template.ts
+  fields    String               // FieldDef[] — vedi types/template.ts (JSON string per SQLite)
   isSystem  Boolean  @default(false) // I template di sistema non sono eliminabili
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

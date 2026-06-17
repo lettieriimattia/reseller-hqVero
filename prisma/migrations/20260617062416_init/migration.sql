@@ -7,6 +7,8 @@ CREATE TABLE "User" (
     "twoFactorEnabled" BOOLEAN NOT NULL DEFAULT false,
     "twoFactorSecret" TEXT,
     "twoFactorBackup" TEXT,
+    "marketingConsent" BOOLEAN NOT NULL DEFAULT false,
+    "plan" TEXT NOT NULL DEFAULT 'free',
     "failedLoginCount" INTEGER NOT NULL DEFAULT 0,
     "lockedUntil" DATETIME,
     "lastLoginAt" DATETIME,
@@ -21,8 +23,13 @@ CREATE TABLE "Warehouse" (
     "name" TEXT NOT NULL,
     "inviteCode" TEXT NOT NULL,
     "inviteCodeExpiresAt" DATETIME,
+    "aiConfig" TEXT,
+    "parentId" TEXT,
+    "category" TEXT,
+    "defaultProfitShares" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "Warehouse_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Warehouse" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -51,10 +58,27 @@ CREATE TABLE "Product" (
     "fees" REAL,
     "status" TEXT NOT NULL DEFAULT 'IN STOCK',
     "customShares" TEXT,
+    "consignmentName" TEXT,
+    "consignmentPercent" REAL,
+    "profitShareOverride" TEXT,
+    "lotName" TEXT,
+    "photos" TEXT,
     "marketPriceMin" REAL,
     "marketPriceMax" REAL,
     "marketPriceAvg" REAL,
     "authenticityScore" INTEGER,
+    "trackingCode" TEXT,
+    "trackingCarrier" TEXT,
+    "trackingDirection" TEXT,
+    "trackingStatus" TEXT,
+    "trackingHistory" TEXT,
+    "trackingUpdatedAt" DATETIME,
+    "notes" TEXT,
+    "salesChannels" TEXT,
+    "attributes" TEXT,
+    "deletedAt" DATETIME,
+    "reservedBy" TEXT,
+    "reservedAt" DATETIME,
     "userId" TEXT NOT NULL,
     "warehouseId" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -119,6 +143,62 @@ CREATE TABLE "MarketPrice" (
     "expiresAt" DATETIME NOT NULL
 );
 
+-- CreateTable
+CREATE TABLE "CategoryTemplate" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "icon" TEXT,
+    "fields" TEXT NOT NULL,
+    "isSystem" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "InventoryLog" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "productId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "field" TEXT,
+    "oldValue" TEXT,
+    "newValue" TEXT,
+    "note" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "InventoryLog_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "InventoryLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "Feedback" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT,
+    "userEmail" TEXT NOT NULL,
+    "userName" TEXT,
+    "type" TEXT NOT NULL DEFAULT 'altro',
+    "message" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'nuova',
+    "reply" TEXT,
+    "repliedAt" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- CreateTable
+CREATE TABLE "PushSubscription" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT NOT NULL,
+    "endpoint" TEXT NOT NULL,
+    "p256dh" TEXT NOT NULL,
+    "auth" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- CreateTable
+CREATE TABLE "Setting" (
+    "key" TEXT NOT NULL PRIMARY KEY,
+    "value" TEXT NOT NULL
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -130,6 +210,9 @@ CREATE UNIQUE INDEX "Warehouse_inviteCode_key" ON "Warehouse"("inviteCode");
 
 -- CreateIndex
 CREATE INDEX "Warehouse_inviteCode_idx" ON "Warehouse"("inviteCode");
+
+-- CreateIndex
+CREATE INDEX "Warehouse_parentId_idx" ON "Warehouse"("parentId");
 
 -- CreateIndex
 CREATE INDEX "Membership_userId_idx" ON "Membership"("userId");
@@ -151,6 +234,9 @@ CREATE INDEX "Product_status_idx" ON "Product"("status");
 
 -- CreateIndex
 CREATE INDEX "Product_warehouseId_idx" ON "Product"("warehouseId");
+
+-- CreateIndex
+CREATE INDEX "Product_deletedAt_idx" ON "Product"("deletedAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "RefreshToken_token_key" ON "RefreshToken"("token");
@@ -181,3 +267,30 @@ CREATE INDEX "MarketPrice_category_brand_idx" ON "MarketPrice"("category", "bran
 
 -- CreateIndex
 CREATE UNIQUE INDEX "MarketPrice_category_brand_modelName_size_key" ON "MarketPrice"("category", "brand", "modelName", "size");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CategoryTemplate_name_key" ON "CategoryTemplate"("name");
+
+-- CreateIndex
+CREATE INDEX "CategoryTemplate_name_idx" ON "CategoryTemplate"("name");
+
+-- CreateIndex
+CREATE INDEX "InventoryLog_productId_idx" ON "InventoryLog"("productId");
+
+-- CreateIndex
+CREATE INDEX "InventoryLog_userId_idx" ON "InventoryLog"("userId");
+
+-- CreateIndex
+CREATE INDEX "InventoryLog_createdAt_idx" ON "InventoryLog"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "Feedback_status_idx" ON "Feedback"("status");
+
+-- CreateIndex
+CREATE INDEX "Feedback_createdAt_idx" ON "Feedback"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PushSubscription_endpoint_key" ON "PushSubscription"("endpoint");
+
+-- CreateIndex
+CREATE INDEX "PushSubscription_userId_idx" ON "PushSubscription"("userId");

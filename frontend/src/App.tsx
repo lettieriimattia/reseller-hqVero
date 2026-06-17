@@ -72,7 +72,7 @@ interface Product {
   marketPriceMin?: number; marketPriceMax?: number; marketPriceAvg?: number; authenticityScore?: number;
   trackingCode?: string; trackingCarrier?: string; trackingStatus?: string;
   trackingHistory?: string; trackingUpdatedAt?: string;
-  notes?: string;
+  notes?: string; warehouseId?: string; trackingDirection?: string;
 }
 
 interface AppUser {
@@ -308,6 +308,11 @@ export default function App() {
   // Quote condivise
   const [isSharedPurchase, setIsSharedPurchase] = useState(false);
   const [productShares, setProductShares] = useState<{userId: string, name: string, percentage: string | number}[]>([]);
+  // Sotto-magazzini: scelta nel form (vuoto = reparto stesso) + creazione nelle impostazioni
+  const [selectedSubWh, setSelectedSubWh] = useState('');
+  const [newSubName, setNewSubName] = useState('');
+  const [addingSubTo, setAddingSubTo] = useState(''); // id reparto a cui sto aggiungendo un sotto-magazzino
+  const [creatingSub, setCreatingSub] = useState(false);
   
   // ----- VENDITA & MODIFICA -----
   const [sellModalOpen, setSellModalOpen] = useState(false);
@@ -853,7 +858,14 @@ export default function App() {
   const [incSaving, setIncSaving] = useState(false);
   
   // ----- DERIVED -----
-  const userCategories = user?.warehouses?.map(w => w.name.replace('Magazzino ', '')) || [];
+  // Solo reparti top-level (i sotto-magazzini non sono reparti a sé).
+  const userCategories = user?.warehouses?.filter(w => !w.parentId).map(w => w.name.replace('Magazzino ', '')) || [];
+  // Sotto-magazzini di un reparto (per nome reparto)
+  const subWarehousesFor = (repartoName: string) => {
+    const reparto = user?.warehouses?.find(w => !w.parentId && w.name.replace('Magazzino ', '') === repartoName);
+    if (!reparto) return [] as NonNullable<typeof user>['warehouses'];
+    return user?.warehouses?.filter(w => w.parentId === reparto.id) || [];
+  };
 
   // Match tollerante tra la categoria rilevata dall'IA e i reparti esistenti:
   // gestisce maiuscole, accenti, spazi e SINONIMI (es. "Sneakers"/"Calzature" → reparto "Scarpe").
@@ -1120,7 +1132,7 @@ export default function App() {
       const myShare = shares.find((s: any) => s.userId === user?.id);
       return acc + (profit * ((myShare?.percentage || 0) / 100));
     } else {
-      const team = teamData.find(t => t.warehouseName.replace('Magazzino ', '') === p.category);
+      const team = teamData.find((t: any) => t.warehouseId === p.warehouseId) || teamData.find((t: any) => t.warehouseName.replace('Magazzino ', '') === p.category);
       const myMember = team?.members?.find((m: any) => m.userId === user?.id);
       const myPct = myMember?.percentage ?? (team?.members?.length > 0 ? 100 / team.members.length : 100);
       return acc + (profit * (myPct / 100));
@@ -1137,7 +1149,7 @@ export default function App() {
         sociProfits[s.userId].profit += (profit * (s.percentage / 100));
       });
     } else {
-      const team = teamData.find(t => t.warehouseName.replace('Magazzino ', '') === p.category);
+      const team = teamData.find((t: any) => t.warehouseId === p.warehouseId) || teamData.find((t: any) => t.warehouseName.replace('Magazzino ', '') === p.category);
       if (team) {
         (team.members || []).forEach((m: any) => {
           if (!sociProfits[m.userId]) sociProfits[m.userId] = { name: m.name, profit: 0 };
@@ -1372,6 +1384,22 @@ export default function App() {
   // ==========================================
   // CATEGORIE / WAREHOUSE
   // ==========================================
+  // Crea un sotto-magazzino dentro un reparto (parentId = id del reparto)
+  const createSubWarehouse = async (parentId: string, name: string) => {
+    if (!name.trim()) return;
+    setCreatingSub(true);
+    const { ok, data } = await apiCall('/warehouses/sub', {
+      method: 'POST', body: JSON.stringify({ parentId, name: name.trim() }),
+    });
+    setCreatingSub(false);
+    if (ok) {
+      setUser(data.user);
+      fetchTeam();
+      setNewSubName(''); setAddingSubTo('');
+      showToast(`Sotto-magazzino "${name.trim()}" creato`);
+    } else showToast(data.error || 'Errore creazione sotto-magazzino', 'err');
+  };
+
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName) return;
@@ -1408,6 +1436,7 @@ export default function App() {
     setWatchBrand(''); setWatchModel(''); setWatchCase(''); setWatchStrap(''); setWatchMaterial('');
     setDynamicAttrs({});
     setIsSharedPurchase(false); setProductShares([]);
+    setSelectedSubWh('');
     setIsConsignment(false); setConsignmentName(''); setConsignmentPercent('');
     setIsFormOpen(true);
     // Apri SUBITO la fotocamera nello stesso gesto del tap su "+"
@@ -1820,6 +1849,7 @@ export default function App() {
           body: JSON.stringify({
             category: effCategory, brand: finalBrand, name: finalName,
             size: finalSize, condition: finalCondition, price: unitPrice,
+            warehouseId: selectedSubWh || undefined, // sotto-magazzino scelto (se presente)
             customShares: finalShares,
             ...(isConsignment && consignmentName.trim() ? {
               consignmentName: consignmentName.trim(),
@@ -4326,7 +4356,9 @@ export default function App() {
 
               {repartiOpen && (<>
               <div className="space-y-3 mb-6 mt-4">
-                {user.warehouses.map((w: any) => (
+                {user.warehouses.filter((w: any) => !w.parentId).map((w: any) => {
+                  const subs = user.warehouses.filter((x: any) => x.parentId === w.id);
+                  return (
                   <div key={w.id} className="bg-[var(--surface-2)] p-4 rounded-xl border border-[var(--border-2)]">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                       <div className="flex items-center gap-3">
@@ -4339,18 +4371,53 @@ export default function App() {
                         </div>
                       </div>
                       {w.inviteCode && (
-                        <button 
-                          onClick={() => {
-                            navigator.clipboard.writeText(w.inviteCode);
-                            showToast('Codice copiato!');
-                          }}
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(w.inviteCode); showToast('Codice copiato!'); }}
                           className="flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-3 py-2 rounded-lg text-xs font-mono">
                           <KeyRound size={12} /> {w.inviteCode} <Copy size={12} />
                         </button>
                       )}
                     </div>
+                    {/* Sotto-magazzini del reparto */}
+                    {(subs.length > 0 || w.role === 'OWNER') && (
+                      <div className="mt-3 pl-3 border-l-2 border-[var(--border)] space-y-2">
+                        {subs.map((sw: any) => (
+                          <div key={sw.id} className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Layers size={12} className="text-[var(--text-faint)] shrink-0" />
+                              <span className="text-sm font-semibold truncate">{sw.name}</span>
+                              <span className="text-[10px] text-[var(--text-faint)] shrink-0">· {sw.percentage}%</span>
+                            </div>
+                            {sw.inviteCode && (
+                              <button onClick={() => { navigator.clipboard.writeText(sw.inviteCode); showToast('Codice copiato!'); }}
+                                className="flex items-center gap-1.5 bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 px-2 py-1 rounded-lg text-[10px] font-mono shrink-0">
+                                <KeyRound size={10} /> {sw.inviteCode}
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        {w.role === 'OWNER' && (
+                          addingSubTo === w.id ? (
+                            <div className="flex gap-2 items-center">
+                              <input autoFocus value={newSubName} onChange={(e: any) => setNewSubName(e.target.value)}
+                                placeholder="Nome (es. con Luca, Milano…)"
+                                className="flex-1 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[#8b5cf6]" />
+                              <button onClick={() => createSubWarehouse(w.id, newSubName)} disabled={creatingSub || !newSubName.trim()}
+                                className="px-3 py-1.5 rounded-lg bg-[#8b5cf6] text-white text-xs font-bold disabled:opacity-50 shrink-0">{creatingSub ? '…' : 'Crea'}</button>
+                              <button onClick={() => { setAddingSubTo(''); setNewSubName(''); }} className="px-1.5 text-[var(--text-soft)] shrink-0"><X size={14} /></button>
+                            </div>
+                          ) : (
+                            <button onClick={() => { setAddingSubTo(w.id); setNewSubName(''); }}
+                              className="text-[11px] text-[#8b5cf6] font-bold flex items-center gap-1 hover:underline">
+                              <Plus size={11} /> Sotto-magazzino
+                            </button>
+                          )
+                        )}
+                      </div>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
               
               {isFounder && (
@@ -5009,7 +5076,7 @@ export default function App() {
                     Automatico
                   </button>
                   {userCategories.map((cat: string) => (
-                    <button key={cat} type="button" onClick={() => { setCategory(cat); setSize(defaultSizeForCategory(cat)); setDetectedReparto(''); }}
+                    <button key={cat} type="button" onClick={() => { setCategory(cat); setSize(defaultSizeForCategory(cat)); setDetectedReparto(''); setSelectedSubWh(''); }}
                       className={`p-3 rounded-xl text-sm font-bold border transition-all ${
                         category === cat
                           ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]'
@@ -5020,6 +5087,24 @@ export default function App() {
                     </button>
                   ))}
                 </div>
+                {/* Selettore sotto-magazzino (se il reparto ne ha) */}
+                {category !== AUTO_CATEGORY && subWarehousesFor(category).length > 0 && (
+                  <div className="mt-3">
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Magazzino</label>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={() => setSelectedSubWh('')}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${selectedSubWh === '' ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
+                        Principale
+                      </button>
+                      {subWarehousesFor(category).map((sw: any) => (
+                        <button key={sw.id} type="button" onClick={() => setSelectedSubWh(sw.id)}
+                          className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${selectedSubWh === sw.id ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
+                          {sw.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {/* Esito modalità automatica */}
                 {category === AUTO_CATEGORY && (
                   detectedReparto ? (

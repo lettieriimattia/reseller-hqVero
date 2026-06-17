@@ -103,7 +103,12 @@ router.get('/', authenticate, async (_req: AuthRequest, res: Response) => {
         prisma.categoryTemplate.upsert({
           where: { name: t.name },
           update: {},
-          create: t,
+          create: {
+            name: t.name,
+            icon: t.icon,
+            isSystem: t.isSystem,
+            fields: JSON.stringify(t.fields),
+          },
         })
       )
     );
@@ -143,7 +148,7 @@ router.post('/', authenticate, requireOwner, async (req: AuthRequest, res: Respo
       return res.status(400).json({ error: 'name e fields[] obbligatori' });
     }
     const t = await prisma.categoryTemplate.create({
-      data: { name: name.trim(), icon: icon || null, fields, isSystem: false },
+      data: { name: name.trim(), icon: icon || null, fields: JSON.stringify(fields), isSystem: false },
     });
     res.json(t);
   } catch (err: any) {
@@ -166,7 +171,7 @@ router.put('/:name', authenticate, requireOwner, async (req: AuthRequest, res: R
       where: { name: req.params.name },
       data: {
         icon: icon !== undefined ? icon : existing.icon,
-        fields: Array.isArray(fields) ? fields : existing.fields,
+        fields: Array.isArray(fields) ? JSON.stringify(fields) : existing.fields,
       },
     });
     res.json(updated);
