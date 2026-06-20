@@ -68,6 +68,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
           name: wm.user.name,
           role: wm.role,
           percentage: wm.percentage,
+          costPercentage: wm.costPercentage ?? 0,
           productsAdded: countMap[key]?.added || 0,
           productsSold: countMap[key]?.sold || 0,
         };
@@ -113,12 +114,15 @@ router.put('/percentage', validate(teamPercentageSchema), async (req: AuthReques
       }
     }
     
-    // Aggiorna in transazione
+    // Aggiorna in transazione (utili + costi se presenti)
     await prisma.$transaction(
       updates.map((u: any) =>
         prisma.membership.update({
           where: { id: u.membershipId },
-          data: { percentage: u.percentage },
+          data: {
+            percentage: u.percentage,
+            ...(typeof u.costPercentage === 'number' ? { costPercentage: u.costPercentage } : {}),
+          },
         })
       )
     );

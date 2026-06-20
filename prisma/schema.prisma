@@ -88,7 +88,8 @@ model Warehouse {
 model Membership {
   id          String     @id @default(cuid())
   role        String     // "OWNER" | "MEMBER"
-  percentage  Float      @default(0)
+  percentage  Float      @default(0)   // quota UTILI (divisione del profitto)
+  costPercentage Float   @default(0)   // quota COSTI (chi sostiene i costi d'acquisto), indipendente dagli utili
   
   userId      String
   warehouseId String

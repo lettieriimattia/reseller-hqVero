@@ -112,6 +112,7 @@ export const teamPercentageSchema = z.object({
     userId: z.string().cuid(),
     membershipId: z.string().cuid(),
     percentage: z.number().min(0).max(100),
+    costPercentage: z.number().min(0).max(100).optional(),
   })).min(1),
 });
 

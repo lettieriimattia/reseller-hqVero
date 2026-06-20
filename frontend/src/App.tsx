@@ -1508,6 +1508,14 @@ export default function App() {
     }
   };
 
+  // Applica la categoria scritta a mano: crea se non esiste, altrimenti seleziona.
+  const useManualCategory = async () => {
+    const v = formCatInput.trim();
+    if (!v || isAddingCat) return;
+    const created = await createRepartoFromDetected(v);
+    if (created) { setSize(defaultSizeForCategory(created)); setFormCatInput(''); setShowRepartoGrid(false); }
+  };
+
   // ===== BARCODE: scansiona + cerca prodotto =====
   const stopBarcodeScan = () => {
     if (barcodeLoopRef.current) { cancelAnimationFrame(barcodeLoopRef.current); barcodeLoopRef.current = null; }
@@ -1703,21 +1711,27 @@ export default function App() {
   // ==========================================
   // TEAM QUOTE
   // ==========================================
-  const updateMemberPercentage = (warehouseId: string, membershipId: string, newPct: string) => {
+  const updateMemberPercentage = (warehouseId: string, membershipId: string, newPct: string, field: 'percentage' | 'costPercentage' = 'percentage') => {
     setTeamData(prev => prev.map(team => {
       if (team.warehouseId === warehouseId) {
-        return { ...team, members: team.members.map((m: any) => 
-          m.membershipId === membershipId ? { ...m, percentage: newPct } : m
+        return { ...team, members: team.members.map((m: any) =>
+          m.membershipId === membershipId ? { ...m, [field]: newPct } : m
         ) };
       }
       return team;
     }));
   };
-  
+
   const savePercentages = async (warehouseId: string, members: any[]) => {
     const total = members.reduce((s, m) => s + (Number(m.percentage) || 0), 0);
     if (Math.round(total) !== 100) {
-      showToast('Le percentuali devono sommare a 100%', 'err');
+      showToast('Le quote UTILI devono sommare a 100%', 'err');
+      return;
+    }
+    // I costi sono opzionali: se qualcuno li ha impostati, devono sommare a 100%.
+    const costTotal = members.reduce((s, m) => s + (Number(m.costPercentage) || 0), 0);
+    if (costTotal > 0 && Math.round(costTotal) !== 100) {
+      showToast('Le quote COSTI devono sommare a 100%', 'err');
       return;
     }
     setIsSavingTeam(true);
@@ -1726,7 +1740,9 @@ export default function App() {
       body: JSON.stringify({
         warehouseId,
         updates: members.map(m => ({
-          userId: m.userId, membershipId: m.membershipId, percentage: Number(m.percentage)
+          userId: m.userId, membershipId: m.membershipId,
+          percentage: Number(m.percentage),
+          costPercentage: Number(m.costPercentage) || 0,
         })),
       }),
     });
@@ -4645,31 +4661,48 @@ export default function App() {
                   <h3 className="text-lg font-bold tracking-tighter">Soci di {team.warehouseName}</h3>
                 </div>
                 
+                {/* Intestazione colonne: Utili (divisione profitto) e Costi (chi paga l'acquisto) */}
+                <div className="flex items-center gap-3 px-3 mb-1">
+                  <div className="flex-1" />
+                  <span className="w-20 text-[10px] font-bold text-[var(--text-soft)] uppercase text-center">Utili %</span>
+                  <span className="w-20 text-[10px] font-bold text-[var(--text-soft)] uppercase text-center">Costi %</span>
+                </div>
                 <div className="space-y-3 mb-4">
                   {team.members.map((m: any) => (
                     <div key={m.membershipId} className="flex items-center gap-3 bg-[var(--surface-2)] p-3 rounded-xl">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center font-bold text-sm">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
                         {m.name[0]?.toUpperCase()}
                       </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-sm">{m.name}</p>
-                        <p className="text-[10px] text-[var(--text-soft)] uppercase">{m.role === 'OWNER' ? 'Fondatore' : 'Membro'}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">{m.name}</p>
+                        <p className="text-[10px] text-[var(--text-soft)] uppercase">{m.role === 'OWNER' ? 'Fondatore' : 'Socio'}</p>
                       </div>
-                      <input type="number" min="0" max="100" value={m.percentage}
-                        onChange={(e: any) => updateMemberPercentage(team.warehouseId, m.membershipId, e.target.value)}
+                      <input type="number" min="0" max="100" value={m.percentage} title="Quota utili"
+                        onChange={(e: any) => updateMemberPercentage(team.warehouseId, m.membershipId, e.target.value, 'percentage')}
                         className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right focus:border-[#8b5cf6] outline-none" />
-                      <span className="text-[var(--text-soft)] text-xs">%</span>
+                      <input type="number" min="0" max="100" value={m.costPercentage ?? 0} title="Quota costi"
+                        onChange={(e: any) => updateMemberPercentage(team.warehouseId, m.membershipId, e.target.value, 'costPercentage')}
+                        className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right focus:border-amber-500 outline-none" />
                     </div>
                   ))}
                 </div>
 
-                <p className={`text-xs font-bold mb-3 ${
+                <p className={`text-xs font-bold mb-1 ${
                   Math.round(team.members.reduce((s: number, m: any) => s + (Number(m.percentage) || 0), 0)) === 100
                     ? 'text-green-500' : 'text-yellow-500'
                 }`}>
-                  Totale: {team.members.reduce((s: number, m: any) => s + (Number(m.percentage) || 0), 0).toFixed(0)}%
+                  Utili: {team.members.reduce((s: number, m: any) => s + (Number(m.percentage) || 0), 0).toFixed(0)}%
                   {Math.round(team.members.reduce((s: number, m: any) => s + (Number(m.percentage) || 0), 0)) !== 100 && ' (deve essere 100%)'}
                 </p>
+                {(() => {
+                  const ct = team.members.reduce((s: number, m: any) => s + (Number(m.costPercentage) || 0), 0);
+                  if (ct === 0) return <p className="text-[11px] text-[var(--text-faint)] mb-3">Costi: non impostati (di default seguono gli utili).</p>;
+                  return (
+                    <p className={`text-xs font-bold mb-3 ${Math.round(ct) === 100 ? 'text-green-500' : 'text-yellow-500'}`}>
+                      Costi: {ct.toFixed(0)}%{Math.round(ct) !== 100 && ' (deve essere 100%)'}
+                    </p>
+                  );
+                })()}
 
                 <button onClick={() => savePercentages(team.warehouseId, team.members)}
                   disabled={isSavingTeam}
@@ -5284,28 +5317,22 @@ export default function App() {
                   </button>
                 </div>
 
-                {/* Input manuale: crea la categoria se non esiste, altrimenti la seleziona */}
+                {/* Input manuale: crea la categoria se non esiste, altrimenti la seleziona.
+                    NB: NIENTE <form> annidato (causerebbe il submit del form esterno → refresh). */}
                 {showRepartoGrid && (
-                  <form
-                    onSubmit={async (e) => {
-                      e.preventDefault();
-                      const v = formCatInput.trim();
-                      if (!v) return;
-                      const created = await createRepartoFromDetected(v);
-                      if (created) { setSize(defaultSizeForCategory(created)); setFormCatInput(''); setShowRepartoGrid(false); }
-                    }}
-                    className="mt-2 flex gap-2">
+                  <div className="mt-2 flex gap-2">
                     <input list="form-cat-suggestions" value={formCatInput} onChange={e => setFormCatInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); useManualCategory(); } }}
                       placeholder="Es. Scarpe, Borse, Elettronica…" autoFocus
                       className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
                     <datalist id="form-cat-suggestions">
                       {userCategories.map((c: string) => <option key={c} value={c} />)}
                     </datalist>
-                    <button type="submit" disabled={isAddingCat || !formCatInput.trim()}
+                    <button type="button" onClick={useManualCategory} disabled={isAddingCat || !formCatInput.trim()}
                       className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">
                       {isAddingCat ? <Loader2 size={14} className="animate-spin" /> : 'Usa'}
                     </button>
-                  </form>
+                  </div>
                 )}
               </div>
 
