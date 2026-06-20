@@ -308,6 +308,9 @@ export default function App() {
   // Quote condivise
   const [isSharedPurchase, setIsSharedPurchase] = useState(false);
   const [productShares, setProductShares] = useState<{userId: string, name: string, percentage: string | number}[]>([]);
+  // Quote costi d'acquisto: chi ha pagato quanto
+  const [isSharedCost, setIsSharedCost] = useState(false);
+  const [purchaseCostShares, setPurchaseCostShares] = useState<{userId: string, name: string, percentage: string | number, amount?: number}[]>([]);
   // Sotto-magazzini: scelta nel form (vuoto = reparto stesso) + creazione nelle impostazioni
   const [selectedSubWh, setSelectedSubWh] = useState('');
   const [newSubName, setNewSubName] = useState('');
@@ -328,6 +331,9 @@ export default function App() {
   
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<any>(null);
+  // Modifica quantità pezzi dall'edit (lotti e gruppi multi-pezzo)
+  const [editQuantity, setEditQuantity] = useState('1');
+  const [editLotIds, setEditLotIds] = useState<string[]>([]); // tutti i pezzi in stock del lotto (se è un lotto)
   // Valutazione di mercato (eBay autenticati / StockX in futuro)
   const [valuation, setValuation] = useState<any>(null);
   const [valLoading, setValLoading] = useState(false);
@@ -353,6 +359,13 @@ export default function App() {
   const [isSavingTeam, setIsSavingTeam] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [isAddingCat, setIsAddingCat] = useState(false);
+  
+  // ----- PROFIT SHARING -----
+  const [showProfitSharesModal, setShowProfitSharesModal] = useState(false);
+  const [profitSharesMode, setProfitSharesMode] = useState<'warehouse' | 'subwarehouse'>('warehouse');
+  const [profitSharesParentId, setProfitSharesParentId] = useState('');
+  const [profitSharesName, setProfitSharesName] = useState('');
+  const [profitShares, setProfitShares] = useState<{userId: string, name: string, percentage: string}[]>([]);
   
   // ----- TOAST -----
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' | 'warn'; action?: { label: string; onClick: () => void } } | null>(null);
@@ -1938,6 +1951,18 @@ export default function App() {
     setEditBrand(group.brand); setEditName(group.name);
     setEditSize(group.size); setEditCondition(group.condition);
     setEditPrice(group.purchasePrice.toString());
+    // Quantità pezzi: per un lotto consideriamo TUTTI i pezzi in stock con lo stesso lotName
+    // (i pezzi di un lotto non si raggruppano perché hanno nome "lotName #N").
+    if (group.lotName) {
+      const lotIds = products
+        .filter((p: any) => p.lotName === group.lotName && p.status === 'IN STOCK' && (p.category || '') === (group.category || ''))
+        .map((p: any) => p.id);
+      setEditLotIds(lotIds);
+      setEditQuantity(String(lotIds.length || group.ids?.length || 1));
+    } else {
+      setEditLotIds([]);
+      setEditQuantity(String(group.ids?.length || 1));
+    }
     const shares = group.customShares && group.customShares !== '[]'
       ? JSON.parse(group.customShares) : [];
     setEditShares(shares);
@@ -2038,6 +2063,51 @@ export default function App() {
       });
       if (!ok) hasError = true;
     }
+
+    // ----- Riconciliazione quantità pezzi (lotti e gruppi multi-pezzo) -----
+    // Per i lotti opera su tutti i pezzi in stock dello stesso lotName; altrimenti sul gruppo.
+    const targetProducts = (productToEdit.lotName && editLotIds.length > 0)
+      ? products.filter((p: any) => editLotIds.includes(p.id))
+      : products.filter((p: any) => (productToEdit.ids as string[]).includes(p.id));
+    targetProducts.sort((a: any, b: any) => ((a.createdAt || '') < (b.createdAt || '') ? -1 : 1));
+    const currentCount = targetProducts.length;
+    const desiredCount = Math.max(0, parseInt(editQuantity) || currentCount);
+
+    if (desiredCount < currentCount) {
+      // Elimina i pezzi in eccesso partendo dai più recenti
+      const toDelete = targetProducts.slice(desiredCount).map((p: any) => p.id);
+      const results = await Promise.allSettled(
+        toDelete.map((id: string) => apiCall(`/products/${id}`, { method: 'DELETE' }))
+      );
+      if (results.some(r => r.status === 'rejected' || (r.status === 'fulfilled' && !(r.value as any).ok))) hasError = true;
+    } else if (desiredCount > currentCount) {
+      const toAdd = desiredCount - currentCount;
+      // Per i lotti continuiamo la numerazione "#N"; per i gruppi normali cloniamo il prodotto.
+      let startNum = currentCount;
+      if (productToEdit.lotName) {
+        const nums = products
+          .filter((p: any) => p.lotName === productToEdit.lotName)
+          .map((p: any) => { const m = /#(\d+)\s*$/.exec(p.name || ''); return m ? parseInt(m[1]) : 0; });
+        startNum = nums.length ? Math.max(...nums) : currentCount;
+      }
+      for (let i = 0; i < toAdd; i++) {
+        const { ok } = await apiCall('/products', {
+          method: 'POST',
+          body: JSON.stringify({
+            category: productToEdit.category,
+            warehouseId: productToEdit.warehouseId || undefined,
+            brand: editBrand,
+            name: productToEdit.lotName ? `${productToEdit.lotName} #${startNum + i + 1}` : editName,
+            size: editSize, condition: editCondition,
+            price: parseFloat(editPrice),
+            lotName: productToEdit.lotName || undefined,
+            customShares: finalEditShares,
+          }),
+        });
+        if (!ok) hasError = true;
+      }
+    }
+
     setIsSaving(false);
     if (hasError) showToast('Errore nella modifica', 'err');
     else {
@@ -5806,6 +5876,23 @@ export default function App() {
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
               </div>
 
+              {/* Quantità pezzi: per lotti e gruppi multi-pezzo. Riduci = elimina i pezzi
+                  in eccesso (i più recenti); aumenta = aggiunge nuovi pezzi. */}
+              {(productToEdit.lotName || (productToEdit.quantity || 1) > 1) && (
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5">
+                    <Layers size={11} className="text-[#8b5cf6]" />
+                    {productToEdit.lotName ? `Pezzi nel lotto "${productToEdit.lotName}"` : 'Quantità pezzi'}
+                  </label>
+                  <input type="number" min="1" step="1" value={editQuantity}
+                    onChange={(e: any) => setEditQuantity(e.target.value)}
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                  <p className="text-[11px] text-[var(--text-faint)] mt-1.5">
+                    Attuale: {productToEdit.lotName ? editLotIds.length : (productToEdit.ids?.length || 1)} pezzi · riducendo elimini i pezzi in eccesso, aumentando ne aggiungi.
+                  </p>
+                </div>
+              )}
+
               {/* Foto prodotto nel modale modifica */}
               <div className="border-t border-[var(--border-2)] pt-4">
                 <div className="flex items-center justify-between mb-3">
@@ -7828,6 +7915,130 @@ export default function App() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== PROFIT SHARING MODAL ========== */}
+      {showProfitSharesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowProfitSharesModal(false)}>
+          <div className="bg-[var(--card)] rounded-3xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-[var(--text)]">
+                Gestisci Profit Sharing
+              </h3>
+              <button onClick={() => setShowProfitSharesModal(false)}
+                className="p-2 hover:bg-[var(--bg)]/50 rounded-xl transition-colors">
+                <X size={20} className="text-[var(--text)]/60" />
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-sm text-[var(--text)]/70 mb-2">
+                {profitSharesMode === 'warehouse' ? 'Reparto' : 'Sotto-magazzino'}: <span className="font-semibold text-[var(--text)]">{profitSharesName}</span>
+              </p>
+            </div>
+
+            <div className="space-y-3 mb-4">
+              <p className="text-sm font-semibold text-[var(--text)]/80">Seleziona membri e percentuali:</p>
+              {teamData.length === 0 ? (
+                <p className="text-sm text-[var(--text)]/50">Nessun membro disponibile</p>
+              ) : (
+                teamData.map((member: any) => {
+                  const existingShare = profitShares.find(s => s.userId === member.userId);
+                  const isSelected = !!existingShare;
+                  
+                  return (
+                    <div key={member.userId} className="flex items-center gap-3 p-3 bg-[var(--bg)]/30 rounded-xl">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setProfitShares([...profitShares, {
+                              userId: member.userId,
+                              name: member.name,
+                              percentage: ''
+                            }]);
+                          } else {
+                            setProfitShares(profitShares.filter(s => s.userId !== member.userId));
+                          }
+                        }}
+                        className="w-5 h-5 rounded accent-blue-500"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-[var(--text)]">{member.name}</p>
+                      </div>
+                      {isSelected && (
+                        <input
+                          type="number"
+                          placeholder="%"
+                          value={existingShare.percentage}
+                          onChange={(e) => {
+                            setProfitShares(profitShares.map(s =>
+                              s.userId === member.userId
+                                ? { ...s, percentage: e.target.value }
+                                : s
+                            ));
+                          }}
+                          className="w-20 px-3 py-2 bg-[var(--bg)] border border-[var(--text)]/10 rounded-xl text-sm text-[var(--text)] focus:outline-none focus:border-blue-500"
+                        />
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowProfitSharesModal(false)}
+                className="flex-1 px-4 py-3 bg-[var(--bg)]/50 hover:bg-[var(--bg)] rounded-xl font-semibold text-[var(--text)]/70 transition-colors">
+                Annulla
+              </button>
+              <button
+                onClick={async () => {
+                  const validShares = profitShares.filter(s => s.percentage && parseFloat(s.percentage) > 0);
+                  if (validShares.length === 0) {
+                    showToast('Seleziona almeno un membro con percentuale valida', 'err');
+                    return;
+                  }
+                  
+                  const total = validShares.reduce((sum, s) => sum + parseFloat(s.percentage), 0);
+                  if (Math.abs(total - 100) > 0.01) {
+                    showToast(`Le percentuali devono sommare a 100% (attuale: ${total.toFixed(1)}%)`, 'err');
+                    return;
+                  }
+
+                  const endpoint = profitSharesMode === 'warehouse'
+                    ? `/warehouses/${profitSharesParentId}/profit-shares`
+                    : `/warehouses/sub/${profitSharesParentId}/profit-shares`;
+                  
+                  const { ok, data } = await apiCall(endpoint, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                      shares: validShares.map(s => ({
+                        userId: s.userId,
+                        percentage: parseFloat(s.percentage)
+                      }))
+                    })
+                  });
+
+                  if (ok) {
+                    showToast('Profit sharing configurato con successo!');
+                    setShowProfitSharesModal(false);
+                    setProfitShares([]);
+                    fetchTeam();
+                  } else {
+                    showToast(data.error || 'Errore durante la configurazione', 'err');
+                  }
+                }}
+                className="flex-1 px-4 py-3 bg-blue-500 hover:bg-blue-600 rounded-xl font-semibold text-white transition-colors">
+                Salva
+              </button>
             </div>
           </div>
         </div>

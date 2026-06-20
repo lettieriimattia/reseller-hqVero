@@ -131,6 +131,11 @@ model Product {
   // Se null, usa defaultProfitShares del warehouse
   profitShareOverride String?
 
+  // Divisione costi d'acquisto: chi ha pagato quanto all'acquisto
+  // JSON string con array di {userId, name, percentage, amount}
+  // Es: [{"userId":"abc","name":"Mario","percentage":70,"amount":70},{"userId":"def","name":"Luca","percentage":30,"amount":30}]
+  purchaseCostShares String?
+
   // Lotto d'acquisto: nome del lotto da cui proviene il prodotto (per raggruppare e
   // poter aggiungere altri pezzi a un lotto esistente). Null se prodotto singolo.
   lotName        String?

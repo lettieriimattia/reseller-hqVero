@@ -60,6 +60,10 @@ const photosSchema = z.array(
 
 export const createProductSchema = z.object({
   category: z.string().min(1).max(50),
+  // Magazzino di destinazione (sotto-magazzino/socio). Se assente si instrada per categoria.
+  warehouseId: z.string().cuid().optional(),
+  // Lotto d'acquisto: raggruppa i pezzi dello stesso lotto.
+  lotName: z.string().max(120).nullable().optional(),
   brand: z.string().min(1).max(100),
   name: z.string().min(1).max(200),
   // Campi secondari: opzionali — l'utente può lasciarli vuoti e compilarli dopo.

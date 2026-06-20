@@ -160,7 +160,7 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
     const {
       category, warehouseId: bodyWarehouseId, brand, name, size, condition, price, customShares, photos,
       marketPriceMin, marketPriceMax, marketPriceAvg, authenticityScore, notes,
-      attributes, consignmentName, consignmentPercent,
+      attributes, consignmentName, consignmentPercent, lotName,
     } = req.body;
 
     const memberships = await prisma.membership.findMany({
@@ -214,6 +214,7 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
         attributes: attributes && typeof attributes === 'object' ? JSON.stringify(attributes) : null,
         consignmentName: (consignmentName || '').trim() || null,
         consignmentPercent: typeof consignmentPercent === 'number' ? consignmentPercent : null,
+        lotName: (typeof lotName === 'string' && lotName.trim()) ? lotName.trim() : null,
       },
     });
 
