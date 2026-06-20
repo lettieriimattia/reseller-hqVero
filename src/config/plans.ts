@@ -11,7 +11,11 @@ export type Feature =
   | 'listing_ai'          // generatore annunci IA
   | 'shipping'            // spedizioni
   | 'labels'              // etichette/QR magazzino
-  | 'advanced_analytics'; // analytics avanzate
+  | 'advanced_analytics'  // analytics avanzate
+  | 'partners'            // magazzini con soci + divisione costi/utili
+  | 'marketplace'         // vetrina pubblica + chat acquirenti
+  | 'stockx_pricing'      // prezzi reali StockX
+  | 'accounting';         // costi extra + export CSV commercialista
 
 export interface Plan {
   id: PlanId;
@@ -30,47 +34,50 @@ export const PLANS: Record<PlanId, Plan> = {
     id: 'free',
     name: 'Free',
     priceMonthly: 0,
-    tagline: 'Per iniziare a gestire il magazzino',
+    tagline: 'Inizia a gestire il tuo magazzino',
     highlights: [
       'Magazzino e vendite',
-      'Riconoscimento foto IA',
-      'Valutazione di mercato',
-      'Fino a 25 prodotti',
+      'Riconoscimento prodotto da foto (IA)',
+      'Categorie create al volo dall\'IA',
+      'Valutazione di mercato base',
+      'Fino a 30 prodotti · solo tu',
     ],
     features: [],
-    maxProducts: 25,
+    maxProducts: 30,
     maxTeamMembers: 1,
   },
   starter: {
     id: 'starter',
     name: 'Starter',
     priceMonthly: 9.99,
-    tagline: 'Per il reseller che vende ogni giorno',
+    tagline: 'Per chi vende ogni giorno',
     highlights: [
       'Tutto del Free',
-      'Generatore annunci IA',
-      'Assistente trattative (offerte)',
+      'Generatore annunci IA + assistente trattative',
       'Riprezzamento stock fermo',
-      'Fino a 150 prodotti · 2 soci',
+      'Lettura SKU/barcode dalla foto della scatola',
+      '1 socio: magazzino condiviso con divisione costi/utili',
+      'Fino a 200 prodotti · 2 persone',
     ],
-    features: ['listing_ai', 'offer_assistant', 'repricing'],
-    maxProducts: 150,
+    features: ['listing_ai', 'offer_assistant', 'repricing', 'partners'],
+    maxProducts: 200,
     maxTeamMembers: 2,
   },
   pro: {
     id: 'pro',
     name: 'Pro',
     priceMonthly: 19.99,
-    tagline: 'Per chi vende su più piattaforme',
+    tagline: 'Per chi vende su più canali e in team',
     highlights: [
       'Tutto dello Starter',
-      'Pubblicazione multi-canale + ritiro automatico',
-      'Spedizioni',
-      'Analytics avanzate',
-      'Fino a 1000 prodotti · 5 soci',
+      'Marketplace pubblico: vendi i tuoi articoli in vetrina + chat',
+      'Prezzi reali StockX (valutazione sneaker)',
+      'Multi-canale + ritiro automatico · Spedizioni',
+      'Analytics avanzate · Costi extra + CSV per il commercialista',
+      'Fino a 2000 prodotti · 5 soci',
     ],
-    features: ['listing_ai', 'offer_assistant', 'repricing', 'crossposting', 'shipping', 'advanced_analytics'],
-    maxProducts: 1000,
+    features: ['listing_ai', 'offer_assistant', 'repricing', 'partners', 'crossposting', 'shipping', 'advanced_analytics', 'marketplace', 'stockx_pricing', 'accounting'],
+    maxProducts: 2000,
     maxTeamMembers: 5,
   },
   business: {
@@ -81,10 +88,10 @@ export const PLANS: Record<PlanId, Plan> = {
     highlights: [
       'Tutto del Pro',
       'Etichette/QR magazzino',
-      'Prodotti e soci illimitati',
+      'Prodotti, soci e magazzini illimitati',
       'Priorità supporto',
     ],
-    features: ['listing_ai', 'offer_assistant', 'repricing', 'crossposting', 'shipping', 'advanced_analytics', 'labels'],
+    features: ['listing_ai', 'offer_assistant', 'repricing', 'partners', 'crossposting', 'shipping', 'advanced_analytics', 'marketplace', 'stockx_pricing', 'accounting', 'labels'],
     maxProducts: null,
     maxTeamMembers: null,
   },
