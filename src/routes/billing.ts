@@ -18,6 +18,102 @@ const router = Router();
 export { isStripeConfigured };
 
 // ==========================================
+// PORTAFOGLIO VENDITORE — saldo + riscossione (KYC solo al primo prelievo).
+// ==========================================
+
+// Saldo: importi sbloccati (consegna confermata) pronti da riscuotere + quanto è ancora in attesa.
+router.get('/payout/balance', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const uid = req.user!.userId;
+    // Pronti da riscuotere: VENDUTO pagato in-app, consegna confermata, non ancora prelevato.
+    const ready = await prisma.product.findMany({
+      where: { userId: uid, status: 'VENDUTO', paidSessionId: { not: null }, deliveredConfirmedAt: { not: null }, withdrawnAt: null, deletedAt: null },
+      select: { id: true, brand: true, name: true, heldAmount: true },
+    });
+    // In attesa: pagati ma consegna non ancora confermata dal compratore.
+    const pendingItems = await prisma.product.findMany({
+      where: { userId: uid, status: 'PAGATO', deletedAt: null },
+      select: { id: true, brand: true, name: true, heldAmount: true },
+    });
+    const sum = (arr: any[]) => Math.round(arr.reduce((a, p) => a + (p.heldAmount || 0), 0) * 100) / 100;
+    res.json({
+      available: sum(ready),
+      pending: sum(pendingItems),
+      readyItems: ready.map(p => ({ id: p.id, name: `${p.brand} ${p.name}`, amount: p.heldAmount || 0 })),
+      pendingItems: pendingItems.map(p => ({ id: p.id, name: `${p.brand} ${p.name}`, amount: p.heldAmount || 0 })),
+    });
+  } catch (err: any) {
+    logger.error('Errore /billing/payout/balance', { err: err.message });
+    res.status(500).json({ error: 'Errore saldo' });
+  }
+});
+
+// Riscossione: se il conto non è ancora verificato → onboarding minimo (IBAN). Altrimenti
+// trasferisce gli importi pronti al conto del venditore (bonifico automatico) e li segna riscossi.
+router.post('/payout/withdraw', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const s = stripe();
+    if (!s) return res.status(400).json({ error: 'Pagamenti non configurati' });
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    if (!user) return res.status(404).json({ error: 'Utente non trovato' });
+
+    const ready = await prisma.product.findMany({
+      where: { userId: user.id, status: 'VENDUTO', paidSessionId: { not: null }, deliveredConfirmedAt: { not: null }, withdrawnAt: null, deletedAt: null },
+      select: { id: true, heldAmount: true },
+    });
+    const total = Math.round(ready.reduce((a, p) => a + (p.heldAmount || 0), 0) * 100) / 100;
+    if (total <= 0) return res.status(400).json({ error: 'Non hai ancora importi da riscuotere.' });
+
+    // Serve il conto verificato per il bonifico. Se non lo è → onboarding (chiede solo il minimo).
+    let accountId = user.stripeAccountId;
+    let chargesEnabled = user.stripeChargesEnabled;
+    if (accountId) {
+      try {
+        const acct = await s.accounts.retrieve(accountId);
+        chargesEnabled = !!acct.payouts_enabled;
+        if (chargesEnabled !== user.stripeChargesEnabled) {
+          await prisma.user.update({ where: { id: user.id }, data: { stripeChargesEnabled: chargesEnabled } }).catch(() => {});
+        }
+      } catch { /* ignora */ }
+    }
+    if (!accountId || !chargesEnabled) {
+      if (!accountId) {
+        const account = await s.accounts.create({
+          type: 'express', email: user.email,
+          capabilities: { transfers: { requested: true } },
+          business_type: 'individual', metadata: { userId: user.id },
+        });
+        accountId = account.id;
+        await prisma.user.update({ where: { id: user.id }, data: { stripeAccountId: accountId } });
+      }
+      const base = appBase(req);
+      const link = await s.accountLinks.create({
+        account: accountId,
+        refresh_url: `${base}/?connect=refresh`,
+        return_url: `${base}/?connect=done`,
+        type: 'account_onboarding',
+        collection_options: { fields: 'currently_due', future_requirements: 'omit' },
+      });
+      return res.json({ needsOnboarding: true, url: link.url });
+    }
+
+    // Conto pronto: trasferisci gli importi e segna riscosso.
+    const transfer = await s.transfers.create({
+      amount: Math.round(total * 100), currency: 'eur', destination: accountId,
+      metadata: { userId: user.id, kind: 'payout' },
+    });
+    await prisma.product.updateMany({
+      where: { id: { in: ready.map(p => p.id) } },
+      data: { withdrawnAt: new Date() },
+    });
+    res.json({ withdrawn: total, count: ready.length, transferId: transfer.id });
+  } catch (err: any) {
+    logger.error('Errore /billing/payout/withdraw', { err: err.message });
+    res.status(500).json({ error: 'Errore riscossione' });
+  }
+});
+
+// ==========================================
 // STRIPE CONNECT — il venditore collega il suo conto per incassare i pagamenti.
 // Flusso: onboard → Stripe (hosted, verifica identità/IBAN) → ritorno → status.
 // ==========================================

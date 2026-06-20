@@ -191,6 +191,10 @@ async function applyDeliveredEffects(product: any): Promise<void> {
       });
     }
     logger.info('Pacco INBOUND consegnato in magazzino', { productId: product.id });
+  } else if (product.status === 'PAGATO') {
+    // Articolo pagato in-app (escrow marketplace): la consegna la CONFERMA il compratore
+    // in chat (sblocca i fondi). Il tracking-consegnato qui non lo finalizza da solo.
+    logger.info('Tracking consegnato su articolo PAGATO: attesa conferma compratore', { productId: product.id });
   } else if (product.status !== 'VENDUTO') {
     await prisma.product.update({
       where: { id: product.id },

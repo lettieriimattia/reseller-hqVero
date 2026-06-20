@@ -20,25 +20,28 @@ export async function fulfillProductOrder(opts: {
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product || product.deletedAt) return { ok: false };
 
-  // Idempotenza: già evaso con questa sessione.
-  if (product.paidSessionId === sessionId && product.status === 'VENDUTO') {
+  // Idempotenza: già evaso con questa sessione (PAGATO in attesa, o già VENDUTO/riscosso).
+  if (product.paidSessionId === sessionId) {
     const existing = await prisma.conversation.findUnique({
       where: { productId_buyerId: { productId, buyerId } },
     }).catch(() => null);
     return { ok: true, conversationId: existing?.id };
   }
 
-  // Segna venduto al prezzo pubblico (netto al venditore) e togli dalla vetrina.
+  // Modello portafoglio: il pagamento è incassato dalla piattaforma e resta IN ATTESA.
+  // Lo stato diventa PAGATO (NON venduto): le percentuali tra soci NON si applicano finché
+  // il venditore non riscuote. heldAmount = prezzo + spedizione (netto per il venditore).
+  const held = (product.publicPrice ?? 0) + (product.shippingCost ?? 0);
   await prisma.product.update({
     where: { id: productId },
     data: {
-      status: 'VENDUTO',
-      soldAt: new Date(),
-      salePrice: product.publicPrice ?? 0,
+      status: 'PAGATO',
       platform: 'Marketplace',
       isPublic: false,
       paidSessionId: sessionId,
       buyerUserId: buyerId,
+      paidAt: new Date(),
+      heldAmount: Math.round(held * 100) / 100,
     },
   });
 
@@ -67,8 +70,8 @@ export async function fulfillProductOrder(opts: {
       warehouseId: product.warehouseId,
       excludeUserId: buyerId,
       type: 'SALE',
-      title: '💰 Venduto e pagato!',
-      message: `${product.brand} ${product.name} è stato pagato. Spedisci e inserisci il tracking.`,
+      title: '💰 Pagato! Da spedire',
+      message: `${product.brand} ${product.name} è stato pagato (in attesa di riscossione). Spediscilo e inserisci il tracking; poi riscuoti dal Portafoglio.`,
     }).catch(() => {});
   }
 

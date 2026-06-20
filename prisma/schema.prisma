@@ -124,7 +124,7 @@ model Product {
   platform       String?
   fees           Float?
   
-  status         String     @default("IN STOCK") // "IN STOCK" | "VENDUTO"
+  status         String     @default("IN STOCK") // "IN STOCK" | "RESERVED" | "PAGATO" | "VENDUTO"
   customShares   String?    // JSON string con quote dei soci
 
   // Conto vendita: il prodotto è di un terzo (consignor). Nome obbligatorio se attivo,
@@ -174,9 +174,14 @@ model Product {
   publicPrice    Float?    // prezzo di vendita pubblico (può differire da quello interno)
   shippingCost   Float?    // spese di spedizione a carico del compratore (per l'etichetta)
   sku            String?   // style code/SKU (es. DV1748-100) letto dalla scatola
-  // Pagamento in-app: id sessione/payment Stripe e id del compratore (conto unico).
-  paidSessionId  String?
-  buyerUserId    String?
+  // Pagamento in-app (modello portafoglio): il compratore paga, i fondi restano "in attesa"
+  // (status PAGATO) finché il venditore non li riscuote → solo allora diventa VENDUTO.
+  paidSessionId  String?   // id Checkout Session Stripe
+  buyerUserId    String?   // chi ha acquistato
+  paidAt         DateTime? // quando è stato pagato
+  heldAmount     Float?    // netto trattenuto per il venditore (prezzo + spedizione)
+  deliveredConfirmedAt DateTime? // quando il compratore ha confermato "Consegnato" → fondi sbloccati
+  withdrawnAt    DateTime? // quando il venditore ha riscosso (bonifico)
 
   // Pilastro 1: Campi dinamici dalla CategoryTemplate (JSONB)
   attributes     String?      // Record<string, any> — popolato dal DynamicForm (JSON string per SQLite)

@@ -415,6 +415,9 @@ export default function App() {
   // Stripe Connect (incassi venditore)
   const [connectStatus, setConnectStatus] = useState<{ configured: boolean; connected: boolean; chargesEnabled: boolean } | null>(null);
   const [connecting, setConnecting] = useState(false);
+  // Portafoglio venditore (saldo da riscuotere)
+  const [wallet, setWallet] = useState<{ available: number; pending: number; readyItems: any[]; pendingItems: any[] } | null>(null);
+  const [withdrawing, setWithdrawing] = useState(false);
   // Stato integrazione StockX (configurato + connesso via OAuth)
   const [stockxStatus, setStockxStatus] = useState<{ configured: boolean; connected: boolean } | null>(null);
   const [stockxConnecting, setStockxConnecting] = useState(false);
@@ -1146,8 +1149,10 @@ export default function App() {
   // Venditore: completa la vendita e (opzionale) registra la spedizione, dalla chat.
   const confirmShip = async () => {
     if (!activeConvo) return;
+    const alreadyPaid = activeConvo.productStatus === 'PAGATO';
     const price = parseFloat(shipForm.price);
-    if (!(price > 0)) { showToast('Inserisci il prezzo concordato', 'warn'); return; }
+    if (!alreadyPaid && !(price > 0)) { showToast('Inserisci il prezzo concordato', 'warn'); return; }
+    if (alreadyPaid && shipForm.code.trim().length < 4) { showToast('Inserisci il codice di tracking', 'warn'); return; }
     if (shipForm.code && CHAT_LINK_RE.test(shipForm.code)) { showToast('Codice tracking non valido', 'err'); return; }
     setShipping(true);
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/ship`, {
@@ -1213,7 +1218,7 @@ export default function App() {
   useEffect(() => {
     if (!isAuthenticated) return;
     if (currentView === 'chat') fetchConversations();
-    if (currentView === 'settings') refreshConnectStatus();
+    if (currentView === 'settings') { refreshConnectStatus(); refreshWallet(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentView, isAuthenticated, fetchConversations]);
 
@@ -1567,11 +1572,13 @@ export default function App() {
     });
   }, [searchedProducts, filterCondition, filterPriceMin, filterPriceMax, sortField, sortDir, staleOnly]);
 
-  const groupedSoldArray = Object.values(searchedProducts.filter(p => p.status === 'VENDUTO').reduce((acc, p) => {
+  // Venduti: include anche i PAGATI in attesa (così "lo vedi ancora"), con badge dedicato.
+  const groupedSoldArray = Object.values(searchedProducts.filter(p => p.status === 'VENDUTO' || (p as any).status === 'PAGATO').reduce((acc, p) => {
     const cat = p.category || 'Scarpe';
     const plat = p.platform || 'Privato';
-    const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.salePrice}-${plat}`;
-    if (!acc[key]) acc[key] = { ...p, category: cat, platform: plat, quantity: 0, totalRevenue: 0, totalProfit: 0, totalFees: 0, ids: [] };
+    const held = (p as any).status === 'PAGATO';
+    const key = `${held ? 'held-' : ''}${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.salePrice}-${plat}`;
+    if (!acc[key]) acc[key] = { ...p, category: cat, platform: plat, isHeld: held, quantity: 0, totalRevenue: 0, totalProfit: 0, totalFees: 0, ids: [] };
     acc[key].quantity += 1;
     acc[key].ids.push(p.id);
     acc[key].totalRevenue += (p.salePrice || 0);
@@ -1911,6 +1918,26 @@ export default function App() {
     setConnecting(false);
     if (ok && data?.url) window.location.href = data.url;
     else showToast(data?.error || 'Pagamenti non ancora attivi', 'err');
+  };
+  // Portafoglio: saldo + riscossione (onboarding minimo solo al primo prelievo).
+  const refreshWallet = async () => {
+    const { ok, data } = await apiCall<any>('/billing/payout/balance');
+    if (ok) setWallet(data);
+  };
+  const withdrawFunds = async () => {
+    setWithdrawing(true);
+    const { ok, data } = await apiCall<any>('/billing/payout/withdraw', { method: 'POST', body: JSON.stringify({}) });
+    setWithdrawing(false);
+    if (ok && data?.needsOnboarding && data?.url) { window.location.href = data.url; return; }
+    if (ok && data?.withdrawn != null) { showToast(`Riscossione avviata: ${data.withdrawn.toFixed(2)}€ in arrivo sul tuo conto`, 'ok'); await refreshWallet(); return; }
+    showToast(data?.error || 'Errore riscossione', 'err');
+  };
+  // Compratore: conferma di aver ricevuto il pacco → sblocca il pagamento al venditore.
+  const confirmDelivery = async () => {
+    if (!activeConvo) return;
+    const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/confirm-delivery`, { method: 'POST', body: JSON.stringify({}) });
+    if (ok && data?.success) { await openConversation({ id: activeConvo.id }); await fetchConversations(); showToast('Consegna confermata, grazie!', 'ok'); }
+    else showToast(data?.error || 'Errore', 'err');
   };
   const openPlanModal = async (tab: 'plans' | 'repricing' | 'offer' | 'channels' = 'plans') => {
     setPlanModalOpen(true);
@@ -4211,6 +4238,29 @@ export default function App() {
                       try { photos = g.photos ? JSON.parse(g.photos) : []; } catch {}
                       const platCls = platColors[g.platform] || 'text-[var(--text-muted)] bg-[var(--fill)] border-[var(--border-2)]';
 
+                      // PAGATO in attesa: pagato dal compratore, soldi in attesa di consegna.
+                      if (g.isHeld) {
+                        return (
+                          <div key={g.ids.join(',')} className="bg-[var(--surface)] border border-[#8b5cf6]/25 rounded-2xl overflow-hidden">
+                            <div className="flex items-center gap-3 p-4">
+                              {photos.length > 0
+                                ? <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[var(--border)]"><img src={photos[0]} alt="" className="w-full h-full object-cover" /></div>
+                                : <span className="text-2xl shrink-0 opacity-60">{getCategoryIcon(g.category)}</span>}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <p className="font-bold text-sm truncate">{g.brand} {g.name}</p>
+                                  <span className="text-[9px] font-bold text-[#8b5cf6] bg-[#8b5cf6]/15 px-1.5 py-0.5 rounded-full uppercase">Pagato · in attesa</span>
+                                </div>
+                                <p className="text-[10px] text-[var(--text-soft)]">{g.size} · {g.condition} · {(g.heldAmount ?? g.publicPrice ?? 0).toFixed(0)}€</p>
+                              </div>
+                            </div>
+                            <div className="px-4 pb-3">
+                              <p className="text-[10px] text-[var(--text-soft)]">💬 Spedisci dalla chat e inserisci il tracking. I soldi si sbloccano quando il compratore conferma la consegna.</p>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       if (g.salePrice === 0) {
                         return (
                           <div key={g.ids.join(',')} className="bg-[var(--surface)] border border-yellow-500/20 rounded-2xl overflow-hidden">
@@ -4867,7 +4917,12 @@ export default function App() {
                   </div>
                   {activeConvo.role === 'seller' && (
                     <button onClick={() => setShipForm(f => ({ ...f, open: true, price: activeConvo.price != null ? String(activeConvo.price) : '' }))}
-                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white flex items-center gap-1.5"><DollarSign size={13} /> Vendi e spedisci</button>
+                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white flex items-center gap-1.5">
+                      <DollarSign size={13} /> {activeConvo.productStatus === 'PAGATO' ? 'Spedisci' : 'Vendi e spedisci'}</button>
+                  )}
+                  {activeConvo.role === 'buyer' && activeConvo.productStatus === 'PAGATO' && (
+                    <button onClick={confirmDelivery}
+                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8b5cf6] text-white flex items-center gap-1.5"><CheckCircle size={13} /> Consegnato</button>
                   )}
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -4893,26 +4948,32 @@ export default function App() {
               <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !shipping && setShipForm(f => ({ ...f, open: false }))}>
                 <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
                   <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-                  <h2 className="text-xl font-semibold mb-1">Vendi e spedisci</h2>
-                  <p className="text-xs text-[var(--text-soft)] mb-5">{activeConvo.productName} — verrà segnato venduto e tolto dalla vetrina. Alla consegna resta venduto.</p>
+                  <h2 className="text-xl font-semibold mb-1">{activeConvo.productStatus === 'PAGATO' ? 'Spedisci articolo' : 'Vendi e spedisci'}</h2>
+                  <p className="text-xs text-[var(--text-soft)] mb-5">
+                    {activeConvo.productStatus === 'PAGATO'
+                      ? `${activeConvo.productName} — già pagato. Inserisci il tracking; i soldi si sbloccano quando il compratore conferma la consegna.`
+                      : `${activeConvo.productName} — verrà segnato venduto e tolto dalla vetrina.`}
+                  </p>
                   <div className="space-y-4">
+                    {activeConvo.productStatus !== 'PAGATO' && (
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo di vendita concordato €</label>
                       <input type="number" step="0.01" value={shipForm.price} onChange={e => setShipForm(f => ({ ...f, price: e.target.value }))}
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6]" />
                     </div>
+                    )}
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Codice tracking (opzionale)</label>
-                      <input value={shipForm.code} onChange={e => setShipForm(f => ({ ...f, code: e.target.value }))} placeholder="Es. da Vinted/Poste/BRT…"
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Codice tracking {activeConvo.productStatus === 'PAGATO' ? '' : '(opzionale)'}</label>
+                      <input value={shipForm.code} onChange={e => setShipForm(f => ({ ...f, code: e.target.value }))} placeholder="Es. da Poste/BRT/InPost…"
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6]" />
-                      <p className="text-[10px] text-[var(--text-faint)] mt-1">Se lo inserisci, segui la spedizione fino alla consegna. Niente link in chat.</p>
+                      <p className="text-[10px] text-[var(--text-faint)] mt-1">Niente link in chat (anti-truffa).</p>
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => setShipForm(f => ({ ...f, open: false }))} disabled={shipping}
                         className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold disabled:opacity-50">Annulla</button>
                       <button onClick={confirmShip} disabled={shipping}
                         className="flex-1 py-3 rounded-xl bg-green-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-1.5">
-                        {shipping ? <Loader2 className="animate-spin" size={18} /> : <><DollarSign size={16} /> Conferma vendita</>}
+                        {shipping ? <Loader2 className="animate-spin" size={18} /> : <><Package size={16} /> {activeConvo.productStatus === 'PAGATO' ? 'Conferma spedizione' : 'Conferma vendita'}</>}
                       </button>
                     </div>
                   </div>
@@ -5381,16 +5442,29 @@ export default function App() {
               </div>
               {connectStatus?.configured === false ? (
                 <p className="text-xs text-[var(--text-faint)] mt-1">I pagamenti non sono ancora attivi sulla piattaforma.</p>
-              ) : connectStatus?.chargesEnabled ? (
-                <p className="text-xs text-[var(--text-soft)] mt-1">Il tuo conto è collegato: quando vendi un articolo nel marketplace, i soldi arrivano direttamente sul tuo conto.</p>
               ) : (
                 <>
-                  <p className="text-xs text-[var(--text-soft)] mt-1 mb-3">Collega il tuo conto per ricevere i pagamenti dei prodotti venduti nel marketplace. La verifica (IBAN + identità) è gestita in sicurezza da Stripe.</p>
-                  <button type="button" onClick={connectStripe} disabled={connecting}
-                    className="px-4 py-2 bg-[#8b5cf6] hover:bg-[#7c3aed] rounded-xl text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-2">
-                    {connecting ? <Loader2 size={14} className="animate-spin" /> : <Wallet size={14} />}
-                    {connectStatus?.connected ? 'Completa il collegamento' : 'Collega il mio conto'}
+                  {/* Saldo */}
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="bg-[var(--surface-2)] rounded-xl p-3">
+                      <p className="text-[10px] text-[var(--text-soft)] uppercase tracking-widest">Da riscuotere</p>
+                      <p className="text-2xl font-bold num">{(wallet?.available ?? 0).toFixed(2)}€</p>
+                    </div>
+                    <div className="bg-[var(--surface-2)] rounded-xl p-3">
+                      <p className="text-[10px] text-[var(--text-soft)] uppercase tracking-widest">In attesa di consegna</p>
+                      <p className="text-2xl font-bold num text-[var(--text-soft)]">{(wallet?.pending ?? 0).toFixed(2)}€</p>
+                    </div>
+                  </div>
+                  <button type="button" onClick={withdrawFunds} disabled={withdrawing || (wallet?.available ?? 0) <= 0}
+                    className="mt-3 w-full py-2.5 bg-[#8b5cf6] hover:bg-[#7c3aed] rounded-xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
+                    {withdrawing ? <Loader2 size={15} className="animate-spin" /> : <Wallet size={15} />}
+                    {(wallet?.available ?? 0) > 0 ? `Riscuoti ${(wallet?.available ?? 0).toFixed(2)}€` : 'Niente da riscuotere'}
                   </button>
+                  <p className="text-[10px] text-[var(--text-faint)] mt-2">
+                    {connectStatus?.chargesEnabled
+                      ? 'Conto verificato: il bonifico parte in automatico quando riscuoti.'
+                      : 'Al primo prelievo Stripe ti chiederà il minimo (IBAN + dati base). I soldi entrano qui quando il compratore conferma la consegna.'}
+                  </p>
                 </>
               )}
             </section>

@@ -64,8 +64,9 @@ router.get('/:id', async (req, res: Response) => {
     if (!p) return res.status(404).json({ error: 'Annuncio non trovato' });
     let photos: string[] = [];
     try { photos = p.photos ? JSON.parse(p.photos) : []; } catch { photos = []; }
-    // Pagamento in-app: serve Stripe attivo, prezzo pubblico e venditore con incassi attivi.
-    const payEnabled = isStripeConfigured() && p.publicPrice != null && p.publicPrice > 0 && !!p.user?.stripeChargesEnabled;
+    // Pagamento in-app: basta Stripe attivo + prezzo pubblico. Il venditore NON deve essere
+    // già verificato: i soldi restano in attesa e lui li riscuote (con verifica) più avanti.
+    const payEnabled = isStripeConfigured() && p.publicPrice != null && p.publicPrice > 0;
     const breakdown = payEnabled ? computeBuyerBreakdown(p.publicPrice as number, p.shippingCost || 0, serviceFeeFor(p.user?.plan)) : null;
     res.json({
       id: p.id, brand: p.brand, name: p.name, category: p.category, size: p.size, condition: p.condition,
@@ -115,20 +116,18 @@ router.post('/:id/buy', authenticate, async (req: AuthRequest, res: Response) =>
     if (!product.publicPrice || product.publicPrice <= 0) return res.status(400).json({ error: 'Prezzo non valido.' });
 
     const seller = product.user;
-    if (!seller?.stripeAccountId || !seller.stripeChargesEnabled) {
-      return res.status(409).json({ error: 'Il venditore non ha ancora attivato gli incassi. Contattalo dalla chat.', sellerNotReady: true });
-    }
-
     const buyer = await prisma.user.findUnique({ where: { id: buyerId } });
     const bd = computeBuyerBreakdown(product.publicPrice, product.shippingCost || 0, serviceFeeFor(seller.plan));
     const base = appBase(req);
-    // La nostra fee + la copertura della commissione Stripe le tratteniamo noi;
-    // al venditore arriva netto prezzo + spedizione.
-    const appFeeCents = Math.round((bd.serviceFee + bd.fees) * 100);
 
+    // Modello portafoglio: addebito SUL CONTO PIATTAFORMA (nessun transfer ora). I soldi
+    // restano "in attesa"; il venditore li riscuoterà più avanti (con verifica al prelievo).
     const session = await s.checkout.sessions.create({
       mode: 'payment',
       customer_email: buyer?.email,
+      // Il compratore inserisce QUI dove vuole ricevere il pacco (serve per la spedizione/etichetta).
+      shipping_address_collection: { allowed_countries: ['IT', 'SM', 'VA'] },
+      phone_number_collection: { enabled: true },
       line_items: [{
         quantity: 1,
         price_data: {
@@ -137,10 +136,6 @@ router.post('/:id/buy', authenticate, async (req: AuthRequest, res: Response) =>
           unit_amount: Math.round(bd.total * 100),
         },
       }],
-      payment_intent_data: {
-        application_fee_amount: appFeeCents,
-        transfer_data: { destination: seller.stripeAccountId },
-      },
       metadata: { kind: 'product', productId: product.id, buyerId },
       success_url: `${base}/?bought=${product.id}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/?buy_cancel=1`,
