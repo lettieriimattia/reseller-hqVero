@@ -4550,9 +4550,7 @@ export default function App() {
 
               {repartiOpen && (<>
               <div className="space-y-3 mb-6 mt-4">
-                {user.warehouses.filter((w: any) => !w.parentId).map((w: any) => {
-                  const subs = user.warehouses.filter((x: any) => x.parentId === w.id);
-                  return (
+                {user.warehouses.filter((w: any) => !w.parentId).map((w: any) => (
                   <div key={w.id} className="bg-[var(--surface-2)] p-4 rounded-xl border border-[var(--border-2)]">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                       <div className="flex items-center gap-3">
@@ -4572,46 +4570,8 @@ export default function App() {
                         </button>
                       )}
                     </div>
-                    {/* Sotto-magazzini del reparto */}
-                    {(subs.length > 0 || w.role === 'OWNER') && (
-                      <div className="mt-3 pl-3 border-l-2 border-[var(--border)] space-y-2">
-                        {subs.map((sw: any) => (
-                          <div key={sw.id} className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Layers size={12} className="text-[var(--text-faint)] shrink-0" />
-                              <span className="text-sm font-semibold truncate">{sw.name}</span>
-                              <span className="text-[10px] text-[var(--text-faint)] shrink-0">· {sw.percentage}%</span>
-                            </div>
-                            {sw.inviteCode && (
-                              <button onClick={() => { navigator.clipboard.writeText(sw.inviteCode); showToast('Codice copiato!'); }}
-                                className="flex items-center gap-1.5 bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 px-2 py-1 rounded-lg text-[10px] font-mono shrink-0">
-                                <KeyRound size={10} /> {sw.inviteCode}
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        {w.role === 'OWNER' && (
-                          addingSubTo === w.id ? (
-                            <div className="flex gap-2 items-center">
-                              <input autoFocus value={newSubName} onChange={(e: any) => setNewSubName(e.target.value)}
-                                placeholder="Nome (es. con Luca, Milano…)"
-                                className="flex-1 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[#8b5cf6]" />
-                              <button onClick={() => createSubWarehouse(w.id, newSubName)} disabled={creatingSub || !newSubName.trim()}
-                                className="px-3 py-1.5 rounded-lg bg-[#8b5cf6] text-white text-xs font-bold disabled:opacity-50 shrink-0">{creatingSub ? '…' : 'Crea'}</button>
-                              <button onClick={() => { setAddingSubTo(''); setNewSubName(''); }} className="px-1.5 text-[var(--text-soft)] shrink-0"><X size={14} /></button>
-                            </div>
-                          ) : (
-                            <button onClick={() => { setAddingSubTo(w.id); setNewSubName(''); }}
-                              className="text-[11px] text-[#8b5cf6] font-bold flex items-center gap-1 hover:underline">
-                              <Plus size={11} /> Sotto-magazzino
-                            </button>
-                          )
-                        )}
-                      </div>
-                    )}
                   </div>
-                  );
-                })}
+                ))}
               </div>
               
               {isFounder && (

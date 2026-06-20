@@ -28,15 +28,17 @@ export function getRedirectUri(req?: any): string {
 }
 
 export function getAuthorizeUrl(redirectUri: string, state: string): string {
-  const params = new URLSearchParams({
-    response_type: 'code',
-    client_id: process.env.STOCKX_CLIENT_ID || '',
-    redirect_uri: redirectUri,
-    scope: 'offline_access openid',
-    audience: STOCKX_AUDIENCE,
-    state,
-  });
-  return `${STOCKX_AUTHORIZE}?${params.toString()}`;
+  // Costruito a mano (non URLSearchParams) così lo spazio nello scope diventa %20
+  // e non '+': StockX/PerimeterX a volte rifiuta il '+' e ti rimanda alla home.
+  const q = [
+    `response_type=code`,
+    `client_id=${encodeURIComponent(process.env.STOCKX_CLIENT_ID || '')}`,
+    `redirect_uri=${encodeURIComponent(redirectUri)}`,
+    `scope=${encodeURIComponent('offline_access openid')}`,
+    `audience=${encodeURIComponent(STOCKX_AUDIENCE)}`,
+    `state=${encodeURIComponent(state)}`,
+  ].join('&');
+  return `${STOCKX_AUTHORIZE}?${q}`;
 }
 
 // Scambia il code per i token e salva il refresh_token (Setting key/value).
