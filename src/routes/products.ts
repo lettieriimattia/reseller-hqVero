@@ -724,11 +724,13 @@ router.patch('/:id/publish', requireFeature('marketplace'), async (req: AuthRequ
     const rawPrice = Number(req.body?.publicPrice);
     const publicPrice = !isNaN(rawPrice) && rawPrice > 0 ? Math.round(rawPrice * 100) / 100 : null;
     if (isPublic && publicPrice == null) return res.status(400).json({ error: 'Inserisci un prezzo pubblico valido.' });
+    const rawShip = Number(req.body?.shippingCost);
+    const shippingCost = !isNaN(rawShip) && rawShip > 0 ? Math.round(rawShip * 100) / 100 : null;
 
     const updated = await prisma.product.update({
       where: { id: product.id },
-      data: { isPublic, publicPrice: isPublic ? publicPrice : null },
-      select: { id: true, isPublic: true, publicPrice: true },
+      data: { isPublic, publicPrice: isPublic ? publicPrice : null, shippingCost: isPublic ? shippingCost : null },
+      select: { id: true, isPublic: true, publicPrice: true, shippingCost: true },
     });
     res.json(updated);
   } catch (err: any) {

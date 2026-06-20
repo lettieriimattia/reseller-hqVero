@@ -348,6 +348,7 @@ export default function App() {
   // Pubblicazione nel marketplace dalla modale di modifica
   const [editIsPublic, setEditIsPublic] = useState(false);
   const [editPublicPrice, setEditPublicPrice] = useState('');
+  const [editShippingCost, setEditShippingCost] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
   // Modifica quantità pezzi dall'edit (lotti e gruppi multi-pezzo)
   const [editQuantity, setEditQuantity] = useState('1');
@@ -411,6 +412,9 @@ export default function App() {
   // Completa vendita + spedizione dalla chat (lato venditore)
   const [shipForm, setShipForm] = useState<{ open: boolean; price: string; code: string; carrier: string }>({ open: false, price: '', code: '', carrier: 'Auto' });
   const [shipping, setShipping] = useState(false);
+  // Stripe Connect (incassi venditore)
+  const [connectStatus, setConnectStatus] = useState<{ configured: boolean; connected: boolean; chargesEnabled: boolean } | null>(null);
+  const [connecting, setConnecting] = useState(false);
   // Stato integrazione StockX (configurato + connesso via OAuth)
   const [stockxStatus, setStockxStatus] = useState<{ configured: boolean; connected: boolean } | null>(null);
   const [stockxConnecting, setStockxConnecting] = useState(false);
@@ -1094,6 +1098,15 @@ export default function App() {
     if (ok) setMarketDetail(data);
   };
 
+  // Acquisto con pagamento in-app (Stripe Connect): reindirizza al checkout.
+  const payProduct = async (productId: string) => {
+    if (!isAuthenticated) { setPublicMarket(false); showToast('Accedi per acquistare', 'warn'); return; }
+    const { ok, data } = await apiCall<any>(`/market/${productId}/buy`, { method: 'POST', body: JSON.stringify({}) });
+    if (ok && data?.url) { window.location.href = data.url; return; }
+    if (data?.sellerNotReady) { showToast('Il venditore non ha ancora attivato gli incassi — contattalo in chat', 'warn'); return; }
+    showToast(data?.error || 'Errore pagamento', 'err');
+  };
+
   const contactSeller = async (productId: string, message?: string) => {
     if (!isAuthenticated) { setPublicMarket(false); showToast('Accedi per contattare il venditore', 'warn'); return; }
     const { ok, data } = await apiCall<any>(`/market/${productId}/contact`, { method: 'POST', body: JSON.stringify(message ? { message } : {}) });
@@ -1200,6 +1213,8 @@ export default function App() {
   useEffect(() => {
     if (!isAuthenticated) return;
     if (currentView === 'chat') fetchConversations();
+    if (currentView === 'settings') refreshConnectStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentView, isAuthenticated, fetchConversations]);
 
   useEffect(() => {
@@ -1257,20 +1272,34 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get('session_id');
     const upgraded = params.get('upgraded');
-    if (!sessionId && !upgraded) return;
+    const bought = params.get('bought');
+    const connect = params.get('connect');
+    if (!sessionId && !upgraded && !bought && !connect) return;
     (async () => {
       try {
-        if (sessionId) {
+        if (sessionId && bought) {
+          // Acquisto prodotto: rete di sicurezza (evade l'ordine anche senza webhook).
+          const { ok, data } = await apiCall<any>('/billing/verify', { method: 'POST', body: JSON.stringify({ sessionId }) });
+          if (ok && data?.updated) {
+            await fetchProducts(); await fetchConversations();
+            showToast('Acquisto completato! 🎉 Trovi la chat col venditore in Messaggi.', 'ok');
+          } else {
+            showToast('Pagamento ricevuto, sto aggiornando…', 'ok');
+          }
+        } else if (sessionId) {
           const { ok, data } = await apiCall<any>('/billing/verify', { method: 'POST', body: JSON.stringify({ sessionId }) });
           if (ok && data?.updated && data?.plan) {
             setUser(u => u ? { ...u, plan: data.plan } : u);
             await refreshMyPlan();
             showToast('Abbonamento attivato! 🎉', 'ok');
           } else {
-            // Anche se la verifica non conferma subito (es. webhook in ritardo), riallinea.
             await refreshMyPlan();
             showToast('Pagamento ricevuto. Aggiorno il piano…', 'ok');
           }
+        }
+        if (connect === 'done') {
+          await refreshConnectStatus();
+          showToast('Conto collegato! Ora puoi ricevere i pagamenti.', 'ok');
         }
       } catch { /* ignora */ }
       window.history.replaceState({}, '', '/');
@@ -1871,6 +1900,18 @@ export default function App() {
     if (ok && data?.url) window.location.href = data.url;
     else showToast(data?.error || 'Nessun abbonamento attivo', 'err');
   };
+  // Stripe Connect: stato del conto venditore + avvio onboarding.
+  const refreshConnectStatus = async () => {
+    const { ok, data } = await apiCall<any>('/billing/connect/status');
+    if (ok) setConnectStatus(data);
+  };
+  const connectStripe = async () => {
+    setConnecting(true);
+    const { ok, data } = await apiCall<any>('/billing/connect/onboard', { method: 'POST', body: JSON.stringify({}) });
+    setConnecting(false);
+    if (ok && data?.url) window.location.href = data.url;
+    else showToast(data?.error || 'Pagamenti non ancora attivi', 'err');
+  };
   const openPlanModal = async (tab: 'plans' | 'repricing' | 'offer' | 'channels' = 'plans') => {
     setPlanModalOpen(true);
     setProTab(tab);
@@ -2382,6 +2423,7 @@ export default function App() {
     } catch { setEditPhotos([]); }
     setEditIsPublic(!!group.isPublic);
     setEditPublicPrice(group.publicPrice != null ? String(group.publicPrice) : (group.salePrice != null ? String(group.salePrice) : ''));
+    setEditShippingCost(group.shippingCost != null ? String(group.shippingCost) : '');
     setValuation(null);
     setEditModalOpen(true);
   };
@@ -2420,10 +2462,11 @@ export default function App() {
   const savePublish = async (group: any, makePublic: boolean) => {
     const price = parseFloat(editPublicPrice);
     if (makePublic && (isNaN(price) || price <= 0)) { showToast('Inserisci un prezzo pubblico', 'err'); return; }
+    const ship = parseFloat(editShippingCost);
     setIsPublishing(true);
     const ids = (group.ids as string[]) || [group.id];
     const results = await Promise.allSettled(ids.map(id =>
-      apiCall(`/products/${id}/publish`, { method: 'PATCH', body: JSON.stringify({ isPublic: makePublic, publicPrice: makePublic ? price : null }) })
+      apiCall(`/products/${id}/publish`, { method: 'PATCH', body: JSON.stringify({ isPublic: makePublic, publicPrice: makePublic ? price : null, shippingCost: makePublic && !isNaN(ship) && ship > 0 ? ship : null }) })
     ));
     setIsPublishing(false);
     const ok = results.every(r => r.status === 'fulfilled' && (r.value as any).ok);
@@ -4909,13 +4952,26 @@ export default function App() {
                   <div className="text-center py-2 text-sm text-[var(--text-soft)] font-semibold">Questo è un tuo articolo in vetrina</div>
                 ) : isAuthenticated ? (
                   <>
+                  {marketDetail.payEnabled && marketDetail.breakdown && (
+                    <div className="mb-3 text-xs bg-[var(--surface-2)] rounded-xl p-3 space-y-1">
+                      <div className="flex justify-between"><span className="text-[var(--text-soft)]">Articolo</span><span className="font-semibold">{marketDetail.breakdown.itemPrice.toFixed(2)}€</span></div>
+                      {marketDetail.breakdown.shipping > 0 && <div className="flex justify-between"><span className="text-[var(--text-soft)]">Spedizione</span><span className="font-semibold">{marketDetail.breakdown.shipping.toFixed(2)}€</span></div>}
+                      <div className="flex justify-between"><span className="text-[var(--text-soft)]">Servizio + commissioni</span><span className="font-semibold">{(marketDetail.breakdown.serviceFee + marketDetail.breakdown.fees).toFixed(2)}€</span></div>
+                      <div className="flex justify-between pt-1 border-t border-[var(--border)] text-sm"><span className="font-bold">Totale</span><span className="font-bold">{marketDetail.breakdown.total.toFixed(2)}€</span></div>
+                    </div>
+                  )}
                   <div className="flex gap-2">
-                    <button onClick={() => contactSeller(marketDetail.id, `Ciao! Vorrei comprare "${marketDetail.brand} ${marketDetail.name}". È disponibile?`)}
-                      className="flex-1 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">Compra</button>
+                    {marketDetail.payEnabled ? (
+                      <button onClick={() => payProduct(marketDetail.id)}
+                        className="flex-1 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">Compra ora</button>
+                    ) : (
+                      <button onClick={() => contactSeller(marketDetail.id, `Ciao! Vorrei comprare "${marketDetail.brand} ${marketDetail.name}". È disponibile?`)}
+                        className="flex-1 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">Compra</button>
+                    )}
                     <button onClick={() => contactSeller(marketDetail.id)}
                       className="flex-1 py-3 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] font-bold transition-colors">Contatta venditore</button>
                   </div>
-                  <p className="text-[10px] text-[var(--text-faint)] text-center mt-2">In chat niente link o foto — prima difesa contro le truffe.</p>
+                  <p className="text-[10px] text-[var(--text-faint)] text-center mt-2">{marketDetail.payEnabled ? 'Pagamento sicuro con Stripe · il venditore riceve i soldi sul suo conto' : 'In chat niente link o foto — prima difesa contro le truffe.'}</p>
                   </>
                 ) : (
                   <button onClick={() => { setMarketDetail(null); setPublicMarket(false); }}
@@ -5310,6 +5366,33 @@ export default function App() {
                   Cambia
                 </button>
               </div>
+            </section>
+
+            {/* SEZIONE: Incassi marketplace (Stripe Connect) */}
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Wallet className="text-[var(--text)]" size={18} />
+                <h3 className="text-lg font-bold tracking-tighter">Incassi marketplace</h3>
+                {connectStatus?.chargesEnabled
+                  ? <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">Attivo</span>
+                  : connectStatus?.connected
+                    ? <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/15 px-2 py-0.5 rounded-full">Da completare</span>
+                    : <span className="text-[10px] font-bold text-[var(--text-soft)] bg-[var(--fill)] px-2 py-0.5 rounded-full">Non collegato</span>}
+              </div>
+              {connectStatus?.configured === false ? (
+                <p className="text-xs text-[var(--text-faint)] mt-1">I pagamenti non sono ancora attivi sulla piattaforma.</p>
+              ) : connectStatus?.chargesEnabled ? (
+                <p className="text-xs text-[var(--text-soft)] mt-1">Il tuo conto è collegato: quando vendi un articolo nel marketplace, i soldi arrivano direttamente sul tuo conto.</p>
+              ) : (
+                <>
+                  <p className="text-xs text-[var(--text-soft)] mt-1 mb-3">Collega il tuo conto per ricevere i pagamenti dei prodotti venduti nel marketplace. La verifica (IBAN + identità) è gestita in sicurezza da Stripe.</p>
+                  <button type="button" onClick={connectStripe} disabled={connecting}
+                    className="px-4 py-2 bg-[#8b5cf6] hover:bg-[#7c3aed] rounded-xl text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-2">
+                    {connecting ? <Loader2 size={14} className="animate-spin" /> : <Wallet size={14} />}
+                    {connectStatus?.connected ? 'Completa il collegamento' : 'Collega il mio conto'}
+                  </button>
+                </>
+              )}
             </section>
 
             {/* SEZIONE: Reparti & Codici Invito — lista a tendina (non spinge giù le impostazioni) */}
@@ -6876,12 +6959,18 @@ export default function App() {
                   </div>
                   {editIsPublic && <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">PUBBLICO</span>}
                 </div>
-                <p className="text-[11px] text-[var(--text-faint)] mb-3">Mettilo in vetrina: chiunque potrà trovarlo e contattarti in chat (niente link/foto in chat).</p>
-                <div className="flex gap-2">
+                <p className="text-[11px] text-[var(--text-faint)] mb-3">Mettilo in vetrina: chiunque potrà trovarlo, pagarlo in-app (se hai collegato gli incassi) o contattarti in chat.</p>
+                <div className="grid grid-cols-2 gap-2 mb-2">
                   <input type="number" step="0.01" min="0" value={editPublicPrice}
                     onChange={(e: any) => setEditPublicPrice(e.target.value)}
                     placeholder="Prezzo pubblico €"
-                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                  <input type="number" step="0.01" min="0" value={editShippingCost}
+                    onChange={(e: any) => setEditShippingCost(e.target.value)}
+                    placeholder="Spedizione €"
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                </div>
+                <div className="flex gap-2">
                   {editIsPublic ? (
                     <button type="button" onClick={() => savePublish(productToEdit, false)} disabled={isPublishing}
                       className="px-4 py-2 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] text-sm font-bold disabled:opacity-50">Ritira</button>

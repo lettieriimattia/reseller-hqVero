@@ -9,30 +9,73 @@ import { Router, Response, Request } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { getPlan, isPlanId, PLAN_ORDER } from '../config/plans';
+import { stripe, isStripeConfigured, appBase } from '../lib/stripe';
+import { fulfillProductOrder } from '../services/order.service';
 import { logger } from '../utils/logger';
-
-// require: il pacchetto porta i suoi tipi, ma evitiamo problemi se non installato in locale.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const Stripe = require('stripe');
 
 const router = Router();
 
-function stripe(): any | null {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) return null;
-  return new Stripe(key);
-}
+export { isStripeConfigured };
 
-export function isStripeConfigured(): boolean {
-  return !!process.env.STRIPE_SECRET_KEY;
-}
+// ==========================================
+// STRIPE CONNECT — il venditore collega il suo conto per incassare i pagamenti.
+// Flusso: onboard → Stripe (hosted, verifica identità/IBAN) → ritorno → status.
+// ==========================================
 
-function appBase(req: Request): string {
-  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, '');
-  const proto = (req.headers['x-forwarded-proto'] || 'https').toString().split(',')[0];
-  const host = (req.headers['x-forwarded-host'] || req.headers.host || 'resellerhq.onrender.com').toString();
-  return `${proto}://${host}`;
-}
+// Avvia/continua l'onboarding del venditore. Crea l'account Express se non esiste
+// e restituisce un Account Link (URL ospitato da Stripe).
+router.post('/connect/onboard', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const s = stripe();
+    if (!s) return res.status(400).json({ error: 'Pagamenti non configurati' });
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    if (!user) return res.status(404).json({ error: 'Utente non trovato' });
+
+    let accountId = user.stripeAccountId;
+    if (!accountId) {
+      const account = await s.accounts.create({
+        type: 'express',
+        email: user.email,
+        capabilities: { transfers: { requested: true }, card_payments: { requested: true } },
+        business_type: 'individual',
+        metadata: { userId: user.id },
+      });
+      accountId = account.id;
+      await prisma.user.update({ where: { id: user.id }, data: { stripeAccountId: accountId } });
+    }
+
+    const base = appBase(req);
+    const link = await s.accountLinks.create({
+      account: accountId,
+      refresh_url: `${base}/?connect=refresh`,
+      return_url: `${base}/?connect=done`,
+      type: 'account_onboarding',
+    });
+    res.json({ url: link.url });
+  } catch (err: any) {
+    logger.error('Errore /billing/connect/onboard', { err: err.message });
+    res.status(500).json({ error: 'Errore collegamento conto' });
+  }
+});
+
+// Stato del conto venditore: connesso + abilitato a incassare.
+router.get('/connect/status', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const s = stripe();
+    if (!s) return res.json({ configured: false, connected: false, chargesEnabled: false });
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    if (!user?.stripeAccountId) return res.json({ configured: true, connected: false, chargesEnabled: false });
+    const acct = await s.accounts.retrieve(user.stripeAccountId);
+    const chargesEnabled = !!acct.charges_enabled && !!acct.payouts_enabled;
+    if (chargesEnabled !== user.stripeChargesEnabled) {
+      await prisma.user.update({ where: { id: user.id }, data: { stripeChargesEnabled: chargesEnabled } }).catch(() => {});
+    }
+    res.json({ configured: true, connected: true, chargesEnabled, detailsSubmitted: !!acct.details_submitted });
+  } catch (err: any) {
+    logger.error('Errore /billing/connect/status', { err: err.message });
+    res.json({ configured: true, connected: false, chargesEnabled: false });
+  }
+});
 
 // Avvio checkout abbonamento per un piano.
 router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) => {
@@ -84,11 +127,27 @@ router.post('/verify', authenticate, async (req: AuthRequest, res: Response) => 
     if (!sessionId) return res.status(400).json({ error: 'sessionId mancante' });
 
     const session = await s.checkout.sessions.retrieve(sessionId);
-    // La sessione deve appartenere a questo utente (sicurezza).
+    const paid = session?.payment_status === 'paid' || session?.status === 'complete';
+
+    // CASO acquisto prodotto (Connect): evade l'ordine se il compratore è chi chiama.
+    if (session?.metadata?.kind === 'product') {
+      if (session.metadata.buyerId && session.metadata.buyerId !== req.user!.userId) {
+        return res.status(403).json({ error: 'Sessione non tua' });
+      }
+      if (paid) {
+        const r = await fulfillProductOrder({
+          productId: session.metadata.productId,
+          buyerId: req.user!.userId,
+          sessionId: session.id,
+        });
+        return res.json({ updated: r.ok, kind: 'product', conversationId: r.conversationId || null });
+      }
+      return res.json({ updated: false, kind: 'product' });
+    }
+
+    // CASO abbonamento.
     const ownerId = session?.client_reference_id || session?.metadata?.userId;
     if (ownerId && ownerId !== req.user!.userId) return res.status(403).json({ error: 'Sessione non tua' });
-
-    const paid = session?.payment_status === 'paid' || session?.status === 'complete';
     const planId = session?.metadata?.planId;
     if (paid && isPlanId(planId) && planId !== 'free') {
       await prisma.user.update({ where: { id: req.user!.userId }, data: { plan: planId } }).catch(() => {});
@@ -155,9 +214,18 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
     };
 
     if (event.type === 'checkout.session.completed') {
-      const userId = obj.client_reference_id || obj.metadata?.userId;
-      const planId = obj.metadata?.planId;
-      await setPlan(userId, planId, obj.customer);
+      // Acquisto prodotto (Connect) oppure abbonamento.
+      if (obj.metadata?.kind === 'product') {
+        await fulfillProductOrder({
+          productId: obj.metadata?.productId,
+          buyerId: obj.metadata?.buyerId,
+          sessionId: obj.id,
+        }).catch((e: any) => logger.error('webhook fulfill prodotto', { err: e.message }));
+      } else {
+        const userId = obj.client_reference_id || obj.metadata?.userId;
+        const planId = obj.metadata?.planId;
+        await setPlan(userId, planId, obj.customer);
+      }
     } else if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.created') {
       const userId = obj.metadata?.userId;
       const planId = obj.metadata?.planId;

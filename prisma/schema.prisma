@@ -30,6 +30,10 @@ model User {
   // Piano di abbonamento: "free" | "starter" | "pro" | "business" (vedi config/plans.ts)
   plan              String         @default("free")
 
+  // Stripe Connect: conto del venditore per incassare i pagamenti dei prodotti.
+  stripeAccountId      String?     // id account Express (acct_...)
+  stripeChargesEnabled Boolean     @default(false) // onboarding completato → può incassare
+
   // Sicurezza
   failedLoginCount  Int            @default(0)
   lockedUntil       DateTime?      // Account temporaneamente bloccato dopo X tentativi
@@ -168,7 +172,11 @@ model Product {
   // Marketplace pubblico: l'articolo è in vetrina e cercabile da chiunque.
   isPublic       Boolean   @default(false)
   publicPrice    Float?    // prezzo di vendita pubblico (può differire da quello interno)
+  shippingCost   Float?    // spese di spedizione a carico del compratore (per l'etichetta)
   sku            String?   // style code/SKU (es. DV1748-100) letto dalla scatola
+  // Pagamento in-app: id sessione/payment Stripe e id del compratore (conto unico).
+  paidSessionId  String?
+  buyerUserId    String?
 
   // Pilastro 1: Campi dinamici dalla CategoryTemplate (JSONB)
   attributes     String?      // Record<string, any> — popolato dal DynamicForm (JSON string per SQLite)
