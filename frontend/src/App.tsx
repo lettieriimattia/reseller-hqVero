@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
+import { createPortal } from 'react-dom';
 import { DynamicForm } from './components/DynamicForm';
 // xlsx caricato on-demand (import dinamico) dentro gli handler: resta fuori dal bundle iniziale
 // Grafico caricato in lazy: recharts finisce in un chunk separato, fuori dal bundle iniziale
@@ -343,6 +344,7 @@ export default function App() {
   
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<any>(null);
+  const [lotDetail, setLotDetail] = useState<any>(null); // dettaglio lotto: lista dei pezzi
   // Pubblicazione nel marketplace dalla modale di modifica
   const [editIsPublic, setEditIsPublic] = useState(false);
   const [editPublicPrice, setEditPublicPrice] = useState('');
@@ -1457,8 +1459,14 @@ export default function App() {
     });
     const grouped = Object.values(base.reduce((acc, p) => {
       const cat = p.category || 'Scarpe';
-      const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.condition}`;
-      if (!acc[key]) acc[key] = { ...p, category: cat, quantity: 0, ids: [], oldestDate: p.createdAt };
+      // I lotti collassano in UNA sola card per lotName (poi si aprono per vedere i pezzi).
+      const key = (p as any).lotName
+        ? `lot:${(p as any).lotName}`
+        : `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.condition}`;
+      if (!acc[key]) acc[key] = {
+        ...p, category: cat, quantity: 0, ids: [], oldestDate: p.createdAt,
+        ...((p as any).lotName ? { isLot: true, lotName: (p as any).lotName, name: (p as any).lotName, size: '—' } : {}),
+      };
       acc[key].quantity += 1;
       acc[key].ids.push(p.id);
       if (p.createdAt && (!acc[key].oldestDate || p.createdAt < acc[key].oldestDate)) {
@@ -2280,6 +2288,8 @@ export default function App() {
   };
   
   const openEditModal = (group: any) => {
+    // I lotti aprono il dettaglio (lista pezzi), non la modifica diretta.
+    if (group?.isLot) { setLotDetail(group); return; }
     setProductToEdit(group);
     setEditBrand(group.brand); setEditName(group.name);
     setEditSize(group.size); setEditCondition(group.condition);
@@ -4721,9 +4731,9 @@ export default function App() {
           </div>
         )}
 
-        {/* ========== MODALE: DETTAGLIO ARTICOLO MARKETPLACE ========== */}
-        {marketDetail && (
-          <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setMarketDetail(null)}>
+        {/* ========== MODALE: DETTAGLIO ARTICOLO MARKETPLACE (portal → copre header/nav) ========== */}
+        {marketDetail && createPortal((
+          <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setMarketDetail(null)}>
             <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
               {/* Header con chiudi (sempre visibile) */}
               <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0">
@@ -4760,7 +4770,49 @@ export default function App() {
               </div>
             </div>
           </div>
-        )}
+        ), document.body)}
+
+        {/* ========== MODALE: DETTAGLIO LOTTO (lista pezzi) ========== */}
+        {lotDetail && createPortal((
+          <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setLotDetail(null)}>
+            <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0">
+                <div className="min-w-0">
+                  <p className="font-bold truncate flex items-center gap-1.5"><Layers size={16} className="text-[#8b5cf6]" /> {lotDetail.lotName}</p>
+                  <p className="text-[11px] text-[var(--text-soft)]">{lotDetail.category}</p>
+                </div>
+                <button onClick={() => setLotDetail(null)} className="p-2 hover:bg-[var(--fill)] rounded-lg shrink-0"><X size={20} /></button>
+              </div>
+              {(() => {
+                const pieces = products.filter((p: any) => p.lotName === lotDetail.lotName && p.status === 'IN STOCK');
+                const tot = pieces.reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0);
+                return (
+                  <>
+                    <div className="px-4 py-2 border-b border-[var(--border)] text-[11px] text-[var(--text-soft)] shrink-0">
+                      {pieces.length} pezzi · costo totale {tot.toFixed(0)}€ · {(tot / (pieces.length || 1)).toFixed(2)}€ cad.
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                      {pieces.map((p: any) => (
+                        <div key={p.id} className="flex items-center justify-between gap-2 bg-[var(--surface-2)] rounded-xl p-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold truncate">{p.brand} {p.name}</p>
+                            <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition} · {p.purchasePrice?.toFixed(0)}€</p>
+                          </div>
+                          <div className="flex gap-1.5 shrink-0">
+                            <button onClick={() => { setLotDetail(null); openEditModal({ ...p, ids: [p.id], quantity: 1, isLot: false }); }}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)]">Modifica</button>
+                            <button onClick={() => { setLotDetail(null); openSellModal([p.id], `${p.brand} ${p.name}`, p); }}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-500/15 text-green-400">Vendi</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        ), document.body)}
 
         {/* ========== TRACKING PAGE ========== */}
         {currentView === 'tracking' && (() => {
