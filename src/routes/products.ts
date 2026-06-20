@@ -17,6 +17,7 @@ import { logInventory } from '../services/inventory-log.service';
 import { notifyWarehouseMembers } from '../services/notification.service';
 import { getMarketValuation } from '../services/price.service';
 import { getStockXValuation, isStockXConfigured } from '../services/stockx.service';
+import { checkProductQuota, requireFeature } from '../middleware/plan';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -72,6 +73,10 @@ router.post('/lot', async (req: AuthRequest, res: Response) => {
     if (!category || !lotName || !totalPrice || !quantity || quantity < 2 || quantity > 200) {
       return res.status(400).json({ error: 'Dati lotto non validi.' });
     }
+
+    // Gating piano: il lotto crea `quantity` prodotti → verifica il limite prima.
+    const quotaErr = await checkProductQuota(req.user!.userId, quantity);
+    if (quotaErr) return res.status(402).json(quotaErr);
 
     // Nuovo modello: il lotto va nel magazzino scelto (warehouseId) o nel magazzino base.
     const memberships = await prisma.membership.findMany({
@@ -158,6 +163,10 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
       marketPriceMin, marketPriceMax, marketPriceAvg, authenticityScore, notes,
       attributes, consignmentName, consignmentPercent, lotName, sku,
     } = req.body;
+
+    // Gating piano: verifica il limite prodotti prima di crearne uno nuovo.
+    const quotaErr = await checkProductQuota(req.user!.userId, 1);
+    if (quotaErr) return res.status(402).json(quotaErr);
 
     const memberships = await prisma.membership.findMany({
       where: { userId: req.user!.userId },
@@ -647,7 +656,7 @@ router.post('/:id/restore', async (req: AuthRequest, res: Response) => {
 // GET /products/:id/valuation — valutazione di mercato (eBay autenticati, anti-falsi)
 // Risponde { configured:false } finché non sono presenti le chiavi della fonte prezzi.
 // ==========================================
-router.get('/:id/valuation', async (req: AuthRequest, res: Response) => {
+router.get('/:id/valuation', requireFeature('stockx_pricing'), async (req: AuthRequest, res: Response) => {
   try {
     const { allowed, product } = await canAccessProduct(req.user!.userId, req.params.id);
     if (!allowed || !product) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
@@ -675,7 +684,7 @@ router.get('/:id/valuation', async (req: AuthRequest, res: Response) => {
 // Pubblicando, usa come prezzo pubblico: publicPrice ?? salePrice ?? marketPriceAvg.
 // Gli articoli senza prezzo vengono saltati (restano privati).
 // ==========================================
-router.patch('/publish-all', async (req: AuthRequest, res: Response) => {
+router.patch('/publish-all', requireFeature('marketplace'), async (req: AuthRequest, res: Response) => {
   try {
     const { warehouseId, isPublic } = req.body || {};
     if (!warehouseId) return res.status(400).json({ error: 'warehouseId richiesto' });
@@ -705,7 +714,7 @@ router.patch('/publish-all', async (req: AuthRequest, res: Response) => {
 // ==========================================
 // PATCH /products/:id/publish — pubblica/ritira l'articolo dal marketplace pubblico
 // ==========================================
-router.patch('/:id/publish', async (req: AuthRequest, res: Response) => {
+router.patch('/:id/publish', requireFeature('marketplace'), async (req: AuthRequest, res: Response) => {
   try {
     const { allowed, product } = await canAccessProduct(req.user!.userId, req.params.id);
     if (!allowed || !product) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });

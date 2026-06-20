@@ -2608,12 +2608,24 @@ export default function App() {
       togglePieceSelection(id);
     }, 400);
   };
-  // Blocca lo scroll della pagina sotto quando è aperto un modale a tutto schermo
+  // Blocca lo scroll della pagina sotto quando è aperto un modale a tutto schermo.
+  // Su iOS overflow:hidden non basta → fissiamo il body alla posizione attuale.
   useEffect(() => {
     if (!lotDetail && !marketDetail) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: body.style.overflow };
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      window.scrollTo(0, scrollY);
+    };
   }, [lotDetail, marketDetail]);
 
   // Undo: ripristina prodotti eliminati / riporta in stock prodotti venduti
@@ -4803,18 +4815,22 @@ export default function App() {
               </div>
               {/* Barra azioni FISSA in basso (sempre raggiungibile) */}
               <div className="border-t border-[var(--border)] p-3 shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
-                {isAuthenticated ? (
+                {isAuthenticated && marketDetail.sellerId && user?.id === marketDetail.sellerId ? (
+                  <div className="text-center py-2 text-sm text-[var(--text-soft)] font-semibold">Questo è un tuo articolo in vetrina</div>
+                ) : isAuthenticated ? (
+                  <>
                   <div className="flex gap-2">
                     <button onClick={() => contactSeller(marketDetail.id, `Ciao! Vorrei comprare "${marketDetail.brand} ${marketDetail.name}". È disponibile?`)}
                       className="flex-1 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">Compra</button>
                     <button onClick={() => contactSeller(marketDetail.id)}
                       className="flex-1 py-3 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] font-bold transition-colors">Contatta venditore</button>
                   </div>
+                  <p className="text-[10px] text-[var(--text-faint)] text-center mt-2">In chat niente link o foto — prima difesa contro le truffe.</p>
+                  </>
                 ) : (
                   <button onClick={() => { setMarketDetail(null); setPublicMarket(false); }}
                     className="w-full py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">Accedi per acquistare</button>
                 )}
-                <p className="text-[10px] text-[var(--text-faint)] text-center mt-2">In chat niente link o foto — prima difesa contro le truffe.</p>
               </div>
             </div>
           </div>

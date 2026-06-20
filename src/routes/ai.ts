@@ -10,6 +10,7 @@ import { getMarketValuation } from '../services/price.service';
 import { getCardValue } from '../services/cards.service';
 import { getValuation } from '../services/valuation.service';
 import { getStockXValuation, isStockXConfigured } from '../services/stockx.service';
+import { requireFeature } from '../middleware/plan';
 import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { audit } from '../services/audit.service';
@@ -59,7 +60,7 @@ router.post('/price', validate(priceEstimateSchema), async (req: AuthRequest, re
 // ==========================================
 // POST /api/ai/market-value - valutazione di mercato da query (sourcing, senza prodotto salvato)
 // ==========================================
-router.post('/market-value', async (req: AuthRequest, res: Response) => {
+router.post('/market-value', requireFeature('stockx_pricing'), async (req: AuthRequest, res: Response) => {
   try {
     const { query, size, condition } = req.body || {};
     const q = (query ?? '').toString().trim();
@@ -104,7 +105,7 @@ router.post('/value', async (req: AuthRequest, res: Response) => {
 // POST /api/ai/stockx-match - conferma visiva: dato ciò che ha riconosciuto l'IA,
 // chiede a StockX il match e restituisce foto + nome + prezzo per confronto.
 // ==========================================
-router.post('/stockx-match', async (req: AuthRequest, res: Response) => {
+router.post('/stockx-match', requireFeature('stockx_pricing'), async (req: AuthRequest, res: Response) => {
   try {
     const query = (req.body?.query ?? '').toString().trim();
     const size = (req.body?.size ?? '').toString().trim() || undefined;

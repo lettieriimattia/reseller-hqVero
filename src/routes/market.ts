@@ -51,7 +51,7 @@ router.get('/:id', async (req, res: Response) => {
   try {
     const p = await prisma.product.findFirst({
       where: { id: req.params.id, isPublic: true, deletedAt: null },
-      select: { id: true, brand: true, name: true, category: true, size: true, condition: true, publicPrice: true, photos: true, sku: true, attributes: true, status: true, user: { select: { name: true } } },
+      select: { id: true, brand: true, name: true, category: true, size: true, condition: true, publicPrice: true, photos: true, sku: true, attributes: true, status: true, userId: true, user: { select: { name: true } } },
     });
     if (!p) return res.status(404).json({ error: 'Annuncio non trovato' });
     let photos: string[] = [];
@@ -59,7 +59,7 @@ router.get('/:id', async (req, res: Response) => {
     res.json({
       id: p.id, brand: p.brand, name: p.name, category: p.category, size: p.size, condition: p.condition,
       price: p.publicPrice ?? null, sku: p.sku || null, photos, sellerName: p.user?.name || 'Venditore',
-      available: p.status === 'IN STOCK',
+      sellerId: p.userId, available: p.status === 'IN STOCK',
     });
   } catch (e: any) { logger.error('GET /market/:id', { err: e.message }); res.status(500).json({ error: 'Errore' }); }
 });

@@ -9,6 +9,7 @@ import { authenticate, AuthRequest, authorizeWarehouseAccess, authorizeWarehouse
 import { apiLimiter } from '../middleware/rateLimit';
 import { validate, teamPercentageSchema, joinWarehouseSchema, createWarehouseSchema } from '../middleware/validate';
 import { generateInviteCode } from '../utils/security';
+import { requireFeature, checkTeamQuota } from '../middleware/plan';
 import { audit } from '../services/audit.service';
 import { notifyWarehouseMembers, notifyTeam } from '../services/notification.service';
 import { logger } from '../utils/logger';
@@ -177,6 +178,10 @@ router.post('/warehouses/join', validate(joinWarehouseSchema), async (req: AuthR
       return res.status(400).json({ error: 'Sei già membro di questo reparto.' });
     }
 
+    // Gating piano: il limite soci è quello del FONDATORE del magazzino.
+    const teamErr = await checkTeamQuota(ownerMembership.userId, warehouse.id);
+    if (teamErr) return res.status(402).json({ ...teamErr, error: 'Il magazzino ha raggiunto il numero massimo di soci del piano del fondatore.' });
+
     // Aggiunge SOLO al warehouse del codice usato, non a tutti
     await prisma.membership.create({
       data: {
@@ -227,7 +232,7 @@ router.post('/warehouses/join', validate(joinWarehouseSchema), async (req: AuthR
 // ==========================================
 // POST /warehouses - crea nuovo reparto
 // ==========================================
-router.post('/warehouses', validate(createWarehouseSchema), async (req: AuthRequest, res: Response) => {
+router.post('/warehouses', requireFeature('partners'), validate(createWarehouseSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { name, defaultProfitShares } = req.body;
     

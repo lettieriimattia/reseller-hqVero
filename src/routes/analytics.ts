@@ -8,6 +8,7 @@ import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { requireOwner } from '../middleware/rbac';
+import { requireFeature } from '../middleware/plan';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -221,7 +222,7 @@ async function ownerWarehouseIds(userId: string): Promise<string[]> {
 // ==========================================
 // COSTI EXTRA (Expense) — sacchetti, spedizioni, materiali, ecc. (OWNER only)
 // ==========================================
-router.get('/expenses', async (req: AuthRequest, res: Response) => {
+router.get('/expenses', requireFeature('accounting'), async (req: AuthRequest, res: Response) => {
   try {
     const ids = await ownerWarehouseIds(req.user!.userId);
     const where: any = { warehouseId: { in: ids } };
@@ -234,7 +235,7 @@ router.get('/expenses', async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post('/expenses', async (req: AuthRequest, res: Response) => {
+router.post('/expenses', requireFeature('accounting'), async (req: AuthRequest, res: Response) => {
   try {
     const { warehouseId, amount, description, category, date } = req.body || {};
     const amt = Number(amount);
@@ -259,7 +260,7 @@ router.post('/expenses', async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.delete('/expenses/:id', async (req: AuthRequest, res: Response) => {
+router.delete('/expenses/:id', requireFeature('accounting'), async (req: AuthRequest, res: Response) => {
   try {
     const exp = await prisma.expense.findUnique({ where: { id: req.params.id } });
     if (!exp) return res.status(404).json({ error: 'Non trovato' });
@@ -276,7 +277,7 @@ router.delete('/expenses/:id', async (req: AuthRequest, res: Response) => {
 // EXPORT CSV per il commercialista — vendite + costi extra (OWNER only)
 // GET /analytics/export.csv?warehouseId=...  (warehouseId opzionale)
 // ==========================================
-router.get('/export.csv', async (req: AuthRequest, res: Response) => {
+router.get('/export.csv', requireFeature('accounting'), async (req: AuthRequest, res: Response) => {
   try {
     const ids = await ownerWarehouseIds(req.user!.userId);
     let scope = ids;
