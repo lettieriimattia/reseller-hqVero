@@ -102,6 +102,25 @@ router.post('/value', async (req: AuthRequest, res: Response) => {
 });
 
 // ==========================================
+// POST /api/ai/stockx-match - conferma visiva: dato ciò che ha riconosciuto l'IA,
+// chiede a StockX il match e restituisce foto + nome + prezzo per confronto.
+// ==========================================
+router.post('/stockx-match', async (req: AuthRequest, res: Response) => {
+  try {
+    const query = (req.body?.query ?? '').toString().trim();
+    const size = (req.body?.size ?? '').toString().trim() || undefined;
+    if (query.length < 2) return res.json({ found: false });
+    if (!isStockXConfigured()) return res.json({ found: false, reason: 'non configurato' });
+    const sx = await getStockXValuation({ query, size });
+    if (!sx.itemName && !sx.image) return res.json({ found: false });
+    res.json({ found: true, title: sx.itemName || null, image: sx.image || null, price: sx.value ?? null, sku: sx.styleId || null });
+  } catch (err: any) {
+    logger.error('Errore /ai/stockx-match', { err: err.message });
+    res.json({ found: false });
+  }
+});
+
+// ==========================================
 // POST /api/ai/barcode-lookup - dal barcode/style code prova a riconoscere il prodotto
 // (per ora via StockX: ricerca catalogo + prezzo). Risponde { found, brand, name, value }.
 // ==========================================

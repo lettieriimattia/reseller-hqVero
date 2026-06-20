@@ -300,6 +300,7 @@ export default function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
   const [scanMarket, setScanMarket] = useState<any>(null); // verifica eBay del riconoscimento (valore di mercato)
+  const [scanStockxMatch, setScanStockxMatch] = useState<any>(null); // conferma visiva StockX (foto+nome del modello riconosciuto)
   const [priceEstimate, setPriceEstimate] = useState<any>(null); // rimasto per compatibilità reset, non più usato in UI
   
   // Input categoria scritta a mano nel form (crea o seleziona la categoria)
@@ -1906,6 +1907,7 @@ export default function App() {
     const scan = data.scan;
     setScanResult(scan);
     setScanMarket(null);
+    setScanStockxMatch(null);
     if (!scan) return;
     const d = scan.details || {};
 
@@ -1979,6 +1981,17 @@ export default function App() {
           condition: condition || undefined,
         }),
       }).then(r => { if (r.ok) setScanMarket(r.data); }).catch(() => {});
+    }
+
+    // === Conferma visiva StockX (solo scarpe): mostra foto+nome del modello che StockX
+    // ritiene corrisponda, così si verifica se l'IA ha azzeccato la scarpa. ===
+    const isShoe = ['scarp', 'sneaker', 'calzatur', 'shoe', 'ginnastica'].some(k => (effCat || '').toLowerCase().includes(k));
+    const matchQuery = [scan.brand, scan.model || fallbackName].filter(Boolean).join(' ').trim();
+    if (isShoe && matchQuery.length >= 2) {
+      apiCall<any>('/api/ai/stockx-match', {
+        method: 'POST',
+        body: JSON.stringify({ query: matchQuery, size: (d.size || '').toString() || undefined }),
+      }).then(r => { if (r.ok && r.data?.found) setScanStockxMatch(r.data); }).catch(() => {});
     }
   };
 
@@ -2279,6 +2292,36 @@ export default function App() {
     setEditPublicPrice(group.publicPrice != null ? String(group.publicPrice) : (group.salePrice != null ? String(group.salePrice) : ''));
     setValuation(null);
     setEditModalOpen(true);
+  };
+
+  // Toggle rapido pubblico/privato dalla card del magazzino (senza aprire la modifica)
+  const quickTogglePublic = async (group: any) => {
+    const makePublic = !group.isPublic;
+    const price = group.publicPrice ?? group.salePrice ?? group.marketPriceAvg ?? null;
+    if (makePublic && (price == null || price <= 0)) {
+      showToast('Imposta un prezzo pubblico nella Modifica', 'warn');
+      openEditModal(group);
+      return;
+    }
+    const ids = (group.ids as string[]) || [group.id];
+    await Promise.allSettled(ids.map(id =>
+      apiCall(`/products/${id}/publish`, { method: 'PATCH', body: JSON.stringify({ isPublic: makePublic, publicPrice: makePublic ? price : null }) })
+    ));
+    await fetchProducts();
+    showToast(makePublic ? 'Pubblicato nel marketplace' : 'Reso privato');
+  };
+
+  // Pubblica/ritira TUTTO un magazzino (dalle impostazioni)
+  const toggleWarehousePublic = async (warehouseId: string, makePublic: boolean) => {
+    const { ok, data } = await apiCall<any>('/products/publish-all', {
+      method: 'PATCH', body: JSON.stringify({ warehouseId, isPublic: makePublic }),
+    });
+    if (ok) {
+      await fetchProducts();
+      showToast(makePublic
+        ? `Pubblicati ${data.published || 0} articoli${data.skipped ? ` · ${data.skipped} senza prezzo saltati` : ''}`
+        : 'Magazzino reso privato');
+    } else showToast(data?.error || 'Errore', 'err');
   };
 
   // Pubblica/ritira l'articolo dal marketplace (applica a tutti i pezzi del gruppo)
@@ -3200,6 +3243,11 @@ export default function App() {
               className="hidden lg:flex items-center gap-2 bg-[#8b5cf6] hover:bg-[#7c3aed] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
               <Plus size={15} /> Aggiungi
             </button>
+            {/* Impostazioni (solo mobile: in alto, visto che non è più nella barra in basso) */}
+            <button onClick={() => navigateTo('settings')}
+              className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'settings' ? 'text-[#8b5cf6]' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
+              <Settings size={18} />
+            </button>
 
             {/* Notifiche */}
             <div className="relative" ref={notifRef}>
@@ -3861,14 +3909,22 @@ export default function App() {
                               {isAdmin
                                 ? <button onClick={() => openListingModal(g)} className="px-3 py-1.5 bg-violet-500/15 text-violet-400 rounded-lg text-xs font-bold">Annuncio</button>
                                 : <button onClick={() => openEditModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">Modifica</button>}
-                              {!isAdmin && <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="px-3 py-1.5 bg-green-500/15 text-green-400 rounded-lg text-xs font-bold">Vendi</button>}
+                              <button onClick={() => quickTogglePublic(g)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.isPublic ? 'bg-[#8b5cf6]/20 text-[#8b5cf6]' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>
+                                {g.isPublic ? 'Pubblico' : 'Pubblica'}
+                              </button>
                             </div>
                           )}
                         </div>
-                        {!bulkMode && isAdmin && (
+                        {/* Riga azioni sotto: Vendi sempre presente (mobile) */}
+                        {!bulkMode && (
                           <div className="flex border-t border-[var(--border)]">
-                            <button onClick={() => openShipping(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-violet-400 hover:bg-violet-900/15"><Package size={13} /> Spedisci</button>
-                            <div className="w-px bg-[var(--fill)]" />
+                            {isAdmin && (
+                              <>
+                                <button onClick={() => openShipping(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-violet-400 hover:bg-violet-900/15"><Package size={13} /> Spedisci</button>
+                                <div className="w-px bg-[var(--fill)]" />
+                              </>
+                            )}
                             <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> Vendi</button>
                           </div>
                         )}
@@ -3926,6 +3982,10 @@ export default function App() {
                             ) : (
                               <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> Vendi</button>
                             )}
+                            <button onClick={() => quickTogglePublic(g)}
+                              className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.isPublic ? 'bg-[#8b5cf6]/20 text-[#8b5cf6]' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)]'}`}>
+                              <Store size={12} /> {g.isPublic ? 'In vetrina' : 'Pubblica'}
+                            </button>
                           </div>
                         )}
                       </div>
@@ -5007,6 +5067,23 @@ export default function App() {
                         </button>
                       )}
                     </div>
+                    {/* Marketplace: pubblica/rendi privato tutto il magazzino (solo OWNER) */}
+                    {w.role === 'OWNER' && (() => {
+                      const whProds = products.filter((p: any) => p.warehouseId === w.id && p.status === 'IN STOCK');
+                      const pub = whProds.filter((p: any) => p.isPublic).length;
+                      return (
+                        <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Store size={14} className="text-[#8b5cf6] shrink-0" />
+                            <span className="text-xs text-[var(--text-soft)]">Vetrina: <b className="text-[var(--text)]">{pub}/{whProds.length}</b> pubblici</span>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <button onClick={() => toggleWarehousePublic(w.id, true)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8b5cf6] text-white">Pubblica tutto</button>
+                            <button onClick={() => toggleWarehousePublic(w.id, false)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] border border-[var(--border-2)] text-[var(--text-soft)]">Rendi privato</button>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>
@@ -5640,13 +5717,14 @@ export default function App() {
         {/* Separatore appena percettibile */}
         <div className="absolute top-0 left-0 right-0 h-px bg-[var(--fill)]" />
 
-        <div className="relative grid grid-cols-5 px-2">
+        <div className="relative grid grid-cols-6 px-1">
           {[
             { id: 'dashboard',  icon: LayoutDashboard },
             { id: 'magazzino',  icon: Package },
+            { id: 'market',     icon: Store },
+            { id: 'chat',       icon: Mail },
             { id: 'analytics',  icon: BarChart3 },
             { id: 'tracking',   icon: Truck },
-            { id: 'settings',   icon: Settings },
           ].map(tab => {
             const Icon = tab.icon;
             const active = currentView === tab.id;
@@ -5859,6 +5937,20 @@ export default function App() {
                           <span>Nessun valore trovato — controlla nome/modello.</span>
                         </div>
                       )
+                    )}
+                    {/* Conferma visiva StockX: la foto del modello che StockX ha trovato */}
+                    {scanStockxMatch && scanStockxMatch.image && (
+                      <div className="p-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border-2)]">
+                        <div className="flex items-center gap-2.5">
+                          <img src={scanStockxMatch.image} alt="" className="w-14 h-14 rounded-lg object-cover bg-white/5 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">StockX dice</p>
+                            <p className="font-bold text-[var(--text)] truncate">{scanStockxMatch.title}</p>
+                            <p className="text-[11px] text-[var(--text-soft)]">{scanStockxMatch.sku ? `${scanStockxMatch.sku} · ` : ''}{scanStockxMatch.price != null ? `${scanStockxMatch.price}€` : ''}</p>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-[var(--text-faint)] mt-1.5">Confronta con la tua foto: è la stessa scarpa? Se no, correggi brand/modello.</p>
+                      </div>
                     )}
                     {/* Tabella dinamica: attributi estratti dall'IA */}
                     {(() => {

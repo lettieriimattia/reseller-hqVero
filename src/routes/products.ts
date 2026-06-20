@@ -671,6 +671,38 @@ router.get('/:id/valuation', async (req: AuthRequest, res: Response) => {
 });
 
 // ==========================================
+// PATCH /products/publish-all — pubblica/ritira TUTTO il magazzino (OWNER del magazzino)
+// Pubblicando, usa come prezzo pubblico: publicPrice ?? salePrice ?? marketPriceAvg.
+// Gli articoli senza prezzo vengono saltati (restano privati).
+// ==========================================
+router.patch('/publish-all', async (req: AuthRequest, res: Response) => {
+  try {
+    const { warehouseId, isPublic } = req.body || {};
+    if (!warehouseId) return res.status(400).json({ error: 'warehouseId richiesto' });
+    const membership = await prisma.membership.findFirst({ where: { userId: req.user!.userId, warehouseId, role: 'OWNER' } });
+    if (!membership) return res.status(403).json({ error: 'Solo il fondatore del magazzino può farlo.' });
+
+    if (!isPublic) {
+      const r = await prisma.product.updateMany({ where: { warehouseId, deletedAt: null }, data: { isPublic: false } });
+      return res.json({ unpublished: r.count });
+    }
+
+    const items = await prisma.product.findMany({
+      where: { warehouseId, status: 'IN STOCK', deletedAt: null },
+      select: { id: true, publicPrice: true, salePrice: true, marketPriceAvg: true },
+    });
+    const withPrice = items.filter(p => (p.publicPrice ?? p.salePrice ?? p.marketPriceAvg) != null);
+    await prisma.$transaction(withPrice.map(p =>
+      prisma.product.update({ where: { id: p.id }, data: { isPublic: true, publicPrice: (p.publicPrice ?? p.salePrice ?? p.marketPriceAvg) as number } })
+    ));
+    res.json({ published: withPrice.length, skipped: items.length - withPrice.length });
+  } catch (err: any) {
+    logger.error('Errore PATCH /products/publish-all', { err: err.message });
+    res.status(500).json({ error: 'Errore pubblicazione di massa' });
+  }
+});
+
+// ==========================================
 // PATCH /products/:id/publish — pubblica/ritira l'articolo dal marketplace pubblico
 // ==========================================
 router.patch('/:id/publish', async (req: AuthRequest, res: Response) => {
