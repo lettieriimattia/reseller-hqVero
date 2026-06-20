@@ -303,6 +303,8 @@ export default function App() {
   
   // Input categoria scritta a mano nel form (crea o seleziona la categoria)
   const [formCatInput, setFormCatInput] = useState('');
+  // "Dettagli categoria" a comparsa nel form (chiuso di default)
+  const [showCatDetails, setShowCatDetails] = useState(false);
   // ----- BARCODE (scansiona + cerca prodotto) -----
   const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
   const [barcodeSupported, setBarcodeSupported] = useState(true);
@@ -5697,16 +5699,24 @@ export default function App() {
                       </select>
                     </div>
                   </div>
-                  {/* Campi dinamici dalla CategoryTemplate (JSONB) */}
+                  {/* Campi dinamici dalla CategoryTemplate — a comparsa per non sovraccaricare */}
                   {activeTemplate && activeTemplate.fields?.length > 0 && (
                     <div className="border-t border-[var(--border-2)] pt-4">
-                      <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest mb-3">Dettagli Categoria</p>
-                      <DynamicForm
-                        fields={activeTemplate.fields}
-                        values={dynamicAttrs}
-                        onChange={(key, value) => setDynamicAttrs(prev => ({ ...prev, [key]: value }))}
-                        disabled={isSaving}
-                      />
+                      <button type="button" onClick={() => setShowCatDetails(v => !v)}
+                        className="w-full flex items-center justify-between text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest">
+                        <span>Dettagli categoria <span className="text-[var(--text-faint)] normal-case">(opzionale)</span></span>
+                        <ChevronDown size={16} className={`transition-transform ${showCatDetails ? 'rotate-180' : ''}`} />
+                      </button>
+                      {showCatDetails && (
+                        <div className="mt-3">
+                          <DynamicForm
+                            fields={activeTemplate.fields}
+                            values={dynamicAttrs}
+                            onChange={(key, value) => setDynamicAttrs(prev => ({ ...prev, [key]: value }))}
+                            disabled={isSaving}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </>
@@ -7522,11 +7532,15 @@ export default function App() {
                     return { ...m, profit };
                   }).sort((a: any, b: any) => b.profit - a.profit);
 
-                  // Pareggio conti: quanto spetta ad ogni membro sul profitto totale
-                  const settleAmounts = memberProfits.map((m: any) => ({
-                    ...m,
-                    spettante: teamProfit * (m.percentage / 100),
-                  }));
+                  // Pareggio conti: ogni socio riceve la sua quota di UTILE + il rimborso
+                  // dei COSTI che ha sostenuto (quota costi separata, se impostata; altrimenti
+                  // i costi seguono la quota utili). La somma = ricavi netti (ricavi - fee).
+                  const hasCostSplit = team.members.some((m: any) => Number(m.costPercentage) > 0);
+                  const settleAmounts = memberProfits.map((m: any) => {
+                    const costPct = hasCostSplit ? (Number(m.costPercentage) || 0) : (Number(m.percentage) || 0);
+                    const rimborsoCosti = teamCosts * (costPct / 100);
+                    return { ...m, rimborsoCosti, spettante: m.profit + rimborsoCosti, hasCostSplit };
+                  });
 
                   return (
                     <section key={team.warehouseId} className="bg-[var(--bg)] rounded-2xl border border-[var(--border)] overflow-hidden">
@@ -7635,30 +7649,33 @@ export default function App() {
                       {/* Footer reparto */}
                       <div className="p-4 border-t border-[var(--border)] space-y-3">
 
-                        {/* Pareggio conti */}
-                        {teamProfit !== 0 && (
+                        {/* Pareggio conti (utile + rimborso costi) */}
+                        {(teamProfit !== 0 || teamCosts !== 0) && (
                           <div className="bg-[var(--surface-2)] rounded-xl p-3">
                             <div className="flex items-center gap-1.5 mb-2.5">
                               <DollarSign size={11} className="text-emerald-500" />
                               <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Pareggio conti</p>
-                              <span className="ml-auto text-[10px] text-[var(--text-faint)] num">{teamProfit >= 0 ? '+' : ''}{teamProfit.toFixed(0)}€ totali</span>
+                              <span className="ml-auto text-[10px] text-[var(--text-faint)] num">ricavi {teamRevenue.toFixed(0)}€ · costi {teamCosts.toFixed(0)}€ · utile {teamProfit.toFixed(0)}€</span>
                             </div>
                             <div className="space-y-1.5">
                               {settleAmounts.map((m: any) => (
                                 <div key={m.membershipId} className="flex items-center justify-between">
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center font-black text-[7px]">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center font-black text-[7px] shrink-0">
                                       {m.name[0]?.toUpperCase()}
                                     </div>
-                                    <span className="text-xs text-[var(--text-muted)]">{m.name}</span>
-                                    <span className="text-[10px] text-gray-700">{m.percentage}%</span>
+                                    <span className="text-xs text-[var(--text-muted)] truncate">{m.name}</span>
+                                    {m.hasCostSplit
+                                      ? <span className="text-[10px] text-gray-700 shrink-0">utile {m.percentage}% · costi {m.costPercentage ?? 0}%</span>
+                                      : <span className="text-[10px] text-gray-700 shrink-0">{m.percentage}%</span>}
                                   </div>
-                                  <span className={`text-sm font-bold num ${m.spettante >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                  <span className={`text-sm font-bold num shrink-0 ${m.spettante >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                                     {m.spettante >= 0 ? '+' : ''}{m.spettante.toFixed(2)}€
                                   </span>
                                 </div>
                               ))}
                             </div>
+                            <p className="text-[9px] text-[var(--text-faint)] mt-2">Quanto spetta a ciascuno (quota utile + rimborso dei costi sostenuti).</p>
                           </div>
                         )}
 

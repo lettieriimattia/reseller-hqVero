@@ -143,8 +143,14 @@ app.use(cors({
 // ==========================================
 // PARSERS
 // ==========================================
-app.use(express.json({ limit: '15mb' })); // 15mb per immagini base64
-app.use(express.urlencoded({ limit: '15mb', extended: true }));
+// Compressione gzip di tutte le risposte: meno banda e payload più piccoli
+// (require: evita problemi di tipi se i @types non sono installati localmente).
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const compression = require('compression');
+app.use(compression());
+
+app.use(express.json({ limit: '10mb' })); // ridotto da 15mb: meno RAM per richiesta (le foto sono compresse lato client)
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
 
 // ==========================================
