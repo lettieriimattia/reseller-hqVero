@@ -1100,7 +1100,11 @@ export default function App() {
     if (!category || !isFormOpen) { setActiveTemplate(null); return; }
     setDynamicAttrs({});
     apiCall(`/templates/${encodeURIComponent(category)}`).then(({ ok, data }) => {
-      setActiveTemplate(ok && data?.fields?.length ? data : null);
+      // fields arriva dal DB come STRINGA JSON: va parsato in array, altrimenti
+      // DynamicForm fa string.map → crash (schermo nero).
+      let fields: any = (data as any)?.fields;
+      if (typeof fields === 'string') { try { fields = JSON.parse(fields); } catch { fields = []; } }
+      setActiveTemplate(ok && Array.isArray(fields) && fields.length ? { ...(data as any), fields } : null);
     }).catch(() => setActiveTemplate(null));
   }, [category, isFormOpen]);
   

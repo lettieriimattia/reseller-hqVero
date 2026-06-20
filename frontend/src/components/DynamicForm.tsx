@@ -26,7 +26,12 @@ const base =
   'focus:outline-none focus:border-[#444] transition-colors disabled:opacity-40 placeholder-gray-700';
 
 export function DynamicForm({ fields, values, onChange, disabled, className }: DynamicFormProps) {
-  if (!fields?.length) return null;
+  // Difesa: se per qualsiasi motivo arriva una stringa JSON invece di un array, la parso;
+  // se non è un array valido, non renderizzo nulla (mai string.map → niente schermo nero).
+  let safeFields: FieldDef[] = Array.isArray(fields) ? fields : [];
+  if (typeof fields === 'string') { try { safeFields = JSON.parse(fields); } catch { safeFields = []; } }
+  if (!Array.isArray(safeFields) || !safeFields.length) return null;
+  fields = safeFields;
 
   return (
     <div className={`grid grid-cols-2 gap-x-3 gap-y-4 ${className ?? ''}`}>
