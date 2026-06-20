@@ -5,6 +5,7 @@
 import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { addTracking } from '../services/tracking.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -85,6 +86,51 @@ router.post('/:id/messages', async (req: AuthRequest, res: Response) => {
     await prisma.conversation.update({ where: { id: c.id }, data: { updatedAt: new Date() } });
     res.json({ id: msg.id, text: msg.text, mine: true, createdAt: msg.createdAt });
   } catch (e: any) { logger.error('POST /chat/:id/messages', { err: e.message }); res.status(500).json({ error: 'Errore invio' }); }
+});
+
+// VENDITORE: completa la vendita dalla chat e spedisce.
+// Segna l'articolo VENDUTO (prezzo concordato), lo toglie dalla vetrina e — se fornito —
+// registra il tracking OUTBOUND (così segui la spedizione fino alla consegna).
+router.post('/:id/ship', async (req: AuthRequest, res: Response) => {
+  try {
+    const uid = req.user!.userId;
+    const c = await assertParticipant(req.params.id, uid);
+    if (!c) return res.status(403).json({ error: 'Non autorizzato' });
+    if (c.sellerId !== uid) return res.status(403).json({ error: 'Solo il venditore può completare la vendita.' });
+
+    const product = await prisma.product.findUnique({ where: { id: c.productId } });
+    if (!product || product.deletedAt) return res.status(404).json({ error: 'Articolo non trovato' });
+    if (product.userId !== uid) return res.status(403).json({ error: 'Non è un tuo articolo.' });
+    if (product.status === 'VENDUTO') return res.status(400).json({ error: 'Articolo già venduto.' });
+
+    const salePrice = Math.round((Number(req.body?.salePrice) || 0) * 100) / 100;
+    if (!(salePrice > 0)) return res.status(400).json({ error: 'Inserisci il prezzo di vendita concordato.' });
+    const fees = Math.max(0, Math.round((Number(req.body?.fees) || 0) * 100) / 100);
+    const trackingCode = (req.body?.trackingCode || '').toString().trim();
+    const carrier = (req.body?.carrier || 'Auto').toString().trim();
+
+    // Segna venduto + togli dalla vetrina pubblica
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { status: 'VENDUTO', soldAt: new Date(), salePrice, fees, platform: 'Marketplace', isPublic: false },
+    });
+
+    // Tracking spedizione al compratore (opzionale). Alla consegna resta VENDUTO.
+    let tracked = false;
+    if (trackingCode.length >= 4) {
+      const r = await addTracking(product.id, trackingCode, carrier, 'OUTBOUND');
+      tracked = r.success;
+    }
+
+    // Messaggio automatico al compratore (solo testo: niente link, anti-truffa).
+    const text = tracked
+      ? `✅ Vendita confermata e articolo spedito! Codice tracking: ${trackingCode} (${carrier}). Cercalo sul sito del corriere.`
+      : `✅ Vendita confermata! L'articolo sarà spedito a breve.`;
+    await prisma.message.create({ data: { conversationId: c.id, senderId: uid, text } });
+    await prisma.conversation.update({ where: { id: c.id }, data: { updatedAt: new Date() } });
+
+    res.json({ success: true, tracked });
+  } catch (e: any) { logger.error('POST /chat/:id/ship', { err: e.message }); res.status(500).json({ error: 'Errore completamento vendita' }); }
 });
 
 export default router;

@@ -408,6 +408,9 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatSending, setChatSending] = useState(false);
+  // Completa vendita + spedizione dalla chat (lato venditore)
+  const [shipForm, setShipForm] = useState<{ open: boolean; price: string; code: string; carrier: string }>({ open: false, price: '', code: '', carrier: 'Auto' });
+  const [shipping, setShipping] = useState(false);
   // Stato integrazione StockX (configurato + connesso via OAuth)
   const [stockxStatus, setStockxStatus] = useState<{ configured: boolean; connected: boolean } | null>(null);
   const [stockxConnecting, setStockxConnecting] = useState(false);
@@ -1125,6 +1128,27 @@ export default function App() {
     setChatSending(false);
     if (ok && data?.id) { setChatMessages(prev => [...prev, data]); setChatInput(''); }
     else showToast(data?.error || 'Errore invio', 'err');
+  };
+
+  // Venditore: completa la vendita e (opzionale) registra la spedizione, dalla chat.
+  const confirmShip = async () => {
+    if (!activeConvo) return;
+    const price = parseFloat(shipForm.price);
+    if (!(price > 0)) { showToast('Inserisci il prezzo concordato', 'warn'); return; }
+    if (shipForm.code && CHAT_LINK_RE.test(shipForm.code)) { showToast('Codice tracking non valido', 'err'); return; }
+    setShipping(true);
+    const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/ship`, {
+      method: 'POST',
+      body: JSON.stringify({ salePrice: price, trackingCode: shipForm.code.trim(), carrier: shipForm.carrier }),
+    });
+    setShipping(false);
+    if (ok && data?.success) {
+      setShipForm({ open: false, price: '', code: '', carrier: 'Auto' });
+      await openConversation({ id: activeConvo.id });
+      await fetchConversations();
+      await fetchProducts();
+      showToast(data.tracked ? 'Venduto e spedizione registrata!' : 'Vendita confermata!', 'ok');
+    } else showToast(data?.error || 'Errore', 'err');
   };
   
   const fetchNotifications = useCallback(async () => {
@@ -4766,7 +4790,14 @@ export default function App() {
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl flex flex-col h-[70vh]">
                 <div className="flex items-center gap-2 p-3 border-b border-[var(--border)]">
                   <button onClick={() => { setActiveConvo(null); setChatMessages([]); }} className="p-1.5 hover:bg-[var(--fill)] rounded-lg"><ChevronDown size={18} className="rotate-90" /></button>
-                  <span className="font-bold text-sm truncate">{activeConvo.otherName || activeConvo.productName || 'Conversazione'}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-bold text-sm truncate block">{activeConvo.otherName || activeConvo.productName || 'Conversazione'}</span>
+                    {activeConvo.productName && <span className="text-[11px] text-[var(--text-soft)] truncate block">{activeConvo.productName}{activeConvo.price != null ? ` · ${activeConvo.price}€` : ''}</span>}
+                  </div>
+                  {activeConvo.role === 'seller' && (
+                    <button onClick={() => setShipForm(f => ({ ...f, open: true, price: activeConvo.price != null ? String(activeConvo.price) : '' }))}
+                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white flex items-center gap-1.5"><DollarSign size={13} /> Vendi e spedisci</button>
+                  )}
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-2">
                   {chatMessages.map((m: any) => (
@@ -4786,6 +4817,37 @@ export default function App() {
                 </div>
               </div>
             )}
+            {/* Modale: completa vendita + spedizione dalla chat (venditore) */}
+            {shipForm.open && activeConvo && createPortal((
+              <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !shipping && setShipForm(f => ({ ...f, open: false }))}>
+                <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+                  <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+                  <h2 className="text-xl font-semibold mb-1">Vendi e spedisci</h2>
+                  <p className="text-xs text-[var(--text-soft)] mb-5">{activeConvo.productName} — verrà segnato venduto e tolto dalla vetrina. Alla consegna resta venduto.</p>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo di vendita concordato €</label>
+                      <input type="number" step="0.01" value={shipForm.price} onChange={e => setShipForm(f => ({ ...f, price: e.target.value }))}
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6]" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Codice tracking (opzionale)</label>
+                      <input value={shipForm.code} onChange={e => setShipForm(f => ({ ...f, code: e.target.value }))} placeholder="Es. da Vinted/Poste/BRT…"
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6]" />
+                      <p className="text-[10px] text-[var(--text-faint)] mt-1">Se lo inserisci, segui la spedizione fino alla consegna. Niente link in chat.</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => setShipForm(f => ({ ...f, open: false }))} disabled={shipping}
+                        className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold disabled:opacity-50">Annulla</button>
+                      <button onClick={confirmShip} disabled={shipping}
+                        className="flex-1 py-3 rounded-xl bg-green-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-1.5">
+                        {shipping ? <Loader2 className="animate-spin" size={18} /> : <><DollarSign size={16} /> Conferma vendita</>}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ), document.body)}
           </div>
         )}
 
