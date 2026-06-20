@@ -301,6 +301,8 @@ export default function App() {
   const [scanMarket, setScanMarket] = useState<any>(null); // verifica eBay del riconoscimento (valore di mercato)
   const [priceEstimate, setPriceEstimate] = useState<any>(null); // rimasto per compatibilità reset, non più usato in UI
   
+  // Input categoria scritta a mano nel form (crea o seleziona la categoria)
+  const [formCatInput, setFormCatInput] = useState('');
   // ----- BARCODE (scansiona + cerca prodotto) -----
   const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
   const [barcodeSupported, setBarcodeSupported] = useState(true);
@@ -5283,25 +5285,9 @@ export default function App() {
             
             <form onSubmit={handleSave} className="p-5 space-y-5">
               
-              {/* Tabs categoria — in Automatico foto-first la griglia è nascosta
-                  finché non c'è una foto o non la si apre a mano (vista minimale). */}
-              {(() => {
-                const autoCollapsed = category === AUTO_CATEGORY && productPhotos.length === 0 && !scanResult && !showRepartoGrid;
-                if (autoCollapsed) {
-                  return (
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-[var(--text-soft)] flex items-center gap-1.5">
-                        <Sparkles size={12} className="text-violet-400" /> Modalità automatica — aggiungi una foto
-                      </span>
-                      <button type="button" onClick={() => setShowRepartoGrid(true)}
-                        className="text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors">
-                        Scegli reparto a mano
-                      </button>
-                    </div>
-                  );
-                }
-                return (
-                <div>
+              {/* Magazzino + Categoria. Foto-first: la categoria la capisce l'IA dalla
+                  foto (niente griglia da cliccare). Resta il "scrivi a mano" per crearla/sceglierla. */}
+              <div>
                 {/* Selettore MAGAZZINO (partnership). Mostrato se l'utente ha più di un magazzino. */}
                 {warehouses.filter((w: any) => !w.parentId).length > 1 && (
                   <div className="mb-3">
@@ -5319,56 +5305,49 @@ export default function App() {
                     </div>
                   </div>
                 )}
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Categoria</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {/* Automatico: l'IA rileva la categoria dalla foto */}
-                  <button type="button"
-                    onClick={() => { setCategory(AUTO_CATEGORY); setDetectedReparto(''); }}
-                    className={`p-3 rounded-xl text-sm font-bold border transition-all ${
-                      category === AUTO_CATEGORY
-                        ? 'bg-violet-500/15 border-violet-500 text-[var(--text)]'
-                        : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
-                    }`}>
-                    <span className="block text-xl mb-1"><Sparkles size="1em" className="inline-block align-[-0.125em]" /></span>
-                    Automatico
+
+                {/* Stato categoria (rilevata dall'IA) + scrivi a mano */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-[11px] text-[var(--text-soft)] flex items-center gap-1.5 min-w-0">
+                    <Sparkles size={12} className="text-violet-400 shrink-0" />
+                    {category && category !== AUTO_CATEGORY ? (
+                      <>Categoria: <b className="text-[var(--text)]">{category}</b></>
+                    ) : detectedReparto ? (
+                      <>Rilevata: <b className="text-[var(--text)]">{detectedReparto}</b>…</>
+                    ) : (
+                      <>L'IA capisce la categoria dalla foto</>
+                    )}
+                  </span>
+                  <button type="button" onClick={() => { setShowRepartoGrid(v => !v); setFormCatInput(''); }}
+                    className="text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors shrink-0">
+                    {showRepartoGrid ? 'Annulla' : 'Scrivi categoria a mano'}
                   </button>
-                  {userCategories.map((cat: string) => (
-                    <button key={cat} type="button" onClick={() => { setCategory(cat); setSize(defaultSizeForCategory(cat)); setDetectedReparto(''); }}
-                      className={`p-3 rounded-xl text-sm font-bold border transition-all ${
-                        category === cat
-                          ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]'
-                          : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
-                      }`}>
-                      <span className="block text-xl mb-1">{categoryIcon(cat) || getCategoryIcon(cat)}</span>
-                      {cat}
-                    </button>
-                  ))}
                 </div>
-                {/* Esito modalità automatica */}
-                {category === AUTO_CATEGORY && (
-                  detectedReparto ? (
-                    <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
-                      <p className="text-[11px] text-[var(--text-muted)] flex items-center gap-1.5">
-                        <Sparkles size={11} className="text-violet-400" />
-                        Rilevato: <b className="text-[var(--text)]">{detectedReparto}</b> — categoria non presente.
-                      </p>
-                      <button type="button" disabled={isAddingCat}
-                        onClick={() => createRepartoFromDetected(detectedReparto)}
-                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-violet-500/15 border border-violet-500/40 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-40 flex items-center gap-1">
-                        {isAddingCat ? <Loader2 size={11} className="animate-spin" /> : <Plus size={11} />}
-                        Crea categoria "{detectedReparto}"
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-[var(--text-muted)] mt-2 flex items-center gap-1.5">
-                      <Sparkles size={11} className="text-violet-400" />
-                      Aggiungi una foto: l'IA capisce da sola di che prodotto si tratta.
-                    </p>
-                  )
+
+                {/* Input manuale: crea la categoria se non esiste, altrimenti la seleziona */}
+                {showRepartoGrid && (
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const v = formCatInput.trim();
+                      if (!v) return;
+                      const created = await createRepartoFromDetected(v);
+                      if (created) { setSize(defaultSizeForCategory(created)); setFormCatInput(''); setShowRepartoGrid(false); }
+                    }}
+                    className="mt-2 flex gap-2">
+                    <input list="form-cat-suggestions" value={formCatInput} onChange={e => setFormCatInput(e.target.value)}
+                      placeholder="Es. Scarpe, Borse, Elettronica…" autoFocus
+                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                    <datalist id="form-cat-suggestions">
+                      {userCategories.map((c: string) => <option key={c} value={c} />)}
+                    </datalist>
+                    <button type="submit" disabled={isAddingCat || !formCatInput.trim()}
+                      className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">
+                      {isAddingCat ? <Loader2 size={14} className="animate-spin" /> : 'Usa'}
+                    </button>
+                  </form>
                 )}
               </div>
-                );
-              })()}
 
               {/* FOTO + IA SCAN — multi-foto (max 5) */}
               <div className="bg-gradient-to-br from-violet-500/10 to-[#8b5cf6]/10 border border-violet-500/30 rounded-2xl p-4">
