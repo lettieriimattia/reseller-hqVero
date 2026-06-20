@@ -36,7 +36,9 @@ router.post('/connect/onboard', authenticate, async (req: AuthRequest, res: Resp
       const account = await s.accounts.create({
         type: 'express',
         email: user.email,
-        capabilities: { transfers: { requested: true }, card_payments: { requested: true } },
+        // Solo "transfers": per i destination charge al venditore basta questa capability,
+        // così l'onboarding è MOLTO più corto (niente requisiti di card_payments).
+        capabilities: { transfers: { requested: true } },
         business_type: 'individual',
         metadata: { userId: user.id },
       });
@@ -50,6 +52,8 @@ router.post('/connect/onboard', authenticate, async (req: AuthRequest, res: Resp
       refresh_url: `${base}/?connect=refresh`,
       return_url: `${base}/?connect=done`,
       type: 'account_onboarding',
+      // Chiedi SOLO ciò che è strettamente necessario ora; il resto viene rimandato.
+      collection_options: { fields: 'currently_due', future_requirements: 'omit' },
     });
     res.json({ url: link.url });
   } catch (err: any) {
