@@ -361,3 +361,21 @@ model Setting {
   key   String @id
   value String
 }
+
+// ==========================================
+// EXPENSE — costi extra fuori dai prodotti (sacchetti, spedizioni, materiali, ecc.)
+// Servono per il conteggio reale dell'utile e per l'export CSV del commercialista.
+// ==========================================
+model Expense {
+  id          String   @id @default(cuid())
+  warehouseId String
+  userId      String   // chi l'ha inserito
+  amount      Float
+  description String
+  category    String?  // es. "Sacchetti", "Spedizioni", "Materiali", "Altro"
+  date        DateTime @default(now()) // data di competenza del costo
+  createdAt   DateTime @default(now())
+
+  @@index([warehouseId])
+  @@index([date])
+}

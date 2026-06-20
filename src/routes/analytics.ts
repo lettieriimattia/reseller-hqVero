@@ -52,7 +52,10 @@ router.get('/dashboard', async (req: AuthRequest, res: Response) => {
     const totalInvested  = sold.reduce((s, p) => s + p.purchasePrice, 0);
     const totalRevenue   = sold.reduce((s, p) => s + (p.salePrice ?? 0), 0);
     const totalFees      = sold.reduce((s, p) => s + (p.fees ?? 0), 0);
-    const netProfit      = totalRevenue - totalInvested - totalFees;
+    // Costi extra (sacchetti, spedizioni, materiali…): entrano nell'utile netto.
+    const expenses       = await prisma.expense.findMany({ where: { warehouseId: { in: warehouseIds } }, select: { amount: true } });
+    const totalExpenses  = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const netProfit      = totalRevenue - totalInvested - totalFees - totalExpenses;
     const roi            = totalInvested > 0 ? (netProfit / totalInvested) * 100 : 0;
     const capitalImmobilizzato =
       inStock.reduce((s, p)  => s + p.purchasePrice, 0) +
@@ -128,6 +131,7 @@ router.get('/dashboard', async (req: AuthRequest, res: Response) => {
         totalRevenue: round2(totalRevenue),
         totalInvested: round2(totalInvested),
         totalFees: round2(totalFees),
+        totalExpenses: round2(totalExpenses),
         capitalImmobilizzato: round2(capitalImmobilizzato),
         avgDaysToSell: Math.round(avgDaysToSell * 10) / 10,
         deadStockCount: deadStockItems.length,
@@ -207,5 +211,119 @@ function emptyDashboard() {
     byCategory: [],
   };
 }
+
+// Helper: gli warehouseId di cui l'utente è OWNER
+async function ownerWarehouseIds(userId: string): Promise<string[]> {
+  const ms = await prisma.membership.findMany({ where: { userId, role: 'OWNER' }, select: { warehouseId: true } });
+  return ms.map(m => m.warehouseId);
+}
+
+// ==========================================
+// COSTI EXTRA (Expense) — sacchetti, spedizioni, materiali, ecc. (OWNER only)
+// ==========================================
+router.get('/expenses', async (req: AuthRequest, res: Response) => {
+  try {
+    const ids = await ownerWarehouseIds(req.user!.userId);
+    const where: any = { warehouseId: { in: ids } };
+    if (req.query.warehouseId && ids.includes(String(req.query.warehouseId))) where.warehouseId = String(req.query.warehouseId);
+    const expenses = await prisma.expense.findMany({ where, orderBy: { date: 'desc' } });
+    res.json(expenses);
+  } catch (err: any) {
+    logger.error('GET /analytics/expenses', { err: err.message });
+    res.status(500).json({ error: 'Errore costi extra' });
+  }
+});
+
+router.post('/expenses', async (req: AuthRequest, res: Response) => {
+  try {
+    const { warehouseId, amount, description, category, date } = req.body || {};
+    const amt = Number(amount);
+    if (!warehouseId || !description?.trim() || isNaN(amt) || amt <= 0) {
+      return res.status(400).json({ error: 'warehouseId, importo (>0) e descrizione obbligatori' });
+    }
+    const ids = await ownerWarehouseIds(req.user!.userId);
+    if (!ids.includes(warehouseId)) return res.status(403).json({ error: 'Magazzino non valido' });
+    const expense = await prisma.expense.create({
+      data: {
+        warehouseId, userId: req.user!.userId,
+        amount: Math.round(amt * 100) / 100,
+        description: description.trim().slice(0, 200),
+        category: (category || 'Altro').toString().slice(0, 50),
+        date: date ? new Date(date) : new Date(),
+      },
+    });
+    res.json(expense);
+  } catch (err: any) {
+    logger.error('POST /analytics/expenses', { err: err.message });
+    res.status(500).json({ error: 'Errore creazione costo' });
+  }
+});
+
+router.delete('/expenses/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const exp = await prisma.expense.findUnique({ where: { id: req.params.id } });
+    if (!exp) return res.status(404).json({ error: 'Non trovato' });
+    const ids = await ownerWarehouseIds(req.user!.userId);
+    if (!ids.includes(exp.warehouseId)) return res.status(403).json({ error: 'Non autorizzato' });
+    await prisma.expense.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Errore eliminazione' });
+  }
+});
+
+// ==========================================
+// EXPORT CSV per il commercialista — vendite + costi extra (OWNER only)
+// GET /analytics/export.csv?warehouseId=...  (warehouseId opzionale)
+// ==========================================
+router.get('/export.csv', async (req: AuthRequest, res: Response) => {
+  try {
+    const ids = await ownerWarehouseIds(req.user!.userId);
+    let scope = ids;
+    if (req.query.warehouseId && ids.includes(String(req.query.warehouseId))) scope = [String(req.query.warehouseId)];
+    if (scope.length === 0) return res.status(400).send('Nessun magazzino');
+
+    const [sold, expenses] = await Promise.all([
+      prisma.product.findMany({
+        where: { warehouseId: { in: scope }, status: 'VENDUTO', deletedAt: null },
+        select: { brand: true, name: true, category: true, purchasePrice: true, salePrice: true, fees: true, platform: true, soldAt: true, createdAt: true },
+        orderBy: { soldAt: 'desc' },
+      }),
+      prisma.expense.findMany({ where: { warehouseId: { in: scope } }, orderBy: { date: 'desc' } }),
+    ]);
+
+    const esc = (v: any) => {
+      const s = (v ?? '').toString().replace(/"/g, '""');
+      return `"${s}"`;
+    };
+    const d = (x?: Date | null) => (x ? new Date(x).toISOString().slice(0, 10) : '');
+    const n = (x: any) => (Math.round((Number(x) || 0) * 100) / 100).toFixed(2);
+
+    const rows: string[] = [];
+    rows.push(['Data', 'Tipo', 'Categoria', 'Articolo/Descrizione', 'Piattaforma', 'Ricavo', 'Costo acquisto', 'Fee', 'Costo extra', 'Utile'].join(','));
+
+    for (const p of sold) {
+      const utile = (p.salePrice || 0) - p.purchasePrice - (p.fees || 0);
+      rows.push([
+        esc(d(p.soldAt || p.createdAt)), esc('Vendita'), esc(p.category), esc(`${p.brand} ${p.name}`), esc(p.platform || ''),
+        n(p.salePrice), n(p.purchasePrice), n(p.fees), n(0), n(utile),
+      ].join(','));
+    }
+    for (const e of expenses) {
+      rows.push([
+        esc(d(e.date)), esc('Costo extra'), esc(e.category || ''), esc(e.description), esc(''),
+        n(0), n(0), n(0), n(e.amount), n(-e.amount),
+      ].join(','));
+    }
+
+    const csv = '﻿' + rows.join('\r\n'); // BOM per Excel
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="resellerhq-commercialista-${d(new Date())}.csv"`);
+    res.send(csv);
+  } catch (err: any) {
+    logger.error('GET /analytics/export.csv', { err: err.message });
+    res.status(500).send('Errore export');
+  }
+});
 
 export default router;

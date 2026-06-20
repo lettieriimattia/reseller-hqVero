@@ -377,6 +377,13 @@ export default function App() {
   // ----- CATEGORIE (trasversali, da CategoryTemplate) -----
   // Catalogo categorie indipendente dai magazzini: {name, icon, fields}.
   const [categories, setCategories] = useState<{ name: string; icon: string | null }[]>([]);
+  // ----- COSTI EXTRA (Expense) -----
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [expAmount, setExpAmount] = useState('');
+  const [expDesc, setExpDesc] = useState('');
+  const [expCat, setExpCat] = useState('Sacchetti');
+  const [expWarehouse, setExpWarehouse] = useState('');
+  const [isAddingExp, setIsAddingExp] = useState(false);
   // Stato integrazione StockX (configurato + connesso via OAuth)
   const [stockxStatus, setStockxStatus] = useState<{ configured: boolean; connected: boolean } | null>(null);
   const [stockxConnecting, setStockxConnecting] = useState(false);
@@ -995,6 +1002,31 @@ export default function App() {
       setCategories(data.map((t: any) => ({ name: t.name, icon: t.icon || null })));
     }
   }, []);
+
+  // Costi extra (solo OWNER; per i MEMBER l'endpoint risponde comunque coi loro magazzini-owner o vuoto)
+  const fetchExpenses = useCallback(async () => {
+    const { ok, data } = await apiCall<any[]>('/analytics/expenses');
+    if (ok && Array.isArray(data)) setExpenses(data);
+  }, []);
+
+  const addExpense = async () => {
+    const amt = parseFloat(expAmount);
+    const whId = expWarehouse || baseWarehouse?.id;
+    if (!whId || !expDesc.trim() || isNaN(amt) || amt <= 0) { showToast('Inserisci importo e descrizione', 'err'); return; }
+    setIsAddingExp(true);
+    const { ok, data } = await apiCall('/analytics/expenses', {
+      method: 'POST',
+      body: JSON.stringify({ warehouseId: whId, amount: amt, description: expDesc.trim(), category: expCat }),
+    });
+    setIsAddingExp(false);
+    if (ok) { setExpAmount(''); setExpDesc(''); await fetchExpenses(); showToast('Costo extra aggiunto'); }
+    else showToast(data.error || 'Errore', 'err');
+  };
+
+  const deleteExpense = async (id: string) => {
+    const { ok } = await apiCall(`/analytics/expenses/${id}`, { method: 'DELETE' });
+    if (ok) setExpenses(prev => prev.filter(e => e.id !== id));
+  };
   
   const fetchNotifications = useCallback(async () => {
     const { ok, data } = await apiCall<{ notifications: AINotification[]; unreadCount: number }>('/notifications');
@@ -1014,6 +1046,7 @@ export default function App() {
     fetchProducts();
     fetchTeam();
     fetchCategories();
+    fetchExpenses();
     apiCall<any>('/api/stockx/status').then(({ ok, data }) => { if (ok) setStockxStatus(data); });
     fetchNotifications();
     checkStaleProducts();
@@ -1024,7 +1057,7 @@ export default function App() {
     // Controllo prodotti fermi ogni ora
     const staleInterval = setInterval(checkStaleProducts, 60 * 60 * 1000);
     return () => { clearInterval(interval); clearInterval(staleInterval); };
-  }, [isAuthenticated, fetchProducts, fetchTeam, fetchCategories, fetchNotifications, checkStaleProducts]);
+  }, [isAuthenticated, fetchProducts, fetchTeam, fetchCategories, fetchExpenses, fetchNotifications, checkStaleProducts]);
 
   // Admin: badge richieste sempre aggiornato; carica dati quando si entra nella pagina Admin
   useEffect(() => {
@@ -3829,11 +3862,56 @@ export default function App() {
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="text-3xl font-semibold">Analytics</h2>
-              <button onClick={exportCSV}
+              <a href="/analytics/export.csv"
                 className="flex items-center gap-2 bg-[var(--surface)] border border-[var(--border-2)] hover:border-[var(--border-3)] px-4 py-2 rounded-xl text-sm font-bold transition-colors text-[var(--text-soft)] hover:text-[var(--text)] active:scale-95">
-                <Download size={15} /> CSV
-              </button>
+                <Download size={15} /> CSV commercialista
+              </a>
             </div>
+
+            {/* ===== COSTI EXTRA (sacchetti, spedizioni, materiali…) ===== */}
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Wallet size={18} className="text-amber-400" />
+                <h3 className="text-lg font-bold tracking-tighter">Costi extra</h3>
+                <span className="text-[11px] text-[var(--text-faint)] ml-auto">Inclusi nell'utile netto e nel CSV</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                <input type="number" step="0.01" min="0" value={expAmount} onChange={e => setExpAmount(e.target.value)}
+                  placeholder="Importo €" className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                <input type="text" value={expDesc} onChange={e => setExpDesc(e.target.value)}
+                  placeholder="Descrizione" className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                <select value={expCat} onChange={e => setExpCat(e.target.value)}
+                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]">
+                  {['Sacchetti', 'Spedizioni', 'Materiali', 'Commissioni', 'Altro'].map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                {warehouses.filter((w: any) => !w.parentId).length > 1 ? (
+                  <select value={expWarehouse || baseWarehouse?.id || ''} onChange={e => setExpWarehouse(e.target.value)}
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]">
+                    {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                ) : <div className="hidden sm:block" />}
+              </div>
+              <button onClick={addExpense} disabled={isAddingExp}
+                className="w-full sm:w-auto px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors disabled:opacity-50 mb-3">
+                {isAddingExp ? <Loader2 className="animate-spin inline" size={16} /> : '+ Aggiungi costo'}
+              </button>
+              {expenses.length > 0 && (
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {expenses.slice(0, 30).map((e: any) => (
+                    <div key={e.id} className="flex items-center justify-between gap-2 bg-[var(--surface-2)] rounded-lg px-3 py-2">
+                      <div className="min-w-0">
+                        <span className="text-sm text-[var(--text)] truncate">{e.description}</span>
+                        <span className="text-[10px] text-[var(--text-faint)] ml-2">{e.category} · {e.date ? new Date(e.date).toLocaleDateString('it-IT') : ''}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-sm font-bold num text-amber-400">-{(e.amount || 0).toFixed(2)}€</span>
+                        <button onClick={() => deleteExpense(e.id)} className="text-[var(--text-faint)] hover:text-red-400"><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
 
             {/* ===== CONTO ECONOMICO MENSILE ===== */}
             {(() => {
@@ -3845,7 +3923,10 @@ export default function App() {
               const ricavi = monthSold.reduce((a: number, p: any) => a + (p.salePrice || 0), 0);
               const costo = monthSold.reduce((a: number, p: any) => a + p.purchasePrice, 0);
               const fees = monthSold.reduce((a: number, p: any) => a + (p.fees || 0), 0);
-              const netto = ricavi - costo - fees;
+              // Costi extra del mese (sacchetti, spedizioni…): entrano nell'utile netto
+              const speseMese = expenses.filter((e: any) => { const d = new Date(e.date); return d.getFullYear() === reportMonth.y && d.getMonth() === reportMonth.m; });
+              const totSpese = speseMese.reduce((a: number, e: any) => a + (e.amount || 0), 0);
+              const netto = ricavi - costo - fees - totSpese;
               const roi = costo > 0 ? (netto / costo * 100) : 0;
               // Confronto col mese precedente
               const pm = reportMonth.m === 0 ? { y: reportMonth.y - 1, m: 11 } : { y: reportMonth.y, m: reportMonth.m - 1 };
@@ -3860,6 +3941,12 @@ export default function App() {
                   p.brand, p.name, p.size || '', String(p.purchasePrice), String(p.salePrice || 0), String(p.fees || 0),
                   ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)).toFixed(2), p.platform || '',
                   p.soldAt ? new Date(p.soldAt).toLocaleDateString('it-IT') : '',
+                ]));
+                // Costi extra del mese in coda al CSV (per il commercialista)
+                speseMese.forEach((e: any) => rows.push([
+                  'COSTO EXTRA', e.description || '', '', '0', '0', '0',
+                  (-(e.amount || 0)).toFixed(2), e.category || '',
+                  e.date ? new Date(e.date).toLocaleDateString('it-IT') : '',
                 ]));
                 const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
                 const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
