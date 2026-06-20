@@ -1805,6 +1805,18 @@ export default function App() {
     const me = await apiCall<any>('/api/plans/me');
     if (me.ok) { setMyPlan(me.data.plan); setMyFeatures(me.data.features || []); }
   };
+  // Abbonamento Stripe: avvia il checkout e reindirizza alla pagina di pagamento.
+  const subscribeToPlan = async (planId: string) => {
+    const { ok, data } = await apiCall<any>('/billing/checkout', { method: 'POST', body: JSON.stringify({ planId }) });
+    if (ok && data?.url) window.location.href = data.url;
+    else showToast(data?.error || 'Pagamenti non ancora attivi', 'err');
+  };
+  // Portale Stripe per gestire/disdire l'abbonamento.
+  const manageBilling = async () => {
+    const { ok, data } = await apiCall<any>('/billing/portal', { method: 'POST', body: JSON.stringify({}) });
+    if (ok && data?.url) window.location.href = data.url;
+    else showToast(data?.error || 'Nessun abbonamento attivo', 'err');
+  };
   const openPlanModal = async (tab: 'plans' | 'repricing' | 'offer' | 'channels' = 'plans') => {
     setPlanModalOpen(true);
     setProTab(tab);
@@ -7442,7 +7454,16 @@ export default function App() {
                           </li>
                         ))}
                       </ul>
-                      {p.id === myPlan && <p className="mt-3 text-center text-[10px] font-bold text-[#8b5cf6] uppercase">Piano attuale</p>}
+                      {p.id === myPlan ? (
+                        <>
+                          <p className="mt-3 text-center text-[10px] font-bold text-[#8b5cf6] uppercase">Piano attuale</p>
+                          {p.priceMonthly > 0 && (
+                            <button onClick={manageBilling} className="mt-2 w-full py-2 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] text-xs font-bold text-[var(--text-soft)]">Gestisci abbonamento</button>
+                          )}
+                        </>
+                      ) : p.priceMonthly > 0 && (
+                        <button onClick={() => subscribeToPlan(p.id)} className="mt-3 w-full py-2.5 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-sm font-bold transition-colors">Abbonati</button>
+                      )}
                     </div>
                   ))}
                   {user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
