@@ -103,13 +103,75 @@ export async function getStockXAccessToken(): Promise<string | null> {
   }
 }
 
-// Valutazione StockX — scheletro. Da completare (catalog search + market data)
-// quando l'accesso API è approvato e attivo.
-export async function getStockXValuation(opts: { query: string; size?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string }> {
+const STOCKX_API_BASE = 'https://api.stockx.com';
+
+// Normalizza una taglia per il confronto con le variant StockX (es. "EU 42" / "42" / "9.5").
+function normSize(s?: string): string {
+  return (s || '').toString().toLowerCase().replace(/eu|us|uk|taglia|size/g, '').replace(/[^0-9.,]/g, '').replace(',', '.').trim();
+}
+
+// Sceglie il prezzo di mercato dai market data (preferisce il lowest ask).
+function pickStockXPrice(m: any): number | null {
+  const candidates = [m?.lowestAskAmount, m?.flexLowestAskAmount, m?.sellFasterAmount, m?.highestBidAmount, m?.earnMoreAmount];
+  for (const c of candidates) {
+    const n = Number(c);
+    if (!isNaN(n) && n > 0) return Math.round(n);
+  }
+  return null;
+}
+
+// Valutazione StockX REALE: catalog search → (variant per taglia) → market data in EUR.
+// Difensiva: in caso di errore/forma diversa ritorna value null senza rompere l'app.
+export async function getStockXValuation(opts: { query: string; size?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; sample?: number }> {
   if (!isStockXConfigured()) return { configured: false, value: null, source: 'StockX (non configurato)' };
   const token = await getStockXAccessToken();
   if (!token) return { configured: true, connected: false, value: null, source: 'StockX (non connesso)' };
-  // TODO: chiamare /v2/catalog/search e i market data quando l'API è attiva.
-  void opts;
-  return { configured: true, connected: true, value: null, source: 'StockX' };
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'x-api-key': process.env.STOCKX_API_KEY || '',
+    Accept: 'application/json',
+  };
+
+  try {
+    // 1) Ricerca catalogo
+    const sr = await fetch(`${STOCKX_API_BASE}/v2/catalog/search?query=${encodeURIComponent(opts.query)}&pageNumber=1&pageSize=10`, { headers });
+    if (!sr.ok) { logger.warn('StockX search non ok', { status: sr.status }); return { configured: true, connected: true, value: null, source: 'StockX (ricerca fallita)' }; }
+    const sd = await sr.json() as any;
+    const products = sd?.products || sd?.data || sd?.hits || [];
+    const product = Array.isArray(products) ? products[0] : null;
+    if (!product) return { configured: true, connected: true, value: null, source: 'StockX (nessun risultato)' };
+    const productId = product.productId || product.id || product.urlKey;
+    const itemName = product.title || product.name || [product.brand, product.model].filter(Boolean).join(' ');
+
+    let value: number | null = null;
+
+    // 2) Prova il market data della variant corrispondente alla taglia
+    if (opts.size && productId) {
+      try {
+        const vr = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(productId)}/variants?currencyCode=EUR`, { headers });
+        if (vr.ok) {
+          const vd = await vr.json() as any;
+          const variants = Array.isArray(vd) ? vd : (vd?.variants || vd?.data || []);
+          const target = normSize(opts.size);
+          const match = variants.find((v: any) => normSize(v.variantValue || v.size || v.sizeChart?.displayOptions?.[0]?.size) === target);
+          if (match?.variantId) {
+            const md = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(productId)}/variants/${encodeURIComponent(match.variantId)}/market-data?currencyCode=EUR`, { headers });
+            if (md.ok) value = pickStockXPrice(await md.json());
+          }
+        }
+      } catch { /* fallback al market data di prodotto */ }
+    }
+
+    // 3) Fallback: market data a livello di prodotto
+    if (value == null && productId) {
+      const md = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(productId)}/market-data?currencyCode=EUR`, { headers });
+      if (md.ok) value = pickStockXPrice(await md.json());
+    }
+
+    return { configured: true, connected: true, value, source: 'StockX', itemName, sample: 1 };
+  } catch (err: any) {
+    logger.error('Errore getStockXValuation', { err: err.message });
+    return { configured: true, connected: true, value: null, source: 'StockX (errore)' };
+  }
 }

@@ -16,6 +16,7 @@ import { audit } from '../services/audit.service';
 import { logInventory } from '../services/inventory-log.service';
 import { notifyWarehouseMembers } from '../services/notification.service';
 import { getMarketValuation } from '../services/price.service';
+import { getStockXValuation, isStockXConfigured } from '../services/stockx.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -651,10 +652,16 @@ router.get('/:id/valuation', async (req: AuthRequest, res: Response) => {
     if (!allowed || !product) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
     if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
 
-    const val = await getMarketValuation({
-      query: `${product.brand} ${product.name}`.trim(),
-      size: product.size || undefined,
-    });
+    const query = `${product.brand} ${product.name}`.trim();
+    // Sneaker → prova StockX (prezzo affidabile EUR). Se trova, lo usiamo.
+    const isShoe = ['scarp', 'sneaker', 'calzatur', 'shoe', 'ginnastica'].some(k => (product.category || '').toLowerCase().includes(k));
+    if (isShoe && isStockXConfigured()) {
+      const sx = await getStockXValuation({ query, size: product.size || undefined });
+      if (sx.value != null) {
+        return res.json({ configured: true, value: sx.value, source: 'StockX', sample: sx.sample || 1, confidence: 'alta', authenticatedOnly: true });
+      }
+    }
+    const val = await getMarketValuation({ query, size: product.size || undefined });
     res.json(val);
   } catch (err: any) {
     logger.error('Errore GET /products/:id/valuation', { err: err.message });

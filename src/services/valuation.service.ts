@@ -9,6 +9,7 @@ import { getCardValue } from './cards.service';
 import { getVinylValue } from './discogs.service';
 import { getBagValue, getWatchValue, isVestiaireConfigured, isChrono24Configured } from './apify.service';
 import { getMarketValuation } from './price.service';
+import { getStockXValuation, isStockXConfigured } from './stockx.service';
 
 export interface UnifiedValuation {
   value: number | null;
@@ -25,6 +26,7 @@ const CARD_KEYS = ['pokemon', 'pokémon', 'carte', 'card', 'tcg', 'magic', 'mtg'
 const VINYL_KEYS = ['vinil', 'disco', 'dischi', 'vinyl', 'record', 'lp', '33 giri', '45 giri'];
 const BAG_KEYS = ['bors', 'bag', 'pochette', 'zaino', 'tracoll', 'clutch', 'handbag', 'shopper'];
 const WATCH_KEYS = ['orolog', 'watch', 'chrono'];
+const SHOE_KEYS = ['scarp', 'sneaker', 'calzatur', 'shoe', 'ginnastica'];
 
 function matches(cat: string, keys: string[]): boolean {
   const c = (cat || '').toLowerCase();
@@ -62,6 +64,18 @@ export async function getValuation(opts: {
     const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
     const v = await getWatchValue({ query: q });
     if (v) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
+  }
+
+  // 1d) SNEAKER → StockX (fonte di prezzo affidabile, in EUR). Se configurato e
+  // restituisce un valore lo usiamo; altrimenti si cade su eBay indicativo sotto.
+  if (matches(cat, SHOE_KEYS) && isStockXConfigured()) {
+    const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
+    if (q.length >= 2) {
+      const v = await getStockXValuation({ query: q, size: opts.size });
+      if (v.value != null) {
+        return { value: v.value, currency: 'EUR', source: 'StockX', reliable: true, sample: v.sample || 1, itemName: v.itemName };
+      }
+    }
   }
 
   // 2) VINILI → Discogs (affidabile)
