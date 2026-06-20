@@ -9,6 +9,7 @@ import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, Lis
 import { getMarketValuation } from '../services/price.service';
 import { getCardValue } from '../services/cards.service';
 import { getValuation } from '../services/valuation.service';
+import { getStockXValuation, isStockXConfigured } from '../services/stockx.service';
 import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { audit } from '../services/audit.service';
@@ -97,6 +98,36 @@ router.post('/value', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     logger.error('Errore /ai/value', { err: err.message });
     res.status(500).json({ error: 'Errore valutazione' });
+  }
+});
+
+// ==========================================
+// POST /api/ai/barcode-lookup - dal barcode/style code prova a riconoscere il prodotto
+// (per ora via StockX: ricerca catalogo + prezzo). Risponde { found, brand, name, value }.
+// ==========================================
+router.post('/barcode-lookup', async (req: AuthRequest, res: Response) => {
+  try {
+    const code = (req.body?.barcode ?? '').toString().trim();
+    if (!code || code.length < 4) return res.status(400).json({ error: 'Barcode non valido' });
+
+    if (!isStockXConfigured()) {
+      return res.json({ found: false, barcode: code, reason: 'StockX non configurato' });
+    }
+    const sx = await getStockXValuation({ query: code });
+    if (sx.brand || sx.model || sx.itemName) {
+      return res.json({
+        found: true,
+        barcode: code,
+        brand: sx.brand || null,
+        name: sx.model || sx.itemName || null,
+        value: sx.value ?? null,
+        source: 'StockX',
+      });
+    }
+    return res.json({ found: false, barcode: code });
+  } catch (err: any) {
+    logger.error('Errore /ai/barcode-lookup', { err: err.message });
+    res.status(500).json({ error: 'Errore lookup barcode' });
   }
 });
 

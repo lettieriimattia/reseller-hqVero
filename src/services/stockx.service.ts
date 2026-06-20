@@ -122,7 +122,7 @@ function pickStockXPrice(m: any): number | null {
 
 // Valutazione StockX REALE: catalog search → (variant per taglia) → market data in EUR.
 // Difensiva: in caso di errore/forma diversa ritorna value null senza rompere l'app.
-export async function getStockXValuation(opts: { query: string; size?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; sample?: number }> {
+export async function getStockXValuation(opts: { query: string; size?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; brand?: string; model?: string; sample?: number }> {
   if (!isStockXConfigured()) return { configured: false, value: null, source: 'StockX (non configurato)' };
   const token = await getStockXAccessToken();
   if (!token) return { configured: true, connected: false, value: null, source: 'StockX (non connesso)' };
@@ -143,6 +143,8 @@ export async function getStockXValuation(opts: { query: string; size?: string })
     if (!product) return { configured: true, connected: true, value: null, source: 'StockX (nessun risultato)' };
     const productId = product.productId || product.id || product.urlKey;
     const itemName = product.title || product.name || [product.brand, product.model].filter(Boolean).join(' ');
+    const brand = product.brand || undefined;
+    const model = product.model || product.styleId || product.title || undefined;
 
     let value: number | null = null;
 
@@ -169,7 +171,7 @@ export async function getStockXValuation(opts: { query: string; size?: string })
       if (md.ok) value = pickStockXPrice(await md.json());
     }
 
-    return { configured: true, connected: true, value, source: 'StockX', itemName, sample: 1 };
+    return { configured: true, connected: true, value, source: 'StockX', itemName, brand, model, sample: 1 };
   } catch (err: any) {
     logger.error('Errore getStockXValuation', { err: err.message });
     return { configured: true, connected: true, value: null, source: 'StockX (errore)' };

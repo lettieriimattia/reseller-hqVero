@@ -10,7 +10,7 @@ import {
   KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon,
   Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal,
   Footprints, Shirt, Watch, ShoppingBag, Gem, Glasses, SprayCan, Smartphone,
-  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp
+  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine
 } from 'lucide-react';
 
 // ==========================================
@@ -301,6 +301,12 @@ export default function App() {
   const [scanMarket, setScanMarket] = useState<any>(null); // verifica eBay del riconoscimento (valore di mercato)
   const [priceEstimate, setPriceEstimate] = useState<any>(null); // rimasto per compatibilità reset, non più usato in UI
   
+  // ----- BARCODE (scansiona + cerca prodotto) -----
+  const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
+  const [barcodeSupported, setBarcodeSupported] = useState(true);
+  const [barcodeManual, setBarcodeManual] = useState('');
+  const [barcodeBusy, setBarcodeBusy] = useState(false);
+
   // ----- FOTO PRODOTTO -----
   const [productPhotos, setProductPhotos] = useState<string[]>([]);
   const [editPhotos, setEditPhotos] = useState<string[]>([]);
@@ -367,6 +373,8 @@ export default function App() {
   // ----- CATEGORIE (trasversali, da CategoryTemplate) -----
   // Catalogo categorie indipendente dai magazzini: {name, icon, fields}.
   const [categories, setCategories] = useState<{ name: string; icon: string | null }[]>([]);
+  // Stato integrazione StockX (configurato + connesso via OAuth)
+  const [stockxStatus, setStockxStatus] = useState<{ configured: boolean; connected: boolean } | null>(null);
   
   // ----- PROFIT SHARING -----
   const [showProfitSharesModal, setShowProfitSharesModal] = useState(false);
@@ -381,6 +389,10 @@ export default function App() {
   // Input fotocamera sempre montato: premendo "+" lo clicchiamo nel gesto utente
   // così su mobile la fotocamera si apre SUBITO (zero tap sprecati).
   const addCameraInputRef = useRef<HTMLInputElement | null>(null);
+  // Barcode scanner (BarcodeDetector + stream fotocamera)
+  const barcodeVideoRef = useRef<HTMLVideoElement | null>(null);
+  const barcodeStreamRef = useRef<MediaStream | null>(null);
+  const barcodeLoopRef = useRef<number | null>(null);
   const notifRef = useRef<HTMLDivElement | null>(null);
   const showToast = useCallback((msg: string, type: 'ok' | 'err' | 'warn' = 'ok', action?: { label: string; onClick: () => void }) => {
     if (toastRef.current) clearTimeout(toastRef.current);
@@ -997,6 +1009,7 @@ export default function App() {
     fetchProducts();
     fetchTeam();
     fetchCategories();
+    apiCall<any>('/api/stockx/status').then(({ ok, data }) => { if (ok) setStockxStatus(data); });
     fetchNotifications();
     checkStaleProducts();
     refreshMyPlan();
@@ -1479,6 +1492,76 @@ export default function App() {
     const isTouch = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
     if (isTouch) addCameraInputRef.current?.click();
   };
+
+  // ===== BARCODE: scansiona + cerca prodotto =====
+  const stopBarcodeScan = () => {
+    if (barcodeLoopRef.current) { cancelAnimationFrame(barcodeLoopRef.current); barcodeLoopRef.current = null; }
+    barcodeStreamRef.current?.getTracks().forEach(t => t.stop());
+    barcodeStreamRef.current = null;
+  };
+
+  // Dal codice letto: salva il barcode negli attributi e prova a riconoscere il prodotto.
+  const lookupBarcode = async (rawCode: string) => {
+    const code = (rawCode || '').trim();
+    if (!code) return;
+    setDynamicAttrs(prev => ({ ...prev, barcode: code }));
+    setBarcodeBusy(true);
+    const { ok, data } = await apiCall<any>('/api/ai/barcode-lookup', {
+      method: 'POST', body: JSON.stringify({ barcode: code }),
+    });
+    setBarcodeBusy(false);
+    if (ok && data?.found) {
+      if (data.brand) setBrand(data.brand);
+      if (data.name) setName(data.name);
+      if (data.value) setScanMarket({ value: data.value, reliable: true, source: 'StockX' });
+      showToast(`Trovato: ${[data.brand, data.name].filter(Boolean).join(' ') || code}`);
+    } else {
+      showToast('Barcode salvato. Prodotto non riconosciuto: usa la foto o compila a mano.', 'warn');
+    }
+  };
+
+  const onBarcodeFound = async (code: string) => {
+    stopBarcodeScan();
+    setBarcodeModalOpen(false);
+    await lookupBarcode(code);
+  };
+
+  const openBarcodeScanner = () => {
+    setBarcodeManual('');
+    setBarcodeSupported(typeof (window as any).BarcodeDetector !== 'undefined');
+    setBarcodeModalOpen(true);
+  };
+
+  // Avvia/ferma la fotocamera + il loop di rilevamento quando il modale è aperto.
+  useEffect(() => {
+    if (!barcodeModalOpen) { stopBarcodeScan(); return; }
+    const BarcodeDetectorCtor = (window as any).BarcodeDetector;
+    if (!BarcodeDetectorCtor) { setBarcodeSupported(false); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+        barcodeStreamRef.current = stream;
+        const video = barcodeVideoRef.current;
+        if (video) { video.srcObject = stream; await video.play().catch(() => {}); }
+        const detector = new BarcodeDetectorCtor({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'] });
+        const tick = async () => {
+          if (cancelled || !barcodeStreamRef.current || !barcodeVideoRef.current) return;
+          try {
+            const codes = await detector.detect(barcodeVideoRef.current);
+            if (codes && codes.length && codes[0].rawValue) { onBarcodeFound(codes[0].rawValue); return; }
+          } catch { /* frame non leggibile, continua */ }
+          barcodeLoopRef.current = requestAnimationFrame(tick);
+        };
+        barcodeLoopRef.current = requestAnimationFrame(tick);
+      } catch {
+        if (!cancelled) setBarcodeSupported(false);
+      }
+    })();
+    return () => { cancelled = true; stopBarcodeScan(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [barcodeModalOpen]);
 
   // Crea un nuovo MAGAZZINO (partnership a nome libero). I soci entrano col codice invito.
   const handleAddWarehouse = async (e: React.FormEvent) => {
@@ -4554,6 +4637,31 @@ export default function App() {
               </>)}
             </section>
 
+            {/* SEZIONE: Integrazioni (StockX) */}
+            {isFounder && (
+              <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="text-green-400" size={18} />
+                  <h3 className="text-lg font-bold tracking-tighter">Integrazioni · StockX</h3>
+                </div>
+                <p className="text-xs text-[var(--text-soft)] mb-4">Prezzi reali delle sneaker da StockX (in EUR).</p>
+                {!stockxStatus?.configured ? (
+                  <p className="text-xs text-[var(--text-faint)]">
+                    Non configurato. Aggiungi su Render le variabili <span className="font-mono">STOCKX_CLIENT_ID</span>, <span className="font-mono">STOCKX_CLIENT_SECRET</span>, <span className="font-mono">STOCKX_API_KEY</span>, poi ricarica.
+                  </p>
+                ) : stockxStatus?.connected ? (
+                  <div className="flex items-center gap-2 text-sm font-semibold text-green-400">
+                    <CheckCircle size={16} /> StockX collegato
+                  </div>
+                ) : (
+                  <a href="/api/stockx/connect"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors">
+                    <KeyRound size={15} /> Connetti StockX
+                  </a>
+                )}
+              </section>
+            )}
+
             {/* SEZIONE: Team & Quote */}
             {teamData.map((team: any) => (
               <section key={team.warehouseId} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
@@ -5263,6 +5371,13 @@ export default function App() {
                     ? "Scatta o carica una foto: l'IA capisce categoria, brand e modello e prepara i campi giusti."
                     : "Aggiungi 1–5 foto. La prima scatena l'IA che riconosce brand e modello. Puoi ri-scansionare qualsiasi foto."}
                 </p>
+
+                {/* Scansiona barcode: legge il codice e prova a riconoscere il prodotto */}
+                <button type="button" onClick={openBarcodeScanner} disabled={barcodeBusy}
+                  className="w-full mb-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[#8b5cf6] text-sm font-bold text-[var(--text)] transition-colors disabled:opacity-50">
+                  {barcodeBusy ? <Loader2 size={15} className="animate-spin" /> : <ScanLine size={15} className="text-[#8b5cf6]" />}
+                  Scansiona barcode
+                </button>
 
                 {/* Griglia foto */}
                 <div className="grid grid-cols-5 gap-2 mb-3">
@@ -8088,6 +8203,47 @@ export default function App() {
                 Salva
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== MODALE: SCANSIONA BARCODE ========== */}
+      {barcodeModalOpen && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          onClick={() => setBarcodeModalOpen(false)}>
+          <div className="bg-[var(--card)] rounded-3xl p-5 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[var(--text)] flex items-center gap-2">
+                <ScanLine size={18} className="text-[#8b5cf6]" /> Scansiona barcode
+              </h3>
+              <button onClick={() => setBarcodeModalOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-lg">
+                <X size={20} />
+              </button>
+            </div>
+
+            {barcodeSupported ? (
+              <>
+                <div className="relative rounded-2xl overflow-hidden bg-black aspect-[4/3] mb-3">
+                  <video ref={barcodeVideoRef} playsInline muted className="w-full h-full object-cover" />
+                  <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-0.5 bg-[#8b5cf6] shadow-[0_0_12px_2px_rgba(139,92,246,0.7)]" />
+                </div>
+                <p className="text-[11px] text-[var(--text-soft)] text-center mb-3">Inquadra il codice a barre del prodotto (o della scatola).</p>
+              </>
+            ) : (
+              <p className="text-xs text-[var(--text-soft)] mb-3">
+                La fotocamera per barcode non è supportata su questo browser. Inserisci il codice a mano:
+              </p>
+            )}
+
+            {/* Inserimento manuale (sempre disponibile come fallback) */}
+            <form onSubmit={(e) => { e.preventDefault(); if (barcodeManual.trim()) onBarcodeFound(barcodeManual.trim()); }}
+              className="flex gap-2">
+              <input value={barcodeManual} onChange={e => setBarcodeManual(e.target.value)}
+                placeholder="Codice a mano (es. EAN o style code)"
+                className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+              <button type="submit" disabled={!barcodeManual.trim()}
+                className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">Cerca</button>
+            </form>
           </div>
         </div>
       )}
