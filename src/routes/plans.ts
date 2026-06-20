@@ -1,11 +1,11 @@
 // src/routes/plans.ts — catalogo piani e piano corrente dell'utente.
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { PLANS, PLAN_ORDER, getPlan } from '../config/plans';
 
 const router = Router();
-const prisma = new PrismaClient();
 router.use(authenticate);
 
 // Catalogo completo (per la pagina prezzi)

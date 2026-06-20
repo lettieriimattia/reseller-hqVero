@@ -10,7 +10,7 @@ import { getMarketValuation } from '../services/price.service';
 import { getCardValue } from '../services/cards.service';
 import { getValuation } from '../services/valuation.service';
 import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 import { audit } from '../services/audit.service';
 import { logger } from '../utils/logger';
 

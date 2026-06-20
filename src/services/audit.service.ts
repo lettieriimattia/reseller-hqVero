@@ -2,10 +2,10 @@
 // Tracciamento azioni sensibili. Scrive sia su DB (per UI) che su logger (per ops).
 
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { Request } from 'express';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
 
 export type AuditAction =
   | 'LOGIN_SUCCESS'

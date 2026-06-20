@@ -13,9 +13,9 @@
 //   APIFY_MONTHLY_LIMIT    → tetto TOTALE ricerche/mese (default 30), condiviso
 
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
 
 const TOKEN = (process.env.APIFY_TOKEN || '').trim();
 const VESTIAIRE_ACTOR = (process.env.APIFY_VESTIAIRE_ACTOR || '').trim();

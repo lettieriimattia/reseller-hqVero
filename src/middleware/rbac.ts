@@ -5,9 +5,9 @@
 
 import { Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { AuthRequest } from './auth';
 
-const prisma = new PrismaClient();
 
 // Middleware: blocca l'accesso se l'utente non è OWNER in nessun warehouse
 export async function requireOwner(req: AuthRequest, res: Response, next: NextFunction) {

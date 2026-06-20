@@ -4,13 +4,13 @@
 
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { requireOwner } from '../middleware/rbac';
 import { generateCategoryConfig } from '../services/ai.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // FieldDef: struttura di un singolo campo dinamico
 // type 'text' | 'number' | 'select' | 'boolean'

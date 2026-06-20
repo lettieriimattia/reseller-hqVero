@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
 
@@ -21,7 +22,6 @@ import { audit } from '../services/audit.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const BCRYPT_ROUNDS = 12;
 const MAX_LOGIN_FAILS = 5;

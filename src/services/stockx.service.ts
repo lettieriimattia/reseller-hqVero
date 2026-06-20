@@ -4,9 +4,9 @@
 //   STOCKX_CLIENT_ID, STOCKX_CLIENT_SECRET, STOCKX_API_KEY  (su Railway)
 //   STOCKX_REDIRECT_URI opzionale (altrimenti dedotto dal dominio della richiesta).
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
 
 const STOCKX_AUTHORIZE = 'https://accounts.stockx.com/authorize';
 const STOCKX_TOKEN = 'https://accounts.stockx.com/oauth/token';

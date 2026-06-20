@@ -2,10 +2,10 @@
 // Gestione notifiche in-app per il team.
 
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
 import { sendPushToUser } from './push.service';
 
-const prisma = new PrismaClient();
 
 export type NotificationType = 'SALE' | 'NEW_MEMBER' | 'PRICE_ALERT' | 'AI_INSIGHT' | 'SECURITY' | 'PRODUCT_ADDED';
 

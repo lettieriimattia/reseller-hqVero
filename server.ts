@@ -14,6 +14,7 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from './src/lib/prisma';
 
 import authRoutes from './src/routes/auth';
 import productRoutes from './src/routes/products';
@@ -75,7 +76,6 @@ if (process.env.ENCRYPTION_KEY!.length !== 64) {
 }
 
 const app = express();
-const prisma = new PrismaClient();
 const PORT = parseInt(process.env.PORT || '3000');
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -287,6 +287,19 @@ serverInstance.listen(PORT, () => {
 
   // Web Push: carica/genera le chiavi VAPID
   initPush();
+
+  // Migrazione one-shot magazzini → partnership, attivata via env su Render.
+  // RUN_WAREHOUSE_MIGRATION=dry  → solo anteprima nei log (non scrive)
+  // RUN_WAREHOUSE_MIGRATION=apply → applica davvero (idempotente, non distruttiva)
+  // Dopo l'esecuzione, rimuovere la variabile da Render.
+  if (process.env.RUN_WAREHOUSE_MIGRATION) {
+    const apply = process.env.RUN_WAREHOUSE_MIGRATION.toLowerCase() === 'apply';
+    import('./src/services/warehouse-migration')
+      .then(({ migrateWarehousesToPartners }) =>
+        migrateWarehousesToPartners(prisma, apply, (...a) => logger.info('[warehouse-migration]', ...a)))
+      .then(s => logger.info('[warehouse-migration] completata', s))
+      .catch(err => logger.error('[warehouse-migration] errore', { err: err?.message }));
+  }
 
   // Email solo per cose importanti (password, account, risposte assistenza):
   // le notifiche operative (prodotti fermi, ecc.) vanno via push/in-app, non email.

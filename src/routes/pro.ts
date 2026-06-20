@@ -4,6 +4,7 @@
 //  - PUT  /api/pro/channels/:id      tracker pubblicazione multi-canale (feature: crossposting)
 import { Router, Response } from 'express';
 import { PrismaClient, Product } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { requireFeature } from '../middleware/plan';
 import { getStaleProducts } from '../services/stale.service';
@@ -11,7 +12,6 @@ import { assessOffer } from '../services/ai.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 router.use(authenticate);
 
 // Carica un prodotto verificando che l'utente sia membro del suo warehouse.

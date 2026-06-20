@@ -5,12 +5,12 @@
 
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { authenticate, AuthRequest, canAccessProduct } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimit';
 import { logger } from '../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 const SENDCLOUD_BASE = 'https://panel.sendcloud.sc/api/v2';
 
 router.use(authenticate, apiLimiter);

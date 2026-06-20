@@ -3,8 +3,8 @@
 // Mai modificare o eliminare righe — solo aggiungere.
 
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 
-const prisma = new PrismaClient();
 
 export type InventoryAction =
   | 'STATUS_CHANGE'

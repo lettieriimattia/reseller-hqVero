@@ -3,6 +3,7 @@
 
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 
 import { authenticate, AuthRequest, authorizeWarehouseAccess, authorizeWarehouseOwner } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimit';
@@ -13,7 +14,6 @@ import { notifyWarehouseMembers, notifyTeam } from '../services/notification.ser
 import { logger } from '../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 router.use(authenticate);
 router.use(apiLimiter);

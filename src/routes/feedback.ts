@@ -9,9 +9,9 @@ import { aiLimiter } from '../middleware/rateLimit';
 import { sendEmail } from '../services/email.service';
 import { logger } from '../utils/logger';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { ADMIN_EMAIL } from './admin';
 
-const prisma = new PrismaClient();
 const router = Router();
 router.use(authenticate);
 router.use(aiLimiter); // riusa un rate-limit esistente per evitare spam

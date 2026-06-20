@@ -4,11 +4,11 @@
 // Imposta TRACKING_17TRACK_KEY nel .env
 
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
 import { notifyWarehouseMembers } from './notification.service';
 import { sendDeliveredEmail } from './email-jobs.service';
 
-const prisma = new PrismaClient();
 
 const SEVENTEEN_TRACK_KEY = process.env.TRACKING_17TRACK_KEY || '';
 const API_BASE = 'https://api.17track.net/track/v2';

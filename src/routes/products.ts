@@ -6,6 +6,7 @@
 
 import { Router, Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { authenticate, AuthRequest, canAccessProduct } from '../middleware/auth';
 import { resolveRole, stripFinancials } from '../middleware/rbac';
 import { uploadImages, isCloudinaryConfigured } from '../services/upload.service';
@@ -18,7 +19,6 @@ import { getMarketValuation } from '../services/price.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Timeout reservation (15 minuti)
 const RESERVATION_TTL_MS = 15 * 60 * 1000;

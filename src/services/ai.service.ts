@@ -1,10 +1,10 @@
 // src/services/ai.service.ts
 import Groq from 'groq-sdk';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
 import { isGeminiConfigured, geminiVision } from './gemini.service';
 
-const prisma = new PrismaClient();
 
 // ==========================================
 // MULTI-KEY GROQ ROTATION

@@ -3,10 +3,10 @@
 
 import cron from 'node-cron';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { sendEmail } from './email.service';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
 
 // ==========================================
 // TEMPLATE EMAIL

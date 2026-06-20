@@ -3,13 +3,13 @@
 
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { authenticate, AuthRequest, canAccessProduct } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimit';
 import { addTracking, refreshTracking, removeTracking, setTrackingStatusManual, CARRIERS } from '../services/tracking.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 router.use(authenticate);
 router.use(apiLimiter);

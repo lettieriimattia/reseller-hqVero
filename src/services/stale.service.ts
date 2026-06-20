@@ -3,10 +3,10 @@
 // con suggerimento di sconto basato su quanto tempo sono fermi.
 
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { notify } from './notification.service';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
 
 export interface StaleProduct {
   id: string;

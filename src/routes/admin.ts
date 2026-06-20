@@ -3,13 +3,13 @@
 
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { sendEmail } from '../services/email.service';
 import { isPlanId } from '../config/plans';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // L'UNICO account admin. Hard-coded (NON modificabile via env) così nessuna
 // configurazione errata o variabile d'ambiente può concedere admin ad altri.
