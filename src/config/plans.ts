@@ -8,14 +8,15 @@ export type Feature =
   | 'repricing'           // riprezzamento stock fermo
   | 'offer_assistant'     // assistente trattative/offerte
   | 'crossposting'        // pubblicazione multi-canale + ritiro automatico
-  | 'listing_ai'          // generatore annunci IA
+  | 'listing_ai'          // generatore annunci IA + lettura barcode/SKU
   | 'shipping'            // spedizioni
   | 'labels'              // etichette/QR magazzino
   | 'advanced_analytics'  // analytics avanzate
   | 'partners'            // magazzini con soci + divisione costi/utili
-  | 'marketplace'         // vetrina pubblica + chat acquirenti
+  | 'marketplace'         // vendere in vetrina pubblica + chat + pagamenti in-app
   | 'stockx_pricing'      // prezzi reali StockX
-  | 'accounting';         // costi extra + export CSV commercialista
+  | 'accounting'          // costi extra + export CSV commercialista
+  | 'no_sale_fee';        // fee di servizio sulle vendite azzerata
 
 export interface Plan {
   id: PlanId;
@@ -34,49 +35,49 @@ export const PLANS: Record<PlanId, Plan> = {
     id: 'free',
     name: 'Free',
     priceMonthly: 0,
-    tagline: 'Inizia a gestire il tuo magazzino',
+    tagline: 'Prova a gestire il tuo magazzino',
     highlights: [
-      'Magazzino e vendite',
-      'Riconoscimento prodotto da foto (IA)',
+      'Magazzino personale + riconoscimento prodotto da foto (IA)',
       'Categorie create al volo dall\'IA',
-      'Valutazione di mercato base',
-      'Fino a 30 prodotti · solo tu',
+      'Registra acquisti e vendite manuali',
+      'Fino a 25 prodotti · solo tu',
+      'Per vendere nel marketplace serve lo Starter',
     ],
     features: [],
-    maxProducts: 30,
+    maxProducts: 25,
     maxTeamMembers: 1,
   },
   starter: {
     id: 'starter',
     name: 'Starter',
     priceMonthly: 9.99,
-    tagline: 'Per chi vende ogni giorno',
+    tagline: 'Per chi vende davvero, ogni giorno',
     highlights: [
       'Tutto del Free',
-      'Generatore annunci IA + assistente trattative',
-      'Riprezzamento stock fermo',
-      'Lettura SKU/barcode dalla foto della scatola',
+      'Vendi nel marketplace: vetrina pubblica + chat + pagamenti in-app',
+      'Generatore annunci IA + lettura SKU/barcode dalla scatola',
       '1 socio: magazzino condiviso con divisione costi/utili',
-      'Fino a 200 prodotti · 2 persone',
+      'Fino a 150 prodotti · 2 persone',
     ],
-    features: ['listing_ai', 'offer_assistant', 'repricing', 'partners'],
-    maxProducts: 200,
+    features: ['marketplace', 'listing_ai', 'partners'],
+    maxProducts: 150,
     maxTeamMembers: 2,
   },
   pro: {
     id: 'pro',
     name: 'Pro',
     priceMonthly: 19.99,
-    tagline: 'Per chi vende su più canali e in team',
+    tagline: 'Il salto di qualità — quasi tutto incluso',
     highlights: [
       'Tutto dello Starter',
-      'Marketplace pubblico: vendi i tuoi articoli in vetrina + chat',
-      'Prezzi reali StockX (valutazione sneaker)',
-      'Multi-canale + ritiro automatico · Spedizioni',
-      'Analytics avanzate · Costi extra + CSV per il commercialista',
+      'Niente fee di servizio sulle tue vendite (azzerata)',
+      'Valutazioni reali StockX su tutto (sneaker, elettronica…)',
+      'Contabilità: costi extra + CSV per il commercialista',
+      'Analytics avanzate · riprezzamento · assistente trattative',
+      'Multi-canale + ritiro automatico · spedizioni',
       'Fino a 2000 prodotti · 5 soci',
     ],
-    features: ['listing_ai', 'offer_assistant', 'repricing', 'partners', 'crossposting', 'shipping', 'advanced_analytics', 'marketplace', 'stockx_pricing', 'accounting'],
+    features: ['marketplace', 'listing_ai', 'partners', 'stockx_pricing', 'accounting', 'advanced_analytics', 'repricing', 'offer_assistant', 'crossposting', 'shipping', 'no_sale_fee'],
     maxProducts: 2000,
     maxTeamMembers: 5,
   },
@@ -91,7 +92,7 @@ export const PLANS: Record<PlanId, Plan> = {
       'Prodotti, soci e magazzini illimitati',
       'Priorità supporto',
     ],
-    features: ['listing_ai', 'offer_assistant', 'repricing', 'partners', 'crossposting', 'shipping', 'advanced_analytics', 'marketplace', 'stockx_pricing', 'accounting', 'labels'],
+    features: ['marketplace', 'listing_ai', 'partners', 'stockx_pricing', 'accounting', 'advanced_analytics', 'repricing', 'offer_assistant', 'crossposting', 'shipping', 'no_sale_fee', 'labels'],
     maxProducts: null,
     maxTeamMembers: null,
   },

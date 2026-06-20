@@ -6,8 +6,14 @@ import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { stripe, isStripeConfigured, appBase } from '../lib/stripe';
-import { computeBuyerBreakdown } from '../config/fees';
+import { computeBuyerBreakdown, PLATFORM_FEE } from '../config/fees';
+import { hasFeature } from '../config/plans';
 import { logger } from '../utils/logger';
+
+// La fee di servizio è azzerata per i venditori Pro/Business (feature no_sale_fee).
+function serviceFeeFor(plan: string | null | undefined): number {
+  return hasFeature(plan, 'no_sale_fee') ? 0 : PLATFORM_FEE;
+}
 
 const router = Router();
 
@@ -53,14 +59,14 @@ router.get('/:id', async (req, res: Response) => {
   try {
     const p = await prisma.product.findFirst({
       where: { id: req.params.id, isPublic: true, deletedAt: null },
-      select: { id: true, brand: true, name: true, category: true, size: true, condition: true, publicPrice: true, shippingCost: true, photos: true, sku: true, attributes: true, status: true, userId: true, user: { select: { name: true } } },
+      select: { id: true, brand: true, name: true, category: true, size: true, condition: true, publicPrice: true, shippingCost: true, photos: true, sku: true, attributes: true, status: true, userId: true, user: { select: { name: true, plan: true, stripeChargesEnabled: true } } },
     });
     if (!p) return res.status(404).json({ error: 'Annuncio non trovato' });
     let photos: string[] = [];
     try { photos = p.photos ? JSON.parse(p.photos) : []; } catch { photos = []; }
-    // Pagamento in-app disponibile solo se Stripe è attivo e c'è un prezzo pubblico.
-    const payEnabled = isStripeConfigured() && p.publicPrice != null && p.publicPrice > 0;
-    const breakdown = payEnabled ? computeBuyerBreakdown(p.publicPrice as number, p.shippingCost || 0) : null;
+    // Pagamento in-app: serve Stripe attivo, prezzo pubblico e venditore con incassi attivi.
+    const payEnabled = isStripeConfigured() && p.publicPrice != null && p.publicPrice > 0 && !!p.user?.stripeChargesEnabled;
+    const breakdown = payEnabled ? computeBuyerBreakdown(p.publicPrice as number, p.shippingCost || 0, serviceFeeFor(p.user?.plan)) : null;
     res.json({
       id: p.id, brand: p.brand, name: p.name, category: p.category, size: p.size, condition: p.condition,
       price: p.publicPrice ?? null, shippingCost: p.shippingCost ?? 0, sku: p.sku || null, photos,
@@ -114,7 +120,7 @@ router.post('/:id/buy', authenticate, async (req: AuthRequest, res: Response) =>
     }
 
     const buyer = await prisma.user.findUnique({ where: { id: buyerId } });
-    const bd = computeBuyerBreakdown(product.publicPrice, product.shippingCost || 0);
+    const bd = computeBuyerBreakdown(product.publicPrice, product.shippingCost || 0, serviceFeeFor(seller.plan));
     const base = appBase(req);
     // La nostra fee + la copertura della commissione Stripe le tratteniamo noi;
     // al venditore arriva netto prezzo + spedizione.
