@@ -11,7 +11,7 @@ import {
   KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon,
   Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal,
   Footprints, Shirt, Watch, ShoppingBag, Gem, Glasses, SprayCan, Smartphone,
-  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine
+  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check
 } from 'lucide-react';
 
 // ==========================================
@@ -478,6 +478,8 @@ export default function App() {
   // ----- BULK ACTIONS -----
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedGroupKeys, setSelectedGroupKeys] = useState<Set<string>>(new Set());
+  // Pezzi SINGOLI selezionati (es. alcuni pezzi di un lotto) da raggruppare con altri prodotti
+  const [selectedPieceIds, setSelectedPieceIds] = useState<Set<string>>(new Set());
 
   // Long-press per entrare in selezione (sostituisce il tasto "Seleziona")
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2579,12 +2581,40 @@ export default function App() {
   };
 
   const getBulkSelectedIds = () => {
-    const ids: string[] = [];
+    const ids = new Set<string>();
     (groupedInStockArray as any[]).forEach((g: any) => {
-      if (selectedGroupKeys.has(g.ids.join(','))) ids.push(...g.ids);
+      if (selectedGroupKeys.has(g.ids.join(','))) g.ids.forEach((id: string) => ids.add(id));
     });
-    return ids;
+    // Pezzi singoli (es. da un lotto) selezionati a mano
+    selectedPieceIds.forEach(id => ids.add(id));
+    return Array.from(ids);
   };
+
+  // Selezione/deselezione di un singolo pezzo (lotto) → entra in bulkMode per venderli insieme
+  const togglePieceSelection = (id: string) => {
+    setBulkMode(true);
+    setSelectedPieceIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+    if ('vibrate' in navigator) { try { navigator.vibrate(20); } catch {} }
+  };
+  // Long-press su un pezzo del lotto per avviare la selezione multipla
+  const startPieceLongPress = (id: string) => {
+    longPressFired.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      togglePieceSelection(id);
+    }, 400);
+  };
+  // Blocca lo scroll della pagina sotto quando è aperto il dettaglio lotto
+  useEffect(() => {
+    if (!lotDetail) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [lotDetail]);
 
   // Undo: ripristina prodotti eliminati / riporta in stock prodotti venduti
   const undoDeleteIds = async (ids: string[]) => {
@@ -2609,6 +2639,7 @@ export default function App() {
     setIsBulkProcessing(false);
     setBulkDeleteConfirmOpen(false);
     setSelectedGroupKeys(new Set());
+    setSelectedPieceIds(new Set());
     setBulkMode(false);
     await fetchProducts();
     errors > 0 ? showToast(`Eliminati con ${errors} errori`, 'warn') : showToast(`${ids.length} prodotti eliminati`, 'ok', { label: 'Annulla', onClick: () => undoDeleteIds(ids) });
@@ -2631,6 +2662,7 @@ export default function App() {
     setIsBulkProcessing(false);
     setBulkSellOpen(false);
     setSelectedGroupKeys(new Set());
+    setSelectedPieceIds(new Set());
     setBulkMode(false);
     await fetchProducts();
     errors > 0 ? showToast(`Vendite con ${errors} errori`, 'warn') : showToast(`${ids.length} prodotti venduti!`, 'ok', { label: 'Annulla', onClick: () => undoSellIds(ids) });
@@ -4787,38 +4819,70 @@ export default function App() {
         {/* ========== MODALE: DETTAGLIO LOTTO (lista pezzi) ========== */}
         {lotDetail && createPortal((
           <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setLotDetail(null)}>
-            <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0">
+            <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0"
+                style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
                 <div className="min-w-0">
                   <p className="font-bold truncate flex items-center gap-1.5"><Layers size={16} className="text-[#8b5cf6]" /> {lotDetail.lotName}</p>
                   <p className="text-[11px] text-[var(--text-soft)]">{lotDetail.category}</p>
                 </div>
-                <button onClick={() => setLotDetail(null)} className="p-2 hover:bg-[var(--fill)] rounded-lg shrink-0"><X size={20} /></button>
+                <button onClick={() => setLotDetail(null)} aria-label="Chiudi"
+                  className="p-3 -mr-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
               </div>
               {(() => {
                 const pieces = products.filter((p: any) => p.lotName === lotDetail.lotName && p.status === 'IN STOCK');
                 const tot = pieces.reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0);
+                const selCount = getBulkSelectedIds().length;
                 return (
                   <>
                     <div className="px-4 py-2 border-b border-[var(--border)] text-[11px] text-[var(--text-soft)] shrink-0">
                       {pieces.length} pezzi · costo totale {tot.toFixed(0)}€ · {(tot / (pieces.length || 1)).toFixed(2)}€ cad.
+                      <span className="block text-[10px] text-[var(--text-soft)]/70 mt-0.5">Tieni premuto un pezzo per selezionarlo e venderlo insieme ad altri</span>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                      {pieces.map((p: any) => (
-                        <div key={p.id} className="flex items-center justify-between gap-2 bg-[var(--surface-2)] rounded-xl p-3">
-                          <div className="min-w-0">
+                    <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
+                      {pieces.map((p: any) => {
+                        const picked = selectedPieceIds.has(p.id);
+                        const selecting = bulkMode;
+                        return (
+                        <div key={p.id}
+                          onMouseDown={() => startPieceLongPress(p.id)} onMouseUp={cancelLongPress} onMouseLeave={cancelLongPress}
+                          onTouchStart={() => startPieceLongPress(p.id)} onTouchEnd={cancelLongPress}
+                          onClick={() => { if (longPressFired.current) { longPressFired.current = false; return; } if (selecting) togglePieceSelection(p.id); }}
+                          className={`flex items-center justify-between gap-2 rounded-xl p-3 select-none transition-all ${picked ? 'bg-[#8b5cf6]/15 ring-1 ring-[#8b5cf6]/60' : 'bg-[var(--surface-2)]'} ${selecting ? 'cursor-pointer' : ''}`}>
+                          {selecting && (
+                            <div className={`shrink-0 w-5 h-5 rounded-md border flex items-center justify-center ${picked ? 'bg-[#8b5cf6] border-[#8b5cf6]' : 'border-[var(--border-2)]'}`}>
+                              {picked && <Check size={14} className="text-white" />}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold truncate">{p.brand} {p.name}</p>
                             <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition} · {p.purchasePrice?.toFixed(0)}€</p>
                           </div>
+                          {!selecting && (
                           <div className="flex gap-1.5 shrink-0">
                             <button onClick={() => { setLotDetail(null); openEditModal({ ...p, ids: [p.id], quantity: 1, isLot: false }); }}
                               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)]">Modifica</button>
                             <button onClick={() => { setLotDetail(null); openSellModal([p.id], `${p.brand} ${p.name}`, p); }}
                               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-500/15 text-green-400">Vendi</button>
                           </div>
+                          )}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
+                    {selCount > 0 && (
+                      <div className="border-t border-[var(--border)] p-3 shrink-0 flex gap-2"
+                        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
+                        <button onClick={() => setLotDetail(null)}
+                          className="flex-1 px-4 py-3 rounded-xl text-sm font-bold bg-[var(--fill)] text-[var(--text-muted)]">
+                          Aggiungi altri prodotti
+                        </button>
+                        <button onClick={() => { setLotDetail(null); setBulkSellOpen(true); }}
+                          className="flex-1 px-4 py-3 rounded-xl text-sm font-bold bg-green-600 text-white flex items-center justify-center gap-1.5">
+                          <DollarSign size={16} /> Vendi {selCount} insieme
+                        </button>
+                      </div>
+                    )}
                   </>
                 );
               })()}
@@ -6927,10 +6991,11 @@ export default function App() {
       {bulkMode && (
         <div className="fixed left-0 right-0 z-40 px-4 transition-all"
           style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom) + 8px)' }}>
+          {(() => { const selCount = getBulkSelectedIds().length; return (
           <div className={`bg-[#1a1a1a] border rounded-2xl p-3 flex items-center gap-2 shadow-2xl transition-all ${
-            selectedGroupKeys.size > 0 ? 'border-[#8b5cf6]/50' : 'border-gray-700'
+            selCount > 0 ? 'border-[#8b5cf6]/50' : 'border-gray-700'
           }`}>
-            <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
+            <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); setSelectedPieceIds(new Set()); }}
               className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-300 hover:text-white transition-colors">
               <X size={16} />
             </button>
@@ -6940,24 +7005,25 @@ export default function App() {
             </button>
             <div className="flex-1 text-center">
               <span className="text-sm font-bold text-white">
-                {selectedGroupKeys.size > 0
-                  ? `${getBulkSelectedIds().length} pezzi selezionati`
+                {selCount > 0
+                  ? `${selCount} pezzi selezionati`
                   : 'Tieni premuto una card per selezionare'}
               </span>
             </div>
             <button
               onClick={() => setBulkDeleteConfirmOpen(true)}
-              disabled={selectedGroupKeys.size === 0}
+              disabled={selCount === 0}
               className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl text-xs font-bold disabled:opacity-30 transition-colors">
               <Trash2 size={14} />
             </button>
             <button
               onClick={() => setBulkSellOpen(true)}
-              disabled={selectedGroupKeys.size === 0}
+              disabled={selCount === 0}
               className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-bold disabled:opacity-30 transition-colors flex items-center gap-1.5">
               <DollarSign size={14} /> Vendi
             </button>
           </div>
+          ); })()}
         </div>
       )}
 
