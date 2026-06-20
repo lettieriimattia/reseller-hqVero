@@ -2608,13 +2608,13 @@ export default function App() {
       togglePieceSelection(id);
     }, 400);
   };
-  // Blocca lo scroll della pagina sotto quando è aperto il dettaglio lotto
+  // Blocca lo scroll della pagina sotto quando è aperto un modale a tutto schermo
   useEffect(() => {
-    if (!lotDetail) return;
+    if (!lotDetail && !marketDetail) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; };
-  }, [lotDetail]);
+  }, [lotDetail, marketDetail]);
 
   // Undo: ripristina prodotti eliminati / riporta in stock prodotti venduti
   const undoDeleteIds = async (ids: string[]) => {
@@ -3029,12 +3029,14 @@ export default function App() {
         </div>
         {marketDetail && (
           <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setMarketDetail(null)}>
-            <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0">
+            <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0"
+                style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
                 <span className="font-bold text-sm truncate">{marketDetail.brand} {marketDetail.name}</span>
-                <button onClick={() => setMarketDetail(null)} className="p-2 hover:bg-[var(--fill)] rounded-lg shrink-0"><X size={20} /></button>
+                <button onClick={() => setMarketDetail(null)} aria-label="Chiudi"
+                  className="p-3 -mr-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
               </div>
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto overscroll-contain">
                 <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
                   {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
                 </div>
@@ -4778,14 +4780,16 @@ export default function App() {
         {/* ========== MODALE: DETTAGLIO ARTICOLO MARKETPLACE (portal → copre header/nav) ========== */}
         {marketDetail && createPortal((
           <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setMarketDetail(null)}>
-            <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-              {/* Header con chiudi (sempre visibile) */}
-              <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0">
+            <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+              {/* Header con chiudi (sempre visibile, sotto la status bar) */}
+              <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0"
+                style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
                 <span className="font-bold text-sm truncate">{marketDetail.brand} {marketDetail.name}</span>
-                <button onClick={() => setMarketDetail(null)} className="p-2 hover:bg-[var(--fill)] rounded-lg shrink-0"><X size={20} /></button>
+                <button onClick={() => setMarketDetail(null)} aria-label="Chiudi"
+                  className="p-3 -mr-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
               </div>
               {/* Contenuto scrollabile */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto overscroll-contain">
                 <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
                   {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
                 </div>
