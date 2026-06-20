@@ -156,7 +156,7 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
     const {
       category, warehouseId: bodyWarehouseId, brand, name, size, condition, price, customShares, photos,
       marketPriceMin, marketPriceMax, marketPriceAvg, authenticityScore, notes,
-      attributes, consignmentName, consignmentPercent, lotName,
+      attributes, consignmentName, consignmentPercent, lotName, sku,
     } = req.body;
 
     const memberships = await prisma.membership.findMany({
@@ -212,6 +212,7 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
         consignmentName: (consignmentName || '').trim() || null,
         consignmentPercent: typeof consignmentPercent === 'number' ? consignmentPercent : null,
         lotName: (typeof lotName === 'string' && lotName.trim()) ? lotName.trim() : null,
+        sku: (typeof sku === 'string' && sku.trim()) ? sku.trim() : null,
       },
     });
 
@@ -666,6 +667,32 @@ router.get('/:id/valuation', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     logger.error('Errore GET /products/:id/valuation', { err: err.message });
     res.status(500).json({ error: 'Errore valutazione' });
+  }
+});
+
+// ==========================================
+// PATCH /products/:id/publish — pubblica/ritira l'articolo dal marketplace pubblico
+// ==========================================
+router.patch('/:id/publish', async (req: AuthRequest, res: Response) => {
+  try {
+    const { allowed, product } = await canAccessProduct(req.user!.userId, req.params.id);
+    if (!allowed || !product) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
+    if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
+
+    const isPublic = req.body?.isPublic === true;
+    const rawPrice = Number(req.body?.publicPrice);
+    const publicPrice = !isNaN(rawPrice) && rawPrice > 0 ? Math.round(rawPrice * 100) / 100 : null;
+    if (isPublic && publicPrice == null) return res.status(400).json({ error: 'Inserisci un prezzo pubblico valido.' });
+
+    const updated = await prisma.product.update({
+      where: { id: product.id },
+      data: { isPublic, publicPrice: isPublic ? publicPrice : null },
+      select: { id: true, isPublic: true, publicPrice: true },
+    });
+    res.json(updated);
+  } catch (err: any) {
+    logger.error('Errore PATCH /products/:id/publish', { err: err.message });
+    res.status(500).json({ error: 'Errore pubblicazione' });
   }
 });
 

@@ -165,6 +165,11 @@ model Product {
   // Quando il prodotto si vende, serve a ricordare di ritirarlo dagli altri canali.
   salesChannels  String?
 
+  // Marketplace pubblico: l'articolo è in vetrina e cercabile da chiunque.
+  isPublic       Boolean   @default(false)
+  publicPrice    Float?    // prezzo di vendita pubblico (può differire da quello interno)
+  sku            String?   // style code/SKU (es. DV1748-100) letto dalla scatola
+
   // Pilastro 1: Campi dinamici dalla CategoryTemplate (JSONB)
   attributes     String?      // Record<string, any> — popolato dal DynamicForm (JSON string per SQLite)
 
@@ -360,6 +365,37 @@ model PushSubscription {
 model Setting {
   key   String @id
   value String
+}
+
+// ==========================================
+// MARKETPLACE CHAT — conversazione acquirente↔venditore su un articolo pubblico.
+// Solo testo: niente link né foto (anti-truffa).
+// ==========================================
+model Conversation {
+  id         String    @id @default(cuid())
+  productId  String
+  sellerId   String
+  buyerId    String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  messages   Message[]
+
+  @@unique([productId, buyerId]) // un thread per acquirente/articolo
+  @@index([sellerId])
+  @@index([buyerId])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  text           String
+  createdAt      DateTime @default(now())
+  readAt         DateTime?
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
 }
 
 // ==========================================

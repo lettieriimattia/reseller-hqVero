@@ -63,6 +63,8 @@ export const createProductSchema = z.object({
   warehouseId: z.string().cuid().optional(),
   // Lotto d'acquisto: raggruppa i pezzi dello stesso lotto.
   lotName: z.string().max(120).nullable().optional(),
+  // Style code / SKU letto dalla scatola (es. DV1748-100)
+  sku: z.string().max(60).nullable().optional(),
   brand: z.string().min(1).max(100),
   name: z.string().min(1).max(200),
   // Campi secondari: opzionali — l'utente può lasciarli vuoti e compilarli dopo.

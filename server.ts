@@ -32,6 +32,8 @@ import pushRoutes from './src/routes/push';
 import stockxRoutes from './src/routes/stockx';
 import plansRoutes from './src/routes/plans';
 import proRoutes from './src/routes/pro';
+import marketRoutes from './src/routes/market';
+import chatRoutes from './src/routes/chat';
 import { initPush } from './src/services/push.service';
 import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
@@ -217,6 +219,8 @@ app.use('/tracking', trackingRoutes);
 app.use('/admin', adminRoutes);
 app.use('/templates', templateRoutes);
 app.use('/analytics', analyticsRoutes);
+app.use('/market', marketRoutes);   // vetrina pubblica (GET senza login) + contatta
+app.use('/chat', chatRoutes);       // chat marketplace (solo testo, no link)
 app.use('/shipping', shippingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/feedback', feedbackRoutes);
