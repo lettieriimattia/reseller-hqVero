@@ -64,12 +64,11 @@ router.post('/market-value', async (req: AuthRequest, res: Response) => {
     const { query, size, condition } = req.body || {};
     const q = (query ?? '').toString().trim();
     if (q.length < 2) return res.status(400).json({ error: 'Inserisci brand e modello.' });
-    const valuation = await getMarketValuation({
-      query: q,
-      size: size ? size.toString() : undefined,
-      condition: condition ? condition.toString() : undefined,
-    });
-    logger.info('market-value esito', { query: q, source: valuation.source, value: valuation.value, sample: valuation.sample });
+    // eBay rimosso: prezzo solo da StockX (sneaker). Altre categorie → nessun valore.
+    void condition;
+    const sx = await getStockXValuation({ query: q, size: size ? size.toString() : undefined });
+    const valuation = { configured: sx.configured, value: sx.value, source: 'Valutazione di mercato', sample: sx.sample || 0, confidence: sx.value != null ? 'alta' : 'bassa' };
+    logger.info('market-value esito', { query: q, value: sx.value });
     res.json(valuation);
   } catch (err: any) {
     logger.error('Errore /ai/market-value', { err: err.message });

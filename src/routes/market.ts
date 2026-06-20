@@ -76,6 +76,13 @@ router.post('/:id/contact', authenticate, async (req: AuthRequest, res: Response
       create: { productId: product.id, sellerId: product.userId, buyerId: req.user!.userId },
       update: {},
     });
+    // Messaggio iniziale opzionale (es. "Vorrei comprare"). Niente link (anti-truffa).
+    const text = (req.body?.message || '').toString().trim().slice(0, 500);
+    const linkRe = /(https?:\/\/|www\.|\b[a-z0-9][a-z0-9-]*\.(com|net|org|it|io|co|me|app|shop|store)\b|t\.me\/|wa\.me\/|@[a-z0-9_.]+)/i;
+    if (text && !linkRe.test(text)) {
+      await prisma.message.create({ data: { conversationId: convo.id, senderId: req.user!.userId, text } });
+      await prisma.conversation.update({ where: { id: convo.id }, data: { updatedAt: new Date() } });
+    }
     res.json({ conversationId: convo.id });
   } catch (e: any) { logger.error('POST /market/:id/contact', { err: e.message }); res.status(500).json({ error: 'Errore contatto' }); }
 });

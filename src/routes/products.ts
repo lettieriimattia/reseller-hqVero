@@ -106,7 +106,7 @@ router.post('/lot', async (req: AuthRequest, res: Response) => {
             userId: req.user!.userId,
             warehouseId: targetMembership.warehouseId,
             notes: notes ? `${lotNote} — ${notes}` : lotNote,
-            attributes: attributes || Prisma.JsonNull,
+            attributes: (attributes && typeof attributes === 'object') ? JSON.stringify(attributes) : null,
             lotName,
           },
         })
@@ -662,8 +662,8 @@ router.get('/:id/valuation', async (req: AuthRequest, res: Response) => {
         return res.json({ configured: true, value: sx.value, source: 'Valutazione di mercato', sample: sx.sample || 1, confidence: 'alta', authenticatedOnly: true });
       }
     }
-    const val = await getMarketValuation({ query, size: product.size || undefined });
-    res.json(val);
+    // eBay rimosso (prezzi inaffidabili): nessun valore se non c'è una fonte dedicata.
+    res.json({ configured: true, value: null, source: 'Valutazione non disponibile', sample: 0 });
   } catch (err: any) {
     logger.error('Errore GET /products/:id/valuation', { err: err.message });
     res.status(500).json({ error: 'Errore valutazione' });

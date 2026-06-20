@@ -8,7 +8,6 @@
 import { getCardValue } from './cards.service';
 import { getVinylValue } from './discogs.service';
 import { getBagValue, getWatchValue, isVestiaireConfigured, isChrono24Configured } from './apify.service';
-import { getMarketValuation } from './price.service';
 import { getStockXValuation, isStockXConfigured } from './stockx.service';
 
 export interface UnifiedValuation {
@@ -88,16 +87,8 @@ export async function getValuation(opts: {
     // se Discogs non trova/non configurato → cade su eBay indicativo qui sotto
   }
 
-  // 3) RESTO → eBay annunci attivi: stima INDICATIVA
-  const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
-  if (q.length < 2) return { value: null, currency: 'EUR', source: 'dati insufficienti', reliable: false, sample: 0 };
-  const eb = await getMarketValuation({ query: q, size: opts.size, condition: opts.condition });
-  if (!eb.configured) return { value: null, currency: 'EUR', source: 'non configurato', reliable: false, sample: 0 };
-  return {
-    value: eb.value,
-    currency: 'EUR',
-    source: eb.value != null ? 'eBay · annunci attivi (indicativo)' : 'nessun dato eBay',
-    reliable: false,
-    sample: eb.sample,
-  };
+  // 3) RESTO → nessuna fonte prezzi affidabile (eBay rimosso: prezzi inaffidabili).
+  // Per le sneaker il prezzo arriva da StockX (sopra); per le altre categorie senza
+  // fonte dedicata non inventiamo un valore.
+  return { value: null, currency: 'EUR', source: 'Valutazione non disponibile', reliable: false, sample: 0 };
 }

@@ -1050,6 +1050,22 @@ export default function App() {
     if (ok) setExpenses(prev => prev.filter(e => e.id !== id));
   };
 
+  // Scarica il CSV per il commercialista (fetch con cookie + refresh, poi blob download).
+  const downloadAccountantCsv = async () => {
+    try {
+      let res = await fetch(`${API_URL}/analytics/export.csv`, { credentials: 'include' });
+      if (res.status === 401) { await refreshSession(); res = await fetch(`${API_URL}/analytics/export.csv`, { credentials: 'include' }); }
+      if (!res.ok) { showToast('Errore nel download del CSV', 'err'); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `resellerhq-commercialista-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    } catch { showToast('Errore nel download del CSV', 'err'); }
+  };
+
   // ----- MARKETPLACE -----
   const fetchMarket = useCallback(async () => {
     setMarketLoading(true);
@@ -1071,9 +1087,9 @@ export default function App() {
     if (ok) setMarketDetail(data);
   };
 
-  const contactSeller = async (productId: string) => {
+  const contactSeller = async (productId: string, message?: string) => {
     if (!isAuthenticated) { setPublicMarket(false); showToast('Accedi per contattare il venditore', 'warn'); return; }
-    const { ok, data } = await apiCall<any>(`/market/${productId}/contact`, { method: 'POST', body: JSON.stringify({}) });
+    const { ok, data } = await apiCall<any>(`/market/${productId}/contact`, { method: 'POST', body: JSON.stringify(message ? { message } : {}) });
     if (ok && data?.conversationId) {
       setMarketDetail(null);
       await fetchConversations();
@@ -2958,18 +2974,26 @@ export default function App() {
           )}
         </div>
         {marketDetail && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm" onClick={() => setMarketDetail(null)}>
-            <div className="bg-[var(--card)] rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
-                {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
+          <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setMarketDetail(null)}>
+            <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0">
+                <span className="font-bold text-sm truncate">{marketDetail.brand} {marketDetail.name}</span>
+                <button onClick={() => setMarketDetail(null)} className="p-2 hover:bg-[var(--fill)] rounded-lg shrink-0"><X size={20} /></button>
               </div>
-              <div className="p-5">
-                <p className="text-xl font-bold">{marketDetail.brand} {marketDetail.name}</p>
-                <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
-                <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
-                <p className="text-xs text-[var(--text-soft)] mt-1">Venditore: {marketDetail.sellerName}</p>
+              <div className="flex-1 overflow-y-auto">
+                <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
+                  {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
+                </div>
+                <div className="p-5">
+                  <p className="text-xl font-bold">{marketDetail.brand} {marketDetail.name}</p>
+                  <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
+                  <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
+                  <p className="text-xs text-[var(--text-soft)] mt-1">Venditore: {marketDetail.sellerName}</p>
+                </div>
+              </div>
+              <div className="border-t border-[var(--border)] p-3 shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
                 <button onClick={() => { setMarketDetail(null); setPublicMarket(false); }}
-                  className="w-full mt-4 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">
+                  className="w-full py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">
                   Accedi per acquistare
                 </button>
               </div>
@@ -4127,10 +4151,10 @@ export default function App() {
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="text-3xl font-semibold">Analytics</h2>
-              <a href="/analytics/export.csv"
+              <button onClick={downloadAccountantCsv}
                 className="flex items-center gap-2 bg-[var(--surface)] border border-[var(--border-2)] hover:border-[var(--border-3)] px-4 py-2 rounded-xl text-sm font-bold transition-colors text-[var(--text-soft)] hover:text-[var(--text)] active:scale-95">
                 <Download size={15} /> CSV commercialista
-              </a>
+              </button>
             </div>
 
             {/* ===== COSTI EXTRA (sacchetti, spedizioni, materiali…) ===== */}
@@ -4699,22 +4723,40 @@ export default function App() {
 
         {/* ========== MODALE: DETTAGLIO ARTICOLO MARKETPLACE ========== */}
         {marketDetail && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm" onClick={() => setMarketDetail(null)}>
-            <div className="bg-[var(--card)] rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
-                {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
+          <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setMarketDetail(null)}>
+            <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              {/* Header con chiudi (sempre visibile) */}
+              <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0">
+                <span className="font-bold text-sm truncate">{marketDetail.brand} {marketDetail.name}</span>
+                <button onClick={() => setMarketDetail(null)} className="p-2 hover:bg-[var(--fill)] rounded-lg shrink-0"><X size={20} /></button>
               </div>
-              <div className="p-5">
-                <p className="text-xl font-bold">{marketDetail.brand} {marketDetail.name}</p>
-                <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
-                {marketDetail.sku && <p className="text-[11px] text-[var(--text-faint)] mt-1">SKU: {marketDetail.sku}</p>}
-                <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
-                <p className="text-xs text-[var(--text-soft)] mt-1">Venditore: {marketDetail.sellerName}</p>
-                <button onClick={() => contactSeller(marketDetail.id)}
-                  className="w-full mt-4 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">
-                  {isAuthenticated ? 'Prenota / Contatta venditore' : 'Accedi per acquistare'}
-                </button>
-                <p className="text-[11px] text-[var(--text-faint)] text-center mt-2">In chat niente link o foto — è la prima difesa contro le truffe.</p>
+              {/* Contenuto scrollabile */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
+                  {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
+                </div>
+                <div className="p-5">
+                  <p className="text-xl font-bold">{marketDetail.brand} {marketDetail.name}</p>
+                  <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
+                  {marketDetail.sku && <p className="text-[11px] text-[var(--text-faint)] mt-1">SKU: {marketDetail.sku}</p>}
+                  <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
+                  <p className="text-xs text-[var(--text-soft)] mt-1">Venditore: {marketDetail.sellerName}</p>
+                </div>
+              </div>
+              {/* Barra azioni FISSA in basso (sempre raggiungibile) */}
+              <div className="border-t border-[var(--border)] p-3 shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
+                {isAuthenticated ? (
+                  <div className="flex gap-2">
+                    <button onClick={() => contactSeller(marketDetail.id, `Ciao! Vorrei comprare "${marketDetail.brand} ${marketDetail.name}". È disponibile?`)}
+                      className="flex-1 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">Compra</button>
+                    <button onClick={() => contactSeller(marketDetail.id)}
+                      className="flex-1 py-3 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] font-bold transition-colors">Contatta venditore</button>
+                  </div>
+                ) : (
+                  <button onClick={() => { setMarketDetail(null); setPublicMarket(false); }}
+                    className="w-full py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">Accedi per acquistare</button>
+                )}
+                <p className="text-[10px] text-[var(--text-faint)] text-center mt-2">In chat niente link o foto — prima difesa contro le truffe.</p>
               </div>
             </div>
           </div>
