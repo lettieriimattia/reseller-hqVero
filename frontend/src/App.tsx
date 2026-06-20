@@ -251,7 +251,7 @@ export default function App() {
   }, [theme]);
 
   // ----- UI STATE -----
-  const [currentView, setCurrentView] = useState<'dashboard' | 'magazzino' | 'analytics' | 'tracking' | 'settings' | 'admin'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'magazzino' | 'analytics' | 'tracking' | 'settings' | 'admin' | 'market' | 'chat'>('dashboard');
   const [magazzinoView, setMagazzinoView] = useState<'instock' | 'sold'>('instock');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
@@ -276,6 +276,7 @@ export default function App() {
   const [quantity, setQuantity] = useState('1');
   const [brand, setBrand] = useState('');
   const [name, setName] = useState('');
+  const [sku, setSku] = useState(''); // style code/SKU letto dalla scatola
   const [size, setSize] = useState('42');
   const [condition, setCondition] = useState('DS');
   // Conto vendita (consignment): prodotto di un terzo. Nome obbligatorio, % facoltativa.
@@ -341,6 +342,10 @@ export default function App() {
   
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<any>(null);
+  // Pubblicazione nel marketplace dalla modale di modifica
+  const [editIsPublic, setEditIsPublic] = useState(false);
+  const [editPublicPrice, setEditPublicPrice] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
   // Modifica quantità pezzi dall'edit (lotti e gruppi multi-pezzo)
   const [editQuantity, setEditQuantity] = useState('1');
   const [editLotIds, setEditLotIds] = useState<string[]>([]); // tutti i pezzi in stock del lotto (se è un lotto)
@@ -384,6 +389,22 @@ export default function App() {
   const [expCat, setExpCat] = useState('Sacchetti');
   const [expWarehouse, setExpWarehouse] = useState('');
   const [isAddingExp, setIsAddingExp] = useState(false);
+  // ----- MARKETPLACE + CHAT -----
+  // Pagina pubblica (senza login): attiva se si arriva su /market
+  const [publicMarket, setPublicMarket] = useState(() => {
+    try { return window.location.pathname.replace(/\/$/, '') === '/market'; } catch { return false; }
+  });
+  const [marketItems, setMarketItems] = useState<any[]>([]);
+  const [marketQuery, setMarketQuery] = useState('');
+  const [marketCat, setMarketCat] = useState('');
+  const [marketCats, setMarketCats] = useState<string[]>([]);
+  const [marketLoading, setMarketLoading] = useState(false);
+  const [marketDetail, setMarketDetail] = useState<any>(null);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [activeConvo, setActiveConvo] = useState<any>(null);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatSending, setChatSending] = useState(false);
   // Stato integrazione StockX (configurato + connesso via OAuth)
   const [stockxStatus, setStockxStatus] = useState<{ configured: boolean; connected: boolean } | null>(null);
   const [stockxConnecting, setStockxConnecting] = useState(false);
@@ -1027,6 +1048,63 @@ export default function App() {
     const { ok } = await apiCall(`/analytics/expenses/${id}`, { method: 'DELETE' });
     if (ok) setExpenses(prev => prev.filter(e => e.id !== id));
   };
+
+  // ----- MARKETPLACE -----
+  const fetchMarket = useCallback(async () => {
+    setMarketLoading(true);
+    const params = new URLSearchParams();
+    if (marketQuery.trim()) params.set('q', marketQuery.trim());
+    if (marketCat) params.set('category', marketCat);
+    const { ok, data } = await apiCall<any[]>(`/market?${params.toString()}`);
+    setMarketLoading(false);
+    if (ok && Array.isArray(data)) setMarketItems(data);
+  }, [marketQuery, marketCat]);
+
+  const fetchMarketCats = useCallback(async () => {
+    const { ok, data } = await apiCall<string[]>('/market/categories');
+    if (ok && Array.isArray(data)) setMarketCats(data);
+  }, []);
+
+  const openMarketDetail = async (id: string) => {
+    const { ok, data } = await apiCall<any>(`/market/${id}`);
+    if (ok) setMarketDetail(data);
+  };
+
+  const contactSeller = async (productId: string) => {
+    if (!isAuthenticated) { setPublicMarket(false); showToast('Accedi per contattare il venditore', 'warn'); return; }
+    const { ok, data } = await apiCall<any>(`/market/${productId}/contact`, { method: 'POST', body: JSON.stringify({}) });
+    if (ok && data?.conversationId) {
+      setMarketDetail(null);
+      await fetchConversations();
+      await openConversation({ id: data.conversationId });
+      setCurrentView('chat');
+    } else showToast(data?.error || 'Errore', 'err');
+  };
+
+  // ----- CHAT -----
+  const fetchConversations = useCallback(async () => {
+    const { ok, data } = await apiCall<any[]>('/chat/conversations');
+    if (ok && Array.isArray(data)) setConversations(data);
+  }, []);
+
+  const openConversation = async (convo: any) => {
+    setActiveConvo(convo);
+    const { ok, data } = await apiCall<any[]>(`/chat/${convo.id}/messages`);
+    if (ok && Array.isArray(data)) setChatMessages(data);
+  };
+
+  // Blocco link lato client (oltre al backend): i link sono il primo vettore di truffa.
+  const CHAT_LINK_RE = /(https?:\/\/|www\.|\b[a-z0-9][a-z0-9-]*\.(com|net|org|it|io|co|me|app|shop|store|xyz|info|eu|de|fr|es|uk|gg|to|link)\b|t\.me\/|wa\.me\/|@[a-z0-9_.]+)/i;
+  const sendMessage = async () => {
+    const text = chatInput.trim();
+    if (!text || !activeConvo) return;
+    if (CHAT_LINK_RE.test(text)) { showToast('Per la tua sicurezza non puoi inviare link o contatti esterni.', 'err'); return; }
+    setChatSending(true);
+    const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/messages`, { method: 'POST', body: JSON.stringify({ text }) });
+    setChatSending(false);
+    if (ok && data?.id) { setChatMessages(prev => [...prev, data]); setChatInput(''); }
+    else showToast(data?.error || 'Errore invio', 'err');
+  };
   
   const fetchNotifications = useCallback(async () => {
     const { ok, data } = await apiCall<{ notifications: AINotification[]; unreadCount: number }>('/notifications');
@@ -1058,6 +1136,35 @@ export default function App() {
     const staleInterval = setInterval(checkStaleProducts, 60 * 60 * 1000);
     return () => { clearInterval(interval); clearInterval(staleInterval); };
   }, [isAuthenticated, fetchProducts, fetchTeam, fetchCategories, fetchExpenses, fetchNotifications, checkStaleProducts]);
+
+  // Marketplace: carica vetrina e categorie quando si apre la sezione o cambia la ricerca
+  useEffect(() => {
+    if (currentView !== 'market') return;
+    fetchMarket();
+    fetchMarketCats();
+  }, [currentView, fetchMarket, fetchMarketCats]);
+
+  // Vetrina pubblica (senza login)
+  useEffect(() => {
+    if (isAuthenticated || !publicMarket) return;
+    fetchMarket();
+    fetchMarketCats();
+  }, [isAuthenticated, publicMarket, fetchMarket, fetchMarketCats]);
+
+  // Chat: carica conversazioni entrando nella sezione; polling messaggi della chat aperta
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (currentView === 'chat') fetchConversations();
+  }, [currentView, isAuthenticated, fetchConversations]);
+
+  useEffect(() => {
+    if (currentView !== 'chat' || !activeConvo) return;
+    const iv = setInterval(async () => {
+      const { ok, data } = await apiCall<any[]>(`/chat/${activeConvo.id}/messages`);
+      if (ok && Array.isArray(data)) setChatMessages(data);
+    }, 5000);
+    return () => clearInterval(iv);
+  }, [currentView, activeConvo]);
 
   // Admin: badge richieste sempre aggiornato; carica dati quando si entra nella pagina Admin
   useEffect(() => {
@@ -1519,7 +1626,7 @@ export default function App() {
     setPriceEstimate(null);
     // Reset COMPLETO dei campi: evita che restino dati del prodotto precedente
     // (bug: scansionavi un nuovo paio e teneva brand/nome di quello prima).
-    setBrand(''); setName(''); setPrice(''); setQuantity('1');
+    setBrand(''); setName(''); setSku(''); setPrice(''); setQuantity('1');
     setCondition('DS'); setSize(''); // taglia vuota: la riempie l'IA o l'utente (niente piu' "42" imposto)
     setPokeName(''); setPokeGraded('No'); setPokeGrade(''); setCardNumber(''); setCardGame('pokemon');
     setWatchBrand(''); setWatchModel(''); setWatchCase(''); setWatchStrap(''); setWatchMaterial('');
@@ -1826,6 +1933,9 @@ export default function App() {
     // Se l'IA non dà un modello preciso (prompt: meglio null che inventare), uso come
     // nome il tipo/colorway rilevato → il campo nome non resta mai vuoto (sbloccca il salvataggio).
     const fallbackName = (scan.model || d.type || d.colorway || '').toString();
+    // SKU / style code letto dalla scatola (es. DV1748-100): utile per match esatto e marketplace
+    const detectedSku = (d.sku || d.styleCode || d.style || d.styleId || d.articleNumber || '').toString().trim();
+    if (detectedSku) setSku(detectedSku);
     if (effCat === 'Pokemon') {
       if (scan.model) setPokeName(scan.model);
       // Numero/set/gioco rilevati dall'IA (per la valutazione carta esatta).
@@ -2055,6 +2165,7 @@ export default function App() {
           body: JSON.stringify({
             category: effCategory, brand: finalBrand, name: finalName,
             size: finalSize, condition: finalCondition, price: unitPrice,
+            sku: sku.trim() || undefined,
             warehouseId: selectedWarehouseId || baseWarehouse?.id || undefined, // magazzino scelto (default: base)
             customShares: finalShares,
             ...(isConsignment && consignmentName.trim() ? {
@@ -2164,8 +2275,25 @@ export default function App() {
       const photos = group.photos ? JSON.parse(group.photos) : [];
       setEditPhotos(Array.isArray(photos) ? photos : []);
     } catch { setEditPhotos([]); }
+    setEditIsPublic(!!group.isPublic);
+    setEditPublicPrice(group.publicPrice != null ? String(group.publicPrice) : (group.salePrice != null ? String(group.salePrice) : ''));
     setValuation(null);
     setEditModalOpen(true);
+  };
+
+  // Pubblica/ritira l'articolo dal marketplace (applica a tutti i pezzi del gruppo)
+  const savePublish = async (group: any, makePublic: boolean) => {
+    const price = parseFloat(editPublicPrice);
+    if (makePublic && (isNaN(price) || price <= 0)) { showToast('Inserisci un prezzo pubblico', 'err'); return; }
+    setIsPublishing(true);
+    const ids = (group.ids as string[]) || [group.id];
+    const results = await Promise.allSettled(ids.map(id =>
+      apiCall(`/products/${id}/publish`, { method: 'PATCH', body: JSON.stringify({ isPublic: makePublic, publicPrice: makePublic ? price : null }) })
+    ));
+    setIsPublishing(false);
+    const ok = results.every(r => r.status === 'fulfilled' && (r.value as any).ok);
+    if (ok) { setEditIsPublic(makePublic); await fetchProducts(); showToast(makePublic ? 'Pubblicato nel marketplace' : 'Ritirato dal marketplace'); }
+    else showToast('Errore pubblicazione', 'err');
   };
 
   // Valutazione di mercato del prodotto (fonte reale, anti-falsi)
@@ -2737,6 +2865,81 @@ export default function App() {
   // ==========================================
   // RENDER: SCHERMATA AUTH
   // ==========================================
+  // Vetrina pubblica accessibile a CHIUNQUE (senza login), su /market
+  if (!isAuthenticated && publicMarket) {
+    return (
+      <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] font-sans">
+        <header className="sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)] px-4 py-3 flex items-center justify-between">
+          <span className="font-black text-lg">HQ <span className="text-[var(--text-soft)]">Market</span></span>
+          <button onClick={() => setPublicMarket(false)} className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold">Accedi</button>
+        </header>
+        <div className="max-w-[1100px] mx-auto p-4 space-y-4">
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
+              <input value={marketQuery} onChange={e => setMarketQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') fetchMarket(); }}
+                placeholder="Cerca modello, colore, SKU…"
+                className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-[#8b5cf6]" />
+            </div>
+            <button onClick={fetchMarket} className="px-4 py-2.5 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold">Cerca</button>
+          </div>
+          {marketCats.length > 0 && (
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={() => setMarketCat('')} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${!marketCat ? 'bg-[#8b5cf6]/10 border-[#8b5cf6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>Tutte</button>
+              {marketCats.map((c: string) => (
+                <button key={c} onClick={() => setMarketCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${marketCat === c ? 'bg-[#8b5cf6]/10 border-[#8b5cf6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{c}</button>
+              ))}
+            </div>
+          )}
+          {marketLoading ? (
+            <div className="flex justify-center py-16"><Loader2 className="animate-spin text-[#8b5cf6]" size={28} /></div>
+          ) : marketItems.length === 0 ? (
+            <div className="text-center py-16 text-[var(--text-soft)]">Nessun articolo in vetrina.</div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {marketItems.map((it: any) => (
+                <button key={it.id} onClick={() => openMarketDetail(it.id)}
+                  className="text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                  <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
+                    {it.photo ? <img src={it.photo} alt="" className="w-full h-full object-cover" /> : <span className="text-4xl">{getCategoryIcon(it.category)}</span>}
+                  </div>
+                  <div className="p-3">
+                    <p className="font-bold text-sm truncate">{it.brand} {it.name}</p>
+                    <p className="text-[11px] text-[var(--text-soft)]">{it.size} · {it.condition}</p>
+                    <p className="text-lg font-bold mt-1">{it.price != null ? `${it.price}€` : '—'}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {marketDetail && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm" onClick={() => setMarketDetail(null)}>
+            <div className="bg-[var(--card)] rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
+                {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
+              </div>
+              <div className="p-5">
+                <p className="text-xl font-bold">{marketDetail.brand} {marketDetail.name}</p>
+                <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
+                <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
+                <p className="text-xs text-[var(--text-soft)] mt-1">Venditore: {marketDetail.sellerName}</p>
+                <button onClick={() => { setMarketDetail(null); setPublicMarket(false); }}
+                  className="w-full mt-4 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">
+                  Accedi per acquistare
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {toast && (
+          <div className="fixed left-4 right-4 bottom-4 mx-auto max-w-sm px-4 py-3 rounded-2xl bg-[var(--surface)] border border-[var(--border-2)] text-sm text-center">{toast.msg}</div>
+        )}
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[var(--surface-2)] flex items-center justify-center p-4 font-sans">
@@ -2926,6 +3129,8 @@ export default function App() {
           {[
             { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
             { id: 'magazzino', label: 'Magazzino', icon: Package },
+            { id: 'market', label: 'Compra', icon: Store },
+            { id: 'chat', label: 'Messaggi', icon: Mail },
             { id: 'analytics', label: 'Analytics', icon: BarChart3 },
             { id: 'tracking', label: 'Tracking', icon: Truck },
           ].map(tab => {
@@ -4329,6 +4534,129 @@ export default function App() {
                 </div>
               </section>
             )}
+          </div>
+        )}
+
+        {/* ========== MARKETPLACE PUBBLICO ========== */}
+        {currentView === 'market' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h2 className="text-3xl font-semibold">Compra</h2>
+              <span className="text-xs text-[var(--text-faint)]">{marketItems.length} articoli in vetrina</span>
+            </div>
+            {/* Ricerca + categorie */}
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
+                <input value={marketQuery} onChange={e => setMarketQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') fetchMarket(); }}
+                  placeholder="Cerca modello, colore, SKU…"
+                  className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-[#8b5cf6]" />
+              </div>
+              <button onClick={fetchMarket} className="px-4 py-2.5 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold">Cerca</button>
+            </div>
+            {marketCats.length > 0 && (
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={() => { setMarketCat(''); }} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${!marketCat ? 'bg-[#8b5cf6]/10 border-[#8b5cf6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>Tutte</button>
+                {marketCats.map((c: string) => (
+                  <button key={c} onClick={() => setMarketCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${marketCat === c ? 'bg-[#8b5cf6]/10 border-[#8b5cf6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{c}</button>
+                ))}
+              </div>
+            )}
+            {marketLoading ? (
+              <div className="flex justify-center py-16"><Loader2 className="animate-spin text-[#8b5cf6]" size={28} /></div>
+            ) : marketItems.length === 0 ? (
+              <div className="text-center py-16 text-[var(--text-soft)]">Nessun articolo in vetrina.</div>
+            ) : (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {marketItems.map((it: any) => (
+                  <button key={it.id} onClick={() => openMarketDetail(it.id)}
+                    className="text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                    <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
+                      {it.photo ? <img src={it.photo} alt="" className="w-full h-full object-cover" /> : <span className="text-4xl">{getCategoryIcon(it.category)}</span>}
+                    </div>
+                    <div className="p-3">
+                      <p className="font-bold text-sm truncate">{it.brand} {it.name}</p>
+                      <p className="text-[11px] text-[var(--text-soft)]">{it.size} · {it.condition}</p>
+                      <p className="text-lg font-bold mt-1">{it.price != null ? `${it.price}€` : '—'}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========== CHAT ========== */}
+        {currentView === 'chat' && (
+          <div className="space-y-4">
+            <h2 className="text-3xl font-semibold">Messaggi</h2>
+            {!activeConvo ? (
+              conversations.length === 0 ? (
+                <div className="text-center py-16 text-[var(--text-soft)]">Nessuna conversazione. Contatta un venditore dal marketplace.</div>
+              ) : (
+                <div className="space-y-2">
+                  {conversations.map((c: any) => (
+                    <button key={c.id} onClick={() => openConversation(c)}
+                      className="w-full flex items-center gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-left hover:border-[var(--border-2)]">
+                      <div className="w-12 h-12 rounded-xl bg-[var(--surface-2)] flex items-center justify-center overflow-hidden shrink-0">
+                        {c.productPhoto ? <img src={c.productPhoto} alt="" className="w-full h-full object-cover" /> : <Store size={18} className="text-[var(--text-faint)]" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">{c.productName} · <span className="text-[var(--text-soft)]">{c.price != null ? `${c.price}€` : ''}</span></p>
+                        <p className="text-[11px] text-[var(--text-soft)] truncate">{c.role === 'seller' ? '🟢 Acquirente' : 'Venditore'}: {c.otherName} — {c.lastMessage || 'Nessun messaggio'}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )
+            ) : (
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl flex flex-col h-[70vh]">
+                <div className="flex items-center gap-2 p-3 border-b border-[var(--border)]">
+                  <button onClick={() => { setActiveConvo(null); setChatMessages([]); }} className="p-1.5 hover:bg-[var(--fill)] rounded-lg"><ChevronDown size={18} className="rotate-90" /></button>
+                  <span className="font-bold text-sm truncate">{activeConvo.otherName || activeConvo.productName || 'Conversazione'}</span>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                  {chatMessages.map((m: any) => (
+                    <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm ${m.mine ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--surface-2)] text-[var(--text)]'}`}>{m.text}</div>
+                    </div>
+                  ))}
+                  {chatMessages.length === 0 && <p className="text-center text-[var(--text-faint)] text-sm py-8">Scrivi il primo messaggio. Niente link o contatti esterni (anti-truffa).</p>}
+                </div>
+                <div className="p-3 border-t border-[var(--border)] flex gap-2">
+                  <input value={chatInput} onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
+                    placeholder="Scrivi un messaggio…"
+                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                  <button onClick={sendMessage} disabled={chatSending || !chatInput.trim()}
+                    className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">Invia</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========== MODALE: DETTAGLIO ARTICOLO MARKETPLACE ========== */}
+        {marketDetail && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm" onClick={() => setMarketDetail(null)}>
+            <div className="bg-[var(--card)] rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
+                {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
+              </div>
+              <div className="p-5">
+                <p className="text-xl font-bold">{marketDetail.brand} {marketDetail.name}</p>
+                <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
+                {marketDetail.sku && <p className="text-[11px] text-[var(--text-faint)] mt-1">SKU: {marketDetail.sku}</p>}
+                <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
+                <p className="text-xs text-[var(--text-soft)] mt-1">Venditore: {marketDetail.sellerName}</p>
+                <button onClick={() => contactSeller(marketDetail.id)}
+                  className="w-full mt-4 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">
+                  {isAuthenticated ? 'Prenota / Contatta venditore' : 'Accedi per acquistare'}
+                </button>
+                <p className="text-[11px] text-[var(--text-faint)] text-center mt-2">In chat niente link o foto — è la prima difesa contro le truffe.</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -6163,6 +6491,33 @@ export default function App() {
                       <Camera size={16} className="text-[var(--text-soft)] mb-0.5" />
                       <span className="text-[9px] text-[var(--text-soft)]">Aggiungi</span>
                     </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Pubblica nel marketplace */}
+              <div className="border-t border-[var(--border-2)] pt-4">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <Store size={15} className="text-[#8b5cf6]" />
+                    <span className="text-sm font-bold">Marketplace pubblico</span>
+                  </div>
+                  {editIsPublic && <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">PUBBLICO</span>}
+                </div>
+                <p className="text-[11px] text-[var(--text-faint)] mb-3">Mettilo in vetrina: chiunque potrà trovarlo e contattarti in chat (niente link/foto in chat).</p>
+                <div className="flex gap-2">
+                  <input type="number" step="0.01" min="0" value={editPublicPrice}
+                    onChange={(e: any) => setEditPublicPrice(e.target.value)}
+                    placeholder="Prezzo pubblico €"
+                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                  {editIsPublic ? (
+                    <button type="button" onClick={() => savePublish(productToEdit, false)} disabled={isPublishing}
+                      className="px-4 py-2 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] text-sm font-bold disabled:opacity-50">Ritira</button>
+                  ) : (
+                    <button type="button" onClick={() => savePublish(productToEdit, true)} disabled={isPublishing}
+                      className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">
+                      {isPublishing ? <Loader2 size={15} className="animate-spin" /> : 'Pubblica'}
+                    </button>
                   )}
                 </div>
               </div>
