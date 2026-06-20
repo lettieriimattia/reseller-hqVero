@@ -62,7 +62,7 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) =
       }],
       metadata: { userId: user.id, planId },
       subscription_data: { metadata: { userId: user.id, planId } },
-      success_url: `${base}/?upgraded=${planId}`,
+      success_url: `${base}/?upgraded=${planId}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/?upgrade_cancel=1`,
       allow_promotion_codes: true,
     });
@@ -70,6 +70,41 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) =
   } catch (err: any) {
     logger.error('Errore /billing/checkout', { err: err.message });
     res.status(500).json({ error: 'Errore avvio pagamento' });
+  }
+});
+
+// RETE DI SICUREZZA: verifica diretta al ritorno dal pagamento.
+// Se il webhook non è configurato o fallisce, l'app chiama qui col session_id e
+// noi controlliamo su Stripe se il pagamento è andato → aggiorniamo il piano.
+router.post('/verify', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const s = stripe();
+    if (!s) return res.status(400).json({ error: 'Pagamenti non configurati' });
+    const sessionId = (req.body?.sessionId || '').toString();
+    if (!sessionId) return res.status(400).json({ error: 'sessionId mancante' });
+
+    const session = await s.checkout.sessions.retrieve(sessionId);
+    // La sessione deve appartenere a questo utente (sicurezza).
+    const ownerId = session?.client_reference_id || session?.metadata?.userId;
+    if (ownerId && ownerId !== req.user!.userId) return res.status(403).json({ error: 'Sessione non tua' });
+
+    const paid = session?.payment_status === 'paid' || session?.status === 'complete';
+    const planId = session?.metadata?.planId;
+    if (paid && isPlanId(planId) && planId !== 'free') {
+      await prisma.user.update({ where: { id: req.user!.userId }, data: { plan: planId } }).catch(() => {});
+      if (session.customer) {
+        await prisma.setting.upsert({
+          where: { key: `stripeCustomer:${req.user!.userId}` },
+          create: { key: `stripeCustomer:${req.user!.userId}`, value: session.customer.toString() },
+          update: { value: session.customer.toString() },
+        }).catch(() => {});
+      }
+      return res.json({ updated: true, plan: planId });
+    }
+    res.json({ updated: false, plan: null });
+  } catch (err: any) {
+    logger.error('Errore /billing/verify', { err: err.message });
+    res.status(500).json({ error: 'Errore verifica pagamento' });
   }
 });
 

@@ -1250,6 +1250,34 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
+  // RETE DI SICUREZZA pagamenti: al ritorno dal checkout (/?upgraded=...&session_id=...)
+  // verifichiamo direttamente con Stripe e aggiorniamo il piano, anche se il webhook non scatta.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    const upgraded = params.get('upgraded');
+    if (!sessionId && !upgraded) return;
+    (async () => {
+      try {
+        if (sessionId) {
+          const { ok, data } = await apiCall<any>('/billing/verify', { method: 'POST', body: JSON.stringify({ sessionId }) });
+          if (ok && data?.updated && data?.plan) {
+            setUser(u => u ? { ...u, plan: data.plan } : u);
+            await refreshMyPlan();
+            showToast('Abbonamento attivato! 🎉', 'ok');
+          } else {
+            // Anche se la verifica non conferma subito (es. webhook in ritardo), riallinea.
+            await refreshMyPlan();
+            showToast('Pagamento ricevuto. Aggiorno il piano…', 'ok');
+          }
+        }
+      } catch { /* ignora */ }
+      window.history.replaceState({}, '', '/');
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
+
   // Rileva se le notifiche push sono già attive su questo dispositivo
   useEffect(() => {
     if (!isAuthenticated || !pushSupported) return;
