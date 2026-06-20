@@ -2073,11 +2073,11 @@ export default function App() {
       }).then(r => { if (r.ok) setScanMarket(r.data); }).catch(() => {});
     }
 
-    // === Conferma visiva StockX (solo scarpe): mostra foto+nome del modello che StockX
-    // ritiene corrisponda, così si verifica se l'IA ha azzeccato la scarpa. ===
-    const isShoe = ['scarp', 'sneaker', 'calzatur', 'shoe', 'ginnastica'].some(k => (effCat || '').toLowerCase().includes(k));
+    // === Conferma visiva StockX (qualsiasi categoria): StockX copre anche elettronica,
+    // console e collezionabili. Mostra foto+nome del modello che StockX ritiene corrisponda,
+    // così si verifica se l'IA ha azzeccato (es. iPhone 12 Mini vs Pro). ===
     const matchQuery = [scan.brand, scan.model || fallbackName].filter(Boolean).join(' ').trim();
-    if (isShoe && matchQuery.length >= 2) {
+    if (matchQuery.length >= 2) {
       apiCall<any>('/api/ai/stockx-match', {
         method: 'POST',
         body: JSON.stringify({ query: matchQuery, size: (d.size || '').toString() || undefined }),
@@ -4042,8 +4042,8 @@ export default function App() {
                             {shares?.length > 0 && <p className="text-[10px] text-blue-400/70 mt-0.5 truncate">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                             {!bulkMode && (
                               <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
-                                className={`mt-1 text-[11px] flex items-center gap-1 ${g.notes ? 'text-[var(--text-soft)]' : 'text-gray-700'}`}>
-                                <StickyNote size={10} /><span className="truncate max-w-[180px]">{g.notes || 'Aggiungi nota…'}</span>
+                                className={`mt-1 text-[11px] flex items-center gap-1 max-w-full w-full overflow-hidden ${g.notes ? 'text-[var(--text-soft)]' : 'text-gray-700'}`}>
+                                <StickyNote size={10} className="shrink-0" /><span className="truncate">{g.notes || 'Aggiungi nota…'}</span>
                               </button>
                             )}
                           </div>

@@ -663,15 +663,15 @@ router.get('/:id/valuation', requireFeature('stockx_pricing'), async (req: AuthR
     if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
 
     const query = `${product.brand} ${product.name}`.trim();
-    // Sneaker → prova StockX (prezzo affidabile EUR). Se trova, lo usiamo.
-    const isShoe = ['scarp', 'sneaker', 'calzatur', 'shoe', 'ginnastica'].some(k => (product.category || '').toLowerCase().includes(k));
-    if (isShoe && isStockXConfigured()) {
+    // StockX copre molto più delle sneaker (elettronica, console, collezionabili…):
+    // proviamo SEMPRE. Se trova un match, usiamo il suo prezzo EUR affidabile.
+    if (isStockXConfigured()) {
       const sx = await getStockXValuation({ query, size: product.size || undefined });
       if (sx.value != null) {
         return res.json({ configured: true, value: sx.value, source: 'Valutazione di mercato', sample: sx.sample || 1, confidence: 'alta', authenticatedOnly: true });
       }
     }
-    // eBay rimosso (prezzi inaffidabili): nessun valore se non c'è una fonte dedicata.
+    // Nessun match su StockX per questo articolo.
     res.json({ configured: true, value: null, source: 'Valutazione non disponibile', sample: 0 });
   } catch (err: any) {
     logger.error('Errore GET /products/:id/valuation', { err: err.message });

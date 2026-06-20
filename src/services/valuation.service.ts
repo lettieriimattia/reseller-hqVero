@@ -87,8 +87,19 @@ export async function getValuation(opts: {
     // se Discogs non trova/non configurato → cade su eBay indicativo qui sotto
   }
 
-  // 3) RESTO → nessuna fonte prezzi affidabile (eBay rimosso: prezzi inaffidabili).
-  // Per le sneaker il prezzo arriva da StockX (sopra); per le altre categorie senza
-  // fonte dedicata non inventiamo un valore.
+  // 3) FALLBACK GENERICO → StockX non copre solo le sneaker: anche elettronica
+  // (iPhone, console), streetwear, accessori e collezionabili. Per qualsiasi categoria
+  // senza fonte dedicata (o se quella dedicata non ha trovato) proviamo comunque StockX.
+  if (isStockXConfigured()) {
+    const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
+    if (q.length >= 2) {
+      const v = await getStockXValuation({ query: q, size: opts.size });
+      if (v.value != null) {
+        return { value: v.value, currency: 'EUR', source: 'Valutazione di mercato', reliable: true, sample: v.sample || 1, itemName: v.itemName };
+      }
+    }
+  }
+
+  // 4) Nessuna fonte ha trovato un prezzo affidabile (eBay rimosso: prezzi inaffidabili).
   return { value: null, currency: 'EUR', source: 'Valutazione non disponibile', reliable: false, sample: 0 };
 }
