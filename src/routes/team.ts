@@ -8,7 +8,6 @@ import { authenticate, AuthRequest, authorizeWarehouseAccess, authorizeWarehouse
 import { apiLimiter } from '../middleware/rateLimit';
 import { validate, teamPercentageSchema, joinWarehouseSchema, createWarehouseSchema } from '../middleware/validate';
 import { generateInviteCode } from '../utils/security';
-import { generateCategoryConfig } from '../services/ai.service';
 import { audit } from '../services/audit.service';
 import { notifyWarehouseMembers, notifyTeam } from '../services/notification.service';
 import { logger } from '../utils/logger';
@@ -242,10 +241,11 @@ router.post('/warehouses', validate(createWarehouseSchema), async (req: AuthRequ
       ? JSON.stringify(defaultProfitShares.map((s: any) => ({ ...s, percentage: Number(s.percentage) || 0 })))
       : null;
 
-    // Il nuovo reparto parte solo col fondatore — ogni reparto ha i propri soci via codice invito
+    // Nuovo modello: il magazzino è una partnership a nome libero (es. "Magazzino con Luca").
+    // Parte solo col fondatore; i soci entrano via codice invito. Niente più legame con la categoria.
     const newWarehouse = await prisma.warehouse.create({
       data: {
-        name: `Magazzino ${name}`,
+        name: name.trim(),
         inviteCode: generateInviteCode(),
         inviteCodeExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         defaultProfitShares: parsedProfitShares,
@@ -256,31 +256,15 @@ router.post('/warehouses', validate(createWarehouseSchema), async (req: AuthRequ
         },
       },
     });
-    
+
     await audit({ action: 'WAREHOUSE_CREATE', userId: req.user!.userId, req,
       resource: newWarehouse.id, metadata: { name } });
-
-    // Genera config IA per categorie personalizzate — sincrono così l'icona appare subito
-    const builtinCategories = ['Scarpe', 'Vestiti', 'Pokemon', 'Orologi'];
-    if (!builtinCategories.includes(name)) {
-      try {
-        const config = await generateCategoryConfig(name);
-        if (config) {
-          await prisma.warehouse.update({
-            where: { id: newWarehouse.id },
-            data: { aiConfig: JSON.stringify(config) },
-          });
-        }
-      } catch (err) {
-        logger.warn('Errore generazione aiConfig (non bloccante)', { err });
-      }
-    }
 
     await notifyTeam({
       fromUserId: req.user!.userId,
       type: 'PRODUCT_ADDED',
-      title: 'Nuovo reparto creato',
-      message: `Reparto "${name}" aggiunto al team`,
+      title: 'Nuovo magazzino creato',
+      message: `Magazzino "${name}" aggiunto`,
     });
     
     const updated = await prisma.user.findUnique({

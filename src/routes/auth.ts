@@ -142,32 +142,30 @@ router.post('/register', authLimiter, validate(registerSchema), async (req, res)
       return res.json({ message: 'Sei entrato nel team con successo! Effettua il login.' });
     }
     
-    // CASO 2: Nuova azienda
-    if (!categories || categories.length === 0) {
-      return res.status(400).json({ error: 'Seleziona almeno un reparto.' });
-    }
-    
+    // CASO 2: Nuovo utente → parte con UN SOLO magazzino base "Il mio magazzino"
+    // (da solo, senza soci). Le categorie sono trasversali e si creano al volo
+    // dopo (foto/IA o a mano), non più legate al magazzino.
     await prisma.user.create({
       data: {
         email, password: hashedPassword, name,
         marketingConsent: marketingConsent === true,
         memberships: {
-          create: categories.map((cat: string) => ({
+          create: [{
             role: 'OWNER', percentage: 100,
             warehouse: {
               create: {
-                name: `Magazzino ${cat}`,
+                name: 'Il mio magazzino',
                 inviteCode: generateInviteCode(),
                 inviteCodeExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
               },
             },
-          })),
+          }],
         },
       },
     });
-    
-    await audit({ action: 'REGISTER', success: true, req, metadata: { type: 'new_team', email, categories } });
-    res.json({ message: 'Azienda creata con successo! Effettua il login.' });
+
+    await audit({ action: 'REGISTER', success: true, req, metadata: { type: 'new_team', email } });
+    res.json({ message: 'Account creato con successo! Effettua il login.' });
     
   } catch (err: any) {
     if (err.message === 'INVALID_INVITE_CODE') {

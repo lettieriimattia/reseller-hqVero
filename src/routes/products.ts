@@ -66,26 +66,21 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 // ==========================================
 router.post('/lot', async (req: AuthRequest, res: Response) => {
   try {
-    const { category, lotName, totalPrice, quantity, brand, size, condition, notes, attributes } = req.body;
+    const { category, lotName, totalPrice, quantity, brand, size, condition, notes, attributes, warehouseId: bodyWarehouseId } = req.body;
 
     if (!category || !lotName || !totalPrice || !quantity || quantity < 2 || quantity > 200) {
       return res.status(400).json({ error: 'Dati lotto non validi.' });
     }
 
-    const myMembership = await prisma.membership.findFirst({
-      where: { userId: req.user!.userId, warehouseId: { not: undefined } },
-      include: { warehouse: true },
-    });
-
-    // Trova il warehouse corretto per la categoria
+    // Nuovo modello: il lotto va nel magazzino scelto (warehouseId) o nel magazzino base.
     const memberships = await prisma.membership.findMany({
       where: { userId: req.user!.userId },
       include: { warehouse: true },
     });
-    const targetMembership = memberships.find(m =>
-      m.warehouse.name === `Magazzino ${category}` || m.warehouseId === category
-    );
-    if (!targetMembership) return res.status(403).json({ error: 'Non sei membro di questo reparto.' });
+    const targetMembership = bodyWarehouseId
+      ? memberships.find(m => m.warehouseId === bodyWarehouseId)
+      : (memberships.find(m => m.role === 'OWNER' && !m.warehouse.parentId) || memberships[0]);
+    if (!targetMembership) return res.status(403).json({ error: 'Non sei membro di questo magazzino.' });
 
     const pricePerUnit = Math.round((totalPrice / quantity) * 100) / 100;
     const lotNote = `Lotto: "${lotName}" — ${quantity} pezzi × ${pricePerUnit.toFixed(2)}€`;
@@ -167,18 +162,19 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
       where: { userId: req.user!.userId },
       include: { warehouse: true },
     });
-    // Se è passato un warehouseId (sotto-magazzino), il prodotto va lì; altrimenti per categoria (reparto).
+    // Nuovo modello: il magazzino è una partnership, non una categoria. Il prodotto va
+    // nel warehouseId scelto; in mancanza, nel magazzino base dell'utente (primo top-level OWNER).
     const targetMembership = bodyWarehouseId
       ? memberships.find(m => m.warehouseId === bodyWarehouseId)
-      : memberships.find(m => m.warehouse.name === `Magazzino ${category}`);
-    // Categoria IA: quella del reparto. Per i sotto-magazzini eredita da warehouse.category.
-    const effectiveCategory = (targetMembership?.warehouse as any)?.category || category;
+      : (memberships.find(m => m.role === 'OWNER' && !m.warehouse.parentId) || memberships[0]);
+    // La categoria è trasversale: arriva dal body, indipendente dal magazzino.
+    const effectiveCategory = category;
     if (!targetMembership) {
       await audit({
         action: 'UNAUTHORIZED_ACCESS', userId: req.user!.userId, req,
         metadata: { resource: 'product_create', category },
       });
-      return res.status(403).json({ error: 'Non sei membro di questo reparto.' });
+      return res.status(403).json({ error: 'Non sei membro di questo magazzino.' });
     }
 
     const parsedShares = customShares && Array.isArray(customShares) && customShares.length > 0
@@ -237,7 +233,7 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
       excludeUserId: req.user!.userId,
       type: 'PRODUCT_ADDED',
       title: 'Nuovo prodotto in magazzino',
-      message: `${brand} ${name} (${size}) aggiunto al reparto ${category}`,
+      message: `${brand} ${name} (${size}) aggiunto · categoria ${category}`,
     });
 
     res.json(newProduct);

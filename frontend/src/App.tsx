@@ -359,6 +359,14 @@ export default function App() {
   const [isSavingTeam, setIsSavingTeam] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [isAddingCat, setIsAddingCat] = useState(false);
+  // Magazzino (partnership) selezionato nel form di aggiunta. Vuoto = magazzino base.
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
+  // Creazione nuovo magazzino (partnership) dalle impostazioni
+  const [newWarehouseName, setNewWarehouseName] = useState('');
+  const [isAddingWarehouse, setIsAddingWarehouse] = useState(false);
+  // ----- CATEGORIE (trasversali, da CategoryTemplate) -----
+  // Catalogo categorie indipendente dai magazzini: {name, icon, fields}.
+  const [categories, setCategories] = useState<{ name: string; icon: string | null }[]>([]);
   
   // ----- PROFIT SHARING -----
   const [showProfitSharesModal, setShowProfitSharesModal] = useState(false);
@@ -871,14 +879,22 @@ export default function App() {
   const [incSaving, setIncSaving] = useState(false);
   
   // ----- DERIVED -----
-  // Solo reparti top-level (i sotto-magazzini non sono reparti a sé).
-  const userCategories = user?.warehouses?.filter(w => !w.parentId).map(w => w.name.replace('Magazzino ', '')) || [];
-  // Sotto-magazzini di un reparto (per nome reparto)
-  const subWarehousesFor = (repartoName: string) => {
-    const reparto = user?.warehouses?.find(w => !w.parentId && w.name.replace('Magazzino ', '') === repartoName);
-    if (!reparto) return [] as NonNullable<typeof user>['warehouses'];
-    return user?.warehouses?.filter(w => w.parentId === reparto.id) || [];
-  };
+  // Nuovo modello: le categorie sono trasversali (CategoryTemplate), indipendenti dai
+  // magazzini. La lista mostrata = catalogo template ∪ categorie già usate nei prodotti.
+  const userCategories = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of categories) if (c?.name) set.add(c.name);
+    for (const p of products) if ((p as any)?.category) set.add((p as any).category);
+    return Array.from(set);
+  }, [categories, products]);
+  // Magazzini (partnership) dell'utente. Il magazzino base è "Il mio magazzino" o il più vecchio top-level.
+  const warehouses = user?.warehouses || [];
+  const baseWarehouse = warehouses.find(w => !w.parentId && w.name === 'Il mio magazzino')
+    || warehouses.find(w => !w.parentId && w.role === 'OWNER')
+    || warehouses[0]
+    || null;
+  // Icona di una categoria dal catalogo (emoji del template), se presente.
+  const categoryIcon = (name: string) => categories.find(c => c.name === name)?.icon || null;
 
   // Match tollerante tra la categoria rilevata dall'IA e i reparti esistenti:
   // gestisce maiuscole, accenti, spazi e SINONIMI (es. "Sneakers"/"Calzature" → reparto "Scarpe").
@@ -954,6 +970,14 @@ export default function App() {
     const { ok, data } = await apiCall<any[]>('/team');
     if (ok && Array.isArray(data)) setTeamData(data);
   }, []);
+
+  // Catalogo categorie (CategoryTemplate). Seed di sistema lato server al primo GET.
+  const fetchCategories = useCallback(async () => {
+    const { ok, data } = await apiCall<any[]>('/templates');
+    if (ok && Array.isArray(data)) {
+      setCategories(data.map((t: any) => ({ name: t.name, icon: t.icon || null })));
+    }
+  }, []);
   
   const fetchNotifications = useCallback(async () => {
     const { ok, data } = await apiCall<{ notifications: AINotification[]; unreadCount: number }>('/notifications');
@@ -972,6 +996,7 @@ export default function App() {
     if (!isAuthenticated) return;
     fetchProducts();
     fetchTeam();
+    fetchCategories();
     fetchNotifications();
     checkStaleProducts();
     refreshMyPlan();
@@ -981,7 +1006,7 @@ export default function App() {
     // Controllo prodotti fermi ogni ora
     const staleInterval = setInterval(checkStaleProducts, 60 * 60 * 1000);
     return () => { clearInterval(interval); clearInterval(staleInterval); };
-  }, [isAuthenticated, fetchProducts, fetchTeam, fetchNotifications, checkStaleProducts]);
+  }, [isAuthenticated, fetchProducts, fetchTeam, fetchCategories, fetchNotifications, checkStaleProducts]);
 
   // Admin: badge richieste sempre aggiornato; carica dati quando si entra nella pagina Admin
   useEffect(() => {
@@ -1066,14 +1091,15 @@ export default function App() {
   // Init quote per acquisto condiviso (usa percentuali salvate del team, non divisione uguale)
   useEffect(() => {
     if (isSharedPurchase) {
-      const currentTeam = teamData.find(t => t.warehouseName.replace('Magazzino ', '') === category);
+      const whId = selectedWarehouseId || baseWarehouse?.id;
+      const currentTeam = teamData.find(t => t.warehouseId === whId);
       if (currentTeam && currentTeam.members.length > 0) {
         setProductShares(currentTeam.members.map((m: any) => ({
           userId: m.userId, name: m.name, percentage: m.percentage,
         })));
       }
     }
-  }, [isSharedPurchase, category, teamData]);
+  }, [isSharedPurchase, selectedWarehouseId, baseWarehouse?.id, teamData]);
   
   // Calcolo fees automatico (vendita)
   useEffect(() => {
@@ -1292,11 +1318,6 @@ export default function App() {
     setAuthError(null);
     setAuthPasswordErrors([]);
     
-    if (authMode === 'register' && regType === 'new_team' && regCategories.length === 0) {
-      setAuthError('Seleziona almeno una categoria per la tua Azienda');
-      return;
-    }
-    
     setAuthLoading(true);
     try {
       const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
@@ -1413,21 +1434,21 @@ export default function App() {
     } else showToast(data.error || 'Errore creazione sotto-magazzino', 'err');
   };
 
+  // Crea una nuova CATEGORIA (trasversale) generando i campi con l'IA.
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName) return;
     setIsAddingCat(true);
-    showToast('Creo il reparto e genero icona con IA…', 'ok');
-    const { ok, data } = await apiCall('/warehouses', {
-      method: 'POST', body: JSON.stringify({ name: newCatName })
+    showToast('Creo la categoria e genero i campi con IA…', 'ok');
+    const { ok, data } = await apiCall('/templates/auto', {
+      method: 'POST', body: JSON.stringify({ name: newCatName.trim() })
     });
     setIsAddingCat(false);
     if (ok) {
-      setUser(data.user);
+      await fetchCategories();
+      const created = data?.name || newCatName.trim();
       setNewCatName('');
-      fetchTeam();
-      // L'icona del reparto è lucide (getCategoryIcon mappa per nome) — niente emoji nel toast
-      showToast(`Reparto "${newCatName}" aggiunto!`);
+      showToast(`Categoria "${created}" aggiunta!`);
     } else showToast(data.error || 'Errore', 'err');
   };
 
@@ -1449,7 +1470,7 @@ export default function App() {
     setWatchBrand(''); setWatchModel(''); setWatchCase(''); setWatchStrap(''); setWatchMaterial('');
     setDynamicAttrs({});
     setIsSharedPurchase(false); setProductShares([]);
-    setSelectedSubWh('');
+    setSelectedWarehouseId('');
     setIsConsignment(false); setConsignmentName(''); setConsignmentPercent('');
     setIsFormOpen(true);
     // Apri SUBITO la fotocamera nello stesso gesto del tap su "+"
@@ -1459,26 +1480,44 @@ export default function App() {
     if (isTouch) addCameraInputRef.current?.click();
   };
 
-  // Crea al volo il reparto rilevato dall'IA (modalità Automatica) e lo seleziona.
-  // Restituisce il nome del reparto creato (o null), così il salvataggio può usarlo subito.
+  // Crea un nuovo MAGAZZINO (partnership a nome libero). I soci entrano col codice invito.
+  const handleAddWarehouse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const nm = newWarehouseName.trim();
+    if (!nm) return;
+    setIsAddingWarehouse(true);
+    const { ok, data } = await apiCall('/warehouses', {
+      method: 'POST', body: JSON.stringify({ name: nm })
+    });
+    setIsAddingWarehouse(false);
+    if (ok) {
+      setUser(data.user);
+      setNewWarehouseName('');
+      fetchTeam();
+      showToast(`Magazzino "${nm}" creato!`);
+    } else showToast(data.error || 'Errore', 'err');
+  };
+
+  // Crea al volo la CATEGORIA rilevata dall'IA (modalità Automatica) e la seleziona.
+  // Restituisce il nome della categoria creata (o null), così il salvataggio può usarlo subito.
   const createRepartoFromDetected = async (rawName: string): Promise<string | null> => {
     const nm = (rawName || '').trim();
     if (!nm || isAddingCat) return null;
     setIsAddingCat(true);
-    showToast(`Creo il reparto "${nm}" con icona IA…`, 'ok');
-    const { ok, data } = await apiCall('/warehouses', {
+    showToast(`Creo la categoria "${nm}" con IA…`, 'ok');
+    const { ok, data } = await apiCall('/templates/auto', {
       method: 'POST', body: JSON.stringify({ name: nm })
     });
     setIsAddingCat(false);
     if (ok) {
-      setUser(data.user);
-      fetchTeam();
-      setCategory(nm);        // seleziona il nuovo reparto (userCategories rimuove "Magazzino ")
+      await fetchCategories();
+      const created = data?.name || nm;
+      setCategory(created);   // seleziona la nuova categoria
       setDetectedReparto('');
-      showToast(`Reparto "${nm}" creato e selezionato`);
-      return nm;
+      showToast(`Categoria "${created}" creata e selezionata`);
+      return created;
     }
-    showToast(data.error || 'Errore creazione reparto', 'err');
+    showToast(data.error || 'Errore creazione categoria', 'err');
     return null;
   };
 
@@ -1767,6 +1806,7 @@ export default function App() {
         quantity: qty,
         brand: lotBrand.trim() || null,
         notes: lotNotes.trim() || null,
+        warehouseId: baseWarehouse?.id || undefined,
       }),
     });
     if (ok) {
@@ -1848,7 +1888,7 @@ export default function App() {
     
     // Snapshot delle percentuali attuali del team: rende ogni prodotto indipendente
     // dalle future modifiche alle quote nelle impostazioni
-    const currentTeam = teamData.find(t => t.warehouseName.replace('Magazzino ', '') === effCategory);
+    const currentTeam = teamData.find(t => t.warehouseId === (selectedWarehouseId || baseWarehouse?.id));
     const snapshotShares = currentTeam?.members?.length > 0
       ? currentTeam.members.map((m: any) => ({ userId: m.userId, name: m.name, percentage: m.percentage }))
       : undefined;
@@ -1862,7 +1902,7 @@ export default function App() {
           body: JSON.stringify({
             category: effCategory, brand: finalBrand, name: finalName,
             size: finalSize, condition: finalCondition, price: unitPrice,
-            warehouseId: selectedSubWh || undefined, // sotto-magazzino scelto (se presente)
+            warehouseId: selectedWarehouseId || baseWarehouse?.id || undefined, // magazzino scelto (default: base)
             customShares: finalShares,
             ...(isConsignment && consignmentName.trim() ? {
               consignmentName: consignmentName.trim(),
@@ -2040,7 +2080,7 @@ export default function App() {
     // (così non vengono sovrascritte con null nel DB)
     const originalShares = productToEdit.customShares && productToEdit.customShares !== '[]'
       ? JSON.parse(productToEdit.customShares) : undefined;
-    const editTeam = teamData.find(t => t.warehouseName.replace('Magazzino ', '') === productToEdit.category);
+    const editTeam = teamData.find(t => t.warehouseId === productToEdit.warehouseId);
     const editSnapshotShares = editTeam?.members?.length > 0
       ? editTeam.members.map((m: any) => ({ userId: m.userId, name: m.name, percentage: m.percentage }))
       : undefined;
@@ -2601,29 +2641,15 @@ export default function App() {
                     {regType === 'new_team' && (
                       <div className="mt-6 mb-4 border-t border-[var(--border-2)] pt-6">
                         <h3 className="text-lg font-bold text-[var(--text)] flex items-center gap-2 mb-1">
-                          <Layers className="text-[var(--text)]" size={18} /> I tuoi Reparti
+                          <Layers className="text-[var(--text)]" size={18} /> Il tuo magazzino
                         </h3>
-                        <p className="text-xs text-[var(--text-soft)] mb-4">Seleziona cosa venderà la tua nuova azienda.</p>
-                        <div className="grid grid-cols-2 gap-3">
-                          {availableCategories.map(cat => (
-                            <button key={cat.id} type="button" onClick={() => {
-                              regCategories.includes(cat.id)
-                                ? setRegCategories(regCategories.filter(c => c !== cat.id))
-                                : setRegCategories([...regCategories, cat.id]);
-                            }}
-                              className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
-                                regCategories.includes(cat.id)
-                                  ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)] shadow-[0_0_15px_rgba(139,92,246,0.2)]'
-                                  : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600 hover:text-gray-300'
-                              }`}>
-                              <span className="text-2xl">{cat.icon}</span>
-                              <span className="text-sm font-bold">{cat.label}</span>
-                            </button>
-                          ))}
-                        </div>
+                        <p className="text-xs text-[var(--text-soft)]">
+                          Parti con <b className="text-[var(--text)]">"Il mio magazzino"</b>. Le categorie (scarpe, vestiti…) le crei al volo
+                          dalla foto con l'IA o scrivendole a mano. Potrai aggiungere altri magazzini con i tuoi soci quando vuoi.
+                        </p>
                       </div>
                     )}
-                    
+
                     {regType === 'join_team' && (
                       <div className="mt-6 mb-4 border-t border-[var(--border-2)] pt-6">
                         <h3 className="text-lg font-bold text-[var(--text)] flex items-center gap-2 mb-1">
@@ -4416,12 +4442,12 @@ export default function App() {
               <button type="button" onClick={() => setRepartiOpen(o => !o)}
                 className="w-full flex items-center gap-2 mb-1 group">
                 <Layers className="text-[var(--text)]" size={18} />
-                <h3 className="text-lg font-bold tracking-tighter">I tuoi Reparti</h3>
-                <span className="text-xs font-bold text-[var(--text-soft)] bg-[var(--fill)] px-2 py-0.5 rounded-full">{user.warehouses.length}</span>
+                <h3 className="text-lg font-bold tracking-tighter">I tuoi Magazzini</h3>
+                <span className="text-xs font-bold text-[var(--text-soft)] bg-[var(--fill)] px-2 py-0.5 rounded-full">{user.warehouses.filter((w: any) => !w.parentId).length}</span>
                 <ChevronDown size={18} className={`ml-auto text-[var(--text-soft)] transition-transform ${repartiOpen ? 'rotate-180' : ''}`} />
               </button>
               {!repartiOpen && (
-                <p className="text-xs text-[var(--text-faint)] mb-1">Tocca per vedere reparti e codici invito</p>
+                <p className="text-xs text-[var(--text-faint)] mb-1">Tocca per vedere magazzini, soci e codici invito</p>
               )}
 
               {repartiOpen && (<>
@@ -4432,11 +4458,11 @@ export default function App() {
                   <div key={w.id} className="bg-[var(--surface-2)] p-4 rounded-xl border border-[var(--border-2)]">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">{getCategoryIcon(w.name.replace('Magazzino ', ''))}</span>
+                        <span className="text-2xl"><Layers size={22} className="text-[#8b5cf6]" /></span>
                         <div>
                           <p className="font-bold">{w.name}</p>
                           <p className="text-[10px] text-[var(--text-soft)] uppercase">
-                            {w.role === 'OWNER' ? 'Fondatore' : 'Membro'} • Quota {w.percentage}%
+                            {w.role === 'OWNER' ? 'Fondatore' : 'Socio'} • Quota {w.percentage}%
                           </p>
                         </div>
                       </div>
@@ -4491,16 +4517,39 @@ export default function App() {
               </div>
               
               {isFounder && (
-                <form onSubmit={handleAddCategory} className="flex flex-col sm:flex-row gap-3 pt-5 border-t border-[var(--border-2)]">
-                  <input type="text" value={newCatName}
-                    onChange={(e: any) => setNewCatName(e.target.value)}
-                    placeholder="Nome nuovo reparto (es. Borse, Vinili...)"
-                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#8b5cf6] outline-none" />
-                  <button type="submit" disabled={isAddingCat}
-                    className="bg-[#8b5cf6] hover:bg-[#a78bfa] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap">
-                    {isAddingCat ? <Loader2 className="animate-spin" size={16} /> : '+ Aggiungi Reparto'}
-                  </button>
-                </form>
+                <div className="pt-5 border-t border-[var(--border-2)] space-y-4">
+                  {/* Crea un nuovo MAGAZZINO (partnership): poi inviti i soci col codice */}
+                  <form onSubmit={handleAddWarehouse} className="flex flex-col sm:flex-row gap-3">
+                    <input type="text" value={newWarehouseName}
+                      onChange={(e: any) => setNewWarehouseName(e.target.value)}
+                      placeholder="Nuovo magazzino (es. Magazzino con Luca)"
+                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#8b5cf6] outline-none" />
+                    <button type="submit" disabled={isAddingWarehouse}
+                      className="bg-[#8b5cf6] hover:bg-[#a78bfa] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap text-white">
+                      {isAddingWarehouse ? <Loader2 className="animate-spin" size={16} /> : '+ Aggiungi Magazzino'}
+                    </button>
+                  </form>
+                  {/* Crea una nuova CATEGORIA (trasversale): l'IA genera i campi giusti */}
+                  <form onSubmit={handleAddCategory} className="flex flex-col sm:flex-row gap-3">
+                    <input type="text" value={newCatName}
+                      onChange={(e: any) => setNewCatName(e.target.value)}
+                      placeholder="Nuova categoria (es. Borse, Vinili, Elettronica...)"
+                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#8b5cf6] outline-none" />
+                    <button type="submit" disabled={isAddingCat}
+                      className="bg-[var(--fill)] hover:bg-[var(--fill-2)] border border-[var(--border-2)] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap">
+                      {isAddingCat ? <Loader2 className="animate-spin" size={16} /> : '+ Aggiungi Categoria'}
+                    </button>
+                  </form>
+                  {categories.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {categories.map(c => (
+                        <span key={c.name} className="text-[11px] bg-[var(--surface-2)] border border-[var(--border-2)] text-[var(--text-soft)] px-2 py-1 rounded-lg">
+                          {c.icon ? `${c.icon} ` : ''}{c.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
               </>)}
             </section>
@@ -4545,14 +4594,14 @@ export default function App() {
                   {isSavingTeam ? <Loader2 className="animate-spin" size={16} /> : 'Salva Quote'}
                 </button>
 
-                {/* Elimina reparto — solo OWNER, piccolo e discreto */}
+                {/* Elimina magazzino — solo OWNER, piccolo e discreto */}
                 {team.myRole === 'OWNER' && user.warehouses.length > 1 && (
                   <div className="mt-4 pt-4 border-t border-[var(--border)] flex justify-end">
                     <button
                       onClick={async () => {
-                        if (!confirm(`Eliminare il reparto "${team.warehouseName.replace('Magazzino ', '')}"? Tutti i prodotti associati verranno rimossi.`)) return;
+                        if (!confirm(`Eliminare il magazzino "${team.warehouseName}"? Tutti i prodotti associati verranno rimossi.`)) return;
                         const { ok, data } = await apiCall(`/warehouses/${team.warehouseId}`, { method: 'DELETE' });
-                        if (ok) { setUser(data.user); await fetchTeam(); showToast('Reparto eliminato'); }
+                        if (ok) { setUser(data.user); await fetchTeam(); showToast('Magazzino eliminato'); }
                         else showToast(data.error || 'Errore', 'err');
                       }}
                       className="text-[11px] text-red-500/40 hover:text-red-400/70 transition-colors flex items-center gap-1"
@@ -5132,9 +5181,26 @@ export default function App() {
                 }
                 return (
                 <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Reparto</label>
+                {/* Selettore MAGAZZINO (partnership). Mostrato se l'utente ha più di un magazzino. */}
+                {warehouses.filter((w: any) => !w.parentId).length > 1 && (
+                  <div className="mb-3">
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Magazzino</label>
+                    <div className="flex flex-wrap gap-2">
+                      {warehouses.filter((w: any) => !w.parentId).map((w: any) => {
+                        const isSel = (selectedWarehouseId || baseWarehouse?.id) === w.id;
+                        return (
+                          <button key={w.id} type="button" onClick={() => setSelectedWarehouseId(w.id)}
+                            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${isSel ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
+                            {w.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Categoria</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {/* Automatico: l'IA rileva il reparto dalla foto */}
+                  {/* Automatico: l'IA rileva la categoria dalla foto */}
                   <button type="button"
                     onClick={() => { setCategory(AUTO_CATEGORY); setDetectedReparto(''); }}
                     className={`p-3 rounded-xl text-sm font-bold border transition-all ${
@@ -5146,48 +5212,30 @@ export default function App() {
                     Automatico
                   </button>
                   {userCategories.map((cat: string) => (
-                    <button key={cat} type="button" onClick={() => { setCategory(cat); setSize(defaultSizeForCategory(cat)); setDetectedReparto(''); setSelectedSubWh(''); }}
+                    <button key={cat} type="button" onClick={() => { setCategory(cat); setSize(defaultSizeForCategory(cat)); setDetectedReparto(''); }}
                       className={`p-3 rounded-xl text-sm font-bold border transition-all ${
                         category === cat
                           ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]'
                           : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
                       }`}>
-                      <span className="block text-xl mb-1">{getCategoryIcon(cat)}</span>
+                      <span className="block text-xl mb-1">{categoryIcon(cat) || getCategoryIcon(cat)}</span>
                       {cat}
                     </button>
                   ))}
                 </div>
-                {/* Selettore sotto-magazzino (se il reparto ne ha) */}
-                {category !== AUTO_CATEGORY && subWarehousesFor(category).length > 0 && (
-                  <div className="mt-3">
-                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Magazzino</label>
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button" onClick={() => setSelectedSubWh('')}
-                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${selectedSubWh === '' ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
-                        Principale
-                      </button>
-                      {subWarehousesFor(category).map((sw: any) => (
-                        <button key={sw.id} type="button" onClick={() => setSelectedSubWh(sw.id)}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${selectedSubWh === sw.id ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
-                          {sw.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
                 {/* Esito modalità automatica */}
                 {category === AUTO_CATEGORY && (
                   detectedReparto ? (
                     <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
                       <p className="text-[11px] text-[var(--text-muted)] flex items-center gap-1.5">
                         <Sparkles size={11} className="text-violet-400" />
-                        Rilevato: <b className="text-[var(--text)]">{detectedReparto}</b> — reparto non presente.
+                        Rilevato: <b className="text-[var(--text)]">{detectedReparto}</b> — categoria non presente.
                       </p>
                       <button type="button" disabled={isAddingCat}
                         onClick={() => createRepartoFromDetected(detectedReparto)}
                         className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-violet-500/15 border border-violet-500/40 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-40 flex items-center gap-1">
                         {isAddingCat ? <Loader2 size={11} className="animate-spin" /> : <Plus size={11} />}
-                        Crea reparto "{detectedReparto}"
+                        Crea categoria "{detectedReparto}"
                       </button>
                     </div>
                   ) : (
@@ -5612,7 +5660,8 @@ export default function App() {
 
               {/* Quote del team */}
               {(() => {
-                const currentTeam = teamData.find((t: any) => t.warehouseName.replace('Magazzino ', '') === category);
+                const whId = selectedWarehouseId || baseWarehouse?.id;
+                const currentTeam = teamData.find((t: any) => t.warehouseId === whId);
                 if (!currentTeam || currentTeam.members.length <= 1) return null;
                 return (
                   <div className="border-t border-[var(--border-2)] pt-4">
@@ -5925,7 +5974,7 @@ export default function App() {
 
               {/* Quote del team nel modale di modifica */}
               {(() => {
-                const currentTeam = teamData.find((t: any) => t.warehouseName.replace('Magazzino ', '') === productToEdit?.category);
+                const currentTeam = teamData.find((t: any) => t.warehouseId === productToEdit?.warehouseId);
                 if (!currentTeam || currentTeam.members.length <= 1) return null;
                 return (
                   <div className="border-t border-[var(--border-2)] pt-4">
@@ -7348,10 +7397,9 @@ export default function App() {
 
               <div className="p-4 space-y-5">
 
-                {/* Per ogni reparto */}
+                {/* Per ogni magazzino (partnership) */}
                 {teamData.map((team: any) => {
-                  const cat = team.warehouseName.replace('Magazzino ', '');
-                  const teamProds = products.filter(p => p.category === cat);
+                  const teamProds = products.filter(p => (p as any).warehouseId === team.warehouseId);
                   const teamSold = teamProds.filter(p => p.status === 'VENDUTO' && (p.salePrice || 0) > 0);
                   const teamRevenue = teamSold.reduce((a, p) => a + (p.salePrice || 0), 0);
                   const teamCosts = teamSold.reduce((a, p) => a + p.purchasePrice, 0);
@@ -7390,10 +7438,10 @@ export default function App() {
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-[#111] border border-[var(--border)] flex items-center justify-center text-xl shrink-0">
-                              {getCategoryIcon(cat)}
+                              <Layers size={18} className="text-[#8b5cf6]" />
                             </div>
                             <div>
-                              <p className="font-bold">{cat}</p>
+                              <p className="font-bold">{team.warehouseName}</p>
                               <p className="text-[10px] text-[var(--text-faint)]">{team.members.length} soci · {teamStock.length} stock · {teamSold.length} vendite</p>
                             </div>
                           </div>

@@ -27,13 +27,12 @@ export const registerSchema = z.object({
   password: z.string().min(10, 'Password troppo corta').max(128),
   name: z.string().min(2, 'Nome troppo corto').max(50)
     .regex(/^[\p{L}\s'\-\.]+$/u, 'Nome contiene caratteri non validi'),
-  categories: z.array(z.enum(['Scarpe', 'Vestiti', 'Pokemon', 'Orologi'])).optional(),
+  // categorie non più richieste alla registrazione: il nuovo utente parte con
+  // un solo "Il mio magazzino" e crea le categorie al volo (foto/IA o a mano).
+  categories: z.array(z.string().max(50)).optional(),
   joinCode: z.string().regex(/^INV-[A-Z0-9]{8,16}$/, 'Codice invito malformato').optional(),
   marketingConsent: z.boolean().optional(),
-}).refine(
-  (data) => data.categories?.length || data.joinCode,
-  { message: 'Specifica almeno categorie o un codice invito' }
-);
+});
 
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(255),

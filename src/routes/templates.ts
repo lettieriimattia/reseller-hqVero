@@ -6,6 +6,7 @@ import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { requireOwner } from '../middleware/rbac';
+import { generateCategoryConfig } from '../services/ai.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -135,6 +136,59 @@ router.get('/:name', authenticate, async (req: AuthRequest, res: Response) => {
     res.json(template);
   } catch (err: any) {
     res.status(500).json({ error: 'Errore' });
+  }
+});
+
+// ==========================================
+// POST /templates/auto — crea una categoria al volo generando i campi con l'IA.
+// Usato quando l'utente scrive a mano una categoria nuova o la foto ne rileva una
+// non ancora presente. Idempotente: se la categoria esiste già, la restituisce.
+// ==========================================
+router.post('/auto', authenticate, requireOwner, async (req: AuthRequest, res: Response) => {
+  try {
+    const rawName = (req.body?.name || '').toString().trim();
+    if (!rawName || rawName.length > 50) {
+      return res.status(400).json({ error: 'Nome categoria non valido' });
+    }
+    // Match case-insensitive su una categoria esistente (lista piccola → filtro in JS)
+    const allTemplates = await prisma.categoryTemplate.findMany();
+    const existing = allTemplates.find(t => t.name.toLowerCase() === rawName.toLowerCase());
+    if (existing) return res.json({ ...existing, created: false });
+
+    // Genera la configurazione campi con l'IA (fallback a un set minimo se l'IA fallisce)
+    let icon: string | null = null;
+    let fields: any[] = [
+      { key: 'colore', label: 'Colore', type: 'text' },
+      { key: 'materiale', label: 'Materiale', type: 'text' },
+    ];
+    try {
+      const config = await generateCategoryConfig(rawName);
+      if (config) {
+        icon = config.emoji || null;
+        if (Array.isArray(config.fields) && config.fields.length > 0) {
+          fields = config.fields.map((f: any) => ({
+            key: f.name || f.key,
+            label: f.label || f.name,
+            type: f.type === 'number' || f.type === 'select' || f.type === 'boolean' ? f.type : 'text',
+            ...(Array.isArray(f.options) && f.options.length ? { options: f.options } : {}),
+          }));
+        }
+      }
+    } catch (err: any) {
+      logger.warn('generateCategoryConfig fallita (uso fallback)', { err: err?.message, name: rawName });
+    }
+
+    const created = await prisma.categoryTemplate.create({
+      data: { name: rawName, icon, fields: JSON.stringify(fields), isSystem: false },
+    });
+    res.json({ ...created, created: true });
+  } catch (err: any) {
+    if (err.code === 'P2002') {
+      const t = await prisma.categoryTemplate.findUnique({ where: { name: (req.body?.name || '').toString().trim() } });
+      if (t) return res.json({ ...t, created: false });
+    }
+    logger.error('POST /templates/auto error', { err: err.message });
+    res.status(500).json({ error: 'Errore creazione categoria' });
   }
 });
 
