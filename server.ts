@@ -288,18 +288,31 @@ serverInstance.listen(PORT, () => {
   // Web Push: carica/genera le chiavi VAPID
   initPush();
 
-  // Migrazione one-shot magazzini → partnership, attivata via env su Render.
-  // RUN_WAREHOUSE_MIGRATION=dry  → solo anteprima nei log (non scrive)
-  // RUN_WAREHOUSE_MIGRATION=apply → applica davvero (idempotente, non distruttiva)
-  // Dopo l'esecuzione, rimuovere la variabile da Render.
-  if (process.env.RUN_WAREHOUSE_MIGRATION) {
-    const apply = process.env.RUN_WAREHOUSE_MIGRATION.toLowerCase() === 'apply';
-    import('./src/services/warehouse-migration')
-      .then(({ migrateWarehousesToPartners }) =>
-        migrateWarehousesToPartners(prisma, apply, (...a) => logger.info('[warehouse-migration]', ...a)))
-      .then(s => logger.info('[warehouse-migration] completata', s))
-      .catch(err => logger.error('[warehouse-migration] errore', { err: err?.message }));
-  }
+  // Migrazione magazzini → partnership. Gira UNA SOLA VOLTA in automatico
+  // (consolida i magazzini esistenti dentro "Il mio magazzino"), poi segna un
+  // flag in Setting così non rigira ai riavvii successivi. Non distruttiva.
+  // Override manuale via env: RUN_WAREHOUSE_MIGRATION=dry (solo anteprima nei log,
+  // non segna il flag) | =apply (riesegue comunque).
+  (async () => {
+    try {
+      const forced = process.env.RUN_WAREHOUSE_MIGRATION?.toLowerCase(); // 'dry' | 'apply' | undefined
+      const done = await prisma.setting.findUnique({ where: { key: 'warehouseMigrationV1' } }).catch(() => null);
+      if (!forced && done) return; // già eseguita
+      const apply = forced ? forced === 'apply' : true; // auto-run = applica
+      const { migrateWarehousesToPartners } = await import('./src/services/warehouse-migration');
+      const summary = await migrateWarehousesToPartners(prisma, apply, (...a) => logger.info('[warehouse-migration]', ...a));
+      logger.info('[warehouse-migration] completata', summary);
+      if (apply && forced !== 'apply') {
+        await prisma.setting.upsert({
+          where: { key: 'warehouseMigrationV1' },
+          create: { key: 'warehouseMigrationV1', value: new Date().toISOString() },
+          update: {},
+        });
+      }
+    } catch (err: any) {
+      logger.error('[warehouse-migration] errore', { err: err?.message });
+    }
+  })();
 
   // Email solo per cose importanti (password, account, risposte assistenza):
   // le notifiche operative (prodotti fermi, ecc.) vanno via push/in-app, non email.
