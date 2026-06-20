@@ -73,7 +73,7 @@ export async function getValuation(opts: {
     if (q.length >= 2) {
       const v = await getStockXValuation({ query: q, size: opts.size });
       if (v.value != null) {
-        return { value: v.value, currency: 'EUR', source: 'StockX', reliable: true, sample: v.sample || 1, itemName: v.itemName };
+        return { value: v.value, currency: 'EUR', source: 'Valutazione di mercato', reliable: true, sample: v.sample || 1, itemName: v.itemName };
       }
     }
   }

@@ -375,6 +375,7 @@ export default function App() {
   const [categories, setCategories] = useState<{ name: string; icon: string | null }[]>([]);
   // Stato integrazione StockX (configurato + connesso via OAuth)
   const [stockxStatus, setStockxStatus] = useState<{ configured: boolean; connected: boolean } | null>(null);
+  const [stockxConnecting, setStockxConnecting] = useState(false);
   
   // ----- PROFIT SHARING -----
   const [showProfitSharesModal, setShowProfitSharesModal] = useState(false);
@@ -1491,6 +1492,18 @@ export default function App() {
     // Solo su dispositivi touch (mobile/tablet): su desktop eviterei un dialog file a sorpresa.
     const isTouch = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
     if (isTouch) addCameraInputRef.current?.click();
+  };
+
+  // Avvia l'OAuth StockX: chiede al server l'URL e ci reindirizza (login una tantum).
+  const connectStockX = async () => {
+    setStockxConnecting(true);
+    const { ok, data } = await apiCall<any>('/api/stockx/connect');
+    if (ok && data?.url) {
+      window.location.href = data.url;
+    } else {
+      setStockxConnecting(false);
+      showToast(data?.error || 'StockX non configurato', 'err');
+    }
   };
 
   // ===== BARCODE: scansiona + cerca prodotto =====
@@ -4637,27 +4650,27 @@ export default function App() {
               </>)}
             </section>
 
-            {/* SEZIONE: Integrazioni (StockX) */}
-            {isFounder && (
+            {/* SEZIONE: Integrazioni (StockX) — SOLO admin. Per gli utenti resta in background. */}
+            {isAdminUser && (
               <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="text-green-400" size={18} />
                   <h3 className="text-lg font-bold tracking-tighter">Integrazioni · StockX</h3>
                 </div>
-                <p className="text-xs text-[var(--text-soft)] mb-4">Prezzi reali delle sneaker da StockX (in EUR).</p>
+                <p className="text-xs text-[var(--text-soft)] mb-4">Fonte prezzi sneaker (in EUR). Collegamento unico per tutta l'app.</p>
                 {!stockxStatus?.configured ? (
                   <p className="text-xs text-[var(--text-faint)]">
                     Non configurato. Aggiungi su Render le variabili <span className="font-mono">STOCKX_CLIENT_ID</span>, <span className="font-mono">STOCKX_CLIENT_SECRET</span>, <span className="font-mono">STOCKX_API_KEY</span>, poi ricarica.
                   </p>
                 ) : stockxStatus?.connected ? (
                   <div className="flex items-center gap-2 text-sm font-semibold text-green-400">
-                    <CheckCircle size={16} /> StockX collegato
+                    <CheckCircle size={16} /> Collegato
                   </div>
                 ) : (
-                  <a href="/api/stockx/connect"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors">
-                    <KeyRound size={15} /> Connetti StockX
-                  </a>
+                  <button type="button" onClick={connectStockX} disabled={stockxConnecting}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors disabled:opacity-50">
+                    {stockxConnecting ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />} Connetti StockX
+                  </button>
                 )}
               </section>
             )}
@@ -6018,7 +6031,7 @@ export default function App() {
                 {valuation && (
                   <div className="mt-3">
                     {valuation.configured === false ? (
-                      <p className="text-[var(--text-soft)] text-xs">Fonte prezzi non ancora attiva. Quando colleghiamo eBay/StockX qui vedrai la valutazione reale — autenticata e anti-falsi.</p>
+                      <p className="text-[var(--text-soft)] text-xs">Fonte prezzi non ancora attiva. Quando sarà attiva qui vedrai la valutazione reale di mercato — autenticata e anti-falsi.</p>
                     ) : valuation.value == null ? (
                       <p className="text-[var(--text-soft)] text-xs">Nessuna quotazione affidabile trovata per questo prodotto.</p>
                     ) : (

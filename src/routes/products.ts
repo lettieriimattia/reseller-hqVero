@@ -658,7 +658,7 @@ router.get('/:id/valuation', async (req: AuthRequest, res: Response) => {
     if (isShoe && isStockXConfigured()) {
       const sx = await getStockXValuation({ query, size: product.size || undefined });
       if (sx.value != null) {
-        return res.json({ configured: true, value: sx.value, source: 'StockX', sample: sx.sample || 1, confidence: 'alta', authenticatedOnly: true });
+        return res.json({ configured: true, value: sx.value, source: 'Valutazione di mercato', sample: sx.sample || 1, confidence: 'alta', authenticatedOnly: true });
       }
     }
     const val = await getMarketValuation({ query, size: product.size || undefined });
