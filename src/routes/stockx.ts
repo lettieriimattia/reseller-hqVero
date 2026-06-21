@@ -20,20 +20,34 @@ router.get('/debug', authenticate, async (req: AuthRequest, res: Response) => {
   const token = await getStockXAccessToken().catch(() => null);
   if (!token) return res.json({ step: 'token', configured: true, tokenOk: false });
   const q = (req.query.q as string) || 'Nike Dunk Low Panda';
+  const headers = { Authorization: `Bearer ${token}`, 'x-api-key': process.env.STOCKX_API_KEY || '', Accept: 'application/json' };
   try {
-    const r = await fetch(`https://api.stockx.com/v2/catalog/search?query=${encodeURIComponent(q)}&pageNumber=1&pageSize=5`, {
-      headers: { Authorization: `Bearer ${token}`, 'x-api-key': process.env.STOCKX_API_KEY || '', Accept: 'application/json' },
-    });
-    const text = await r.text();
-    let json: any = null; try { json = JSON.parse(text); } catch {}
+    // 1) Ricerca
+    const sr = await fetch(`https://api.stockx.com/v2/catalog/search?query=${encodeURIComponent(q)}&pageNumber=1&pageSize=5`, { headers });
+    const sText = await sr.text();
+    let sJson: any = null; try { sJson = JSON.parse(sText); } catch {}
+    const product = sJson?.products?.[0] || null;
+    const productId = product?.productId || product?.id || product?.urlKey || null;
+
+    // 2) Market data a livello di prodotto (qui di solito sta il problema: nomi campo prezzo)
+    let mdStatus: number | null = null;
+    let mdPreview: string | null = null;
+    let mdKeys: string[] | null = null;
+    if (productId) {
+      const md = await fetch(`https://api.stockx.com/v2/catalog/products/${encodeURIComponent(productId)}/market-data?currencyCode=EUR`, { headers });
+      mdStatus = md.status;
+      const mdText = await md.text();
+      try { const mj = JSON.parse(mdText); mdKeys = mj && typeof mj === 'object' ? Object.keys(Array.isArray(mj) ? (mj[0] || {}) : mj) : null; } catch {}
+      mdPreview = mdText.slice(0, 1500);
+    }
+
     res.json({
-      step: 'search', query: q, httpStatus: r.status,
-      topLevelKeys: json && typeof json === 'object' ? Object.keys(json) : null,
-      // primi 1500 char della risposta grezza (per vedere la struttura reale)
-      rawPreview: text.slice(0, 1500),
+      query: q,
+      search: { httpStatus: sr.status, count: sJson?.count ?? null, firstTitle: product?.title ?? null, productId },
+      marketData: { httpStatus: mdStatus, topLevelKeys: mdKeys, rawPreview: mdPreview },
     });
   } catch (e: any) {
-    res.json({ step: 'search', error: e.message });
+    res.json({ error: e.message });
   }
 });
 
