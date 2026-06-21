@@ -108,8 +108,17 @@ router.post('/payout/withdraw', authenticate, async (req: AuthRequest, res: Resp
     });
     res.json({ withdrawn: total, count: ready.length, transferId: transfer.id });
   } catch (err: any) {
-    logger.error('Errore /billing/payout/withdraw', { err: err.message });
-    res.status(500).json({ error: 'Errore riscossione' });
+    const code = err?.code || err?.raw?.code;
+    const msg = err?.raw?.message || err?.message || '';
+    logger.error('Errore /billing/payout/withdraw', { err: msg, code });
+    // Cause tipiche → messaggi chiari (invece del generico "Errore riscossione").
+    if (code === 'balance_insufficient' || /insufficient/i.test(msg)) {
+      return res.status(400).json({ error: 'Fondi non ancora disponibili su Stripe: gli incassi sono in fase di accredito (in test/sandbox può servire qualche minuto). Riprova tra poco.' });
+    }
+    if (/capabilit|transfers|not.*enabled|destination/i.test(msg)) {
+      return res.status(400).json({ error: 'Il conto venditore non è ancora abilitato a ricevere bonifici. Completa la verifica del conto e riprova.' });
+    }
+    res.status(500).json({ error: `Riscossione non riuscita: ${msg || 'errore Stripe'}` });
   }
 });
 
