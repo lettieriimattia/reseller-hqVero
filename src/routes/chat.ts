@@ -117,6 +117,9 @@ router.post('/:id/ship', async (req: AuthRequest, res: Response) => {
       // compratore non conferma "Consegnato"). Qui aggiungiamo solo la spedizione/tracking.
       if (trackingCode.length < 4) return res.status(400).json({ error: 'Inserisci il codice di tracking.' });
       const r = await addTracking(product.id, trackingCode, carrier, 'OUTBOUND');
+      // Stesso tracking anche sulla copia del compratore (in arrivo / INBOUND).
+      const buyerCopy = await prisma.product.findFirst({ where: { sourceProductId: product.id, userId: c.buyerId, deletedAt: null } }).catch(() => null);
+      if (buyerCopy) await addTracking(buyerCopy.id, trackingCode, carrier, 'INBOUND').catch(() => {});
       await prisma.message.create({ data: { conversationId: c.id, senderId: uid, text: `📦 Spedito! Codice tracking: ${trackingCode} (${carrier}). Quando ricevi il pacco premi "Consegnato" per sbloccare il pagamento al venditore.` } });
       await prisma.conversation.update({ where: { id: c.id }, data: { updatedAt: new Date() } });
       return res.json({ success: true, tracked: r.success, paid: true });

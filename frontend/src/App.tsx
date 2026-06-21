@@ -570,7 +570,8 @@ export default function App() {
   const [adminLoaded, setAdminLoaded] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const adminRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const ADMIN_EMAIL = 'noreply.hq.app@gmail.com';
+  const ADMIN_EMAILS = ['noreply.hq.app@gmail.com', 'ciaociao@gmail.com'];
+  const isAdminEmail = (e?: string | null) => !!e && ADMIN_EMAILS.includes(e.toLowerCase());
 
   // ── PIANI & STRUMENTI PRO ──
   const [planModalOpen, setPlanModalOpen] = useState(false);
@@ -995,7 +996,7 @@ export default function App() {
   // Piano dell'utente → gating feature. 'advanced_analytics' è incluso da Pro in su.
   const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, business: 3 };
   const planRank = PLAN_RANK[(user?.plan as string) || 'free'] ?? 0;
-  const isAdminUser = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  const isAdminUser = isAdminEmail(user?.email);
   const hasAdvancedAnalytics = planRank >= 1 || isAdminUser; // Starter in su (admin sempre)
   const teamFounderName = teamData.length > 0 
     ? teamData[0].members.find((m: any) => m.role === 'OWNER')?.name 
@@ -1264,7 +1265,7 @@ export default function App() {
 
   // Admin: badge richieste sempre aggiornato; carica dati quando si entra nella pagina Admin
   useEffect(() => {
-    if (!isAuthenticated || user?.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) return;
+    if (!isAuthenticated || !isAdminEmail(user?.email)) return;
     fetchAdminFeedback();
     if (currentView === 'admin' && !adminLoaded) fetchAdminUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3617,7 +3618,7 @@ export default function App() {
               )}
             </div>
 
-            {user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+            {isAdminEmail(user.email) && (
               <button onClick={() => navigateTo('admin')} title="Admin"
                 className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors relative">
                 <Shield size={18} className={currentView === 'admin' ? 'text-[#8b5cf6]' : 'text-[var(--text-muted)]'} />
@@ -4221,7 +4222,7 @@ export default function App() {
                   {groupedInStockArray.map((g: any) => {
                     const groupKey = g.ids.join(',');
                     const isSelected = selectedGroupKeys.has(groupKey);
-                    const isAdmin = user!.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+                    const isAdmin = isAdminEmail(user!.email);
                     let photoUrl: string | null = null;
                     try { const ph = g.photos ? JSON.parse(g.photos) : []; if (ph.length > 0) photoUrl = ph[0]; } catch {}
                     const days = g.oldestDate || g.createdAt ? Math.floor((Date.now() - new Date(g.oldestDate || g.createdAt).getTime()) / 86400000) : null;
@@ -4252,8 +4253,8 @@ export default function App() {
                           {photoUrl
                             ? <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)]"><img src={photoUrl} alt="" className="w-full h-full object-cover" /></div>
                             : <span className="text-3xl shrink-0 w-16 text-center">{getCategoryIcon(g.category)}</span>}
-                          <div className={`flex-1 min-w-0 ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
-                            onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
+                          <div className={`flex-1 min-w-0 ${!bulkMode ? 'cursor-pointer' : ''}`}
+                            onClick={!bulkMode ? () => openEditModal(g) : undefined}>
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-bold text-sm truncate">{g.brand} {g.name}</span>
                               {g.quantity > 1 && <span className="text-[10px] bg-[#8b5cf6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
@@ -4302,7 +4303,7 @@ export default function App() {
                           bulkMode ? 'cursor-pointer select-none' : ''
                         } ${isSelected ? 'border-[#8b5cf6] shadow-sm' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
                         <div
-                          className={`relative aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden ${!bulkMode && isAdmin ? 'cursor-pointer' : ''}`}
+                          className={`relative aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden ${!bulkMode ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                           {photoUrl
                             ? <img src={photoUrl} alt="" className="w-full h-full object-cover" />
@@ -6069,7 +6070,7 @@ export default function App() {
         )}
 
         {/* ========== PAGINA ADMIN (dedicata, solo ADMIN_EMAIL) ========== */}
-        {currentView === 'admin' && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+        {currentView === 'admin' && isAdminEmail(user.email) && (
           <div className="space-y-5">
             <div className="flex items-center gap-2">
               <Shield size={24} className="text-[#8b5cf6]" />
@@ -6150,7 +6151,7 @@ export default function App() {
                             </select>
                           </div>
                         </div>
-                        {u.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase() && (
+                        {!isAdminEmail(u.email) && (
                           <button onClick={() => deleteAdminUser(u.id, u.name)}
                             className="p-1 hover:bg-red-500/10 rounded-lg transition-colors shrink-0">
                             <Trash2 size={13} className="text-red-500/40 hover:text-red-400" />
@@ -8083,7 +8084,7 @@ export default function App() {
                       )}
                     </div>
                   ))}
-                  {user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
+                  {isAdminEmail(user?.email) && (
                     <p className="sm:col-span-2 text-[10px] text-[var(--text-faint)] text-center mt-1">Modalità admin: cambia il piano (anche il tuo) dal Pannello Admin → Utenti per testare le funzioni.</p>
                   )}
                 </div>

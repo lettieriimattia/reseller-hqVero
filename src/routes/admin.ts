@@ -11,13 +11,17 @@ import { isPlanId } from '../config/plans';
 
 const router = Router();
 
-// L'UNICO account admin. Hard-coded (NON modificabile via env) così nessuna
+// Account admin. Hard-coded (NON modificabili via env) così nessuna
 // configurazione errata o variabile d'ambiente può concedere admin ad altri.
-export const ADMIN_EMAIL = 'noreply.hq.app@gmail.com';
+export const ADMIN_EMAILS = ['noreply.hq.app@gmail.com', 'ciaociao@gmail.com'];
+export const ADMIN_EMAIL = ADMIN_EMAILS[0]; // destinatario notifiche (es. feedback)
+export function isAdminEmail(email?: string | null): boolean {
+  return !!email && ADMIN_EMAILS.includes(email.toLowerCase());
+}
 
-// Middleware: solo l'account admin
+// Middleware: solo gli account admin
 function requireAdmin(req: AuthRequest, res: Response, next: any) {
-  if (req.user?.email?.toLowerCase() !== ADMIN_EMAIL) {
+  if (!isAdminEmail(req.user?.email)) {
     return res.status(403).json({ error: 'Accesso riservato.' });
   }
   next();

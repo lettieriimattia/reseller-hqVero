@@ -66,6 +66,40 @@ export async function fulfillProductOrder(opts: {
     await prisma.conversation.update({ where: { id: convo.id }, data: { updatedAt: new Date() } });
   } catch (e: any) { logger.error('fulfillProductOrder: conversazione', { err: e.message }); }
 
+  // Copia l'articolo nel magazzino del COMPRATORE con i dati ORIGINALI del venditore
+  // (nome, brand, taglia, condizione, categoria, foto): così ha l'oggetto vero in stock,
+  // non un nome a caso. Prezzo d'acquisto = quanto ha pagato (prezzo articolo, no spedizione).
+  try {
+    const already = await prisma.product.findFirst({ where: { buyerUserId: buyerId, sourceProductId: productId, userId: buyerId } }).catch(() => null);
+    if (!already) {
+      const buyerWh = await prisma.membership.findFirst({
+        where: { userId: buyerId, role: 'OWNER', warehouse: { parentId: null } },
+        orderBy: { createdAt: 'asc' },
+      }) || await prisma.membership.findFirst({ where: { userId: buyerId } });
+      if (buyerWh) {
+        await prisma.product.create({
+          data: {
+            userId: buyerId,
+            warehouseId: buyerWh.warehouseId,
+            category: product.category,
+            brand: product.brand,
+            name: product.name,
+            size: product.size,
+            condition: product.condition,
+            purchasePrice: itemPrice,
+            status: 'IN STOCK',
+            photos: product.photos || null,
+            sku: product.sku || null,
+            attributes: product.attributes || null,
+            sourceProductId: productId,
+            buyerUserId: buyerId,
+            notes: 'Acquistato dal marketplace',
+          },
+        });
+      }
+    }
+  } catch (e: any) { logger.error('fulfillProductOrder: copia compratore', { err: e.message }); }
+
   // Notifica il venditore.
   if (product.warehouseId) {
     await notifyWarehouseMembers({
