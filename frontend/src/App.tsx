@@ -2015,14 +2015,17 @@ export default function App() {
     showToast(data?.error || 'Errore riscossione', 'err');
   };
   // Offerte: il compratore propone un prezzo, il venditore accetta/rifiuta.
-  const makeOffer = async () => {
+  const [chatOffer, setChatOffer] = useState<{ open: boolean; amount: string }>({ open: false, amount: '' });
+  const makeOffer = () => {
     if (!activeConvo) return;
-    const raw = window.prompt('La tua offerta in € (es. 120):', activeConvo.price != null ? String(activeConvo.price) : '');
-    if (raw == null) return;
-    const amount = parseFloat(raw.replace(',', '.'));
+    setChatOffer({ open: true, amount: activeConvo.price != null ? String(activeConvo.price) : '' });
+  };
+  const submitChatOffer = async () => {
+    if (!activeConvo) return;
+    const amount = parseFloat((chatOffer.amount || '').replace(',', '.'));
     if (!(amount > 0)) { showToast('Importo non valido', 'warn'); return; }
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/offer`, { method: 'POST', body: JSON.stringify({ amount }) });
-    if (ok && data?.id) { await reloadConversation(); }
+    if (ok && data?.id) { setChatOffer({ open: false, amount: '' }); await reloadConversation(); }
     else showToast(data?.error || 'Errore offerta', 'err');
   };
   const respondOffer = async (msgId: string, action: 'accept' | 'decline') => {
@@ -5455,6 +5458,29 @@ export default function App() {
                         {shipping ? <Loader2 className="animate-spin" size={18} /> : <><Package size={16} /> {activeConvo.productStatus === 'PAGATO' ? 'Conferma spedizione' : 'Conferma vendita'}</>}
                       </button>
                     </div>
+                  </div>
+                </div>
+              </div>
+            ), document.body)}
+
+            {/* ========== MODALE: FAI UN'OFFERTA (compratore) ========== */}
+            {chatOffer.open && activeConvo && createPortal((
+              <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setChatOffer(o => ({ ...o, open: false }))}>
+                <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+                  <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+                  <h2 className="text-xl font-semibold mb-1 flex items-center gap-2"><DollarSign size={18} className="text-[#8b5cf6]" /> Fai un'offerta</h2>
+                  <p className="text-xs text-[var(--text-soft)] mb-5">{activeConvo.productName}{activeConvo.price != null ? ` · prezzo ${activeConvo.price}€` : ''}</p>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">La tua offerta €</label>
+                  <input type="number" inputMode="decimal" step="0.01" autoFocus value={chatOffer.amount}
+                    onChange={e => setChatOffer(o => ({ ...o, amount: e.target.value }))}
+                    onKeyDown={e => { if (e.key === 'Enter') submitChatOffer(); }}
+                    placeholder="es. 120"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-lg font-bold num outline-none focus:border-[#8b5cf6]" />
+                  <div className="flex gap-2 mt-5">
+                    <button onClick={() => setChatOffer(o => ({ ...o, open: false }))}
+                      className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">Annulla</button>
+                    <button onClick={submitChatOffer}
+                      className="flex-1 py-3 rounded-xl bg-[#8b5cf6] text-white font-bold flex items-center justify-center gap-1.5"><DollarSign size={16} /> Invia offerta</button>
                   </div>
                 </div>
               </div>
