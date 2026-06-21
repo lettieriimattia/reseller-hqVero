@@ -413,6 +413,8 @@ export default function App() {
   // Completa vendita + spedizione dalla chat (lato venditore)
   const [shipForm, setShipForm] = useState<{ open: boolean; price: string; code: string; carrier: string }>({ open: false, price: '', code: '', carrier: 'Auto' });
   const [shipping, setShipping] = useState(false);
+  // Etichetta dimostrativa mostrata in-app (no nuova finestra che intrappola su mobile)
+  const [labelData, setLabelData] = useState<{ productName: string; sender: string; recipient: string; code: string; carrier: string } | null>(null);
   // Stripe Connect (incassi venditore)
   const [connectStatus, setConnectStatus] = useState<{ configured: boolean; connected: boolean; chargesEnabled: boolean } | null>(null);
   const [connecting, setConnecting] = useState(false);
@@ -1983,28 +1985,9 @@ export default function App() {
     if (ok && data?.success) { await reloadConversation(); showToast(action === 'accept' ? 'Offerta accettata' : 'Offerta rifiutata', 'ok'); }
     else showToast(data?.error || 'Errore', 'err');
   };
-  // Apre un'etichetta di spedizione dimostrativa stampabile (riusata in più punti).
+  // Mostra l'etichetta dimostrativa DENTRO l'app (su telefono una nuova finestra intrappola l'utente).
   const openDemoLabel = (productName: string, sender: string, recipient: string, code: string, carrier: string) => {
-    const w = window.open('', '_blank', 'width=420,height=620');
-    if (!w) { showToast('Abilita i popup per vedere l\'etichetta', 'warn'); return; }
-    const esc = (s: string) => (s || '').replace(/</g, '');
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Etichetta</title>
-      <style>body{font-family:-apple-system,Arial,sans-serif;margin:0;padding:24px;color:#111}
-      .lbl{border:2px solid #111;border-radius:12px;padding:20px;max-width:340px;margin:auto}
-      .tag{display:inline-block;background:#8b5cf6;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}
-      h1{font-size:18px;margin:10px 0 2px}.row{font-size:13px;margin:2px 0;color:#333}
-      .code{font-family:monospace;font-size:20px;font-weight:700;letter-spacing:2px;margin-top:14px;border-top:1px dashed #999;padding-top:12px}
-      .bars{height:46px;background:repeating-linear-gradient(90deg,#111 0 3px,#fff 3px 6px);margin-top:8px;border-radius:4px}
-      small{color:#888}</style></head>
-      <body><div class="lbl"><span class="tag">ETICHETTA DI PROVA</span>
-      <h1>${esc(productName || 'Articolo')}</h1>
-      <div class="row"><b>Mittente:</b> ${esc(sender || 'Venditore')}</div>
-      <div class="row"><b>Destinatario:</b> ${esc(recipient || 'Acquirente')}</div>
-      <div class="row"><b>Corriere:</b> ${esc(carrier || 'Test Express')}</div>
-      <div class="code">${esc(code)}</div><div class="bars"></div>
-      <small>Etichetta dimostrativa — non valida per la spedizione reale.</small>
-      </div><script>window.onload=()=>setTimeout(()=>window.print(),300)</script></body></html>`);
-    w.document.close();
+    setLabelData({ productName: productName || 'Articolo', sender: sender || 'Venditore', recipient: recipient || 'Acquirente', code, carrier: carrier || 'Test Express' });
   };
   // Apre la pagina pubblica di tracciamento del corriere (azione di sistema, non un link in chat).
   const trackShipment = (code: string) => {
@@ -4055,19 +4038,19 @@ export default function App() {
             })()}
             {/* Riga 1: titolo + toggle IN STOCK/VENDUTI accanto, ricerca inline su desktop */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-              <div className="flex items-center gap-3 shrink-0">
-                <h2 className="text-2xl lg:text-3xl font-semibold">Magazzino</h2>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <h2 className="text-xl lg:text-3xl font-semibold">Magazzino</h2>
                 <div className="flex bg-[var(--surface)] p-1 rounded-xl border border-[var(--border-2)]">
                   <button onClick={() => { setMagazzinoView('instock'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-                    className={`px-3 lg:px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                    className={`px-2.5 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
                       magazzinoView === 'instock' ? 'bg-[#8b5cf6] text-[var(--text)]' : 'text-[var(--text-soft)]'
                     }`}>IN STOCK</button>
                   <button onClick={() => { setMagazzinoView('toship'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-                    className={`px-3 lg:px-4 py-1.5 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 ${
+                    className={`px-2.5 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap ${
                       magazzinoView === 'toship' ? 'bg-[#8b5cf6] text-[var(--text)]' : 'text-[var(--text-soft)]'
-                    }`}>DA SPEDIRE{toShipItems.length > 0 && <span className="min-w-[16px] h-4 px-1 bg-amber-500 text-black rounded-full text-[9px] font-bold flex items-center justify-center">{toShipItems.length}</span>}</button>
+                    }`}>SPEDIRE{toShipItems.length > 0 && <span className="min-w-[15px] h-4 px-1 bg-amber-500 text-black rounded-full text-[9px] font-bold flex items-center justify-center">{toShipItems.length}</span>}</button>
                   <button onClick={() => { setMagazzinoView('sold'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-                    className={`px-3 lg:px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                    className={`px-2.5 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
                       magazzinoView === 'sold' ? 'bg-green-600 text-[var(--text)]' : 'text-[var(--text-soft)]'
                     }`}>VENDUTI</button>
                 </div>
@@ -5335,6 +5318,28 @@ export default function App() {
                     className="w-full py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">Accedi per acquistare</button>
                 )}
               </div>
+            </div>
+          </div>
+        ), document.body)}
+
+        {/* ========== MODALE: ETICHETTA DI PROVA (in-app, niente nuova finestra) ========== */}
+        {labelData && createPortal((
+          <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setLabelData(null)}>
+            <div className="bg-white text-black rounded-2xl w-full max-w-sm p-6 relative" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setLabelData(null)} aria-label="Chiudi"
+                className="absolute top-3 right-3 p-2 rounded-lg hover:bg-black/5 active:scale-95"><X size={20} /></button>
+              <span className="inline-block bg-[#8b5cf6] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">ETICHETTA DI PROVA</span>
+              <h3 className="text-lg font-bold mt-3">{labelData.productName}</h3>
+              <div className="text-sm text-gray-700 mt-2 space-y-1">
+                <p><b>Mittente:</b> {labelData.sender}</p>
+                <p><b>Destinatario:</b> {labelData.recipient}</p>
+                <p><b>Corriere:</b> {labelData.carrier}</p>
+              </div>
+              <div className="font-mono text-xl font-bold tracking-widest mt-4 pt-3 border-t border-dashed border-gray-400">{labelData.code}</div>
+              <div className="h-12 mt-2 rounded" style={{ background: 'repeating-linear-gradient(90deg,#111 0 3px,#fff 3px 6px)' }} />
+              <p className="text-[11px] text-gray-500 mt-3">Etichetta dimostrativa — non valida per la spedizione reale.</p>
+              <button onClick={() => setLabelData(null)}
+                className="mt-4 w-full py-3 rounded-xl bg-[#8b5cf6] text-white font-bold">Chiudi</button>
             </div>
           </div>
         ), document.body)}

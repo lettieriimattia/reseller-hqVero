@@ -1,0 +1,43 @@
+Categoria;Funzione;Chiave tecnica;Free;Starter;Pro;Business;Note
+CORE;Magazzino personale + aggiunta manuale;-;;;;;Base consigliata per tutti
+CORE;Riconoscimento prodotto da foto (IA);-;;;;;
+CORE;Categorie create al volo dall'IA;-;;;;;
+CORE;Lotti (piu pezzi in una card);-;;;;;
+CORE;Foto multiple / note / taglia / condizione;-;;;;;
+CORE;Import da Excel;-;;;;;
+CORE;Registra vendita (prezzo/fees/piattaforma);-;;;;;
+CORE;Vendita in blocco (bulk);-;;;;;
+CORE;Stati In stock / Da spedire / Venduti;-;;;;;
+CORE;Filtri / ricerca / ordinamento;-;;;;;
+CORE;Soft-delete + ripristino;-;;;;;
+CORE;Alert prodotti fermi + sconto IA;-;;;;;
+IA;Lettura SKU/barcode dalla scatola;listing_ai;;;;;Ora: Starter
+IA;Generatore annunci IA multi-piattaforma;listing_ai;;;;;Ora: Starter
+PREZZI;Valutazione StockX (sneaker/elettronica/ecc);stockx_pricing;;;;;Ora: Pro
+PREZZI;Valutazione carte (Pokemon/Magic);-;;;;;Ora: non bloccata
+PREZZI;Valutazione vinili (Discogs);-;;;;;Ora: non bloccata
+MARKETPLACE;Vendere in vetrina pubblica;marketplace;;;;;Ora: Starter
+MARKETPLACE;Pagina pubblica di ricerca (compratori);-;;;;;Gratis per chi compra
+MARKETPLACE;Chat acquirente-venditore (anti-truffa);marketplace;;;;;
+MARKETPLACE;Offerte / contrattazione prezzo in chat;marketplace;;;;;
+MARKETPLACE;Pagamenti in-app (Stripe escrow);marketplace;;;;;
+MARKETPLACE;Portafoglio + riscossione;marketplace;;;;;
+MARKETPLACE;Fee servizio 2 euro AZZERATA;no_sale_fee;;;;;Ora: Pro+Business
+SPEDIZIONI;Tracking pacchi (acquisti + vendite);-;;;;;
+SPEDIZIONI;Consegna -> venduto automatico;-;;;;;
+SPEDIZIONI;Etichette di spedizione;labels;;;;;Ora: Pro+Business
+SPEDIZIONI;Scheda Da spedire;-;;;;;
+SOCI;Magazzini con piu soci + codici invito;partners;;;;;Ora: Starter
+SOCI;Divisione costi/utili (profit sharing %);partners;;;;;Ora: Starter
+SOCI;Quote personali + conguaglio;partners;;;;;
+CONTABILITA;Costi extra (sacchetti/spedizioni/materiali);accounting;;;;;Ora: Pro
+CONTABILITA;Export CSV commercialista;accounting;;;;;Ora: Pro
+CONTABILITA;Conto economico mensile;accounting;;;;;Ora: Pro
+ANALYTICS;Dashboard base (profitto/stock/vendite);-;;;;;Sempre (anche Free)
+ANALYTICS;ROI/margine/andamento/sell-through;advanced_analytics;;;;;Ora: Starter
+STRUMENTI PRO;Riprezzamento stock fermo;repricing;;;;;Ora: Pro
+STRUMENTI PRO;Assistente trattative;offer_assistant;;;;;Ora: Pro
+STRUMENTI PRO;Multi-canale + ritiro automatico;crossposting;;;;;Ora: Pro
+LIMITI;Numero massimo prodotti;maxProducts;25;150;2000;illimitato;Scrivi i numeri che volete
+LIMITI;Numero massimo soci per magazzino;maxTeamMembers;1;2;5;illimitato;Scrivi i numeri che volete
+PREZZO;Prezzo mensile (euro);priceMonthly;0;9,99;19,99;39,99;Modificabili
