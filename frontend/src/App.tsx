@@ -425,7 +425,7 @@ export default function App() {
   const [wallet, setWallet] = useState<{ available: number; pending: number; readyItems: any[]; pendingItems: any[] } | null>(null);
   const [withdrawing, setWithdrawing] = useState(false);
   // Stato integrazione StockX (configurato + connesso via OAuth)
-  const [stockxStatus, setStockxStatus] = useState<{ configured: boolean; connected: boolean } | null>(null);
+  const [stockxStatus, setStockxStatus] = useState<{ configured: boolean; connected: boolean; tokenOk?: boolean } | null>(null);
   const [stockxConnecting, setStockxConnecting] = useState(false);
   
   // ----- PROFIT SHARING -----
@@ -6080,15 +6080,22 @@ export default function App() {
                   <p className="text-xs text-[var(--text-faint)]">
                     Non configurato. Aggiungi su Render le variabili <span className="font-mono">STOCKX_CLIENT_ID</span>, <span className="font-mono">STOCKX_CLIENT_SECRET</span>, <span className="font-mono">STOCKX_API_KEY</span>, poi ricarica.
                   </p>
-                ) : stockxStatus?.connected ? (
-                  <div className="flex items-center gap-2 text-sm font-semibold text-green-400">
-                    <CheckCircle size={16} /> Collegato
+                ) : (stockxStatus?.connected && stockxStatus?.tokenOk) ? (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-green-400"><CheckCircle size={16} /> Collegato</div>
+                    <button type="button" onClick={connectStockX} disabled={stockxConnecting}
+                      className="text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] underline">Riconnetti</button>
                   </div>
                 ) : (
-                  <button type="button" onClick={connectStockX} disabled={stockxConnecting}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors disabled:opacity-50">
-                    {stockxConnecting ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />} Connetti StockX
-                  </button>
+                  <div>
+                    {stockxStatus?.connected && !stockxStatus?.tokenOk && (
+                      <p className="text-xs text-amber-400 mb-2">⚠️ Sessione StockX scaduta. Riconnetti per riattivare le valutazioni.</p>
+                    )}
+                    <button type="button" onClick={connectStockX} disabled={stockxConnecting}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors disabled:opacity-50">
+                      {stockxConnecting ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />} {stockxStatus?.connected ? 'Riconnetti StockX' : 'Connetti StockX'}
+                    </button>
+                  </div>
                 )}
               </section>
             )}

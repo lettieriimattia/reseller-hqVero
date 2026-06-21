@@ -5,13 +5,24 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import {
   isStockXConfigured, isStockXConnected, getRedirectUri, getAuthorizeUrl, exchangeCodeForTokens,
+  getStockXAccessToken,
 } from '../services/stockx.service';
 
 const router = Router();
 
-// Stato per il frontend: configurato lato server? account collegato?
+// Stato per il frontend: configurato? token salvato? token ANCORA VALIDO?
+// tokenOk verifica davvero il token (il refresh può scadere): così "Collegato" è veritiero
+// e se la sessione è scaduta il frontend mostra "Riconnetti".
 router.get('/status', authenticate, async (_req: AuthRequest, res: Response) => {
-  res.json({ configured: isStockXConfigured(), connected: await isStockXConnected() });
+  const configured = isStockXConfigured();
+  let connected = false;
+  let tokenOk = false;
+  if (configured && await isStockXConnected()) {
+    connected = true;
+    const t = await getStockXAccessToken().catch(() => null);
+    tokenOk = !!t;
+  }
+  res.json({ configured, connected, tokenOk });
 });
 
 // Avvio OAuth: restituisce l'URL di autorizzazione (il frontend ci reindirizza).
