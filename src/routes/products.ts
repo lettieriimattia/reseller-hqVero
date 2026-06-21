@@ -712,6 +712,24 @@ router.patch('/publish-all', requireFeature('marketplace'), async (req: AuthRequ
 });
 
 // ==========================================
+// PATCH /products/:id/toship — aggiungi/togli dalla lista "da spedire"
+// (es. articolo venduto su un'altra piattaforma da spedire manualmente)
+// ==========================================
+router.patch('/:id/toship', async (req: AuthRequest, res: Response) => {
+  try {
+    const { allowed, product } = await canAccessProduct(req.user!.userId, req.params.id);
+    if (!allowed || !product) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
+    if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
+    const toShip = req.body?.toShip === true;
+    const updated = await prisma.product.update({ where: { id: product.id }, data: { toShip }, select: { id: true, toShip: true } });
+    res.json(updated);
+  } catch (err: any) {
+    logger.error('Errore PATCH /products/:id/toship', { err: err.message });
+    res.status(500).json({ error: 'Errore aggiornamento' });
+  }
+});
+
+// ==========================================
 // PATCH /products/:id/publish — pubblica/ritira l'articolo dal marketplace pubblico
 // ==========================================
 router.patch('/:id/publish', requireFeature('marketplace'), async (req: AuthRequest, res: Response) => {

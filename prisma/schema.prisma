@@ -182,6 +182,7 @@ model Product {
   heldAmount     Float?    // netto trattenuto per il venditore (prezzo + spedizione)
   deliveredConfirmedAt DateTime? // quando il compratore ha confermato "Consegnato" → fondi sbloccati
   withdrawnAt    DateTime? // quando il venditore ha riscosso (bonifico)
+  toShip         Boolean   @default(false) // marcato "da spedire" (es. venduto su un'altra piattaforma)
 
   // Pilastro 1: Campi dinamici dalla CategoryTemplate (JSONB)
   attributes     String?      // Record<string, any> — popolato dal DynamicForm (JSON string per SQLite)

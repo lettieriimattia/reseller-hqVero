@@ -253,7 +253,7 @@ export default function App() {
 
   // ----- UI STATE -----
   const [currentView, setCurrentView] = useState<'dashboard' | 'magazzino' | 'analytics' | 'tracking' | 'settings' | 'admin' | 'market' | 'chat' | 'wallet'>('dashboard');
-  const [magazzinoView, setMagazzinoView] = useState<'instock' | 'sold'>('instock');
+  const [magazzinoView, setMagazzinoView] = useState<'instock' | 'sold' | 'toship'>('instock');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
   const [chartTimeframe, setChartTimeframe] = useState<'1D' | '1W' | '1M' | '1Y' | 'MAX'>('MAX');
@@ -1573,13 +1573,12 @@ export default function App() {
     });
   }, [searchedProducts, filterCondition, filterPriceMin, filterPriceMax, sortField, sortDir, staleOnly]);
 
-  // Venduti: include anche i PAGATI in attesa (così "lo vedi ancora"), con badge dedicato.
-  const groupedSoldArray = Object.values(searchedProducts.filter(p => p.status === 'VENDUTO' || (p as any).status === 'PAGATO').reduce((acc, p) => {
+  // Venduti: SOLO gli articoli realmente venduti (i PAGATI in attesa stanno in "Da spedire").
+  const groupedSoldArray = Object.values(searchedProducts.filter(p => p.status === 'VENDUTO').reduce((acc, p) => {
     const cat = p.category || 'Scarpe';
     const plat = p.platform || 'Privato';
-    const held = (p as any).status === 'PAGATO';
-    const key = `${held ? 'held-' : ''}${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.salePrice}-${plat}`;
-    if (!acc[key]) acc[key] = { ...p, category: cat, platform: plat, isHeld: held, quantity: 0, totalRevenue: 0, totalProfit: 0, totalFees: 0, ids: [] };
+    const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.salePrice}-${plat}`;
+    if (!acc[key]) acc[key] = { ...p, category: cat, platform: plat, quantity: 0, totalRevenue: 0, totalProfit: 0, totalFees: 0, ids: [] };
     acc[key].quantity += 1;
     acc[key].ids.push(p.id);
     acc[key].totalRevenue += (p.salePrice || 0);
@@ -1587,7 +1586,12 @@ export default function App() {
     acc[key].totalProfit += ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0));
     return acc;
   }, {} as Record<string, any>));
-  
+
+  // Da spedire: pagati in-app (PAGATO) + quelli marcati a mano (venduti altrove, toShip).
+  const toShipItems = products.filter((p: any) =>
+    p.status === 'PAGATO' || (p.toShip && p.status === 'IN STOCK')
+  );
+
   // ==========================================
   // HANDLERS AUTH
   // ==========================================
@@ -2523,6 +2527,16 @@ export default function App() {
     ));
     await fetchProducts();
     showToast(makePublic ? 'Pubblicato nel marketplace' : 'Reso privato');
+  };
+
+  // Aggiungi/togli un prodotto dalla lista "Da spedire" (es. venduto su un'altra piattaforma).
+  const toggleToShip = async (group: any, value: boolean) => {
+    const ids = (group.ids as string[]) || [group.id];
+    await Promise.allSettled(ids.map(id =>
+      apiCall(`/products/${id}/toship`, { method: 'PATCH', body: JSON.stringify({ toShip: value }) })
+    ));
+    await fetchProducts();
+    showToast(value ? 'Aggiunto a "Da spedire"' : 'Rimosso da "Da spedire"');
   };
 
   // Pubblica/ritira TUTTO un magazzino (dalle impostazioni)
@@ -4008,6 +4022,10 @@ export default function App() {
                     className={`px-3 lg:px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
                       magazzinoView === 'instock' ? 'bg-[#8b5cf6] text-[var(--text)]' : 'text-[var(--text-soft)]'
                     }`}>IN STOCK</button>
+                  <button onClick={() => { setMagazzinoView('toship'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
+                    className={`px-3 lg:px-4 py-1.5 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 ${
+                      magazzinoView === 'toship' ? 'bg-[#8b5cf6] text-[var(--text)]' : 'text-[var(--text-soft)]'
+                    }`}>DA SPEDIRE{toShipItems.length > 0 && <span className="min-w-[16px] h-4 px-1 bg-amber-500 text-black rounded-full text-[9px] font-bold flex items-center justify-center">{toShipItems.length}</span>}</button>
                   <button onClick={() => { setMagazzinoView('sold'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`px-3 lg:px-4 py-1.5 text-xs font-bold rounded-lg transition-colors ${
                       magazzinoView === 'sold' ? 'bg-green-600 text-[var(--text)]' : 'text-[var(--text-soft)]'
@@ -4098,7 +4116,50 @@ export default function App() {
 
             {/* Lista prodotti */}
             <div className="space-y-2.5">
-              {magazzinoView === 'instock' ? (
+              {magazzinoView === 'toship' ? (
+                toShipItems.length === 0 ? (
+                  <div className="text-center py-16 px-5 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
+                    <Truck className="mx-auto text-[var(--text-faint)] mb-3" size={40} />
+                    <p className="font-bold">Niente da spedire</p>
+                    <p className="text-sm text-[var(--text-soft)] mt-1">Qui trovi gli articoli pagati nel marketplace e quelli che marchi "Da spedire" perché venduti altrove.</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2.5">
+                    {toShipItems.map((p: any) => {
+                      let ph: string[] = []; try { ph = p.photos ? JSON.parse(p.photos) : []; } catch {}
+                      const paid = p.status === 'PAGATO';
+                      const g = { ...p, ids: [p.id], quantity: 1 };
+                      return (
+                        <div key={p.id} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3.5">
+                          <div className="flex items-center gap-3">
+                            {ph.length > 0
+                              ? <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)]"><img src={ph[0]} alt="" className="w-full h-full object-cover" /></div>
+                              : <span className="text-2xl shrink-0 w-14 text-center">{getCategoryIcon(p.category)}</span>}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-sm truncate">{p.brand} {p.name}</span>
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${paid ? 'text-[#8b5cf6] bg-[#8b5cf6]/15' : 'text-amber-400 bg-amber-500/15'}`}>{paid ? 'Pagato in-app' : 'Venduto altrove'}</span>
+                              </div>
+                              <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition}</p>
+                              {p.trackingCode && <p className="text-[11px] text-blue-400 mt-0.5">📦 {p.trackingCode} · {p.trackingStatus || 'In transito'}</p>}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            {hasFeature('labels') ? (
+                              <button onClick={() => openShipping(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] flex items-center justify-center gap-1.5"><Package size={13} /> {p.trackingCode ? 'Etichetta' : 'Crea etichetta'}</button>
+                            ) : (
+                              <button onClick={() => openTrackingModal(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)] flex items-center justify-center gap-1.5"><Truck size={13} /> Tracking</button>
+                            )}
+                            {!paid && (
+                              <button onClick={() => toggleToShip(g, false)} className="px-3 py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)]">Spedito</button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
+              ) : magazzinoView === 'instock' ? (
                 groupedInStockArray.length === 0 ? (
                   inStockItems.length === 0 ? (
                     /* Magazzino davvero vuoto → onboarding */
@@ -4184,9 +4245,8 @@ export default function App() {
                           {!bulkMode && (
                             <div className="flex flex-col gap-1 shrink-0">
                               <button onClick={() => openTrackingModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">Track</button>
-                              {isAdmin
-                                ? <button onClick={() => openListingModal(g)} className="px-3 py-1.5 bg-violet-500/15 text-violet-400 rounded-lg text-xs font-bold">Annuncio</button>
-                                : <button onClick={() => openEditModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">Modifica</button>}
+                              <button onClick={() => toggleToShip(g, !g.toShip)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>{g.toShip ? 'In lista' : 'Da spedire'}</button>
                               <button onClick={() => quickTogglePublic(g)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.isPublic ? 'bg-[#8b5cf6]/20 text-[#8b5cf6]' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>
                                 {g.isPublic ? 'Pubblico' : 'Pubblica'}
@@ -4248,9 +4308,8 @@ export default function App() {
                           <div className="border-t border-[var(--border)] p-2.5 flex flex-col gap-1.5">
                             <div className="grid grid-cols-2 gap-1.5">
                               <button onClick={() => openTrackingModal(g)} className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.trackingCode ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> Track</button>
-                              {isAdmin
-                                ? <button onClick={() => openListingModal(g)} className="py-2 rounded-lg text-xs font-bold bg-violet-500/15 text-violet-400 hover:bg-violet-500/25 hover:text-violet-300 transition-colors flex items-center justify-center gap-1"><Store size={12} /> Annuncio</button>
-                                : <button onClick={() => openEditModal(g)} className="py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1"><Edit size={12} /> Modifica</button>}
+                              <button onClick={() => toggleToShip(g, !g.toShip)}
+                                className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> {g.toShip ? 'In lista' : 'Da spedire'}</button>
                             </div>
                             {isAdmin ? (
                               <div className="grid grid-cols-2 gap-1.5">

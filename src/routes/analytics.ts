@@ -219,12 +219,19 @@ async function ownerWarehouseIds(userId: string): Promise<string[]> {
   return ms.map(m => m.warehouseId);
 }
 
+// Magazzini di cui l'utente fa parte (anche come socio): per i costi extra di una partnership
+// anche un socio può inserire spese sul magazzino condiviso.
+async function memberWarehouseIds(userId: string): Promise<string[]> {
+  const ms = await prisma.membership.findMany({ where: { userId }, select: { warehouseId: true } });
+  return ms.map(m => m.warehouseId);
+}
+
 // ==========================================
 // COSTI EXTRA (Expense) — sacchetti, spedizioni, materiali, ecc. (OWNER only)
 // ==========================================
 router.get('/expenses', requireFeature('accounting'), async (req: AuthRequest, res: Response) => {
   try {
-    const ids = await ownerWarehouseIds(req.user!.userId);
+    const ids = await memberWarehouseIds(req.user!.userId);
     const where: any = { warehouseId: { in: ids } };
     if (req.query.warehouseId && ids.includes(String(req.query.warehouseId))) where.warehouseId = String(req.query.warehouseId);
     const expenses = await prisma.expense.findMany({ where, orderBy: { date: 'desc' } });
@@ -242,7 +249,7 @@ router.post('/expenses', requireFeature('accounting'), async (req: AuthRequest, 
     if (!warehouseId || !description?.trim() || isNaN(amt) || amt <= 0) {
       return res.status(400).json({ error: 'warehouseId, importo (>0) e descrizione obbligatori' });
     }
-    const ids = await ownerWarehouseIds(req.user!.userId);
+    const ids = await memberWarehouseIds(req.user!.userId);
     if (!ids.includes(warehouseId)) return res.status(403).json({ error: 'Magazzino non valido' });
     const expense = await prisma.expense.create({
       data: {
@@ -264,7 +271,7 @@ router.delete('/expenses/:id', requireFeature('accounting'), async (req: AuthReq
   try {
     const exp = await prisma.expense.findUnique({ where: { id: req.params.id } });
     if (!exp) return res.status(404).json({ error: 'Non trovato' });
-    const ids = await ownerWarehouseIds(req.user!.userId);
+    const ids = await memberWarehouseIds(req.user!.userId);
     if (!ids.includes(exp.warehouseId)) return res.status(403).json({ error: 'Non autorizzato' });
     await prisma.expense.delete({ where: { id: req.params.id } });
     res.json({ success: true });
