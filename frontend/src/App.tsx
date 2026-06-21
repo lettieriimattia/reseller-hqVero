@@ -393,6 +393,7 @@ export default function App() {
   const [expCat, setExpCat] = useState('Sacchetti');
   const [expWarehouse, setExpWarehouse] = useState('');
   const [isAddingExp, setIsAddingExp] = useState(false);
+  const [expensesOpen, setExpensesOpen] = useState(false); // accordion costi extra (chiuso = non invade le analytics)
   // ----- MARKETPLACE + CHAT -----
   // Pagina pubblica (senza login): attiva se si arriva su /market
   const [publicMarket, setPublicMarket] = useState(() => {
@@ -4395,14 +4396,19 @@ export default function App() {
               </button>
             </div>
 
-            {/* ===== COSTI EXTRA (sacchetti, spedizioni, materiali…) ===== */}
+            {/* ===== COSTI EXTRA (accordion, chiuso di default per non invadere le analytics) ===== */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-3">
+              <button type="button" onClick={() => setExpensesOpen(o => !o)} className="w-full flex items-center gap-2">
                 <Wallet size={18} className="text-amber-400" />
                 <h3 className="text-lg font-bold tracking-tighter">Costi extra</h3>
-                <span className="text-[11px] text-[var(--text-faint)] ml-auto">Inclusi nell'utile netto e nel CSV</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                <span className="text-[11px] text-[var(--text-faint)] ml-auto num">
+                  {expenses.length > 0 ? `${expenses.length} voci · -${expenses.reduce((a: number, e: any) => a + (e.amount || 0), 0).toFixed(0)}€` : 'Nessuno'}
+                </span>
+                <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${expensesOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {!expensesOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">Tocca per aggiungere sacchetti, spedizioni, materiali… (inclusi nell'utile netto e nel CSV)</p>}
+              {expensesOpen && (<>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 mt-4">
                 <input type="number" step="0.01" min="0" value={expAmount} onChange={e => setExpAmount(e.target.value)}
                   placeholder="Importo €" className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
                 <input type="text" value={expDesc} onChange={e => setExpDesc(e.target.value)}
@@ -4438,6 +4444,7 @@ export default function App() {
                   ))}
                 </div>
               )}
+              </>)}
             </section>
 
             {/* ===== CONTO ECONOMICO MENSILE ===== */}
