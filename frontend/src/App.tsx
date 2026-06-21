@@ -1883,6 +1883,7 @@ export default function App() {
   // Crea un nuovo MAGAZZINO (partnership a nome libero). I soci entrano col codice invito.
   const handleAddWarehouse = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireFeatureOrUpgrade('partners')) return;
     const nm = newWarehouseName.trim();
     if (!nm) return;
     setIsAddingWarehouse(true);
@@ -2609,6 +2610,7 @@ export default function App() {
 
   // Valutazione di mercato del prodotto (fonte reale, anti-falsi)
   const fetchValuation = async (group: any) => {
+    if (!requireFeatureOrUpgrade('stockx_pricing')) return;
     const id = group?.ids?.[0];
     if (!id) return;
     setValLoading(true); setValuation(null);
@@ -5793,6 +5795,7 @@ export default function App() {
               {isFounder && (
                 <div className="pt-5 border-t border-[var(--border-2)] space-y-4">
                   {/* Crea un nuovo MAGAZZINO (partnership): poi inviti i soci col codice */}
+                  <div className="flex items-center gap-2"><span className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest">Nuovo magazzino con soci</span>{!hasFeature('partners') && <PlanLock plan="Starter" />}</div>
                   <form onSubmit={handleAddWarehouse} className="flex flex-col sm:flex-row gap-3">
                     <input type="text" value={newWarehouseName}
                       onChange={(e: any) => setNewWarehouseName(e.target.value)}
@@ -7211,6 +7214,7 @@ export default function App() {
                   <div className="flex items-center gap-2 min-w-0">
                     <TrendingUp size={15} className="text-[#8b5cf6] shrink-0" />
                     <span className="text-sm font-bold">Valutazione di mercato</span>
+                    {!hasFeature('stockx_pricing') && <PlanLock plan="Pro" />}
                   </div>
                   <button type="button" onClick={() => fetchValuation(productToEdit)} disabled={valLoading}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#8b5cf6] text-white hover:bg-[#7c3aed] disabled:opacity-50 transition-colors flex items-center gap-1.5">
