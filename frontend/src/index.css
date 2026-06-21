@@ -200,6 +200,19 @@ button:active { opacity: 0.75; }
   input, select, textarea { font-size: 16px !important; }
 }
 
+/* Tendina nativa <select>: forza le opzioni a tema scuro (altrimenti alcuni browser
+   le mostrano con i colori di sistema — sfondo giallo/azzurro). */
+select option,
+select optgroup {
+  background-color: #0f0f0f;
+  color: #ffffff;
+}
+.light select option,
+.light select optgroup {
+  background-color: #ffffff;
+  color: #1d1d1f;
+}
+
 /* Scroll momentum iOS */
 * { -webkit-overflow-scrolling: touch; }
 

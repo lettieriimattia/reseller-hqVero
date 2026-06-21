@@ -1950,6 +1950,41 @@ export default function App() {
     if (ok && data?.success) { await openConversation({ id: activeConvo.id }); showToast(action === 'accept' ? 'Offerta accettata' : 'Offerta rifiutata', 'ok'); }
     else showToast(data?.error || 'Errore', 'err');
   };
+  // TEST: genera etichetta + tracking finti e spedisce l'articolo pagato (per provare il flusso).
+  const shipTestLabel = async () => {
+    if (!activeConvo) return;
+    const code = 'TEST' + Date.now().toString().slice(-9);
+    setShipping(true);
+    const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/ship`, {
+      method: 'POST', body: JSON.stringify({ trackingCode: code, carrier: 'Test' }),
+    });
+    setShipping(false);
+    if (!(ok && data?.success)) { showToast(data?.error || 'Errore', 'err'); return; }
+    setShipForm(f => ({ ...f, open: false }));
+    await openConversation({ id: activeConvo.id }); await fetchConversations();
+    // Apri un'etichetta di prova stampabile.
+    const w = window.open('', '_blank', 'width=420,height=620');
+    if (w) {
+      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Etichetta di prova</title>
+        <style>body{font-family:-apple-system,Arial,sans-serif;margin:0;padding:24px;color:#111}
+        .lbl{border:2px solid #111;border-radius:12px;padding:20px;max-width:340px;margin:auto}
+        .tag{display:inline-block;background:#8b5cf6;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}
+        h1{font-size:18px;margin:10px 0 2px}.row{font-size:13px;margin:2px 0;color:#333}
+        .code{font-family:monospace;font-size:20px;font-weight:700;letter-spacing:2px;margin-top:14px;border-top:1px dashed #999;padding-top:12px}
+        .bars{height:46px;background:repeating-linear-gradient(90deg,#111 0 3px,#fff 3px 6px);margin-top:8px;border-radius:4px}
+        small{color:#888}</style></head>
+        <body><div class="lbl"><span class="tag">ETICHETTA DI PROVA</span>
+        <h1>${(activeConvo.productName || 'Articolo').replace(/</g,'')}</h1>
+        <div class="row"><b>Mittente:</b> ${(user?.name || 'Venditore').replace(/</g,'')}</div>
+        <div class="row"><b>Destinatario:</b> ${(activeConvo.otherName || 'Acquirente').replace(/</g,'')}</div>
+        <div class="row"><b>Corriere:</b> Test Express</div>
+        <div class="code">${code}</div><div class="bars"></div>
+        <small>Etichetta dimostrativa — non valida per la spedizione reale.</small>
+        </div><script>window.onload=()=>setTimeout(()=>window.print(),300)</script></body></html>`);
+      w.document.close();
+    }
+    showToast('Etichetta e tracking di prova generati!', 'ok');
+  };
   // Compratore: conferma di aver ricevuto il pacco → sblocca il pagamento al venditore.
   const confirmDelivery = async () => {
     if (!activeConvo) return;
@@ -5099,6 +5134,12 @@ export default function App() {
                       : `${activeConvo.productName} — verrà segnato venduto e tolto dalla vetrina.`}
                   </p>
                   <div className="space-y-4">
+                    {activeConvo.productStatus === 'PAGATO' && (
+                      <button onClick={shipTestLabel} disabled={shipping}
+                        className="w-full py-3 rounded-xl bg-[#8b5cf6]/15 text-[#8b5cf6] font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                        {shipping ? <Loader2 className="animate-spin" size={16} /> : <Package size={16} />} Genera etichetta + tracking di PROVA
+                      </button>
+                    )}
                     {activeConvo.productStatus !== 'PAGATO' && (
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo di vendita concordato €</label>
