@@ -192,12 +192,21 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
     }
 
     // 3) Fallback: market data a livello di prodotto
+    let mdError: string | null = null;
     if (value == null && productId) {
       const md = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(productId)}/market-data?currencyCode=EUR`, { headers });
-      if (md.ok) value = pickStockXPrice(await md.json());
+      if (md.ok) {
+        value = pickStockXPrice(await md.json());
+      } else {
+        // StockX richiede billing+shipping completi sull'account per dare i prezzi (market-data).
+        const t = await md.text().catch(() => '');
+        if (/billing|shipping/i.test(t)) mdError = 'StockX (manca billing/shipping sull\'account StockX)';
+        else mdError = `StockX (market-data ${md.status})`;
+        logger.warn('StockX market-data non ok', { status: md.status, productId });
+      }
     }
 
-    return { configured: true, connected: true, value, source: 'StockX', itemName, brand, model, image, styleId, sample: 1 };
+    return { configured: true, connected: true, value, source: value != null ? 'StockX' : (mdError || 'StockX (nessun prezzo)'), itemName, brand, model, image, styleId, sample: 1 };
   } catch (err: any) {
     logger.error('Errore getStockXValuation', { err: err.message });
     return { configured: true, connected: true, value: null, source: 'StockX (errore)' };
