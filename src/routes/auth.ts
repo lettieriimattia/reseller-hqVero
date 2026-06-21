@@ -19,6 +19,7 @@ import {
   validatePassword 
 } from '../utils/security';
 import { audit } from '../services/audit.service';
+import { sendEmail } from '../services/email.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -26,6 +27,42 @@ const router = Router();
 const BCRYPT_ROUNDS = 12;
 const MAX_LOGIN_FAILS = 5;
 const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minuti
+const VERIFY_TTL_MS = 30 * 60 * 1000; // codice valido 30 minuti
+
+// La verifica email è attiva solo se l'invio email è configurato (BREVO_API_KEY).
+// Così, se l'email non è pronta, le registrazioni non si bloccano.
+function emailConfigured() { return !!process.env.BREVO_API_KEY; }
+function genVerifyCode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
+
+// Genera + salva + invia il codice di verifica a un utente.
+async function sendVerificationCode(user: { id: string; email: string; name?: string }) {
+  const code = genVerifyCode();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { emailVerifyCode: code, emailVerifyExpires: new Date(Date.now() + VERIFY_TTL_MS) },
+  });
+  await sendEmail({
+    to: user.email,
+    subject: 'Il tuo codice di verifica — HQ',
+    text: `Il tuo codice di verifica è: ${code}. Scade tra 30 minuti.`,
+    html: `<div style="font-family:Arial,sans-serif"><h2>Conferma la tua email</h2><p>Il tuo codice di verifica è:</p><p style="font-size:28px;font-weight:bold;letter-spacing:4px">${code}</p><p style="color:#888">Scade tra 30 minuti. Se non hai creato un account, ignora questa email.</p></div>`,
+  }).catch((e) => logger.error('Invio codice verifica fallito', { err: e?.message }));
+}
+
+// Oggetto utente standard restituito al frontend (login + verifica).
+function userResponse(user: any) {
+  return {
+    id: user.id, name: user.name, email: user.email,
+    twoFactorEnabled: user.twoFactorEnabled, plan: user.plan,
+    warehouses: (user.memberships || []).map((m: any) => ({
+      id: m.warehouse.id, name: m.warehouse.name, role: m.role,
+      inviteCode: m.role === 'OWNER' ? m.warehouse.inviteCode : null,
+      aiConfig: m.warehouse.aiConfig || null,
+      parentId: m.warehouse.parentId || null, category: m.warehouse.category || null,
+      percentage: m.percentage,
+    })),
+  };
+}
 
 // ==========================================
 // HELPER: setta cookies access + refresh
@@ -106,7 +143,7 @@ router.post('/register', authLimiter, validate(registerSchema), async (req, res)
     
     // CASO 1: Join team via codice invito
     if (joinCode) {
-      await prisma.$transaction(async (tx) => {
+      const joinedUser = await prisma.$transaction(async (tx) => {
         const inviteWarehouse = await tx.warehouse.findUnique({ where: { inviteCode: joinCode } });
         if (!inviteWarehouse) throw new Error('INVALID_INVITE_CODE');
         
@@ -124,10 +161,11 @@ router.post('/register', authLimiter, validate(registerSchema), async (req, res)
           where: { userId: ownerMembership.userId, role: 'OWNER' },
         });
         
-        await tx.user.create({
+        return await tx.user.create({
           data: {
             email, password: hashedPassword, name,
             marketingConsent: marketingConsent === true,
+            emailVerified: !emailConfigured(),
             memberships: {
               create: allOwnerWarehouses.map(m => ({
                 role: 'MEMBER', percentage: 0,
@@ -137,18 +175,23 @@ router.post('/register', authLimiter, validate(registerSchema), async (req, res)
           },
         });
       });
-      
+
       await audit({ action: 'REGISTER', success: true, req, metadata: { type: 'join_team', email } });
+      if (emailConfigured() && joinedUser) {
+        await sendVerificationCode(joinedUser);
+        return res.json({ needsVerification: true, email, message: 'Ti abbiamo inviato un codice di verifica via email.' });
+      }
       return res.json({ message: 'Sei entrato nel team con successo! Effettua il login.' });
     }
     
     // CASO 2: Nuovo utente → parte con UN SOLO magazzino base "Il mio magazzino"
     // (da solo, senza soci). Le categorie sono trasversali e si creano al volo
     // dopo (foto/IA o a mano), non più legate al magazzino.
-    await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
         email, password: hashedPassword, name,
         marketingConsent: marketingConsent === true,
+        emailVerified: !emailConfigured(), // se l'email è configurata → deve verificare
         memberships: {
           create: [{
             role: 'OWNER', percentage: 100,
@@ -165,6 +208,10 @@ router.post('/register', authLimiter, validate(registerSchema), async (req, res)
     });
 
     await audit({ action: 'REGISTER', success: true, req, metadata: { type: 'new_team', email } });
+    if (emailConfigured()) {
+      await sendVerificationCode(newUser);
+      return res.json({ needsVerification: true, email, message: 'Ti abbiamo inviato un codice di verifica via email.' });
+    }
     res.json({ message: 'Account creato con successo! Effettua il login.' });
     
   } catch (err: any) {
@@ -235,7 +282,13 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
       return res.status(400).json({ error: 'Credenziali non valide.' });
     }
     
-    // Password OK - verifica 2FA se abilitato
+    // Password OK - blocca se l'email non è ancora verificata (anti email inesistenti)
+    if (!user.emailVerified && emailConfigured()) {
+      await sendVerificationCode(user);
+      return res.status(200).json({ needsVerification: true, email: user.email, message: 'Verifica la tua email: ti abbiamo inviato un nuovo codice.' });
+    }
+
+    // verifica 2FA se abilitato
     if (user.twoFactorEnabled) {
       if (!twoFactorCode) {
         return res.status(200).json({ require2FA: true });
@@ -298,6 +351,57 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
   } catch (err: any) {
     logger.error('Errore login', { err: err.message });
     res.status(500).json({ error: 'Errore durante il login.' });
+  }
+});
+
+// ==========================================
+// POST /auth/verify-email — conferma il codice e fa il login
+// ==========================================
+router.post('/verify-email', authLimiter, async (req: Request, res: Response) => {
+  try {
+    const email = (req.body?.email || '').toString().trim().toLowerCase();
+    const code = (req.body?.code || '').toString().trim();
+    if (!email || !code) return res.status(400).json({ error: 'Email e codice obbligatori.' });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { memberships: { include: { warehouse: true } } },
+    });
+    if (!user) return res.status(400).json({ error: 'Codice non valido.' });
+    if (user.emailVerified) {
+      // già verificata: procedi al login
+      await issueTokens(res, user, req);
+      return res.json({ user: userResponse(user) });
+    }
+    if (!user.emailVerifyCode || !user.emailVerifyExpires || user.emailVerifyExpires < new Date()) {
+      return res.status(400).json({ error: 'Codice scaduto. Richiedine uno nuovo.' });
+    }
+    if (user.emailVerifyCode !== code) {
+      return res.status(400).json({ error: 'Codice non valido.' });
+    }
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerified: true, emailVerifyCode: null, emailVerifyExpires: null, lastLoginAt: new Date(), lastLoginIp: req.ip },
+    });
+    await issueTokens(res, user, req);
+    await audit({ action: 'LOGIN_SUCCESS', success: true, userId: user.id, req, metadata: { via: 'email_verify' } });
+    res.json({ user: userResponse(user) });
+  } catch (err: any) {
+    logger.error('Errore verify-email', { err: err.message });
+    res.status(500).json({ error: 'Errore verifica.' });
+  }
+});
+
+// POST /auth/resend-verification — rimanda il codice
+router.post('/resend-verification', authLimiter, async (req: Request, res: Response) => {
+  try {
+    const email = (req.body?.email || '').toString().trim().toLowerCase();
+    const user = await prisma.user.findUnique({ where: { email } });
+    // Risposta generica (anti-enumeration): non riveliamo se l'email esiste.
+    if (user && !user.emailVerified) await sendVerificationCode(user);
+    res.json({ ok: true });
+  } catch (err: any) {
+    logger.error('Errore resend-verification', { err: err.message });
+    res.json({ ok: true });
   }
 });
 

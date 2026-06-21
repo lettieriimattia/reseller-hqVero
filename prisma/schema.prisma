@@ -27,6 +27,11 @@ model User {
   // Consenso comunicazioni email (opzionale, revocabile)
   marketingConsent  Boolean        @default(false)
 
+  // Verifica email (default true: gli account esistenti restano verificati; i nuovi partono false)
+  emailVerified     Boolean        @default(true)
+  emailVerifyCode   String?        // codice OTP a 6 cifre
+  emailVerifyExpires DateTime?
+
   // Piano di abbonamento: "free" | "starter" | "pro" | "business" (vedi config/plans.ts)
   plan              String         @default("free")
 

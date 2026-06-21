@@ -222,6 +222,9 @@ export default function App() {
   // 2FA login
   const [require2FA, setRequire2FA] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
+  // Verifica email (codice OTP) — per evitare account con email inesistenti
+  const [needVerifyEmail, setNeedVerifyEmail] = useState<string | null>(null);
+  const [verifyCode, setVerifyCode] = useState('');
   
   const availableCategories = [
     { id: 'Scarpe', label: 'Scarpe', icon: '👟' },
@@ -1657,7 +1660,15 @@ export default function App() {
         setRequire2FA(true);
         return;
       }
-      
+
+      // Email da verificare (registrazione o login di account non ancora verificato)
+      if (data.needsVerification) {
+        setNeedVerifyEmail(data.email || authEmail);
+        setVerifyCode('');
+        showToast(data.message || 'Ti abbiamo inviato un codice via email');
+        return;
+      }
+
       if (authMode === 'register') {
         showToast(data.message || 'Registrazione completata!');
         setAuthMode('login');
@@ -1675,6 +1686,21 @@ export default function App() {
     }
   };
   
+  const submitVerify = async () => {
+    if (verifyCode.trim().length < 4) { setAuthError('Inserisci il codice ricevuto via email'); return; }
+    setAuthLoading(true); setAuthError(null);
+    const { ok, data } = await apiCall<any>('/auth/verify-email', { method: 'POST', body: JSON.stringify({ email: needVerifyEmail, code: verifyCode.trim() }) });
+    setAuthLoading(false);
+    if (ok && data?.user) {
+      setUser(data.user); setIsAuthenticated(true);
+      setNeedVerifyEmail(null); setVerifyCode(''); setAuthPassword('');
+    } else setAuthError(data?.error || 'Codice non valido');
+  };
+  const resendVerify = async () => {
+    await apiCall('/auth/resend-verification', { method: 'POST', body: JSON.stringify({ email: needVerifyEmail }) });
+    showToast('Codice rinviato — controlla la mail');
+  };
+
   const handleLogout = async () => {
     await apiCall('/auth/logout', { method: 'POST' });
     setUser(null);
@@ -3299,10 +3325,28 @@ export default function App() {
               <span className="absolute bottom-0 right-0 text-[3rem] font-black leading-none text-[var(--text)]/40">Q</span>
             </div>
           </div>
+          {needVerifyEmail ? (
+            <div className="space-y-4">
+              <p className="text-center text-[var(--text-soft)] text-sm">Verifica la tua email<br/><span className="text-[var(--text)] font-semibold">{needVerifyEmail}</span></p>
+              <p className="text-center text-[11px] text-[var(--text-faint)]">Ti abbiamo inviato un codice a 6 cifre. Inseriscilo per continuare.</p>
+              <input value={verifyCode} onChange={e => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                inputMode="numeric" placeholder="______" maxLength={6}
+                className="w-full text-center tracking-[0.5em] text-xl font-bold bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl py-3 outline-none focus:border-[#8b5cf6]" />
+              {authError && <p className="text-red-400 text-sm text-center">{authError}</p>}
+              <button type="button" onClick={submitVerify} disabled={authLoading}
+                className="w-full bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center">
+                {authLoading ? <Loader2 className="animate-spin" size={20} /> : 'Verifica e accedi'}
+              </button>
+              <div className="flex items-center justify-between text-sm">
+                <button type="button" onClick={resendVerify} className="text-[var(--text-soft)] hover:text-[var(--text)] font-bold">Rimanda codice</button>
+                <button type="button" onClick={() => { setNeedVerifyEmail(null); setVerifyCode(''); setAuthError(null); }} className="text-[var(--text-soft)] hover:text-[var(--text)] font-bold">Indietro</button>
+              </div>
+            </div>
+          ) : (<>
           <p className="text-center text-[var(--text-soft)] text-sm mb-8">
             {authMode === 'login' ? 'Accedi al tuo account' : 'Crea il tuo account'}
           </p>
-          
+
           <form onSubmit={handleAuth} className="space-y-4">
             {require2FA ? (
               <div className="bg-blue-500/10 border border-blue-500/30 p-5 rounded-2xl">
@@ -3451,6 +3495,7 @@ export default function App() {
               {authMode === 'login' ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi'}
             </button>
           </div>
+          </>)}
         </div>
       </div>
     );
