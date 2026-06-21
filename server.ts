@@ -240,6 +240,10 @@ app.use('/api/pro', proRoutes);
 // ==========================================
 if (isProduction) {
   const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+  // Pannello admin separato: /admin → admin.html (entry Vite dedicata).
+  app.get(['/admin', '/admin/'], (_req, res) => {
+    res.sendFile(path.join(frontendDist, 'admin.html'));
+  });
   app.get('*', (_req, res) => {
     res.sendFile(path.join(frontendDist, 'index.html'));
   });

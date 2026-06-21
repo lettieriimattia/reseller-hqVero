@@ -3744,15 +3744,7 @@ export default function App() {
               )}
             </div>
 
-            {isAdminEmail(user.email) && (
-              <button onClick={() => navigateTo('admin')} title="Admin"
-                className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors relative">
-                <Shield size={18} className={currentView === 'admin' ? 'text-[#8b5cf6]' : 'text-[var(--text-muted)]'} />
-                {adminFbNuove > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#8b5cf6] text-white rounded-full text-[9px] font-bold flex items-center justify-center">{adminFbNuove}</span>
-                )}
-              </button>
-            )}
+            {/* Pulsante Admin rimosso: la gestione è ora nel pannello separato su /admin */}
 
             <button onClick={() => navigateTo('settings')}
               className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors hidden sm:block lg:hidden">

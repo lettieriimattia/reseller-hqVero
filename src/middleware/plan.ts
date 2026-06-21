@@ -4,7 +4,8 @@ import { Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { AuthRequest } from './auth';
-import { Feature, hasFeature, minPlanFor, getPlan, PLAN_ORDER, PLANS } from '../config/plans';
+import { Feature, hasFeature, minPlanFor, getPlan, PLAN_ORDER, PLANS, isFeatureLive, isBetaFeature } from '../config/plans';
+import { isAdminEmail } from '../config/admins';
 
 
 export function requireFeature(feature: Feature) {
@@ -12,9 +13,15 @@ export function requireFeature(feature: Feature) {
     try {
       const user = await prisma.user.findUnique({
         where: { id: req.user!.userId },
-        select: { plan: true },
+        select: { plan: true, email: true },
       });
-      if (hasFeature(user?.plan, feature)) return next();
+      const admin = isAdminEmail(user?.email);
+      // Admin = beta tester: accesso a tutto (anche funzioni in beta).
+      if (isFeatureLive(user?.plan, feature, admin)) return next();
+      // Funzione ancora in beta (non rilasciata a nessuno): non è un problema di piano.
+      if (isBetaFeature(feature)) {
+        return res.status(403).json({ error: 'Funzione non ancora disponibile.', feature, beta: true });
+      }
       const need = minPlanFor(feature);
       return res.status(402).json({
         error: 'Funzione disponibile in un piano superiore.',

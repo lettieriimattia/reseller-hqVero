@@ -1,10 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1000, // Aumenta il limite a 1000 kB (default è 500 kB)
+    rollupOptions: {
+      input: {
+        // App utenti (index.html) + pannello admin separato (admin.html → /admin)
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        admin: fileURLToPath(new URL('./admin.html', import.meta.url)),
+      },
+    },
   },
   plugins: [
     react(),
@@ -65,7 +73,7 @@ export default defineConfig({
         importScripts: ['sw-share.js', 'sw-push.js'],
         globPatterns: ['**/*.{js,css,html,ico,svg,png,woff,woff2}'],
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api/, /^\/auth/, /^\/products/, /^\/team/, /^\/notifications/, /^\/tracking/, /^\/health/],
+        navigateFallbackDenylist: [/^\/api/, /^\/auth/, /^\/products/, /^\/team/, /^\/notifications/, /^\/tracking/, /^\/health/, /^\/admin/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.pokemontcg\.io\/.*/i,

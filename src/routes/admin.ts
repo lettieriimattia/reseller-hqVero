@@ -12,13 +12,9 @@ import { refundProductPayment, releaseHold, reverseSaleAfterRefund, reasonLabel 
 
 const router = Router();
 
-// Account admin. Hard-coded (NON modificabili via env) così nessuna
-// configurazione errata o variabile d'ambiente può concedere admin ad altri.
-export const ADMIN_EMAILS = ['noreply.hq.app@gmail.com', 'ciaociao@gmail.com'];
-export const ADMIN_EMAIL = ADMIN_EMAILS[0]; // destinatario notifiche (es. feedback)
-export function isAdminEmail(email?: string | null): boolean {
-  return !!email && ADMIN_EMAILS.includes(email.toLowerCase());
-}
+// Account admin (definiti in config/admins.ts). Re-export per compatibilità.
+export { ADMIN_EMAILS, ADMIN_EMAIL, isAdminEmail } from '../config/admins';
+import { isAdminEmail } from '../config/admins';
 
 // Middleware: solo gli account admin
 function requireAdmin(req: AuthRequest, res: Response, next: any) {
@@ -160,6 +156,41 @@ router.delete('/feedback/:id', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     logger.error('Errore DELETE /admin/feedback/:id', { err: err.message });
     res.status(500).json({ error: 'Errore eliminazione' });
+  }
+});
+
+// ==========================================
+// CONSEGNE — panoramica spedizioni in corso (pagate, in attesa di consegna)
+// ==========================================
+router.get('/deliveries', async (_req: AuthRequest, res: Response) => {
+  try {
+    const items = await prisma.product.findMany({
+      where: { status: 'PAGATO', deletedAt: null },
+      orderBy: { paidAt: 'desc' },
+      select: {
+        id: true, brand: true, name: true, heldAmount: true,
+        trackingCode: true, trackingCarrier: true, trackingStatus: true,
+        paidAt: true, deliveredAt: true, autoReleaseAt: true, disputeStatus: true,
+        userId: true, buyerUserId: true,
+      },
+    });
+    const userIds = Array.from(new Set(items.flatMap(p => [p.userId, p.buyerUserId].filter(Boolean) as string[])));
+    const users = await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } });
+    const uMap = new Map(users.map(u => [u.id, u.name]));
+    res.json({
+      deliveries: items.map(p => ({
+        productId: p.id, product: `${p.brand} ${p.name}`, amount: p.heldAmount ?? 0,
+        trackingCode: p.trackingCode, trackingCarrier: p.trackingCarrier, trackingStatus: p.trackingStatus,
+        paidAt: p.paidAt, deliveredAt: p.deliveredAt, autoReleaseAt: p.autoReleaseAt,
+        disputeStatus: p.disputeStatus,
+        seller: uMap.get(p.userId) || '—',
+        buyer: p.buyerUserId ? (uMap.get(p.buyerUserId) || '—') : '—',
+      })),
+      total: items.length,
+    });
+  } catch (err: any) {
+    logger.error('Errore GET /admin/deliveries', { err: err.message });
+    res.status(500).json({ error: 'Errore database' });
   }
 });
 

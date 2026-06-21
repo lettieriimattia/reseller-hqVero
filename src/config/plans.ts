@@ -102,6 +102,28 @@ export const PLANS: Record<PlanId, Plan> = {
 
 export const PLAN_ORDER: PlanId[] = ['free', 'starter', 'pro', 'business'];
 
+// ==========================================
+// FEATURE FLAG — funzioni "in beta": le usano SOLO gli account admin.
+// Quando una funzione è approvata, togli la sua chiave da qui → diventa disponibile
+// a tutti gli utenti secondo le regole dei piani (PLANS sopra).
+// Es: 'labels' è in test → la vedono solo gli admin; quando approvi, rimuovila.
+// ==========================================
+export const BETA_FEATURES = new Set<Feature>([
+  'labels',
+]);
+
+export function isBetaFeature(feature: Feature): boolean {
+  return BETA_FEATURES.has(feature);
+}
+
+// Una feature è "usabile" se: l'utente è admin (beta tester) OPPURE
+// è già rilasciata (non in beta) E il piano dell'utente la include.
+export function isFeatureLive(planId: string | null | undefined, feature: Feature, isAdmin = false): boolean {
+  if (isAdmin) return true;
+  if (BETA_FEATURES.has(feature)) return false;
+  return hasFeature(planId, feature);
+}
+
 export function isPlanId(x: any): x is PlanId {
   return typeof x === 'string' && (PLAN_ORDER as string[]).includes(x);
 }
