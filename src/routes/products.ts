@@ -18,6 +18,8 @@ import { notifyWarehouseMembers } from '../services/notification.service';
 import { getMarketValuation } from '../services/price.service';
 import { getStockXValuation, isStockXConfigured } from '../services/stockx.service';
 import { checkProductQuota, requireFeature } from '../middleware/plan';
+import { isFeatureLive } from '../config/plans';
+import { isAdminEmail } from '../config/admins';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -59,6 +61,31 @@ router.get('/', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     logger.error('Errore GET /products', { err: err.message });
     res.status(500).json({ error: 'Errore database' });
+  }
+});
+
+// ==========================================
+// Magazzino pubblico (auto-pubblicazione): on/off. Quando attivo, ogni nuovo prodotto
+// finisce automaticamente in vetrina (Compra) con prezzo = stima di mercato o prezzo inserito.
+// ==========================================
+router.get('/auto-publish', async (req: AuthRequest, res: Response) => {
+  try {
+    const s = await prisma.setting.findUnique({ where: { key: `autoPublish:${req.user!.userId}` } });
+    res.json({ enabled: s?.value === '1' });
+  } catch { res.json({ enabled: false }); }
+});
+router.put('/auto-publish', async (req: AuthRequest, res: Response) => {
+  try {
+    const enabled = req.body?.enabled === true;
+    await prisma.setting.upsert({
+      where: { key: `autoPublish:${req.user!.userId}` },
+      create: { key: `autoPublish:${req.user!.userId}`, value: enabled ? '1' : '0' },
+      update: { value: enabled ? '1' : '0' },
+    });
+    res.json({ enabled });
+  } catch (err: any) {
+    logger.error('Errore PUT /products/auto-publish', { err: err.message });
+    res.status(500).json({ error: 'Errore salvataggio' });
   }
 });
 
@@ -191,6 +218,24 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
       ? JSON.stringify(customShares.map((s: any) => ({ ...s, percentage: Number(s.percentage) || 0 })))
       : null;
 
+    // Auto-pubblicazione: se l'utente ha attivato "magazzino pubblico", ogni nuovo prodotto
+    // va in vetrina (Compra). Serve un prezzo pubblico: usa la stima di mercato IA, altrimenti
+    // il prezzo inserito. Rispetta il piano (serve la feature 'marketplace').
+    let autoPublish = false;
+    let autoPublicPrice: number | null = null;
+    try {
+      const ap = await prisma.setting.findUnique({ where: { key: `autoPublish:${req.user!.userId}` } });
+      if (ap?.value === '1') {
+        const u = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { plan: true, email: true } });
+        if (isFeatureLive(u?.plan, 'marketplace', isAdminEmail(u?.email))) {
+          const pp = (typeof marketPriceAvg === 'number' && marketPriceAvg > 0) ? marketPriceAvg
+            : (typeof marketPriceMax === 'number' && marketPriceMax > 0) ? marketPriceMax
+            : (price > 0 ? price : null);
+          if (pp && pp > 0) { autoPublish = true; autoPublicPrice = Math.round(pp * 100) / 100; }
+        }
+      }
+    } catch { /* best-effort: se fallisce, niente auto-pubblicazione */ }
+
     // Se Cloudinary è configurato, carica le foto e salva gli URL invece del base64
     let finalPhotos = photos && Array.isArray(photos) && photos.length > 0 ? photos : null;
     if (finalPhotos && isCloudinaryConfigured()) {
@@ -222,6 +267,9 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
         consignmentPercent: typeof consignmentPercent === 'number' ? consignmentPercent : null,
         lotName: (typeof lotName === 'string' && lotName.trim()) ? lotName.trim() : null,
         sku: (typeof sku === 'string' && sku.trim()) ? sku.trim() : null,
+        // Magazzino pubblico attivo → in vetrina automaticamente.
+        isPublic: autoPublish,
+        publicPrice: autoPublish ? autoPublicPrice : null,
       },
     });
 
@@ -665,7 +713,7 @@ router.get('/:id/valuation', requireFeature('stockx_pricing'), async (req: AuthR
     const query = `${product.brand} ${product.name}`.trim();
     // StockX: prova SEMPRE. Restituiamo anche il MOTIVO preciso se non c'è valore,
     // così dall'app si capisce se manca la configurazione, la connessione o solo il match.
-    const sx = await getStockXValuation({ query, name: product.name || undefined, size: product.size || undefined, sku: product.sku || undefined });
+    const sx = await getStockXValuation({ query, name: product.name || undefined, size: product.size || undefined, sku: product.sku || undefined, category: product.category || undefined });
     if (sx.value != null) {
       return res.json({ configured: true, value: sx.value, source: 'Valutazione di mercato', sample: sx.sample || 1, confidence: 'alta', authenticatedOnly: true });
     }

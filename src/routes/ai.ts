@@ -62,12 +62,12 @@ router.post('/price', validate(priceEstimateSchema), async (req: AuthRequest, re
 // ==========================================
 router.post('/market-value', requireFeature('stockx_pricing'), async (req: AuthRequest, res: Response) => {
   try {
-    const { query, size, condition } = req.body || {};
+    const { query, size, condition, category, sku } = req.body || {};
     const q = (query ?? '').toString().trim();
     if (q.length < 2) return res.status(400).json({ error: 'Inserisci brand e modello.' });
     // eBay rimosso: prezzo solo da StockX (sneaker). Altre categorie → nessun valore.
     void condition;
-    const sx = await getStockXValuation({ query: q, size: size ? size.toString() : undefined });
+    const sx = await getStockXValuation({ query: q, name: q, size: size ? size.toString() : undefined, category: category?.toString(), sku: sku?.toString() });
     const valuation = { configured: sx.configured, value: sx.value, source: 'Valutazione di mercato', sample: sx.sample || 0, confidence: sx.value != null ? 'alta' : 'bassa' };
     logger.info('market-value esito', { query: q, value: sx.value });
     res.json(valuation);
@@ -82,7 +82,7 @@ router.post('/market-value', requireFeature('stockx_pricing'), async (req: AuthR
 // ==========================================
 router.post('/value', async (req: AuthRequest, res: Response) => {
   try {
-    const { category, game, brand, name, size, number, setName, condition } = req.body || {};
+    const { category, game, brand, name, size, number, setName, condition, sku } = req.body || {};
     const val = await getValuation({
       category: category?.toString(),
       game: game?.toString(),
@@ -92,6 +92,7 @@ router.post('/value', async (req: AuthRequest, res: Response) => {
       number: number?.toString(),
       setName: setName?.toString(),
       condition: condition?.toString(),
+      sku: sku?.toString(),
     });
     logger.info('value esito', { category, game, value: val.value, reliable: val.reliable, source: val.source });
     res.json(val);
@@ -109,9 +110,11 @@ router.post('/stockx-match', requireFeature('stockx_pricing'), async (req: AuthR
   try {
     const query = (req.body?.query ?? '').toString().trim();
     const size = (req.body?.size ?? '').toString().trim() || undefined;
+    const category = (req.body?.category ?? '').toString().trim() || undefined;
+    const sku = (req.body?.sku ?? '').toString().trim() || undefined;
     if (query.length < 2) return res.json({ found: false });
     if (!isStockXConfigured()) return res.json({ found: false, reason: 'non configurato' });
-    const sx = await getStockXValuation({ query, size });
+    const sx = await getStockXValuation({ query, name: query, size, category, sku });
     if (!sx.itemName && !sx.image) return res.json({ found: false });
     res.json({ found: true, title: sx.itemName || null, image: sx.image || null, price: sx.value ?? null, sku: sx.styleId || null });
   } catch (err: any) {

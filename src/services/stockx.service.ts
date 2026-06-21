@@ -141,7 +141,7 @@ function pickStockXPrice(md: any): number | null {
 
 // Valutazione StockX REALE: catalog search → (variant per taglia) → market data in EUR.
 // Difensiva: in caso di errore/forma diversa ritorna value null senza rompere l'app.
-export async function getStockXValuation(opts: { query: string; name?: string; size?: string; sku?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; brand?: string; model?: string; image?: string | null; styleId?: string | null; sample?: number }> {
+export async function getStockXValuation(opts: { query: string; name?: string; size?: string; sku?: string; category?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; brand?: string; model?: string; image?: string | null; styleId?: string | null; sample?: number }> {
   if (!isStockXConfigured()) return { configured: false, value: null, source: 'StockX (non configurato)' };
   const token = await getStockXAccessToken();
   if (!token) return { configured: true, connected: false, value: null, source: 'StockX (non connesso)' };
@@ -182,6 +182,16 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
     return { matched, penalty, final: matched - 2 * penalty };
   };
 
+  // Se è una scarpa, accetta SOLO sneaker su StockX (mai maglie/accessori/apparel).
+  const catStr = `${opts.category || ''} ${opts.name || ''} ${opts.query || ''}`.toLowerCase();
+  const expectSneakers = /scarp|sneaker|shoe|jordan|dunk|yeezy|air ?force|air ?max|new balance|samba/.test(catStr);
+  const productTypeOf = (p: any) => (p.productType || p.product_type || p.productAttributes?.productCategory || '').toString().toLowerCase();
+  const isSneaker = (p: any) => {
+    const pt = productTypeOf(p);
+    if (!pt) return true; // campo assente → non escludere
+    return pt.includes('sneaker') || pt.includes('shoe') || pt.includes('footwear');
+  };
+
   try {
     let product: any = null;
     let best = { final: -Infinity, matched: 0 };
@@ -190,8 +200,13 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
       const sr = await fetch(`${STOCKX_API_BASE}/v2/catalog/search?query=${encodeURIComponent(q)}&pageNumber=1&pageSize=10`, { headers });
       if (!sr.ok) { logger.warn('StockX search non ok', { status: sr.status, q }); searchFailed = true; continue; }
       const sd = await sr.json() as any;
-      const products: any[] = sd?.products || sd?.data || sd?.hits || [];
+      let products: any[] = sd?.products || sd?.data || sd?.hits || [];
       if (!Array.isArray(products) || products.length === 0) continue;
+      // Per le scarpe scarta tutto ciò che non è una sneaker (es. maglie del Brasile).
+      if (expectSneakers) {
+        const onlyShoes = products.filter(isSneaker);
+        if (onlyShoes.length > 0) products = onlyShoes;
+      }
       // Match esatto per style code (SKU): vince su tutto.
       if (opts.sku) {
         const exact = products.find((p: any) => (p.styleId || p.productAttributes?.styleId || '').toString().toLowerCase() === opts.sku!.toLowerCase());

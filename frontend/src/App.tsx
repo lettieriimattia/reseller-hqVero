@@ -578,6 +578,15 @@ export default function App() {
     { key: 'team', label: 'Soci e magazzino', desc: 'Nuovi soci, prodotti aggiunti dal team' },
     { key: 'insights', label: 'Suggerimenti e avvisi', desc: 'Prodotti fermi, consigli di prezzo' },
   ];
+  // Magazzino pubblico (auto-pubblicazione dei nuovi prodotti in vetrina)
+  const [autoPublishOn, setAutoPublishOn] = useState(false);
+  const toggleAutoPublish = async () => {
+    const next = !autoPublishOn;
+    setAutoPublishOn(next);
+    const { ok } = await apiCall('/products/auto-publish', { method: 'PUT', body: JSON.stringify({ enabled: next }) });
+    if (!ok) { setAutoPublishOn(!next); showToast('Errore salvataggio', 'err'); }
+    else showToast(next ? 'Magazzino pubblico attivo: i nuovi prodotti andranno in vetrina' : 'Magazzino pubblico disattivato', 'ok');
+  };
   const openNotifPrefs = async () => {
     setNotifPrefsOpen(true);
     const { ok, data } = await apiCall<any>('/notifications/prefs');
@@ -1265,6 +1274,7 @@ export default function App() {
     fetchCategories();
     fetchExpenses();
     apiCall<any>('/api/stockx/status').then(({ ok, data }) => { if (ok) setStockxStatus(data); });
+    apiCall<any>('/products/auto-publish').then(({ ok, data }) => { if (ok) setAutoPublishOn(!!data?.enabled); });
     fetchNotifications();
     checkStaleProducts();
     refreshMyPlan();
@@ -2379,6 +2389,7 @@ export default function App() {
           number: (d.cardNumber || d.number || '').toString() || undefined,
           setName: (d.setName || d.set || '').toString() || undefined,
           condition: condition || undefined,
+          sku: detectedSku || undefined,
         }),
       }).then(r => { if (r.ok) setScanMarket(r.data); }).catch(() => {});
     }
@@ -2390,7 +2401,7 @@ export default function App() {
     if (matchQuery.length >= 2) {
       apiCall<any>('/api/ai/stockx-match', {
         method: 'POST',
-        body: JSON.stringify({ query: matchQuery, size: (d.size || '').toString() || undefined }),
+        body: JSON.stringify({ query: matchQuery, size: (d.size || '').toString() || undefined, category: effCat, sku: detectedSku || undefined }),
       }).then(r => { if (r.ok && r.data?.found) setScanStockxMatch(r.data); }).catch(() => {});
     }
   };
@@ -5978,6 +5989,30 @@ export default function App() {
               )}
               {!pushSupported && (
                 <p className="text-[10px] text-[var(--text-faint)] mt-3">Su iPhone le notifiche funzionano solo se aggiungi l'app alla schermata Home.</p>
+              )}
+            </section>
+
+            {/* SEZIONE: Magazzino pubblico (auto-pubblicazione) */}
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <Store className={autoPublishOn ? 'text-[#8b5cf6] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
+                  <div>
+                    <h3 className="text-lg font-bold tracking-tighter">Magazzino pubblico</h3>
+                    <p className="text-xs text-[var(--text-soft)] mt-1 max-w-md">
+                      {autoPublishOn
+                        ? '✓ Attivo: ogni nuovo prodotto che aggiungi va automaticamente in vetrina (Compra), con prezzo dalla stima di mercato o dal prezzo che inserisci.'
+                        : 'Attivalo per mettere in vetrina (Compra) automaticamente ogni nuovo prodotto che aggiungi, senza pubblicarlo a mano.'}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={toggleAutoPublish}
+                  className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${autoPublishOn ? 'bg-[#8b5cf6]' : 'bg-[var(--fill-2)]'}`}>
+                  <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${autoPublishOn ? 'left-6' : 'left-1'}`} />
+                </button>
+              </div>
+              {!hasFeature('marketplace') && (
+                <p className="text-[11px] text-amber-400 mt-3">⚠️ La vendita nel marketplace è inclusa dal piano Starter in su. Con un piano senza marketplace i prodotti non verranno pubblicati.</p>
               )}
             </section>
 

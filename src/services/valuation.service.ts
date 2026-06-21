@@ -34,7 +34,7 @@ function matches(cat: string, keys: string[]): boolean {
 
 export async function getValuation(opts: {
   category?: string; game?: string; brand?: string; name?: string;
-  size?: string; number?: string; setName?: string; condition?: string;
+  size?: string; number?: string; setName?: string; condition?: string; sku?: string;
 }): Promise<UnifiedValuation> {
   const cat = (opts.category || '').toLowerCase();
 
@@ -70,7 +70,7 @@ export async function getValuation(opts: {
   if (matches(cat, SHOE_KEYS) && isStockXConfigured()) {
     const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
     if (q.length >= 2) {
-      const v = await getStockXValuation({ query: q, size: opts.size });
+      const v = await getStockXValuation({ query: q, name: opts.name, size: opts.size, category: opts.category || 'scarpe', sku: opts.sku });
       if (v.value != null) {
         return { value: v.value, currency: 'EUR', source: 'Valutazione di mercato', reliable: true, sample: v.sample || 1, itemName: v.itemName };
       }
@@ -93,7 +93,7 @@ export async function getValuation(opts: {
   if (isStockXConfigured()) {
     const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
     if (q.length >= 2) {
-      const v = await getStockXValuation({ query: q, size: opts.size });
+      const v = await getStockXValuation({ query: q, name: opts.name, size: opts.size, category: opts.category, sku: opts.sku });
       if (v.value != null) {
         return { value: v.value, currency: 'EUR', source: 'Valutazione di mercato', reliable: true, sample: v.sample || 1, itemName: v.itemName };
       }

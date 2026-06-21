@@ -427,6 +427,10 @@ Chicago (100/601), Bred Banned (101), Bred Toe (149), Royal Blue (002), Shadow (
 
 AIR JORDAN 1 MID (ref 554724-XXX): White/Shadow (554724-073), Banned (554724-074), Chicago (554724-173), True Blue (554724-412), Gym Red (554724-121)
 
+AIR JORDAN 1 LOW OG (ref CZ/DZ/DM-XXX): Travis Scott Mocha (CQ4277-001 marrone/sail, swoosh ROVESCIATO), Travis Scott Reverse Mocha (DM7866-162 sail/marrone, swoosh rovesciato), Travis Scott Olive/Medium Olive (DZ4137-106 VERDE OLIVA + sail, swoosh rovesciato — collab Travis Scott), Travis Scott Black Phantom (DM7866-001 nero/grigio, swoosh rovesciato), Fragment x Travis Scott (DM7866-140 blu/bianco). Altre Low OG: UNC (CZ0790-104), Black/White (CZ0790), Mystic Navy.
+
+⚠️ SEGNALE TRAVIS SCOTT: se lo SWOOSH Nike è ROVESCIATO/AL CONTRARIO (punta verso l'alto/indietro) è quasi sempre una collaborazione TRAVIS SCOTT (Cactus Jack). Indicalo in "collaboration":"Travis Scott" e nel model (es: "Air Jordan 1 Low OG Travis Scott Olive"). Una Jordan 1 Low verde oliva con swoosh rovesciato = Travis Scott Olive (DZ4137-106), vale molto di più di una Low normale.
+
 AIR JORDAN 3 (ref CT8532/136064-XXX): White Cement (136064-101/CT8532-130 reimaginato 2023), Fire Red (136064-160/DN3707-160), True Blue (136064-104/CT8532-104 reimaginato), Black Cement (854262-001), A Ma Maniéré (DH7139-105 tessuto jacquard)
 
 AIR JORDAN 4 (ref FQ8138/XXX): Military Black (FQ8138-001 2023), Bred Reimagined (FQ8138-006 2023 velluto/suede), Red Cement (DH6927-161), Canyon Purple (AQ9129-500 donna), Midnight Navy (AQ9129-416), University Blue (CT8527-400), Taupe Haze (DB0549-200), Neon (CW7567-800 volt/black), White Cement (840606-192/FZ4810-102), Infrared (308497-062), DMP (GP4 Raptors)
@@ -1036,6 +1040,7 @@ Se l'oggetto appartiene a uno di questi reparti, restituisci in "category" ESATT
 Restituisci SOLO JSON (niente markdown): {"category":"...","type":"..."}
 - "category": macro-categoria merceologica in italiano, UNA sola etichetta breve.
   Se rientra in una di queste usala ESATTAMENTE com'è scritta: Scarpe, Vestiti, Orologi, Pokemon.
+  REGOLA ASSOLUTA: QUALSIASI calzatura (sneaker, scarpa, scarpa da ginnastica/running, stivale, sandalo, tacco, mocassino, anche solo la scatola di scarpe o la suola) → categoria SEMPRE "Scarpe". Non sbagliare mai questa.
   Altrimenti scegli l'etichetta italiana più adatta e specifica, es: Occhiali, Borse, Gioielli, Portafogli, Cintura, Profumo, Elettronica, Cappello, Accessori.
 - "type": tipo specifico dell'oggetto (es: "sneaker alta", "bracciale rigido", "occhiali da sole aviator", "portafogli con zip").
 Se davvero non capisci, usa {"category":"Generico","type":"oggetto non identificato"}.${existingBlock}`;
