@@ -2050,6 +2050,25 @@ export default function App() {
     if (ok && data?.id) { setChatOffer({ open: false, amount: '' }); await reloadConversation(); }
     else showToast(data?.error || 'Errore offerta', 'err');
   };
+  // ---- Conferma / prompt IN-APP (sostituiscono i brutti popup del browser) ----
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; confirmLabel: string; danger: boolean } | null>(null);
+  const confirmResolver = useRef<((v: boolean) => void) | null>(null);
+  const askConfirm = (opts: { title: string; message: string; confirmLabel?: string; danger?: boolean }) =>
+    new Promise<boolean>(resolve => {
+      confirmResolver.current = resolve;
+      setConfirmState({ title: opts.title, message: opts.message, confirmLabel: opts.confirmLabel || 'Conferma', danger: !!opts.danger });
+    });
+  const closeConfirm = (v: boolean) => { setConfirmState(null); confirmResolver.current?.(v); confirmResolver.current = null; };
+
+  const [promptState, setPromptState] = useState<{ title: string; message: string; placeholder: string; value: string } | null>(null);
+  const promptResolver = useRef<((v: string | null) => void) | null>(null);
+  const askPrompt = (opts: { title: string; message?: string; placeholder?: string; initial?: string }) =>
+    new Promise<string | null>(resolve => {
+      promptResolver.current = resolve;
+      setPromptState({ title: opts.title, message: opts.message || '', placeholder: opts.placeholder || '', value: opts.initial || '' });
+    });
+  const closePrompt = (v: string | null) => { setPromptState(null); promptResolver.current?.(v); promptResolver.current = null; };
+
   const respondOffer = async (msgId: string, action: 'accept' | 'decline') => {
     if (!activeConvo) return;
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/offer/${msgId}/${action}`, { method: 'POST', body: JSON.stringify({}) });
@@ -2095,7 +2114,7 @@ export default function App() {
   // Compratore: conferma di aver ricevuto il pacco → sblocca il pagamento al venditore.
   const confirmDelivery = async () => {
     if (!activeConvo) return;
-    if (!window.confirm('Confermi di aver ricevuto l\'articolo come descritto? Il pagamento verrà sbloccato per il venditore.')) return;
+    if (!(await askConfirm({ title: 'Conferma consegna', message: 'Confermi di aver ricevuto l\'articolo come descritto? Il pagamento verrà sbloccato per il venditore.', confirmLabel: 'Confermo' }))) return;
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/confirm-delivery`, { method: 'POST', body: JSON.stringify({}) });
     if (ok && data?.success) { await reloadConversation(); showToast('Consegna confermata, grazie!', 'ok'); }
     else showToast(data?.error || 'Errore', 'err');
@@ -2140,14 +2159,15 @@ export default function App() {
   const respondDispute = async (action: 'refund' | 'partial' | 'contest') => {
     if (!activeConvo) return;
     let body: any = { action };
-    if (action === 'refund' && !window.confirm('Confermi il rimborso TOTALE al compratore? L\'articolo tornerà invenduto nel tuo magazzino.')) return;
+    if (action === 'refund' && !(await askConfirm({ title: 'Rimborso totale', message: 'Confermi il rimborso TOTALE al compratore? L\'articolo tornerà invenduto nel tuo magazzino.', confirmLabel: 'Rimborsa tutto', danger: true }))) return;
     if (action === 'partial') {
-      const raw = window.prompt('Importo da rimborsare al compratore (€):', '');
+      const raw = await askPrompt({ title: 'Rimborso parziale', message: 'Quanto vuoi rimborsare al compratore? (€)', placeholder: 'es. 30' });
+      if (raw == null) return;
       const amount = Math.round((parseFloat((raw || '').replace(',', '.')) || 0) * 100) / 100;
-      if (!(amount > 0)) return;
+      if (!(amount > 0)) { showToast('Importo non valido', 'warn'); return; }
       body.amount = amount;
     }
-    if (action === 'contest' && !window.confirm('Contestare apre una mediazione con l\'assistenza ResellerHQ. Procedere?')) return;
+    if (action === 'contest' && !(await askConfirm({ title: 'Contesta', message: 'Contestare apre una mediazione con l\'assistenza ResellerHQ. Procedere?', confirmLabel: 'Contesta' }))) return;
     setDisputeSaving(true);
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/dispute/respond`, { method: 'POST', body: JSON.stringify(body) });
     setDisputeSaving(false);
@@ -5493,37 +5513,6 @@ export default function App() {
               </div>
             ), document.body)}
 
-            {/* ========== SCHERMATA: PREFERENZE NOTIFICHE ========== */}
-            {notifPrefsOpen && createPortal((
-              <div className="fixed inset-0 z-[220] bg-[var(--bg)] overflow-y-auto">
-                <div className="sticky top-0 z-10 bg-[var(--bg)]/95 backdrop-blur border-b border-[var(--border)] px-4 py-3 flex items-center gap-3">
-                  <button onClick={() => setNotifPrefsOpen(false)} className="p-1.5 hover:bg-[var(--fill)] rounded-lg"><ChevronDown size={20} className="rotate-90" /></button>
-                  <h2 className="text-lg font-bold">Notifiche</h2>
-                </div>
-                <div className="max-w-md mx-auto p-4 space-y-2.5">
-                  <p className="text-xs text-[var(--text-soft)] px-1 mb-2">Scegli quali notifiche ricevere sul dispositivo. Le notifiche di sicurezza arrivano sempre.</p>
-                  {NOTIF_LABELS.map(c => {
-                    const on = notifPrefs[c.key] !== false;
-                    return (
-                      <div key={c.key} className="flex items-center justify-between gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
-                        <div className="min-w-0">
-                          <p className="font-bold text-sm">{c.label}</p>
-                          <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{c.desc}</p>
-                        </div>
-                        <button onClick={() => toggleNotifPref(c.key)}
-                          className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${on ? 'bg-[#8b5cf6]' : 'bg-[var(--fill-2)]'}`}>
-                          <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${on ? 'left-6' : 'left-1'}`} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                  {!pushEnabled && (
-                    <p className="text-[11px] text-amber-400 px-1 pt-2">⚠️ Le notifiche push non sono attive su questo dispositivo. Attivale qui sopra in "Notifiche" per riceverle.</p>
-                  )}
-                </div>
-              </div>
-            ), document.body)}
-
             {/* ========== MODALE: FAI UN'OFFERTA (compratore) ========== */}
             {chatOffer.open && activeConvo && createPortal((
               <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setChatOffer(o => ({ ...o, open: false }))}>
@@ -6638,6 +6627,71 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* ========== SCHERMATA: PREFERENZE NOTIFICHE (globale) ========== */}
+      {notifPrefsOpen && createPortal((
+        <div className="fixed inset-0 z-[220] bg-[var(--bg)] overflow-y-auto">
+          <div className="sticky top-0 z-10 bg-[var(--bg)]/95 backdrop-blur border-b border-[var(--border)] px-4 py-3 flex items-center gap-3">
+            <button onClick={() => setNotifPrefsOpen(false)} className="p-1.5 hover:bg-[var(--fill)] rounded-lg"><ChevronDown size={20} className="rotate-90" /></button>
+            <h2 className="text-lg font-bold">Notifiche</h2>
+          </div>
+          <div className="max-w-md mx-auto p-4 space-y-2.5">
+            <p className="text-xs text-[var(--text-soft)] px-1 mb-2">Scegli quali notifiche ricevere sul dispositivo. Le notifiche di sicurezza arrivano sempre.</p>
+            {NOTIF_LABELS.map(c => {
+              const on = notifPrefs[c.key] !== false;
+              return (
+                <div key={c.key} className="flex items-center justify-between gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm">{c.label}</p>
+                    <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{c.desc}</p>
+                  </div>
+                  <button onClick={() => toggleNotifPref(c.key)}
+                    className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${on ? 'bg-[#8b5cf6]' : 'bg-[var(--fill-2)]'}`}>
+                    <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${on ? 'left-6' : 'left-1'}`} />
+                  </button>
+                </div>
+              );
+            })}
+            {!pushEnabled && (
+              <p className="text-[11px] text-amber-400 px-1 pt-2">⚠️ Le notifiche push non sono attive su questo dispositivo. Attivale in Impostazioni → Notifiche per riceverle.</p>
+            )}
+          </div>
+        </div>
+      ), document.body)}
+
+      {/* ========== DIALOG CONFERMA (in-app, sostituisce window.confirm) ========== */}
+      {confirmState && createPortal((
+        <div className="fixed inset-0 z-[240] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => closeConfirm(false)}>
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+            <h2 className="text-lg font-bold mb-2">{confirmState.title}</h2>
+            <p className="text-sm text-[var(--text-soft)] mb-6">{confirmState.message}</p>
+            <div className="flex gap-2">
+              <button onClick={() => closeConfirm(false)} className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">Annulla</button>
+              <button onClick={() => closeConfirm(true)} className={`flex-1 py-3 rounded-xl text-white font-bold ${confirmState.danger ? 'bg-red-600' : 'bg-[#8b5cf6]'}`}>{confirmState.confirmLabel}</button>
+            </div>
+          </div>
+        </div>
+      ), document.body)}
+
+      {/* ========== DIALOG PROMPT (in-app, sostituisce window.prompt) ========== */}
+      {promptState && createPortal((
+        <div className="fixed inset-0 z-[240] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => closePrompt(null)}>
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+            <h2 className="text-lg font-bold mb-1">{promptState.title}</h2>
+            {promptState.message && <p className="text-sm text-[var(--text-soft)] mb-4">{promptState.message}</p>}
+            <input autoFocus value={promptState.value} placeholder={promptState.placeholder}
+              onChange={e => setPromptState(s => s ? { ...s, value: e.target.value } : s)}
+              onKeyDown={e => { if (e.key === 'Enter') closePrompt(promptState.value); }}
+              className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-base outline-none focus:border-[#8b5cf6]" />
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => closePrompt(null)} className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">Annulla</button>
+              <button onClick={() => closePrompt(promptState.value)} className="flex-1 py-3 rounded-xl bg-[#8b5cf6] text-white font-bold">Conferma</button>
+            </div>
+          </div>
+        </div>
+      ), document.body)}
 
       {/* ========== COMMAND PALETTE (⌘K / Ctrl+K) ========== */}
       {cmdOpen && (() => {
