@@ -4195,7 +4195,7 @@ export default function App() {
                   <div className="text-center py-16 px-5 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
                     <Truck className="mx-auto text-[var(--text-faint)] mb-3" size={40} />
                     <p className="font-bold">Niente da spedire</p>
-                    <p className="text-sm text-[var(--text-soft)] mt-1">Qui trovi gli articoli pagati nel marketplace e quelli che marchi "Da spedire" perché venduti altrove.</p>
+                    <p className="text-sm text-[var(--text-soft)] mt-1">Qui trovi gli articoli pagati nel marketplace e quelli che marchi "Da spedire" perché venduti fuori dall'app.</p>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2.5">
@@ -4212,7 +4212,7 @@ export default function App() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-bold text-sm truncate">{p.brand} {p.name}</span>
-                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${paid ? 'text-[#8b5cf6] bg-[#8b5cf6]/15' : 'text-amber-400 bg-amber-500/15'}`}>{paid ? 'Pagato in-app' : 'Venduto altrove'}</span>
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${paid ? 'text-[#8b5cf6] bg-[#8b5cf6]/15' : 'text-amber-400 bg-amber-500/15'}`}>{paid ? 'Pagato in-app' : 'Venduto fuori dall\'app'}</span>
                                 {p.trackingCode && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase text-green-400 bg-green-500/15">Spedito</span>}
                               </div>
                               <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition}</p>
