@@ -3434,6 +3434,12 @@ export default function App() {
                   <p className="text-xl font-bold">{marketDetail.brand} {marketDetail.name}</p>
                   <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
                   <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
+                  {marketDetail.breakdown && (
+                    <p className="text-sm font-bold text-[#8b5cf6] mt-0.5">
+                      Totale {marketDetail.breakdown.total.toFixed(2)}€
+                      <span className="font-normal text-[var(--text-soft)]"> · incl. spedizione e commissioni</span>
+                    </p>
+                  )}
                   <p className="text-xs text-[var(--text-soft)] mt-1">Venditore: {marketDetail.sellerName}</p>
                 </div>
               </div>
@@ -5338,10 +5344,12 @@ export default function App() {
                     <span className="font-bold text-sm truncate block">{activeConvo.otherName || activeConvo.productName || 'Conversazione'}</span>
                     {activeConvo.productName && <span className="text-[11px] text-[var(--text-soft)] truncate block">{activeConvo.productName}{activeConvo.price != null ? ` · ${activeConvo.price}€` : ''}</span>}
                   </div>
-                  {activeConvo.role === 'seller' && (
+                  {/* Solo per articoli PAGATI: il venditore spedisce. La vendita avviene quando
+                      il compratore paga in-app, quindi niente piu "Vendi e spedisci" manuale. */}
+                  {activeConvo.role === 'seller' && activeConvo.productStatus === 'PAGATO' && (
                     <button onClick={() => setShipForm(f => ({ ...f, open: true, price: activeConvo.price != null ? String(activeConvo.price) : '' }))}
                       className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white flex items-center gap-1.5">
-                      <DollarSign size={13} /> {activeConvo.productStatus === 'PAGATO' ? 'Spedisci' : 'Vendi e spedisci'}</button>
+                      <Package size={13} /> Spedisci</button>
                   )}
                   {activeConvo.role === 'buyer' && activeConvo.productStatus === 'PAGATO' && !activeConvo.disputeStatus && (
                     <>
@@ -5619,6 +5627,12 @@ export default function App() {
                   <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
                   {marketDetail.sku && <p className="text-[11px] text-[var(--text-faint)] mt-1">SKU: {marketDetail.sku}</p>}
                   <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
+                  {marketDetail.breakdown && (
+                    <p className="text-sm font-bold text-[#8b5cf6] mt-0.5">
+                      Totale {marketDetail.breakdown.total.toFixed(2)}€
+                      <span className="font-normal text-[var(--text-soft)]"> · incl. spedizione e commissioni</span>
+                    </p>
+                  )}
                   <p className="text-xs text-[var(--text-soft)] mt-1">Venditore: {marketDetail.sellerName}</p>
                 </div>
               </div>
