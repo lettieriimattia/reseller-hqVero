@@ -112,13 +112,30 @@ function normSize(s?: string): string {
   return (s || '').toString().toLowerCase().replace(/eu|us|uk|taglia|size/g, '').replace(/[^0-9.,]/g, '').replace(',', '.').trim();
 }
 
-// Sceglie il prezzo di mercato dai market data (preferisce il lowest ask).
-function pickStockXPrice(m: any): number | null {
-  const candidates = [m?.lowestAskAmount, m?.flexLowestAskAmount, m?.sellFasterAmount, m?.highestBidAmount, m?.earnMoreAmount];
+// Prezzo da una singola variante. NB: highestBidAmount è l'offerta più alta (spesso una
+// "civetta" bassissima) → NON è il prezzo di mercato, lo escludiamo. Usiamo il lowest ask.
+function variantPrice(v: any): number | null {
+  const candidates = [
+    v?.lowestAskAmount, v?.standardMarketData?.lowestAsk, v?.flexLowestAskAmount,
+    v?.sellFasterAmount, v?.standardMarketData?.sellFaster, v?.earnMoreAmount,
+  ];
   for (const c of candidates) {
     const n = Number(c);
     if (!isNaN(n) && n > 0) return Math.round(n);
   }
+  return null;
+}
+
+// Il market-data StockX può essere un ARRAY di varianti (una per taglia) o un singolo oggetto.
+// Prezzo di mercato = il lowest ask più basso tra le varianti disponibili ("a partire da").
+function pickStockXPrice(md: any): number | null {
+  const arr = Array.isArray(md) ? md : (Array.isArray(md?.variants) ? md.variants : [md]);
+  const asks = arr
+    .map((v: any) => Number(v?.lowestAskAmount ?? v?.standardMarketData?.lowestAsk))
+    .filter((n: number) => !isNaN(n) && n > 0);
+  if (asks.length) return Math.round(Math.min(...asks));
+  // Nessun "ask" disponibile: ripiega su altri segnali di prezzo per-variante.
+  for (const v of arr) { const p = variantPrice(v); if (p) return p; }
   return null;
 }
 
