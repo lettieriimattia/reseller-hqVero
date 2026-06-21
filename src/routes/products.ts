@@ -663,16 +663,20 @@ router.get('/:id/valuation', requireFeature('stockx_pricing'), async (req: AuthR
     if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
 
     const query = `${product.brand} ${product.name}`.trim();
-    // StockX copre molto più delle sneaker (elettronica, console, collezionabili…):
-    // proviamo SEMPRE. Se trova un match, usiamo il suo prezzo EUR affidabile.
-    if (isStockXConfigured()) {
-      const sx = await getStockXValuation({ query, size: product.size || undefined });
-      if (sx.value != null) {
-        return res.json({ configured: true, value: sx.value, source: 'Valutazione di mercato', sample: sx.sample || 1, confidence: 'alta', authenticatedOnly: true });
-      }
+    // StockX: prova SEMPRE. Restituiamo anche il MOTIVO preciso se non c'è valore,
+    // così dall'app si capisce se manca la configurazione, la connessione o solo il match.
+    const sx = await getStockXValuation({ query, size: product.size || undefined });
+    if (sx.value != null) {
+      return res.json({ configured: true, value: sx.value, source: 'Valutazione di mercato', sample: sx.sample || 1, confidence: 'alta', authenticatedOnly: true });
     }
-    // Nessun match su StockX per questo articolo.
-    res.json({ configured: true, value: null, source: 'Valutazione non disponibile', sample: 0 });
+    res.json({
+      configured: sx.configured,
+      connected: sx.connected ?? false,
+      value: null,
+      // sx.source è già esplicativo: "non configurato" | "non connesso" | "nessun risultato" | "errore"
+      source: sx.source,
+      sample: 0,
+    });
   } catch (err: any) {
     logger.error('Errore GET /products/:id/valuation', { err: err.message });
     res.status(500).json({ error: 'Errore valutazione' });

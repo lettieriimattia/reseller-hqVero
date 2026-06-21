@@ -127,21 +127,39 @@ router.get('/rates', async (req: AuthRequest, res: Response) => {
 router.post('/book', async (req: AuthRequest, res: Response) => {
   if (!isConfigured()) {
     // Modalità demo: genera etichetta HTML stampabile senza corriere reale
-    const { from, to, pkg, content, serviceId } = req.body;
+    const { productId, from, to, pkg, content, serviceId } = req.body;
+
+    // Se il prodotto ha GIÀ un'etichetta salvata → restituisci QUELLA (non crearne un'altra).
+    if (productId) {
+      const access = await canAccessProduct(req.user!.userId, productId);
+      if (access.allowed && (access.product as any)?.shippingLabel) {
+        try {
+          const saved = JSON.parse((access.product as any).shippingLabel);
+          if (saved?.trackingCode) {
+            return res.json({ reference: saved.trackingCode, labelUrl: saved.labelUrl || null, labelHtml: generateDemoLabel(saved), demo: true, existing: true });
+          }
+        } catch { /* snapshot corrotto: rigenera sotto */ }
+      }
+    }
+
     const demoServices: Record<string, string> = {
       'demo-1': 'BRT Express', 'demo-2': 'GLS Standard',
       'demo-3': 'Poste Italiane Pacco', 'demo-4': 'DHL Express',
     };
     const carrier = demoServices[serviceId] || serviceId;
     const trackingCode = `HQ-DEMO-${Date.now()}`;
-    const labelHtml = generateDemoLabel({ from, to, pkg, content, carrier, trackingCode });
+    const snapshot = { from, to, pkg, content, carrier, trackingCode };
+    const labelHtml = generateDemoLabel(snapshot);
 
-    return res.json({
-      reference: trackingCode,
-      labelUrl: null,
-      labelHtml,
-      demo: true,
-    });
+    // Salva l'etichetta sul prodotto: così resta e si riapre identica.
+    if (productId) {
+      await prisma.product.update({
+        where: { id: productId },
+        data: { trackingCode, trackingCarrier: carrier, shippingLabel: JSON.stringify(snapshot) },
+      }).catch(() => {});
+    }
+
+    return res.json({ reference: trackingCode, labelUrl: null, labelHtml, demo: true });
   }
 
   const { productId, serviceId, from, to, pkg, content } = req.body;
@@ -209,6 +227,8 @@ router.post('/book', async (req: AuthRequest, res: Response) => {
           trackingCarrier:  parcel?.carrier?.code || 'Sendcloud',
           trackingStatus:   'PENDING',
           trackingUpdatedAt: new Date(),
+          // Salva il riferimento all'etichetta reale: si riapre senza ricrearla.
+          shippingLabel:    JSON.stringify({ labelUrl, trackingCode: trackingNumber, carrier: parcel?.carrier?.code || 'Sendcloud' }),
         },
       }).catch(() => {});
     }

@@ -2035,6 +2035,18 @@ export default function App() {
   const openDemoLabel = (productName: string, sender: string, recipient: string, code: string, carrier: string) => {
     setLabelData({ productName: productName || 'Articolo', sender: sender || 'Venditore', recipient: recipient || 'Acquirente', code, carrier: carrier || 'Test Express' });
   };
+  // Riapre l'etichetta GIÀ creata e salvata sul prodotto (non ne genera un'altra).
+  const viewSavedLabel = (p: any) => {
+    let snap: any = null;
+    try { snap = p.shippingLabel ? JSON.parse(p.shippingLabel) : null; } catch {}
+    if (snap?.labelUrl) { window.open(snap.labelUrl, '_blank'); return; } // etichetta reale (PDF corriere)
+    if (snap) {
+      openDemoLabel(`${p.brand} ${p.name}`, snap.from?.name || user?.name || 'Venditore', snap.to?.name || 'Acquirente', snap.trackingCode || p.trackingCode, snap.carrier || p.trackingCarrier || 'Corriere');
+      return;
+    }
+    // Nessuno snapshot ma c'è un tracking: ricostruisci la stessa etichetta dai dati salvati.
+    openDemoLabel(`${p.brand} ${p.name}`, user?.name || 'Venditore', 'Acquirente', p.trackingCode, p.trackingCarrier || 'Corriere');
+  };
   // Apre la pagina pubblica di tracciamento del corriere (azione di sistema, non un link in chat).
   const trackShipment = (code: string) => {
     if (!code) return;
@@ -4291,7 +4303,9 @@ export default function App() {
                           </div>
                           <div className="flex gap-2 mt-3">
                             {hasFeature('labels') ? (
-                              <button onClick={() => openShipping(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] flex items-center justify-center gap-1.5"><Package size={13} /> {p.trackingCode ? 'Etichetta' : 'Crea etichetta'}</button>
+                              (p.trackingCode || p.shippingLabel)
+                                ? <button onClick={() => viewSavedLabel(p)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] flex items-center justify-center gap-1.5"><Package size={13} /> Vedi etichetta</button>
+                                : <button onClick={() => openShipping(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] flex items-center justify-center gap-1.5"><Package size={13} /> Crea etichetta</button>
                             ) : (
                               <button onClick={() => openTrackingModal(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)] flex items-center justify-center gap-1.5"><Truck size={13} /> Tracking</button>
                             )}

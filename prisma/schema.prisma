@@ -167,6 +167,10 @@ model Product {
   trackingHistory   String?   // JSON array di eventi tracking
   trackingUpdatedAt DateTime?
 
+  // Etichetta di spedizione salvata: una volta creata NON si rigenera, si riapre identica.
+  // Demo: snapshot JSON {from,to,pkg,content,carrier,trackingCode}. Reale: {labelUrl}.
+  shippingLabel     String?
+
   // Note libere
   notes          String?    // Note operative (es: cinturino usurato, scatola mancante)
 
