@@ -166,16 +166,47 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
     opts.query,
   ].filter(Boolean)));
 
+  // --- Matching robusto: scegli il risultato che combacia col nome riconosciuto,
+  //     non il primo a caso (StockX mette in cima i modelli più popolari/hype). ---
+  const toks = (s: string) => clean(s).toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length > 1);
+  const nameStr = (opts.name || opts.query || '').toLowerCase();
+  const qSet = new Set(toks(opts.name || opts.query));
+  // Collab/edizioni speciali: se sono nel titolo StockX ma NON nel nome riconosciuto,
+  // è quasi certo un modello diverso (e molto più caro) → forte penalità.
+  const COLLAB = ['travis scott', 'off-white', 'off white', 'dior', 'fragment', 'union', 'tiffany', 'louis vuitton', 'ben & jerry', 'a ma maniere', 'sacai', 'supreme', 'kaws'];
+  const scoreOf = (title: string) => {
+    const t = (title || '').toLowerCase();
+    const tSet = new Set(toks(title));
+    let matched = 0; qSet.forEach(x => { if (tSet.has(x)) matched++; });
+    let penalty = 0; for (const c of COLLAB) { if (t.includes(c) && !nameStr.includes(c)) penalty++; }
+    return { matched, penalty, final: matched - 2 * penalty };
+  };
+
   try {
     let product: any = null;
+    let best = { final: -Infinity, matched: 0 };
     let searchFailed = false;
     for (const q of candidates) {
       const sr = await fetch(`${STOCKX_API_BASE}/v2/catalog/search?query=${encodeURIComponent(q)}&pageNumber=1&pageSize=10`, { headers });
       if (!sr.ok) { logger.warn('StockX search non ok', { status: sr.status, q }); searchFailed = true; continue; }
       const sd = await sr.json() as any;
-      const products = sd?.products || sd?.data || sd?.hits || [];
-      product = Array.isArray(products) ? products[0] : null;
-      if (product) break;
+      const products: any[] = sd?.products || sd?.data || sd?.hits || [];
+      if (!Array.isArray(products) || products.length === 0) continue;
+      // Match esatto per style code (SKU): vince su tutto.
+      if (opts.sku) {
+        const exact = products.find((p: any) => (p.styleId || p.productAttributes?.styleId || '').toString().toLowerCase() === opts.sku!.toLowerCase());
+        if (exact) { product = exact; best = { final: 99, matched: qSet.size }; break; }
+      }
+      // Altrimenti scegli il titolo che combacia meglio col nome riconosciuto.
+      for (const p of products) {
+        const sc = scoreOf(p.title || p.name || '');
+        if (sc.final > best.final) { best = { final: sc.final, matched: sc.matched }; product = p; }
+      }
+    }
+    // Soglia di affidabilità: serve un minimo di parole in comune e niente collab "intrusa".
+    const minMatch = Math.max(2, Math.ceil(qSet.size * 0.5));
+    if (product && (best.matched < minMatch || best.final < 2)) {
+      return { configured: true, connected: true, value: null, source: 'StockX (nessun match affidabile)' };
     }
     if (!product) {
       return { configured: true, connected: true, value: null, source: searchFailed ? 'StockX (ricerca fallita)' : 'StockX (nessun risultato)' };
