@@ -7,8 +7,35 @@ import {
   isStockXConfigured, isStockXConnected, getRedirectUri, getAuthorizeUrl, exchangeCodeForTokens,
   getStockXAccessToken,
 } from '../services/stockx.service';
+import { isAdminEmail } from '../config/admins';
 
 const router = Router();
+
+// DEBUG (solo admin): mostra la risposta GREZZA della ricerca catalogo StockX.
+// Serve a capire perché "nessun risultato": struttura risposta? 0 risultati? errore?
+// Uso: apri /stockx/debug?q=Nike%20Dunk%20Low%20Panda da loggato admin.
+router.get('/debug', authenticate, async (req: AuthRequest, res: Response) => {
+  if (!isAdminEmail(req.user?.email)) return res.status(403).json({ error: 'Solo admin' });
+  if (!isStockXConfigured()) return res.json({ step: 'config', configured: false });
+  const token = await getStockXAccessToken().catch(() => null);
+  if (!token) return res.json({ step: 'token', configured: true, tokenOk: false });
+  const q = (req.query.q as string) || 'Nike Dunk Low Panda';
+  try {
+    const r = await fetch(`https://api.stockx.com/v2/catalog/search?query=${encodeURIComponent(q)}&pageNumber=1&pageSize=5`, {
+      headers: { Authorization: `Bearer ${token}`, 'x-api-key': process.env.STOCKX_API_KEY || '', Accept: 'application/json' },
+    });
+    const text = await r.text();
+    let json: any = null; try { json = JSON.parse(text); } catch {}
+    res.json({
+      step: 'search', query: q, httpStatus: r.status,
+      topLevelKeys: json && typeof json === 'object' ? Object.keys(json) : null,
+      // primi 1500 char della risposta grezza (per vedere la struttura reale)
+      rawPreview: text.slice(0, 1500),
+    });
+  } catch (e: any) {
+    res.json({ step: 'search', error: e.message });
+  }
+});
 
 // Stato per il frontend: configurato? token salvato? token ANCORA VALIDO?
 // tokenOk verifica davvero il token (il refresh può scadere): così "Collegato" è veritiero
