@@ -883,12 +883,17 @@ export default function App() {
       setShippingRef(data.reference);
       setShippingLabel(data.labelUrl);
       setShippingStep('done');
-      if (data.labelHtml) {
-        // Modalità demo: apri etichetta HTML in nuova finestra e stampa
-        const w = window.open('', '_blank', 'width=600,height=800');
-        if (w) { w.document.write(data.labelHtml); w.document.close(); }
-      } else if (data.labelUrl) {
-        window.open(data.labelUrl, '_blank');
+      if (data.labelUrl && !data.demo) {
+        window.open(data.labelUrl, '_blank'); // etichetta reale (PDF del corriere)
+      } else {
+        // Demo: mostra l'etichetta DENTRO l'app (niente nuova finestra che intrappola su mobile)
+        openDemoLabel(
+          shippingProduct ? `${shippingProduct.brand} ${shippingProduct.name}` : 'Articolo',
+          shipFrom?.name || user?.name || 'Venditore',
+          shipTo?.name || 'Acquirente',
+          data.reference || data.trackingCode || 'HQ-DEMO',
+          selectedRate?.carrier || selectedRate?.name || 'Corriere',
+        );
       }
       await fetchProducts();
       showToast(data.demo ? 'Etichetta demo generata!' : 'Spedizione creata! Tracking salvato sul prodotto.');
@@ -5111,15 +5116,15 @@ export default function App() {
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 text-sm text-[var(--text-soft)]">I pagamenti non sono ancora attivi sulla piattaforma.</div>
             ) : (
               <>
-                {/* Saldo */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
-                    <p className="text-[10px] text-[var(--text-soft)] uppercase tracking-widest">Da riscuotere</p>
-                    <p className="text-3xl font-bold num">{(wallet?.available ?? 0).toFixed(2)}€</p>
+                {/* Saldo — due righe separate, così anche cifre grandi entrano */}
+                <div className="flex flex-col gap-3">
+                  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 flex items-center justify-between gap-3">
+                    <p className="text-[11px] text-[var(--text-soft)] uppercase tracking-widest shrink-0">Da riscuotere</p>
+                    <p className="text-2xl sm:text-3xl font-bold num truncate text-right">{(wallet?.available ?? 0).toFixed(2)}€</p>
                   </div>
-                  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
-                    <p className="text-[10px] text-[var(--text-soft)] uppercase tracking-widest">In attesa di consegna</p>
-                    <p className="text-3xl font-bold num text-[var(--text-soft)]">{(wallet?.pending ?? 0).toFixed(2)}€</p>
+                  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 flex items-center justify-between gap-3">
+                    <p className="text-[11px] text-[var(--text-soft)] uppercase tracking-widest shrink-0">In attesa di consegna</p>
+                    <p className="text-2xl sm:text-3xl font-bold num truncate text-right text-[var(--text-soft)]">{(wallet?.pending ?? 0).toFixed(2)}€</p>
                   </div>
                 </div>
 
