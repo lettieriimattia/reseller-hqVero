@@ -7512,7 +7512,11 @@ export default function App() {
                     {valuation.configured === false ? (
                       <p className="text-[var(--text-soft)] text-xs">Fonte prezzi non ancora attiva. Quando sarà attiva qui vedrai la valutazione reale di mercato — autenticata e anti-falsi.</p>
                     ) : valuation.value == null ? (
-                      <p className="text-[var(--text-soft)] text-xs">Nessuna quotazione affidabile trovata per questo prodotto.</p>
+                      (valuation.source && /non connesso|non configurato|ricerca fallita|errore/i.test(valuation.source)) ? (
+                        <p className="text-amber-400 text-xs">⚠️ StockX non disponibile — {valuation.source}. {isAdminUser ? 'Collega/verifica in Impostazioni → Integrazioni · StockX.' : 'La fonte prezzi è in fase di attivazione.'}</p>
+                      ) : (
+                        <p className="text-[var(--text-soft)] text-xs">Nessuna quotazione trovata per questo articolo su StockX.</p>
+                      )
                     ) : (
                       <div className="flex items-end justify-between gap-2">
                         <div>
