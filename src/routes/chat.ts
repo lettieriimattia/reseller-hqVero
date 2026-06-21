@@ -29,7 +29,7 @@ router.get('/conversations', async (req: AuthRequest, res: Response) => {
     const productIds = Array.from(new Set(convos.map(c => c.productId)));
     const userIds = Array.from(new Set(convos.flatMap(c => [c.buyerId, c.sellerId])));
     const [products, users] = await Promise.all([
-      prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, brand: true, name: true, photos: true, publicPrice: true, status: true } }),
+      prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, brand: true, name: true, photos: true, publicPrice: true, status: true, trackingCode: true, trackingCarrier: true, trackingStatus: true } }),
       prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } }),
     ]);
     const pMap = new Map(products.map(p => [p.id, p]));
@@ -44,6 +44,9 @@ router.get('/conversations', async (req: AuthRequest, res: Response) => {
         productName: p ? `${p.brand} ${p.name}` : 'Articolo',
         productPhoto: photo, price: p?.publicPrice ?? null,
         productStatus: p?.status ?? null,
+        trackingCode: p?.trackingCode ?? null,
+        trackingCarrier: p?.trackingCarrier ?? null,
+        trackingStatus: p?.trackingStatus ?? null,
         role: c.buyerId === uid ? 'buyer' : 'seller',
         otherName: uMap.get(otherId) || 'Utente',
         lastMessage: c.messages[0]?.text || null,

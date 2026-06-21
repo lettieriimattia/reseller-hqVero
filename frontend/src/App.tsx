@@ -1129,9 +1129,23 @@ export default function App() {
   }, []);
 
   const openConversation = async (convo: any) => {
-    setActiveConvo(convo);
+    // Merge: passando {id} (es. dopo un'azione) non perdiamo i metadati già caricati.
+    setActiveConvo((prev: any) => prev && prev.id === convo.id ? { ...prev, ...convo } : convo);
     const { ok, data } = await apiCall<any[]>(`/chat/${convo.id}/messages`);
     if (ok && Array.isArray(data)) setChatMessages(data);
+  };
+
+  // Ricarica conversazione attiva: metadati freschi (stato, tracking) + messaggi.
+  const reloadConversation = async () => {
+    if (!activeConvo) return;
+    const { ok, data } = await apiCall<any[]>('/chat/conversations');
+    if (ok && Array.isArray(data)) {
+      setConversations(data);
+      const fresh = data.find((c: any) => c.id === activeConvo.id);
+      if (fresh) setActiveConvo((prev: any) => ({ ...prev, ...fresh }));
+    }
+    const m = await apiCall<any[]>(`/chat/${activeConvo.id}/messages`);
+    if (m.ok && Array.isArray(m.data)) setChatMessages(m.data);
   };
 
   // Blocco link lato client (oltre al backend): i link sono il primo vettore di truffa.
@@ -1163,8 +1177,7 @@ export default function App() {
     setShipping(false);
     if (ok && data?.success) {
       setShipForm({ open: false, price: '', code: '', carrier: 'Auto' });
-      await openConversation({ id: activeConvo.id });
-      await fetchConversations();
+      await reloadConversation();
       await fetchProducts();
       showToast(data.tracked ? 'Venduto e spedizione registrata!' : 'Vendita confermata!', 'ok');
     } else showToast(data?.error || 'Errore', 'err');
@@ -1945,14 +1958,42 @@ export default function App() {
     const amount = parseFloat(raw.replace(',', '.'));
     if (!(amount > 0)) { showToast('Importo non valido', 'warn'); return; }
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/offer`, { method: 'POST', body: JSON.stringify({ amount }) });
-    if (ok && data?.id) { await openConversation({ id: activeConvo.id }); }
+    if (ok && data?.id) { await reloadConversation(); }
     else showToast(data?.error || 'Errore offerta', 'err');
   };
   const respondOffer = async (msgId: string, action: 'accept' | 'decline') => {
     if (!activeConvo) return;
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/offer/${msgId}/${action}`, { method: 'POST', body: JSON.stringify({}) });
-    if (ok && data?.success) { await openConversation({ id: activeConvo.id }); showToast(action === 'accept' ? 'Offerta accettata' : 'Offerta rifiutata', 'ok'); }
+    if (ok && data?.success) { await reloadConversation(); showToast(action === 'accept' ? 'Offerta accettata' : 'Offerta rifiutata', 'ok'); }
     else showToast(data?.error || 'Errore', 'err');
+  };
+  // Apre un'etichetta di spedizione dimostrativa stampabile (riusata in più punti).
+  const openDemoLabel = (productName: string, sender: string, recipient: string, code: string, carrier: string) => {
+    const w = window.open('', '_blank', 'width=420,height=620');
+    if (!w) { showToast('Abilita i popup per vedere l\'etichetta', 'warn'); return; }
+    const esc = (s: string) => (s || '').replace(/</g, '');
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Etichetta</title>
+      <style>body{font-family:-apple-system,Arial,sans-serif;margin:0;padding:24px;color:#111}
+      .lbl{border:2px solid #111;border-radius:12px;padding:20px;max-width:340px;margin:auto}
+      .tag{display:inline-block;background:#8b5cf6;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}
+      h1{font-size:18px;margin:10px 0 2px}.row{font-size:13px;margin:2px 0;color:#333}
+      .code{font-family:monospace;font-size:20px;font-weight:700;letter-spacing:2px;margin-top:14px;border-top:1px dashed #999;padding-top:12px}
+      .bars{height:46px;background:repeating-linear-gradient(90deg,#111 0 3px,#fff 3px 6px);margin-top:8px;border-radius:4px}
+      small{color:#888}</style></head>
+      <body><div class="lbl"><span class="tag">ETICHETTA DI PROVA</span>
+      <h1>${esc(productName || 'Articolo')}</h1>
+      <div class="row"><b>Mittente:</b> ${esc(sender || 'Venditore')}</div>
+      <div class="row"><b>Destinatario:</b> ${esc(recipient || 'Acquirente')}</div>
+      <div class="row"><b>Corriere:</b> ${esc(carrier || 'Test Express')}</div>
+      <div class="code">${esc(code)}</div><div class="bars"></div>
+      <small>Etichetta dimostrativa — non valida per la spedizione reale.</small>
+      </div><script>window.onload=()=>setTimeout(()=>window.print(),300)</script></body></html>`);
+    w.document.close();
+  };
+  // Apre la pagina pubblica di tracciamento del corriere (azione di sistema, non un link in chat).
+  const trackShipment = (code: string) => {
+    if (!code) return;
+    window.open(`https://t.17track.net/it#nums=${encodeURIComponent(code)}`, '_blank');
   };
   // TEST: genera etichetta + tracking finti e spedisce l'articolo pagato (per provare il flusso).
   const shipTestLabel = async () => {
@@ -1965,35 +2006,15 @@ export default function App() {
     setShipping(false);
     if (!(ok && data?.success)) { showToast(data?.error || 'Errore', 'err'); return; }
     setShipForm(f => ({ ...f, open: false }));
-    await openConversation({ id: activeConvo.id }); await fetchConversations();
-    // Apri un'etichetta di prova stampabile.
-    const w = window.open('', '_blank', 'width=420,height=620');
-    if (w) {
-      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Etichetta di prova</title>
-        <style>body{font-family:-apple-system,Arial,sans-serif;margin:0;padding:24px;color:#111}
-        .lbl{border:2px solid #111;border-radius:12px;padding:20px;max-width:340px;margin:auto}
-        .tag{display:inline-block;background:#8b5cf6;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}
-        h1{font-size:18px;margin:10px 0 2px}.row{font-size:13px;margin:2px 0;color:#333}
-        .code{font-family:monospace;font-size:20px;font-weight:700;letter-spacing:2px;margin-top:14px;border-top:1px dashed #999;padding-top:12px}
-        .bars{height:46px;background:repeating-linear-gradient(90deg,#111 0 3px,#fff 3px 6px);margin-top:8px;border-radius:4px}
-        small{color:#888}</style></head>
-        <body><div class="lbl"><span class="tag">ETICHETTA DI PROVA</span>
-        <h1>${(activeConvo.productName || 'Articolo').replace(/</g,'')}</h1>
-        <div class="row"><b>Mittente:</b> ${(user?.name || 'Venditore').replace(/</g,'')}</div>
-        <div class="row"><b>Destinatario:</b> ${(activeConvo.otherName || 'Acquirente').replace(/</g,'')}</div>
-        <div class="row"><b>Corriere:</b> Test Express</div>
-        <div class="code">${code}</div><div class="bars"></div>
-        <small>Etichetta dimostrativa — non valida per la spedizione reale.</small>
-        </div><script>window.onload=()=>setTimeout(()=>window.print(),300)</script></body></html>`);
-      w.document.close();
-    }
+    await reloadConversation();
+    openDemoLabel(activeConvo.productName, user?.name || 'Venditore', activeConvo.otherName, code, 'Test Express');
     showToast('Etichetta e tracking di prova generati!', 'ok');
   };
   // Compratore: conferma di aver ricevuto il pacco → sblocca il pagamento al venditore.
   const confirmDelivery = async () => {
     if (!activeConvo) return;
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/confirm-delivery`, { method: 'POST', body: JSON.stringify({}) });
-    if (ok && data?.success) { await openConversation({ id: activeConvo.id }); await fetchConversations(); showToast('Consegna confermata, grazie!', 'ok'); }
+    if (ok && data?.success) { await reloadConversation(); showToast('Consegna confermata, grazie!', 'ok'); }
     else showToast(data?.error || 'Errore', 'err');
   };
   const openPlanModal = async (tab: 'plans' | 'repricing' | 'offer' | 'channels' = 'plans') => {
@@ -5145,6 +5166,17 @@ export default function App() {
                       className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text)] border border-[var(--border-2)] flex items-center gap-1.5"><DollarSign size={13} /> Offerta</button>
                   )}
                 </div>
+                {/* Barra spedizione: tracciamento + etichetta direttamente in chat */}
+                {activeConvo.trackingCode && (
+                  <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
+                    <Truck size={14} className="text-blue-400 shrink-0" />
+                    <span className="text-[11px] text-[var(--text-soft)] truncate flex-1 num">{activeConvo.trackingCode}</span>
+                    <button onClick={() => trackShipment(activeConvo.trackingCode)}
+                      className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-500/15 text-blue-400">Traccia</button>
+                    <button onClick={() => openDemoLabel(activeConvo.productName, activeConvo.role === 'seller' ? (user?.name || 'Venditore') : 'Venditore', activeConvo.role === 'buyer' ? (user?.name || 'Acquirente') : (activeConvo.otherName || 'Acquirente'), activeConvo.trackingCode, activeConvo.trackingCarrier || 'Corriere')}
+                      className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#8b5cf6]/15 text-[#8b5cf6]">Etichetta</button>
+                  </div>
+                )}
                 <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
                   {chatMessages.map((m: any) => (
                     m.offerAmount != null ? (
