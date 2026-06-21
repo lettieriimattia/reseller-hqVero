@@ -1,0 +1,38 @@
+Sezione;Voce;Stima min (EUR);Stima max (EUR);Il tuo valore reale (EUR);Note
+1. AVVIO (una tantum);Apertura Partita IVA;0;0;;Gratis
+1. AVVIO (una tantum);Firma digitale + PEC;40;60;;Necessarie per pratiche e fattura elettronica
+1. AVVIO (una tantum);SCIA / iscrizione Camera di Commercio;100;150;;Solo se attivita commerciale - chiedi al commercialista
+1. AVVIO (una tantum);Setup pratica commercialista/Fiscozen;0;150;;Spesso incluso nel canone annuale
+1. AVVIO (una tantum);SUBTOTALE AVVIO;140;360;;
+;;;;;
+2. COSTI FISSI ANNUI;Commercialista / Fiscozen;300;800;;Fiscozen ok se P.IVA singola forfettaria
+2. COSTI FISSI ANNUI;INPS gestione commercianti (forfettario -35%);2700;2700;;Minimo fisso - si paga anche con pochi ricavi
+2. COSTI FISSI ANNUI;ALTERNATIVA INPS gestione separata (~26%);0;0;;Niente minimo fisso - paghi solo % sul reddito (verifica ATECO!)
+2. COSTI FISSI ANNUI;Diritto camerale annuale;50;90;;Se iscritto in Camera di Commercio
+2. COSTI FISSI ANNUI;SUBTOTALE FISSI;3050;3590;;
+;;;;;
+3. COSTI APP / STRUMENTI;Hosting Render;0;250;;Free tier all'inizio
+3. COSTI APP / STRUMENTI;Database Neon;0;200;;Free tier all'inizio
+3. COSTI APP / STRUMENTI;Dominio;10;15;;
+3. COSTI APP / STRUMENTI;Email Brevo;0;300;;Free fino a un limite di invii
+3. COSTI APP / STRUMENTI;Commissioni Stripe;0;0;;Ribaltate sul compratore - costo solo su vostre vendite/abbonamenti
+3. COSTI APP / STRUMENTI;Apple Developer (se App Store);0;95;;Opzionale - solo se pubblicate su App Store
+3. COSTI APP / STRUMENTI;Google Play (una tantum);0;23;;Opzionale
+3. COSTI APP / STRUMENTI;SUBTOTALE APP;10;1083;;
+;;;;;
+4. TASSE FORFETTARIO;Fatturato annuo previsto;;;;Inserisci il fatturato stimato qui
+4. TASSE FORFETTARIO;Coefficiente redditivita (40% commercio / 67% servizi);;;;Dipende dal codice ATECO - chiedi al commercialista
+4. TASSE FORFETTARIO;Imponibile = Fatturato x coefficiente;;;;Calcolo
+4. TASSE FORFETTARIO;Imposta sostitutiva 5% (primi 5 anni; poi 15%);;;;Imponibile x 5%
+4. TASSE FORFETTARIO;SUBTOTALE TASSE;;;;
+;;;;;
+5. TOTALE PRIMO ANNO;TOTALE (avvio + fissi + app + tasse);;;;Somma di tutti i subtotali
+;;;;;
+ESEMPIO CALCOLO TASSE;Fatturato esempio;10000;;;
+ESEMPIO CALCOLO TASSE;Imponibile (coeff 67%);6700;;;10000 x 0.67
+ESEMPIO CALCOLO TASSE;Imposta 5%;335;;;6700 x 0.05
+ESEMPIO CALCOLO TASSE;Imposta + INPS commercianti;3035;;;335 + 2700
+;;;;;
+DA CHIEDERE AL COMMERCIALISTA;Domanda 1;;;;Quale codice ATECO e coefficiente (40% o 67%)?
+DA CHIEDERE AL COMMERCIALISTA;Domanda 2;;;;Gestione commercianti (minimo fisso ~2700) o gestione separata (~26% senza minimo)?
+DA CHIEDERE AL COMMERCIALISTA;Domanda 3;;;;Siamo in due soci: meglio forfettario singolo + patto scritto o SRL subito?

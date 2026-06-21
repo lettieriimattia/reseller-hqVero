@@ -70,7 +70,8 @@ export const createProductSchema = z.object({
   // Campi secondari: opzionali — l'utente può lasciarli vuoti e compilarli dopo.
   size: z.string().max(50).optional(),
   condition: z.string().max(100).optional(),
-  price: z.number().positive().max(1000000),
+  // 0 ammesso: l'"acquisto in arrivo" si crea senza prezzo (lo metti dopo dalla Modifica).
+  price: z.number().nonnegative().max(1000000),
   customShares: sharesSchema,
   photos: photosSchema,
   // Conto vendita: nome del conto vendita (obbligatorio se attivo) + % facoltativa
