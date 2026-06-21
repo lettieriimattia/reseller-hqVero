@@ -30,8 +30,10 @@ export async function fulfillProductOrder(opts: {
 
   // Modello portafoglio: il pagamento è incassato dalla piattaforma e resta IN ATTESA.
   // Lo stato diventa PAGATO (NON venduto): le percentuali tra soci NON si applicano finché
-  // il venditore non riscuote. heldAmount = prezzo + spedizione (netto per il venditore).
-  const held = (product.publicPrice ?? 0) + (product.shippingCost ?? 0);
+  // il venditore non riscuote. heldAmount = prezzo (eventualmente concordato) + spedizione.
+  const convo = await prisma.conversation.findUnique({ where: { productId_buyerId: { productId, buyerId } } }).catch(() => null);
+  const itemPrice = (convo?.agreedPrice && convo.agreedPrice > 0) ? convo.agreedPrice : (product.publicPrice ?? 0);
+  const held = itemPrice + (product.shippingCost ?? 0);
   await prisma.product.update({
     where: { id: productId },
     data: {

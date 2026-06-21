@@ -117,7 +117,10 @@ router.post('/:id/buy', authenticate, async (req: AuthRequest, res: Response) =>
 
     const seller = product.user;
     const buyer = await prisma.user.findUnique({ where: { id: buyerId } });
-    const bd = computeBuyerBreakdown(product.publicPrice, product.shippingCost || 0, serviceFeeFor(seller.plan));
+    // Se c'è un'offerta accettata in chat, usa il prezzo concordato.
+    const convo = await prisma.conversation.findUnique({ where: { productId_buyerId: { productId: product.id, buyerId } } }).catch(() => null);
+    const effectivePrice = (convo?.agreedPrice && convo.agreedPrice > 0) ? convo.agreedPrice : product.publicPrice;
+    const bd = computeBuyerBreakdown(effectivePrice, product.shippingCost || 0, serviceFeeFor(seller.plan));
     const base = appBase(req);
 
     // Modello portafoglio: addebito SUL CONTO PIATTAFORMA (nessun transfer ora). I soldi

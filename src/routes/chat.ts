@@ -70,7 +70,7 @@ router.get('/:id/messages', async (req: AuthRequest, res: Response) => {
       where: { conversationId: c.id, senderId: { not: req.user!.userId }, readAt: null },
       data: { readAt: new Date() },
     });
-    res.json(messages.map(m => ({ id: m.id, text: m.text, mine: m.senderId === req.user!.userId, createdAt: m.createdAt })));
+    res.json(messages.map(m => ({ id: m.id, text: m.text, mine: m.senderId === req.user!.userId, createdAt: m.createdAt, offerAmount: m.offerAmount ?? null, offerStatus: m.offerStatus ?? null })));
   } catch (e: any) { logger.error('GET /chat/:id/messages', { err: e.message }); res.status(500).json({ error: 'Errore' }); }
 });
 
@@ -143,6 +143,49 @@ router.post('/:id/ship', async (req: AuthRequest, res: Response) => {
 
     res.json({ success: true, tracked });
   } catch (e: any) { logger.error('POST /chat/:id/ship', { err: e.message }); res.status(500).json({ error: 'Errore completamento vendita' }); }
+});
+
+// OFFERTE — contrattazione del prezzo in chat.
+// Il compratore propone un prezzo; il venditore accetta (fissa il prezzo d'acquisto) o rifiuta.
+router.post('/:id/offer', async (req: AuthRequest, res: Response) => {
+  try {
+    const uid = req.user!.userId;
+    const c = await assertParticipant(req.params.id, uid);
+    if (!c) return res.status(403).json({ error: 'Non autorizzato' });
+    if (c.buyerId !== uid) return res.status(403).json({ error: 'Solo il compratore può fare un\'offerta.' });
+    const amount = Math.round((Number(req.body?.amount) || 0) * 100) / 100;
+    if (!(amount > 0)) return res.status(400).json({ error: 'Importo offerta non valido.' });
+    const msg = await prisma.message.create({
+      data: { conversationId: c.id, senderId: uid, text: `💶 Offerta: ${amount.toFixed(2)}€`, offerAmount: amount, offerStatus: 'pending' },
+    });
+    await prisma.conversation.update({ where: { id: c.id }, data: { updatedAt: new Date() } });
+    res.json({ id: msg.id, text: msg.text, mine: true, createdAt: msg.createdAt, offerAmount: amount, offerStatus: 'pending' });
+  } catch (e: any) { logger.error('POST /chat/:id/offer', { err: e.message }); res.status(500).json({ error: 'Errore offerta' }); }
+});
+
+// Venditore accetta/rifiuta un'offerta.
+router.post('/:id/offer/:msgId/:action', async (req: AuthRequest, res: Response) => {
+  try {
+    const uid = req.user!.userId;
+    const action = req.params.action;
+    if (action !== 'accept' && action !== 'decline') return res.status(400).json({ error: 'Azione non valida' });
+    const c = await assertParticipant(req.params.id, uid);
+    if (!c) return res.status(403).json({ error: 'Non autorizzato' });
+    if (c.sellerId !== uid) return res.status(403).json({ error: 'Solo il venditore può rispondere alle offerte.' });
+    const offer = await prisma.message.findFirst({ where: { id: req.params.msgId, conversationId: c.id } });
+    if (!offer || offer.offerAmount == null) return res.status(404).json({ error: 'Offerta non trovata' });
+    if (offer.offerStatus !== 'pending') return res.status(400).json({ error: 'Offerta già gestita.' });
+
+    const accepted = action === 'accept';
+    await prisma.message.update({ where: { id: offer.id }, data: { offerStatus: accepted ? 'accepted' : 'declined' } });
+    if (accepted) {
+      await prisma.conversation.update({ where: { id: c.id }, data: { agreedPrice: offer.offerAmount, updatedAt: new Date() } });
+    }
+    await prisma.message.create({
+      data: { conversationId: c.id, senderId: uid, text: accepted ? `✅ Offerta accettata: ${offer.offerAmount.toFixed(2)}€. Puoi completare l'acquisto a questo prezzo.` : `❌ Offerta rifiutata.` },
+    });
+    res.json({ success: true, accepted, agreedPrice: accepted ? offer.offerAmount : null });
+  } catch (e: any) { logger.error('POST /chat/:id/offer/action', { err: e.message }); res.status(500).json({ error: 'Errore gestione offerta' }); }
 });
 
 // COMPRATORE: conferma "Consegnato" → sblocca i fondi al venditore (diventa VENDUTO,

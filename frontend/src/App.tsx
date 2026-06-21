@@ -1932,6 +1932,23 @@ export default function App() {
     if (ok && data?.withdrawn != null) { showToast(`Riscossione avviata: ${data.withdrawn.toFixed(2)}€ in arrivo sul tuo conto`, 'ok'); await refreshWallet(); return; }
     showToast(data?.error || 'Errore riscossione', 'err');
   };
+  // Offerte: il compratore propone un prezzo, il venditore accetta/rifiuta.
+  const makeOffer = async () => {
+    if (!activeConvo) return;
+    const raw = window.prompt('La tua offerta in € (es. 120):', activeConvo.price != null ? String(activeConvo.price) : '');
+    if (raw == null) return;
+    const amount = parseFloat(raw.replace(',', '.'));
+    if (!(amount > 0)) { showToast('Importo non valido', 'warn'); return; }
+    const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/offer`, { method: 'POST', body: JSON.stringify({ amount }) });
+    if (ok && data?.id) { await openConversation({ id: activeConvo.id }); }
+    else showToast(data?.error || 'Errore offerta', 'err');
+  };
+  const respondOffer = async (msgId: string, action: 'accept' | 'decline') => {
+    if (!activeConvo) return;
+    const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/offer/${msgId}/${action}`, { method: 'POST', body: JSON.stringify({}) });
+    if (ok && data?.success) { await openConversation({ id: activeConvo.id }); showToast(action === 'accept' ? 'Offerta accettata' : 'Offerta rifiutata', 'ok'); }
+    else showToast(data?.error || 'Errore', 'err');
+  };
   // Compratore: conferma di aver ricevuto il pacco → sblocca il pagamento al venditore.
   const confirmDelivery = async () => {
     if (!activeConvo) return;
@@ -4924,12 +4941,33 @@ export default function App() {
                     <button onClick={confirmDelivery}
                       className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8b5cf6] text-white flex items-center gap-1.5"><CheckCircle size={13} /> Consegnato</button>
                   )}
+                  {activeConvo.role === 'buyer' && (!activeConvo.productStatus || activeConvo.productStatus === 'IN STOCK') && (
+                    <button onClick={makeOffer}
+                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text)] border border-[var(--border-2)] flex items-center gap-1.5"><DollarSign size={13} /> Offerta</button>
+                  )}
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-2">
                   {chatMessages.map((m: any) => (
+                    m.offerAmount != null ? (
+                      <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
+                        <div className="max-w-[80%] px-3 py-2 rounded-2xl text-sm bg-[var(--surface-2)] border border-[#8b5cf6]/30">
+                          <p className="font-bold">💶 Offerta: {m.offerAmount.toFixed(2)}€</p>
+                          {m.offerStatus === 'accepted' && <p className="text-[11px] text-green-400 font-semibold mt-0.5">Accettata</p>}
+                          {m.offerStatus === 'declined' && <p className="text-[11px] text-red-400 font-semibold mt-0.5">Rifiutata</p>}
+                          {m.offerStatus === 'pending' && activeConvo.role === 'seller' && (
+                            <div className="flex gap-2 mt-2">
+                              <button onClick={() => respondOffer(m.id, 'accept')} className="px-3 py-1 rounded-lg text-xs font-bold bg-green-600 text-white">Accetta</button>
+                              <button onClick={() => respondOffer(m.id, 'decline')} className="px-3 py-1 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)]">Rifiuta</button>
+                            </div>
+                          )}
+                          {m.offerStatus === 'pending' && activeConvo.role === 'buyer' && <p className="text-[11px] text-[var(--text-soft)] mt-0.5">In attesa di risposta…</p>}
+                        </div>
+                      </div>
+                    ) : (
                     <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm ${m.mine ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--surface-2)] text-[var(--text)]'}`}>{m.text}</div>
                     </div>
+                    )
                   ))}
                   {chatMessages.length === 0 && <p className="text-center text-[var(--text-faint)] text-sm py-8">Scrivi il primo messaggio. Niente link o contatti esterni (anti-truffa).</p>}
                 </div>
