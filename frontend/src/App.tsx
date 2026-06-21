@@ -2961,6 +2961,27 @@ export default function App() {
     };
   }, [lotDetail, marketDetail]);
 
+  // Chat aperta: blocca lo scroll della pagina (su mobile, digitando un messaggio iOS
+  // muoveva tutta la pagina). Così resta ferma l'intestazione e l'input; scorre solo la chat.
+  useEffect(() => {
+    if (currentView !== 'chat' || !activeConvo) return;
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: body.style.overflow };
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      window.scrollTo(0, scrollY);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentView, activeConvo?.id]);
+
   // Undo: ripristina prodotti eliminati / riporta in stock prodotti venduti
   const undoDeleteIds = async (ids: string[]) => {
     await Promise.allSettled(ids.map(id => apiCall(`/products/${id}/restore`, { method: 'POST' })));
@@ -5306,8 +5327,12 @@ export default function App() {
                     </>
                   )}
                   {activeConvo.role === 'buyer' && (!activeConvo.productStatus || activeConvo.productStatus === 'IN STOCK') && (
-                    <button onClick={makeOffer}
-                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text)] border border-[var(--border-2)] flex items-center gap-1.5"><DollarSign size={13} /> Offerta</button>
+                    <>
+                      <button onClick={() => payProduct(activeConvo.productId)}
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white flex items-center gap-1.5"><DollarSign size={13} /> Compra</button>
+                      <button onClick={makeOffer}
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text)] border border-[var(--border-2)] flex items-center gap-1.5"><DollarSign size={13} /> Offerta</button>
+                    </>
                   )}
                 </div>
                 {/* Barra spedizione: tracciamento + etichetta direttamente in chat */}
