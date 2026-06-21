@@ -252,7 +252,7 @@ export default function App() {
   }, [theme]);
 
   // ----- UI STATE -----
-  const [currentView, setCurrentView] = useState<'dashboard' | 'magazzino' | 'analytics' | 'tracking' | 'settings' | 'admin' | 'market' | 'chat'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'magazzino' | 'analytics' | 'tracking' | 'settings' | 'admin' | 'market' | 'chat' | 'wallet'>('dashboard');
   const [magazzinoView, setMagazzinoView] = useState<'instock' | 'sold'>('instock');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
@@ -1219,7 +1219,7 @@ export default function App() {
   useEffect(() => {
     if (!isAuthenticated) return;
     if (currentView === 'chat') fetchConversations();
-    if (currentView === 'settings') { refreshConnectStatus(); refreshWallet(); }
+    if (currentView === 'settings' || currentView === 'wallet') { refreshConnectStatus(); refreshWallet(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentView, isAuthenticated, fetchConversations]);
 
@@ -3433,6 +3433,12 @@ export default function App() {
             className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-semibold text-[#8b5cf6] hover:bg-[#8b5cf6]/10 transition-colors">
             <Sparkles size={17} /> Piani
           </button>
+          <button onClick={() => navigateTo('wallet')}
+            className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+              currentView === 'wallet' ? 'bg-[#8b5cf6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
+            }`}>
+            <Wallet size={17} /> Portafoglio
+          </button>
           <button onClick={() => navigateTo('settings')}
             className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
               currentView === 'settings' ? 'bg-[#8b5cf6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
@@ -3474,6 +3480,11 @@ export default function App() {
             <button onClick={() => openAddForm()}
               className="hidden lg:flex items-center gap-2 bg-[#8b5cf6] hover:bg-[#7c3aed] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
               <Plus size={15} /> Aggiungi
+            </button>
+            {/* Portafoglio (solo mobile: icona in alto a destra, accesso rapido agli incassi) */}
+            <button onClick={() => navigateTo('wallet')}
+              className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'wallet' ? 'text-[#8b5cf6]' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
+              <Wallet size={18} />
             </button>
             {/* Impostazioni (solo mobile: in alto, visto che non è più nella barra in basso) */}
             <button onClick={() => navigateTo('settings')}
@@ -4916,6 +4927,86 @@ export default function App() {
           </div>
         )}
 
+        {/* ========== PORTAFOGLIO (Incassi marketplace) ========== */}
+        {currentView === 'wallet' && (
+          <div className="space-y-4 max-w-2xl">
+            <div className="flex items-center gap-2">
+              <Wallet className="text-[#8b5cf6]" size={26} />
+              <h2 className="text-3xl font-semibold">Portafoglio</h2>
+              {connectStatus?.chargesEnabled
+                ? <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">Conto attivo</span>
+                : connectStatus?.connected
+                  ? <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/15 px-2 py-0.5 rounded-full">Da completare</span>
+                  : null}
+            </div>
+
+            {connectStatus?.configured === false ? (
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 text-sm text-[var(--text-soft)]">I pagamenti non sono ancora attivi sulla piattaforma.</div>
+            ) : (
+              <>
+                {/* Saldo */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                    <p className="text-[10px] text-[var(--text-soft)] uppercase tracking-widest">Da riscuotere</p>
+                    <p className="text-3xl font-bold num">{(wallet?.available ?? 0).toFixed(2)}€</p>
+                  </div>
+                  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                    <p className="text-[10px] text-[var(--text-soft)] uppercase tracking-widest">In attesa di consegna</p>
+                    <p className="text-3xl font-bold num text-[var(--text-soft)]">{(wallet?.pending ?? 0).toFixed(2)}€</p>
+                  </div>
+                </div>
+
+                <button type="button" onClick={withdrawFunds} disabled={withdrawing || (wallet?.available ?? 0) <= 0}
+                  className="w-full py-3 bg-[#8b5cf6] hover:bg-[#7c3aed] rounded-2xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
+                  {withdrawing ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}
+                  {(wallet?.available ?? 0) > 0 ? `Riscuoti ${(wallet?.available ?? 0).toFixed(2)}€` : 'Niente da riscuotere'}
+                </button>
+                <p className="text-[11px] text-[var(--text-faint)]">
+                  {connectStatus?.chargesEnabled
+                    ? 'Conto verificato: il bonifico parte in automatico quando riscuoti.'
+                    : 'Al primo prelievo Stripe ti chiederà solo il minimo (IBAN + dati base). I soldi entrano qui quando il compratore conferma la consegna.'}
+                </p>
+
+                {/* Pronti da riscuotere */}
+                {(wallet?.readyItems?.length ?? 0) > 0 && (
+                  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                    <p className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest mb-2">Pronti da riscuotere</p>
+                    <div className="space-y-1.5">
+                      {wallet!.readyItems.map((it: any) => (
+                        <div key={it.id} className="flex justify-between text-sm">
+                          <span className="truncate text-[var(--text)]">{it.name}</span>
+                          <span className="font-bold num text-green-400">+{(it.amount || 0).toFixed(2)}€</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* In attesa di consegna */}
+                {(wallet?.pendingItems?.length ?? 0) > 0 && (
+                  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                    <p className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest mb-2">In attesa che il compratore confermi</p>
+                    <div className="space-y-1.5">
+                      {wallet!.pendingItems.map((it: any) => (
+                        <div key={it.id} className="flex justify-between text-sm">
+                          <span className="truncate text-[var(--text-soft)]">{it.name}</span>
+                          <span className="font-bold num text-[var(--text-soft)]">{(it.amount || 0).toFixed(2)}€</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(wallet?.readyItems?.length ?? 0) === 0 && (wallet?.pendingItems?.length ?? 0) === 0 && (
+                  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-8 text-center text-sm text-[var(--text-soft)]">
+                    Nessun incasso ancora. Quando vendi nel marketplace, qui trovi i soldi da riscuotere.
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
         {/* ========== CHAT ========== */}
         {currentView === 'chat' && (
           <div className="space-y-4">
@@ -5482,45 +5573,16 @@ export default function App() {
               </div>
             </section>
 
-            {/* SEZIONE: Incassi marketplace (Stripe Connect) */}
-            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
-              <div className="flex items-center gap-2 mb-1">
-                <Wallet className="text-[var(--text)]" size={18} />
-                <h3 className="text-lg font-bold tracking-tighter">Incassi marketplace</h3>
-                {connectStatus?.chargesEnabled
-                  ? <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">Attivo</span>
-                  : connectStatus?.connected
-                    ? <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/15 px-2 py-0.5 rounded-full">Da completare</span>
-                    : <span className="text-[10px] font-bold text-[var(--text-soft)] bg-[var(--fill)] px-2 py-0.5 rounded-full">Non collegato</span>}
+            {/* SEZIONE: Incassi marketplace → rimanda alla pagina Portafoglio dedicata */}
+            <button type="button" onClick={() => navigateTo('wallet')}
+              className="w-full text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 hover:border-[var(--border-2)] transition-colors flex items-center gap-3">
+              <Wallet className="text-[#8b5cf6]" size={20} />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold tracking-tighter">Portafoglio · Incassi marketplace</h3>
+                <p className="text-xs text-[var(--text-soft)]">Saldo da riscuotere {(wallet?.available ?? 0).toFixed(2)}€ · in attesa {(wallet?.pending ?? 0).toFixed(2)}€</p>
               </div>
-              {connectStatus?.configured === false ? (
-                <p className="text-xs text-[var(--text-faint)] mt-1">I pagamenti non sono ancora attivi sulla piattaforma.</p>
-              ) : (
-                <>
-                  {/* Saldo */}
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div className="bg-[var(--surface-2)] rounded-xl p-3">
-                      <p className="text-[10px] text-[var(--text-soft)] uppercase tracking-widest">Da riscuotere</p>
-                      <p className="text-2xl font-bold num">{(wallet?.available ?? 0).toFixed(2)}€</p>
-                    </div>
-                    <div className="bg-[var(--surface-2)] rounded-xl p-3">
-                      <p className="text-[10px] text-[var(--text-soft)] uppercase tracking-widest">In attesa di consegna</p>
-                      <p className="text-2xl font-bold num text-[var(--text-soft)]">{(wallet?.pending ?? 0).toFixed(2)}€</p>
-                    </div>
-                  </div>
-                  <button type="button" onClick={withdrawFunds} disabled={withdrawing || (wallet?.available ?? 0) <= 0}
-                    className="mt-3 w-full py-2.5 bg-[#8b5cf6] hover:bg-[#7c3aed] rounded-xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
-                    {withdrawing ? <Loader2 size={15} className="animate-spin" /> : <Wallet size={15} />}
-                    {(wallet?.available ?? 0) > 0 ? `Riscuoti ${(wallet?.available ?? 0).toFixed(2)}€` : 'Niente da riscuotere'}
-                  </button>
-                  <p className="text-[10px] text-[var(--text-faint)] mt-2">
-                    {connectStatus?.chargesEnabled
-                      ? 'Conto verificato: il bonifico parte in automatico quando riscuoti.'
-                      : 'Al primo prelievo Stripe ti chiederà il minimo (IBAN + dati base). I soldi entrano qui quando il compratore conferma la consegna.'}
-                  </p>
-                </>
-              )}
-            </section>
+              <ChevronDown size={18} className="-rotate-90 text-[var(--text-soft)]" />
+            </button>
 
             {/* SEZIONE: Reparti & Codici Invito — lista a tendina (non spinge giù le impostazioni) */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
