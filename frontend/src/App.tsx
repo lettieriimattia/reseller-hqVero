@@ -3034,15 +3034,14 @@ export default function App() {
 
   // Crea un prodotto IN STOCK e gli attacca un tracking INBOUND (pacco in arrivo)
   const createIncoming = async () => {
-    if (!incCategory) { showToast('Scegli un reparto', 'warn'); return; }
-    if (!incBrand.trim() || !incName.trim()) { showToast('Inserisci brand e nome', 'warn'); return; }
-    const priceNum = parseFloat(incPrice);
-    if (isNaN(priceNum) || priceNum <= 0) { showToast('Inserisci un prezzo d\'acquisto valido', 'warn'); return; }
+    if (!incName.trim()) { showToast('Inserisci il nome', 'warn'); return; }
     if (incTrackCode.trim().length < 4) { showToast('Inserisci un codice tracking valido', 'warn'); return; }
     setIncSaving(true);
+    // Minimal: serve solo il nome. Reparto/brand/prezzo si mettono dopo dalla Modifica.
+    const cat = incCategory || userCategories[0] || 'Altro';
     const { ok, data } = await apiCall<any>('/products', {
       method: 'POST',
-      body: JSON.stringify({ category: incCategory, brand: incBrand.trim(), name: incName.trim(), price: priceNum }),
+      body: JSON.stringify({ category: cat, brand: incBrand.trim() || '-', name: incName.trim(), price: parseFloat(incPrice) || 0 }),
     });
     if (!ok || !data?.id) { setIncSaving(false); showToast(data?.error || 'Errore creazione prodotto', 'err'); return; }
     const t = await apiCall(`/tracking/${data.id}`, {
@@ -5125,7 +5124,7 @@ export default function App() {
                 </div>
               )
             ) : (
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl flex flex-col h-[70vh]">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl flex flex-col h-[calc(100dvh-13rem)] lg:h-[70vh] overflow-hidden">
                 <div className="flex items-center gap-2 p-3 border-b border-[var(--border)]">
                   <button onClick={() => { setActiveConvo(null); setChatMessages([]); }} className="p-1.5 hover:bg-[var(--fill)] rounded-lg"><ChevronDown size={18} className="rotate-90" /></button>
                   <div className="flex-1 min-w-0">
@@ -5146,7 +5145,7 @@ export default function App() {
                       className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text)] border border-[var(--border-2)] flex items-center gap-1.5"><DollarSign size={13} /> Offerta</button>
                   )}
                 </div>
-                <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
                   {chatMessages.map((m: any) => (
                     m.offerAmount != null ? (
                       <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
@@ -8444,29 +8443,10 @@ export default function App() {
 
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Reparto</label>
-                <select value={incCategory} onChange={(e: any) => setIncCategory(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none">
-                  {userCategories.length === 0 && <option value="">— crea prima un reparto —</option>}
-                  {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Brand</label>
-                  <input value={incBrand} onChange={(e: any) => setIncBrand(e.target.value)} placeholder="Nike"
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none" />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo acquisto €</label>
-                  <input type="number" step="0.01" value={incPrice} onChange={(e: any) => setIncPrice(e.target.value)} placeholder="0"
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none" />
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nome / Modello</label>
-                <input value={incName} onChange={(e: any) => setIncName(e.target.value)} placeholder="Air Jordan 1 Chicago"
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nome</label>
+                <input value={incName} onChange={(e: any) => setIncName(e.target.value)} placeholder="Es. Air Jordan 1 Chicago" autoFocus
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none" />
+                <p className="text-[10px] text-[var(--text-faint)] mt-1">Reparto, brand e prezzo li aggiungi dopo dalla Modifica (facoltativi).</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
