@@ -587,6 +587,19 @@ export default function App() {
   const [chSelected, setChSelected] = useState<string[]>([]);
   const [chSaving, setChSaving] = useState(false);
   const hasFeature = (f: string) => myFeatures.includes(f);
+  // Gating UX: se non hai la feature, apre i Piani (invece di dare errore). true = puoi procedere.
+  const requireFeatureOrUpgrade = (f: string) => {
+    if (hasFeature(f)) return true;
+    openPlanModal();
+    return false;
+  };
+  // Lucchetto cliccabile → apre i Piani. Mostralo accanto alle feature premium bloccate.
+  const PlanLock = ({ plan = 'Pro' }: { plan?: string }) => (
+    <button type="button" onClick={(e) => { e.stopPropagation(); openPlanModal(); }}
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] shrink-0">
+      <Lock size={10} /> {plan}
+    </button>
+  );
   // Admin: vista corrente (Utenti / Richieste) + stato richieste
   const [adminView, setAdminView] = useState<'users' | 'feedback'>('users');
   const [adminFeedback, setAdminFeedback] = useState<any[]>([]);
@@ -981,7 +994,7 @@ export default function App() {
   const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, business: 3 };
   const planRank = PLAN_RANK[(user?.plan as string) || 'free'] ?? 0;
   const isAdminUser = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-  const hasAdvancedAnalytics = planRank >= 2 || isAdminUser; // Pro/Business (admin sempre)
+  const hasAdvancedAnalytics = planRank >= 1 || isAdminUser; // Starter in su (admin sempre)
   const teamFounderName = teamData.length > 0 
     ? teamData[0].members.find((m: any) => m.role === 'OWNER')?.name 
     : null;
@@ -1047,6 +1060,7 @@ export default function App() {
   }, []);
 
   const addExpense = async () => {
+    if (!requireFeatureOrUpgrade('accounting')) return;
     const amt = parseFloat(expAmount);
     const whId = expWarehouse || baseWarehouse?.id;
     if (!whId || !expDesc.trim() || isNaN(amt) || amt <= 0) { showToast('Inserisci importo e descrizione', 'err'); return; }
@@ -1067,6 +1081,7 @@ export default function App() {
 
   // Scarica il CSV per il commercialista (fetch con cookie + refresh, poi blob download).
   const downloadAccountantCsv = async () => {
+    if (!requireFeatureOrUpgrade('accounting')) return;
     try {
       let res = await fetch(`${API_URL}/analytics/export.csv`, { credentials: 'include' });
       if (res.status === 401) { await refreshSession(); res = await fetch(`${API_URL}/analytics/export.csv`, { credentials: 'include' }); }
@@ -2536,6 +2551,7 @@ export default function App() {
   // Toggle rapido pubblico/privato dalla card del magazzino (senza aprire la modifica)
   const quickTogglePublic = async (group: any) => {
     const makePublic = !group.isPublic;
+    if (makePublic && !requireFeatureOrUpgrade('marketplace')) return;
     const price = group.publicPrice ?? group.salePrice ?? group.marketPriceAvg ?? null;
     if (makePublic && (price == null || price <= 0)) {
       showToast('Imposta un prezzo pubblico nella Modifica', 'warn');
@@ -2562,6 +2578,7 @@ export default function App() {
 
   // Pubblica/ritira TUTTO un magazzino (dalle impostazioni)
   const toggleWarehousePublic = async (warehouseId: string, makePublic: boolean) => {
+    if (makePublic && !requireFeatureOrUpgrade('marketplace')) return;
     const { ok, data } = await apiCall<any>('/products/publish-all', {
       method: 'PATCH', body: JSON.stringify({ warehouseId, isPublic: makePublic }),
     });
@@ -2575,6 +2592,7 @@ export default function App() {
 
   // Pubblica/ritira l'articolo dal marketplace (applica a tutti i pezzi del gruppo)
   const savePublish = async (group: any, makePublic: boolean) => {
+    if (makePublic && !requireFeatureOrUpgrade('marketplace')) return;
     const price = parseFloat(editPublicPrice);
     if (makePublic && (isNaN(price) || price <= 0)) { showToast('Inserisci un prezzo pubblico', 'err'); return; }
     const ship = parseFloat(editShippingCost);
@@ -4498,14 +4516,14 @@ export default function App() {
               <div className="absolute inset-0 bg-[#8b5cf6]/[0.05] pointer-events-none" />
               <div className="relative max-w-md mx-auto">
                 <div className="w-14 h-14 rounded-2xl bg-[#8b5cf6]/15 flex items-center justify-center mx-auto mb-4"><BarChart3 size={26} className="text-[#8b5cf6]" /></div>
-                <h3 className="text-xl font-bold mb-2">Analisi avanzate — piano Pro</h3>
+                <h3 className="text-xl font-bold mb-2">Analytics — dallo Starter</h3>
                 <p className="text-sm text-[var(--text-soft)] mb-5">Scopri quanto guadagni davvero: ROI, andamento nel tempo, performance per categoria e piattaforma, sell-through e giorni medi di vendita.</p>
                 <ul className="text-sm text-[var(--text-muted)] text-left space-y-2 mb-6 inline-block">
                   {['ROI e margine reali', 'Grafico andamento (trend storico)', 'Performance per categoria e piattaforma', 'Sell-through % e giorni medi di vendita', 'Report e analisi per socio (Business)'].map(x => (
                     <li key={x} className="flex items-center gap-2"><CheckCircle size={15} className="text-[#8b5cf6] shrink-0" /> {x}</li>
                   ))}
                 </ul>
-                <button onClick={() => openPlanModal()} className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-6 py-3 rounded-xl font-bold text-sm transition-colors">Sblocca con Pro</button>
+                <button onClick={() => openPlanModal()} className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-6 py-3 rounded-xl font-bold text-sm transition-colors">Sblocca con Starter</button>
                 <p className="text-[11px] text-[var(--text-faint)] mt-4">I tuoi numeri principali (profitto, stock, vendite) restano sempre nella Dashboard.</p>
               </div>
             </section>
@@ -4526,6 +4544,7 @@ export default function App() {
               <button type="button" onClick={() => setExpensesOpen(o => !o)} className="w-full flex items-center gap-2">
                 <Wallet size={18} className="text-amber-400" />
                 <h3 className="text-lg font-bold tracking-tighter">Costi extra</h3>
+                {!hasFeature('accounting') && <PlanLock plan="Pro" />}
                 <span className="text-[11px] text-[var(--text-faint)] ml-auto num">
                   {expenses.length > 0 ? `${expenses.length} voci · -${expenses.reduce((a: number, e: any) => a + (e.amount || 0), 0).toFixed(0)}€` : 'Nessuno'}
                 </span>
@@ -7276,6 +7295,7 @@ export default function App() {
                   <div className="flex items-center gap-2">
                     <Store size={15} className="text-[#8b5cf6]" />
                     <span className="text-sm font-bold">Marketplace pubblico</span>
+                    {!hasFeature('marketplace') && <PlanLock plan="Starter" />}
                   </div>
                   {editIsPublic && <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">PUBBLICO</span>}
                 </div>
