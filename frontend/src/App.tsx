@@ -566,6 +566,28 @@ export default function App() {
   // ----- NOTIFICHE PUSH -----
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
+  // Preferenze notifiche (schermata dedicata con toggle per categoria)
+  const [notifPrefsOpen, setNotifPrefsOpen] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>({});
+  const NOTIF_LABELS: { key: string; label: string; desc: string }[] = [
+    { key: 'offers', label: 'Offerte', desc: 'Quando ricevi o ti rispondono a un\'offerta' },
+    { key: 'messages', label: 'Messaggi', desc: 'Nuovi messaggi in chat' },
+    { key: 'sales', label: 'Vendite e pagamenti', desc: 'Quando un articolo viene pagato/venduto' },
+    { key: 'shipping', label: 'Spedizioni e consegne', desc: 'Stato spedizione e consegne confermate' },
+    { key: 'disputes', label: 'Resi e contestazioni', desc: 'Contestazioni aperte o risolte' },
+    { key: 'team', label: 'Soci e magazzino', desc: 'Nuovi soci, prodotti aggiunti dal team' },
+    { key: 'insights', label: 'Suggerimenti e avvisi', desc: 'Prodotti fermi, consigli di prezzo' },
+  ];
+  const openNotifPrefs = async () => {
+    setNotifPrefsOpen(true);
+    const { ok, data } = await apiCall<any>('/notifications/prefs');
+    if (ok && data?.prefs) setNotifPrefs(data.prefs);
+  };
+  const toggleNotifPref = async (key: string) => {
+    const next = { ...notifPrefs, [key]: !(notifPrefs[key] !== false) };
+    setNotifPrefs(next);
+    await apiCall('/notifications/prefs', { method: 'PUT', body: JSON.stringify({ prefs: next }) });
+  };
 
   // ----- ADMIN -----
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
@@ -5463,6 +5485,37 @@ export default function App() {
               </div>
             ), document.body)}
 
+            {/* ========== SCHERMATA: PREFERENZE NOTIFICHE ========== */}
+            {notifPrefsOpen && createPortal((
+              <div className="fixed inset-0 z-[220] bg-[var(--bg)] overflow-y-auto">
+                <div className="sticky top-0 z-10 bg-[var(--bg)]/95 backdrop-blur border-b border-[var(--border)] px-4 py-3 flex items-center gap-3">
+                  <button onClick={() => setNotifPrefsOpen(false)} className="p-1.5 hover:bg-[var(--fill)] rounded-lg"><ChevronDown size={20} className="rotate-90" /></button>
+                  <h2 className="text-lg font-bold">Notifiche</h2>
+                </div>
+                <div className="max-w-md mx-auto p-4 space-y-2.5">
+                  <p className="text-xs text-[var(--text-soft)] px-1 mb-2">Scegli quali notifiche ricevere sul dispositivo. Le notifiche di sicurezza arrivano sempre.</p>
+                  {NOTIF_LABELS.map(c => {
+                    const on = notifPrefs[c.key] !== false;
+                    return (
+                      <div key={c.key} className="flex items-center justify-between gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                        <div className="min-w-0">
+                          <p className="font-bold text-sm">{c.label}</p>
+                          <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{c.desc}</p>
+                        </div>
+                        <button onClick={() => toggleNotifPref(c.key)}
+                          className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${on ? 'bg-[#8b5cf6]' : 'bg-[var(--fill-2)]'}`}>
+                          <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${on ? 'left-6' : 'left-1'}`} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {!pushEnabled && (
+                    <p className="text-[11px] text-amber-400 px-1 pt-2">⚠️ Le notifiche push non sono attive su questo dispositivo. Attivale qui sopra in "Notifiche" per riceverle.</p>
+                  )}
+                </div>
+              </div>
+            ), document.body)}
+
             {/* ========== MODALE: FAI UN'OFFERTA (compratore) ========== */}
             {chatOffer.open && activeConvo && createPortal((
               <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setChatOffer(o => ({ ...o, open: false }))}>
@@ -5909,9 +5962,14 @@ export default function App() {
                   {pushBusy ? <Loader2 size={14} className="animate-spin" /> : pushEnabled ? 'Disattiva' : 'Attiva'}
                 </button>
               </div>
+              <button onClick={openNotifPrefs}
+                className="mt-4 w-full py-2.5 rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors flex items-center justify-between px-4">
+                <span className="flex items-center gap-2"><Bell size={13} /> Gestisci quali notifiche ricevere</span>
+                <ChevronDown size={16} className="-rotate-90" />
+              </button>
               {pushEnabled && user?.warehouses?.some(w => w.role === 'OWNER') && (
                 <button onClick={sendTestPush} disabled={pushBusy}
-                  className="mt-4 w-full py-2 rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
+                  className="mt-2 w-full py-2 rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
                   <Bell size={13} /> Invia notifica di prova
                 </button>
               )}

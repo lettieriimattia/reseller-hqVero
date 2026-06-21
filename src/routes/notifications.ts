@@ -4,9 +4,11 @@
 import { Router, Response } from 'express';
 import { authenticate, AuthRequest, authorizeWarehouseOwner } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimit';
-import { 
-  getNotifications, markAsRead, markAllRead, getUnreadCount 
+import {
+  getNotifications, markAsRead, markAllRead, getUnreadCount,
+  defaultNotifPrefs, NOTIF_CATEGORIES,
 } from '../services/notification.service';
+import { prisma } from '../lib/prisma';
 import { getAuditLogsForWarehouse } from '../services/audit.service';
 import { getStaleProducts, checkAndNotifyStale } from '../services/stale.service';
 import { logger } from '../utils/logger';
@@ -28,6 +30,37 @@ router.get('/', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     logger.error('Errore GET /notifications', { err: err.message });
     res.status(500).json({ error: 'Errore notifiche' });
+  }
+});
+
+// ==========================================
+// GET /notifications/prefs — preferenze notifiche (toggle per categoria)
+// ==========================================
+router.get('/prefs', async (req: AuthRequest, res: Response) => {
+  try {
+    const u = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { notifPrefs: true } });
+    let prefs = defaultNotifPrefs();
+    if (u?.notifPrefs) { try { prefs = { ...prefs, ...JSON.parse(u.notifPrefs) }; } catch {} }
+    res.json({ prefs, categories: NOTIF_CATEGORIES });
+  } catch (err: any) {
+    logger.error('Errore GET /notifications/prefs', { err: err.message });
+    res.status(500).json({ error: 'Errore preferenze' });
+  }
+});
+
+// PUT /notifications/prefs — salva le preferenze
+router.put('/prefs', async (req: AuthRequest, res: Response) => {
+  try {
+    const body = req.body?.prefs || {};
+    const prefs = defaultNotifPrefs();
+    for (const cat of NOTIF_CATEGORIES) {
+      if (typeof body[cat] === 'boolean') prefs[cat] = body[cat];
+    }
+    await prisma.user.update({ where: { id: req.user!.userId }, data: { notifPrefs: JSON.stringify(prefs) } });
+    res.json({ prefs });
+  } catch (err: any) {
+    logger.error('Errore PUT /notifications/prefs', { err: err.message });
+    res.status(500).json({ error: 'Errore salvataggio preferenze' });
   }
 });
 

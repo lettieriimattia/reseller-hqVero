@@ -32,6 +32,10 @@ model User {
   emailVerifyCode   String?        // codice OTP a 6 cifre
   emailVerifyExpires DateTime?
 
+  // Preferenze notifiche push: JSON { offers, messages, sales, shipping, disputes, team, insights }.
+  // null = tutte attive (default). Le notifiche di sicurezza non sono disattivabili.
+  notifPrefs        String?
+
   // Piano di abbonamento: "free" | "starter" | "pro" | "business" (vedi config/plans.ts)
   plan              String         @default("free")
 

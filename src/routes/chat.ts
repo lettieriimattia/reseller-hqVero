@@ -6,7 +6,7 @@ import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { addTracking } from '../services/tracking.service';
-import { notifyWarehouseMembers } from '../services/notification.service';
+import { notifyWarehouseMembers, notify } from '../services/notification.service';
 import { logger } from '../utils/logger';
 import { refundProductPayment, releaseHold, reverseSaleAfterRefund, reasonLabel, DISPUTE_REASONS, SHIP_FALLBACK_DAYS } from '../services/dispute.service';
 
@@ -92,6 +92,9 @@ router.post('/:id/messages', async (req: AuthRequest, res: Response) => {
     }
     const msg = await prisma.message.create({ data: { conversationId: c.id, senderId: req.user!.userId, text } });
     await prisma.conversation.update({ where: { id: c.id }, data: { updatedAt: new Date() } });
+    // Notifica l'altro partecipante (push, se ha i messaggi attivi).
+    const otherId = c.buyerId === req.user!.userId ? c.sellerId : c.buyerId;
+    notify({ userId: otherId, type: 'MESSAGE', title: '💬 Nuovo messaggio', message: text.slice(0, 120), link: '/?view=chat' }).catch(() => {});
     res.json({ id: msg.id, text: msg.text, mine: true, createdAt: msg.createdAt });
   } catch (e: any) { logger.error('POST /chat/:id/messages', { err: e.message }); res.status(500).json({ error: 'Errore invio' }); }
 });
@@ -172,6 +175,7 @@ router.post('/:id/offer', async (req: AuthRequest, res: Response) => {
       data: { conversationId: c.id, senderId: uid, text: `💶 Offerta: ${amount.toFixed(2)}€`, offerAmount: amount, offerStatus: 'pending' },
     });
     await prisma.conversation.update({ where: { id: c.id }, data: { updatedAt: new Date() } });
+    notify({ userId: c.sellerId, type: 'OFFER', title: '💶 Nuova offerta', message: `Hai ricevuto un'offerta di ${amount.toFixed(2)}€`, link: '/?view=chat' }).catch(() => {});
     res.json({ id: msg.id, text: msg.text, mine: true, createdAt: msg.createdAt, offerAmount: amount, offerStatus: 'pending' });
   } catch (e: any) { logger.error('POST /chat/:id/offer', { err: e.message }); res.status(500).json({ error: 'Errore offerta' }); }
 });
@@ -197,6 +201,7 @@ router.post('/:id/offer/:msgId/:action', async (req: AuthRequest, res: Response)
     await prisma.message.create({
       data: { conversationId: c.id, senderId: uid, text: accepted ? `✅ Offerta accettata: ${offer.offerAmount.toFixed(2)}€. Puoi completare l'acquisto a questo prezzo.` : `❌ Offerta rifiutata.` },
     });
+    notify({ userId: c.buyerId, type: 'OFFER', title: accepted ? '✅ Offerta accettata' : '❌ Offerta rifiutata', message: accepted ? `La tua offerta di ${offer.offerAmount.toFixed(2)}€ è stata accettata!` : 'Il venditore ha rifiutato la tua offerta.', link: '/?view=chat' }).catch(() => {});
     res.json({ success: true, accepted, agreedPrice: accepted ? offer.offerAmount : null });
   } catch (e: any) { logger.error('POST /chat/:id/offer/action', { err: e.message }); res.status(500).json({ error: 'Errore gestione offerta' }); }
 });

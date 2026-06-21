@@ -7,7 +7,41 @@ import { logger } from '../utils/logger';
 import { sendPushToUser } from './push.service';
 
 
-export type NotificationType = 'SALE' | 'NEW_MEMBER' | 'PRICE_ALERT' | 'AI_INSIGHT' | 'SECURITY' | 'PRODUCT_ADDED';
+export type NotificationType = 'SALE' | 'NEW_MEMBER' | 'PRICE_ALERT' | 'AI_INSIGHT' | 'SECURITY' | 'PRODUCT_ADDED' | 'OFFER' | 'MESSAGE' | 'DISPUTE';
+
+// Categorie attivabili/disattivabili dall'utente (Impostazioni → Notifiche).
+export type NotifCategory = 'offers' | 'messages' | 'sales' | 'shipping' | 'disputes' | 'team' | 'insights';
+export const NOTIF_CATEGORIES: NotifCategory[] = ['offers', 'messages', 'sales', 'shipping', 'disputes', 'team', 'insights'];
+
+// Mappa tipo → categoria. 'SECURITY' non è mappata: le notifiche di sicurezza arrivano sempre.
+const TYPE_CATEGORY: Partial<Record<NotificationType, NotifCategory>> = {
+  OFFER: 'offers',
+  MESSAGE: 'messages',
+  SALE: 'sales',
+  DISPUTE: 'disputes',
+  NEW_MEMBER: 'team',
+  PRODUCT_ADDED: 'team',
+  PRICE_ALERT: 'insights',
+  AI_INSIGHT: 'insights',
+};
+
+// Default: tutte attive.
+export function defaultNotifPrefs(): Record<NotifCategory, boolean> {
+  return { offers: true, messages: true, sales: true, shipping: true, disputes: true, team: true, insights: true };
+}
+
+// L'utente vuole il PUSH per questo tipo? (in-app si crea sempre; il push rispetta le preferenze)
+async function pushAllowed(userId: string, type: NotificationType): Promise<boolean> {
+  if (type === 'SECURITY') return true; // sicurezza sempre
+  const cat = TYPE_CATEGORY[type];
+  if (!cat) return true;
+  try {
+    const u = await prisma.user.findUnique({ where: { id: userId }, select: { notifPrefs: true } });
+    if (!u?.notifPrefs) return true; // default: attivo
+    const prefs = JSON.parse(u.notifPrefs);
+    return prefs[cat] !== false;
+  } catch { return true; }
+}
 
 interface NotifyInput {
   userId: string;
@@ -20,8 +54,10 @@ interface NotifyInput {
 export async function notify(input: NotifyInput) {
   try {
     const n = await prisma.notification.create({ data: input });
-    // Push al dispositivo (best-effort, non blocca)
-    sendPushToUser(input.userId, { title: input.title, body: input.message, url: input.link }).catch(() => {});
+    // Push al dispositivo (best-effort, non blocca) — solo se l'utente lo vuole per questa categoria.
+    pushAllowed(input.userId, input.type).then(ok => {
+      if (ok) sendPushToUser(input.userId, { title: input.title, body: input.message, url: input.link }).catch(() => {});
+    }).catch(() => {});
     return n;
   } catch (err) {
     logger.error('Errore creazione notifica', { err, input });
@@ -55,8 +91,10 @@ export async function notifyWarehouseMembers(params: {
         ...rest,
       })),
     });
-    // Push a ogni membro (best-effort)
-    memberships.forEach(m => sendPushToUser(m.userId, { title: rest.title, body: rest.message, url: rest.link }).catch(() => {}));
+    // Push a ogni membro (best-effort) — rispetta le preferenze notifiche.
+    memberships.forEach(m => pushAllowed(m.userId, rest.type).then(ok => {
+      if (ok) sendPushToUser(m.userId, { title: rest.title, body: rest.message, url: rest.link }).catch(() => {});
+    }).catch(() => {}));
   } catch (err) {
     logger.error('Errore broadcast notifiche', { err, warehouseId });
   }
