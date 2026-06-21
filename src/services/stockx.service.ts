@@ -124,7 +124,7 @@ function pickStockXPrice(m: any): number | null {
 
 // Valutazione StockX REALE: catalog search → (variant per taglia) → market data in EUR.
 // Difensiva: in caso di errore/forma diversa ritorna value null senza rompere l'app.
-export async function getStockXValuation(opts: { query: string; size?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; brand?: string; model?: string; image?: string | null; styleId?: string | null; sample?: number }> {
+export async function getStockXValuation(opts: { query: string; size?: string; sku?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; brand?: string; model?: string; image?: string | null; styleId?: string | null; sample?: number }> {
   if (!isStockXConfigured()) return { configured: false, value: null, source: 'StockX (non configurato)' };
   const token = await getStockXAccessToken();
   if (!token) return { configured: true, connected: false, value: null, source: 'StockX (non connesso)' };
@@ -135,14 +135,29 @@ export async function getStockXValuation(opts: { query: string; size?: string })
     Accept: 'application/json',
   };
 
+  // Pulisce la query: trattini "lunghi", separatori e doppi spazi confondono la ricerca StockX.
+  const clean = (s: string) => (s || '').replace(/[–—]/g, ' ').replace(/[•|]/g, ' ').replace(/\s+/g, ' ').trim();
+  // Candidati in ordine di precisione: SKU/style code (match esatto) → query pulita → query grezza.
+  const candidates = Array.from(new Set([
+    opts.sku ? opts.sku.trim() : '',
+    clean(opts.query),
+    opts.query,
+  ].filter(Boolean)));
+
   try {
-    // 1) Ricerca catalogo
-    const sr = await fetch(`${STOCKX_API_BASE}/v2/catalog/search?query=${encodeURIComponent(opts.query)}&pageNumber=1&pageSize=10`, { headers });
-    if (!sr.ok) { logger.warn('StockX search non ok', { status: sr.status }); return { configured: true, connected: true, value: null, source: 'StockX (ricerca fallita)' }; }
-    const sd = await sr.json() as any;
-    const products = sd?.products || sd?.data || sd?.hits || [];
-    const product = Array.isArray(products) ? products[0] : null;
-    if (!product) return { configured: true, connected: true, value: null, source: 'StockX (nessun risultato)' };
+    let product: any = null;
+    let searchFailed = false;
+    for (const q of candidates) {
+      const sr = await fetch(`${STOCKX_API_BASE}/v2/catalog/search?query=${encodeURIComponent(q)}&pageNumber=1&pageSize=10`, { headers });
+      if (!sr.ok) { logger.warn('StockX search non ok', { status: sr.status, q }); searchFailed = true; continue; }
+      const sd = await sr.json() as any;
+      const products = sd?.products || sd?.data || sd?.hits || [];
+      product = Array.isArray(products) ? products[0] : null;
+      if (product) break;
+    }
+    if (!product) {
+      return { configured: true, connected: true, value: null, source: searchFailed ? 'StockX (ricerca fallita)' : 'StockX (nessun risultato)' };
+    }
     const productId = product.productId || product.id || product.urlKey;
     const itemName = product.title || product.name || [product.brand, product.model].filter(Boolean).join(' ');
     const brand = product.brand || undefined;

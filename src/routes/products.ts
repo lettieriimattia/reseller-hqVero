@@ -665,7 +665,7 @@ router.get('/:id/valuation', requireFeature('stockx_pricing'), async (req: AuthR
     const query = `${product.brand} ${product.name}`.trim();
     // StockX: prova SEMPRE. Restituiamo anche il MOTIVO preciso se non c'è valore,
     // così dall'app si capisce se manca la configurazione, la connessione o solo il match.
-    const sx = await getStockXValuation({ query, size: product.size || undefined });
+    const sx = await getStockXValuation({ query, size: product.size || undefined, sku: product.sku || undefined });
     if (sx.value != null) {
       return res.json({ configured: true, value: sx.value, source: 'Valutazione di mercato', sample: sx.sample || 1, confidence: 'alta', authenticatedOnly: true });
     }
