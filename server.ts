@@ -39,6 +39,7 @@ import { initPush } from './src/services/push.service';
 import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
 import { startEmailJobs } from './src/services/email-jobs.service';
+import { releaseExpiredHolds } from './src/services/dispute.service';
 
 import { logger } from './src/utils/logger';
 
@@ -373,4 +374,12 @@ serverInstance.listen(PORT, () => {
     }, TWO_HOURS);
     logger.info('📦 Tracking automatico attivo (poll ogni 2 ore)');
   }
+
+  // Auto-conferma escrow: sblocca i fondi degli acquisti la cui finestra è scaduta
+  // (5gg dalla consegna, o fallback dalla spedizione) e senza contestazioni aperte.
+  releaseExpiredHolds().catch(() => {});
+  setInterval(() => {
+    releaseExpiredHolds().catch(err => logger.error('Errore auto-sblocco escrow', { err }));
+  }, 60 * 60 * 1000);
+  logger.info('💸 Auto-sblocco escrow attivo (controllo ogni ora)');
 });

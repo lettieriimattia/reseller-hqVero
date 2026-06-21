@@ -8,6 +8,7 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { sendEmail } from '../services/email.service';
 import { isPlanId } from '../config/plans';
+import { refundProductPayment, releaseHold, reverseSaleAfterRefund, reasonLabel } from '../services/dispute.service';
 
 const router = Router();
 
@@ -159,6 +160,79 @@ router.delete('/feedback/:id', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     logger.error('Errore DELETE /admin/feedback/:id', { err: err.message });
     res.status(500).json({ error: 'Errore eliminazione' });
+  }
+});
+
+// ==========================================
+// CONTESTAZIONI / RESI — mediazione (casi escalati dal venditore)
+// ==========================================
+
+// GET /admin/disputes — contestazioni aperte/escalate
+router.get('/disputes', async (_req: AuthRequest, res: Response) => {
+  try {
+    const items = await prisma.product.findMany({
+      where: { disputeStatus: { in: ['OPEN', 'ESCALATED'] }, deletedAt: null },
+      orderBy: { disputeOpenedAt: 'desc' },
+      select: {
+        id: true, brand: true, name: true, heldAmount: true, shippingCost: true,
+        disputeStatus: true, disputeReason: true, disputeNote: true, disputePhotos: true,
+        disputeOpenedAt: true, userId: true, buyerUserId: true,
+      },
+    });
+    const userIds = Array.from(new Set(items.flatMap(p => [p.userId, p.buyerUserId].filter(Boolean) as string[])));
+    const users = await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, email: true } });
+    const uMap = new Map(users.map(u => [u.id, u]));
+    res.json({
+      disputes: items.map(p => {
+        let photos: string[] = []; try { photos = p.disputePhotos ? JSON.parse(p.disputePhotos) : []; } catch {}
+        return {
+          productId: p.id, product: `${p.brand} ${p.name}`,
+          amount: p.heldAmount ?? 0,
+          status: p.disputeStatus, reason: p.disputeReason, reasonLabel: reasonLabel(p.disputeReason),
+          note: p.disputeNote, photos, openedAt: p.disputeOpenedAt,
+          seller: uMap.get(p.userId) || null,
+          buyer: p.buyerUserId ? (uMap.get(p.buyerUserId) || null) : null,
+        };
+      }),
+      total: items.length,
+    });
+  } catch (err: any) {
+    logger.error('Errore GET /admin/disputes', { err: err.message });
+    res.status(500).json({ error: 'Errore database' });
+  }
+});
+
+// POST /admin/disputes/:productId/resolve — l'admin decide
+//  decision 'refund_buyer'   → rimborso totale al compratore (articolo torna al venditore)
+//  decision 'release_seller' → contestazione respinta, fondi al venditore
+router.post('/disputes/:productId/resolve', async (req: AuthRequest, res: Response) => {
+  try {
+    const product = await prisma.product.findUnique({ where: { id: req.params.productId } });
+    if (!product || product.deletedAt) return res.status(404).json({ error: 'Articolo non trovato' });
+    if (!product.disputeStatus) return res.status(400).json({ error: 'Nessuna contestazione su questo articolo.' });
+
+    const decision = (req.body?.decision || '').toString();
+    const convo = await prisma.conversation.findFirst({ where: { productId: product.id } });
+
+    if (decision === 'refund_buyer') {
+      const r = await refundProductPayment(product);
+      if (!r.ok) return res.status(502).json({ error: r.error || 'Rimborso non riuscito' });
+      await reverseSaleAfterRefund(product.id, product.heldAmount ?? 0);
+      if (convo) await prisma.message.create({ data: { conversationId: convo.id, senderId: product.buyerUserId || product.userId, text: '⚖️ L\'assistenza ha deciso a favore del compratore: rimborso totale effettuato.' } });
+    } else if (decision === 'release_seller') {
+      await prisma.product.update({ where: { id: product.id }, data: { disputeStatus: null } });
+      await releaseHold(product.id);
+      // Verdetto chiuso: elimina le foto prova dal DB (privacy + spazio), tieni motivo/nota.
+      await prisma.product.update({ where: { id: product.id }, data: { disputeStatus: 'RESOLVED_RELEASE', disputeResolvedAt: new Date(), disputePhotos: null } });
+      if (convo) await prisma.message.create({ data: { conversationId: convo.id, senderId: product.userId, text: '⚖️ L\'assistenza ha respinto la contestazione: i fondi sono stati sbloccati al venditore.' } });
+    } else {
+      return res.status(400).json({ error: 'Decisione non valida.' });
+    }
+    if (convo) await prisma.conversation.update({ where: { id: convo.id }, data: { updatedAt: new Date() } });
+    res.json({ success: true });
+  } catch (err: any) {
+    logger.error('Errore POST /admin/disputes/:id/resolve', { err: err.message });
+    res.status(500).json({ error: 'Errore risoluzione' });
   }
 });
 

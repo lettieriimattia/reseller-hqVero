@@ -8,6 +8,7 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 import { addTracking } from '../services/tracking.service';
 import { notifyWarehouseMembers } from '../services/notification.service';
 import { logger } from '../utils/logger';
+import { refundProductPayment, releaseHold, reverseSaleAfterRefund, reasonLabel, DISPUTE_REASONS, SHIP_FALLBACK_DAYS } from '../services/dispute.service';
 
 const router = Router();
 router.use(authenticate);
@@ -29,7 +30,7 @@ router.get('/conversations', async (req: AuthRequest, res: Response) => {
     const productIds = Array.from(new Set(convos.map(c => c.productId)));
     const userIds = Array.from(new Set(convos.flatMap(c => [c.buyerId, c.sellerId])));
     const [products, users] = await Promise.all([
-      prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, brand: true, name: true, photos: true, publicPrice: true, status: true, trackingCode: true, trackingCarrier: true, trackingStatus: true } }),
+      prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, brand: true, name: true, photos: true, publicPrice: true, status: true, trackingCode: true, trackingCarrier: true, trackingStatus: true, disputeStatus: true, disputeReason: true } }),
       prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } }),
     ]);
     const pMap = new Map(products.map(p => [p.id, p]));
@@ -47,6 +48,8 @@ router.get('/conversations', async (req: AuthRequest, res: Response) => {
         trackingCode: p?.trackingCode ?? null,
         trackingCarrier: p?.trackingCarrier ?? null,
         trackingStatus: p?.trackingStatus ?? null,
+        disputeStatus: p?.disputeStatus ?? null,
+        disputeReason: p?.disputeReason ?? null,
         role: c.buyerId === uid ? 'buyer' : 'seller',
         otherName: uMap.get(otherId) || 'Utente',
         lastMessage: c.messages[0]?.text || null,
@@ -117,6 +120,10 @@ router.post('/:id/ship', async (req: AuthRequest, res: Response) => {
       // compratore non conferma "Consegnato"). Qui aggiungiamo solo la spedizione/tracking.
       if (trackingCode.length < 4) return res.status(400).json({ error: 'Inserisci il codice di tracking.' });
       const r = await addTracking(product.id, trackingCode, carrier, 'OUTBOUND');
+      // Rete di sicurezza: se la consegna non viene mai rilevata, sblocca comunque dopo SHIP_FALLBACK_DAYS.
+      // (Quando il tracking segna "consegnato", la finestra si stringe a 5gg — vedi tracking.service.)
+      const fallback = new Date(Date.now() + SHIP_FALLBACK_DAYS * 86400000);
+      await prisma.product.update({ where: { id: product.id }, data: { autoReleaseAt: fallback } }).catch(() => {});
       // Stesso tracking anche sulla copia del compratore (in arrivo / INBOUND).
       const buyerCopy = await prisma.product.findFirst({ where: { sourceProductId: product.id, userId: c.buyerId, deletedAt: null } }).catch(() => null);
       if (buyerCopy) await addTracking(buyerCopy.id, trackingCode, carrier, 'INBOUND').catch(() => {});
@@ -206,13 +213,9 @@ router.post('/:id/confirm-delivery', async (req: AuthRequest, res: Response) => 
     const product = await prisma.product.findUnique({ where: { id: c.productId } });
     if (!product || product.deletedAt) return res.status(404).json({ error: 'Articolo non trovato' });
     if (product.status !== 'PAGATO') return res.status(400).json({ error: 'Questo articolo non è in attesa di consegna.' });
+    if (product.disputeStatus) return res.status(400).json({ error: 'C\'è una contestazione aperta su questo articolo.' });
 
-    const salePrice = Math.max(0, Math.round((((product.heldAmount ?? product.publicPrice ?? 0) - (product.shippingCost ?? 0))) * 100) / 100);
-    await prisma.product.update({
-      where: { id: product.id },
-      data: { status: 'VENDUTO', soldAt: new Date(), salePrice, deliveredConfirmedAt: new Date() },
-    });
-
+    await releaseHold(product.id);
     await prisma.message.create({ data: { conversationId: c.id, senderId: uid, text: '📬 Consegna confermata! Grazie. Il pagamento è stato sbloccato per il venditore.' } });
     await prisma.conversation.update({ where: { id: c.id }, data: { updatedAt: new Date() } });
 
@@ -225,6 +228,109 @@ router.post('/:id/confirm-delivery', async (req: AuthRequest, res: Response) => 
     }
     res.json({ success: true });
   } catch (e: any) { logger.error('POST /chat/:id/confirm-delivery', { err: e.message }); res.status(500).json({ error: 'Errore conferma consegna' }); }
+});
+
+// ==========================================
+// CONTESTAZIONI / RESI
+// ==========================================
+
+// COMPRATORE: apre una contestazione su un articolo pagato (fondi ancora congelati).
+// Motivo + descrizione + foto come prova. Il venditore deve rispondere.
+router.post('/:id/dispute', async (req: AuthRequest, res: Response) => {
+  try {
+    const uid = req.user!.userId;
+    const c = await assertParticipant(req.params.id, uid);
+    if (!c) return res.status(403).json({ error: 'Non autorizzato' });
+    if (c.buyerId !== uid) return res.status(403).json({ error: 'Solo il compratore può aprire una contestazione.' });
+
+    const product = await prisma.product.findUnique({ where: { id: c.productId } });
+    if (!product || product.deletedAt) return res.status(404).json({ error: 'Articolo non trovato' });
+    if (product.status !== 'PAGATO') return res.status(400).json({ error: 'Puoi contestare solo un articolo pagato e non ancora sbloccato.' });
+    if (product.disputeStatus) return res.status(400).json({ error: 'Hai già aperto una contestazione su questo articolo.' });
+
+    const reason = (req.body?.reason || '').toString();
+    if (!DISPUTE_REASONS.includes(reason as any)) return res.status(400).json({ error: 'Motivo non valido.' });
+    const note = (req.body?.note || '').toString().trim().slice(0, 1000);
+    let photos: string[] = [];
+    if (Array.isArray(req.body?.photos)) {
+      photos = req.body.photos.filter((p: any) => typeof p === 'string' && /^data:image\/(jpeg|jpg|png|webp);base64,/.test(p)).slice(0, 5);
+    }
+
+    await prisma.product.update({
+      where: { id: product.id },
+      data: {
+        disputeStatus: 'OPEN',
+        disputeReason: reason,
+        disputeNote: note || null,
+        disputePhotos: photos.length ? JSON.stringify(photos) : null,
+        disputeOpenedAt: new Date(),
+      },
+    });
+    await prisma.message.create({ data: { conversationId: c.id, senderId: uid, text: `⚠️ Contestazione aperta: ${reasonLabel(reason)}${note ? ` — ${note}` : ''}. Il venditore può rimborsarti o rispondere.` } });
+    await prisma.conversation.update({ where: { id: c.id }, data: { updatedAt: new Date() } });
+
+    if (product.warehouseId) {
+      await notifyWarehouseMembers({
+        warehouseId: product.warehouseId, excludeUserId: uid, type: 'SALE',
+        title: '⚠️ Contestazione ricevuta',
+        message: `${product.brand} ${product.name}: ${reasonLabel(reason)}. Apri la chat per rispondere (rimborso totale/parziale o contesta).`,
+      }).catch(() => {});
+    }
+    res.json({ success: true });
+  } catch (e: any) { logger.error('POST /chat/:id/dispute', { err: e.message }); res.status(500).json({ error: 'Errore apertura contestazione' }); }
+});
+
+// VENDITORE: risponde a una contestazione.
+//  action 'refund'  → rimborso totale (l'articolo torna invenduto, copia compratore rimossa)
+//  action 'partial' → rimborso parziale (il compratore tiene l'oggetto, il resto si sblocca)
+//  action 'contest' → escala all'assistenza (admin) per la mediazione
+router.post('/:id/dispute/respond', async (req: AuthRequest, res: Response) => {
+  try {
+    const uid = req.user!.userId;
+    const c = await assertParticipant(req.params.id, uid);
+    if (!c) return res.status(403).json({ error: 'Non autorizzato' });
+    if (c.sellerId !== uid) return res.status(403).json({ error: 'Solo il venditore può rispondere alla contestazione.' });
+
+    const product = await prisma.product.findUnique({ where: { id: c.productId } });
+    if (!product || product.deletedAt) return res.status(404).json({ error: 'Articolo non trovato' });
+    if (product.disputeStatus !== 'OPEN') return res.status(400).json({ error: 'Nessuna contestazione da gestire.' });
+
+    const action = (req.body?.action || '').toString();
+
+    if (action === 'refund') {
+      const r = await refundProductPayment(product);
+      if (!r.ok) return res.status(502).json({ error: r.error || 'Rimborso non riuscito' });
+      await reverseSaleAfterRefund(product.id, product.heldAmount ?? 0);
+      await prisma.message.create({ data: { conversationId: c.id, senderId: uid, text: '✅ Rimborso totale effettuato. Riceverai i soldi sul metodo di pagamento entro pochi giorni.' } });
+    } else if (action === 'partial') {
+      const amount = Math.round((Number(req.body?.amount) || 0) * 100) / 100;
+      const maxRefund = (product.heldAmount ?? 0);
+      if (!(amount > 0) || amount >= maxRefund) return res.status(400).json({ error: 'Importo rimborso parziale non valido.' });
+      const r = await refundProductPayment(product, amount);
+      if (!r.ok) return res.status(502).json({ error: r.error || 'Rimborso non riuscito' });
+      await releaseHold(product.id, { partialRefund: amount });
+      await prisma.message.create({ data: { conversationId: c.id, senderId: uid, text: `✅ Rimborso parziale di ${amount.toFixed(2)}€ effettuato. Tieni l'articolo; il resto è stato sbloccato.` } });
+    } else if (action === 'contest') {
+      await prisma.product.update({ where: { id: product.id }, data: { disputeStatus: 'ESCALATED' } });
+      await prisma.message.create({ data: { conversationId: c.id, senderId: uid, text: '⚖️ Il venditore ha contestato. L\'assistenza ResellerHQ esaminerà il caso e deciderà.' } });
+    } else {
+      return res.status(400).json({ error: 'Azione non valida.' });
+    }
+    await prisma.conversation.update({ where: { id: c.id }, data: { updatedAt: new Date() } });
+    res.json({ success: true });
+  } catch (e: any) { logger.error('POST /chat/:id/dispute/respond', { err: e.message }); res.status(500).json({ error: 'Errore gestione contestazione' }); }
+});
+
+// Dettaglio contestazione (motivo, nota, foto) — visibile ai due partecipanti.
+router.get('/:id/dispute', async (req: AuthRequest, res: Response) => {
+  try {
+    const c = await assertParticipant(req.params.id, req.user!.userId);
+    if (!c) return res.status(403).json({ error: 'Non autorizzato' });
+    const p = await prisma.product.findUnique({ where: { id: c.productId }, select: { disputeStatus: true, disputeReason: true, disputeNote: true, disputePhotos: true, disputeOpenedAt: true, heldAmount: true } });
+    if (!p?.disputeStatus) return res.json({ open: false });
+    let photos: string[] = []; try { photos = p.disputePhotos ? JSON.parse(p.disputePhotos) : []; } catch {}
+    res.json({ open: true, status: p.disputeStatus, reason: p.disputeReason, reasonLabel: reasonLabel(p.disputeReason), note: p.disputeNote, photos, openedAt: p.disputeOpenedAt, amount: p.heldAmount });
+  } catch (e: any) { logger.error('GET /chat/:id/dispute', { err: e.message }); res.status(500).json({ error: 'Errore' }); }
 });
 
 export default router;

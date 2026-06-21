@@ -187,6 +187,23 @@ model Product {
   heldAmount     Float?    // netto trattenuto per il venditore (prezzo + spedizione)
   deliveredConfirmedAt DateTime? // quando il compratore ha confermato "Consegnato" → fondi sbloccati
   withdrawnAt    DateTime? // quando il venditore ha riscosso (bonifico)
+
+  // Finestra auto-conferma: se il compratore non conferma né contesta entro autoReleaseAt,
+  // i fondi si sbloccano da soli al venditore (sweep cron). deliveredAt avvia la finestra (5gg).
+  deliveredAt    DateTime? // consegna rilevata (tracking) o stimata (spedizione) → avvia finestra
+  autoReleaseAt  DateTime? // oltre questa data, sblocco automatico se nessuna contestazione
+
+  // Contestazioni / resi (escrow: i fondi restano congelati finché la disputa non si chiude).
+  // disputeStatus: null | OPEN (compratore aperto) | ESCALATED (venditore contesta → admin)
+  //               | RESOLVED_REFUND | RESOLVED_PARTIAL | RESOLVED_RELEASE
+  disputeStatus    String?
+  disputeReason    String?   // NOT_AS_DESCRIBED | COUNTERFEIT | DAMAGED | NOT_ARRIVED | WRONG_ITEM
+  disputeNote      String?   // descrizione del compratore
+  disputePhotos    String?   // JSON array di foto (base64) come prova
+  disputeOpenedAt  DateTime?
+  disputeResolvedAt DateTime?
+  refundedAmount   Float?    // quanto è stato rimborsato al compratore
+  refundedAt       DateTime?
   toShip         Boolean   @default(false) // marcato "da spedire" (es. venduto su un'altra piattaforma)
   sourceProductId String?  // se acquistato nel marketplace: id dell'articolo originale del venditore
 

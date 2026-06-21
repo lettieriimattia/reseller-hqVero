@@ -8,6 +8,7 @@ import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
 import { notifyWarehouseMembers } from './notification.service';
 import { sendDeliveredEmail } from './email-jobs.service';
+import { AUTO_RELEASE_DAYS } from './dispute.service';
 
 
 const SEVENTEEN_TRACK_KEY = process.env.TRACKING_17TRACK_KEY || '';
@@ -193,8 +194,16 @@ async function applyDeliveredEffects(product: any): Promise<void> {
     logger.info('Pacco INBOUND consegnato in magazzino', { productId: product.id });
   } else if (product.status === 'PAGATO') {
     // Articolo pagato in-app (escrow marketplace): la consegna la CONFERMA il compratore
-    // in chat (sblocca i fondi). Il tracking-consegnato qui non lo finalizza da solo.
-    logger.info('Tracking consegnato su articolo PAGATO: attesa conferma compratore', { productId: product.id });
+    // in chat (sblocca i fondi). Qui avviamo la finestra di auto-conferma: se entro
+    // AUTO_RELEASE_DAYS il compratore non conferma né contesta, i fondi si sbloccano da soli.
+    if (!product.deliveredAt) {
+      const now = new Date();
+      await prisma.product.update({
+        where: { id: product.id },
+        data: { deliveredAt: now, autoReleaseAt: new Date(now.getTime() + AUTO_RELEASE_DAYS * 86400000) },
+      }).catch(() => {});
+    }
+    logger.info('Tracking consegnato su articolo PAGATO: avviata finestra auto-conferma', { productId: product.id });
   } else if (product.status !== 'VENDUTO') {
     await prisma.product.update({
       where: { id: product.id },

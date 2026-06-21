@@ -607,7 +607,8 @@ export default function App() {
     </button>
   );
   // Admin: vista corrente (Utenti / Richieste) + stato richieste
-  const [adminView, setAdminView] = useState<'users' | 'feedback'>('users');
+  const [adminView, setAdminView] = useState<'users' | 'feedback' | 'disputes'>('users');
+  const [adminDisputes, setAdminDisputes] = useState<any[]>([]);
   const [adminFeedback, setAdminFeedback] = useState<any[]>([]);
   const [adminFbNuove, setAdminFbNuove] = useState(0);
   const [replyingId, setReplyingId] = useState<string | null>(null);
@@ -626,6 +627,19 @@ export default function App() {
     const { ok, data } = await apiCall('/admin/feedback');
     if (ok) { setAdminFeedback(data.feedback || []); setAdminFbNuove(data.nuove || 0); }
     else showToast(data?.error || 'Errore caricamento richieste', 'err');
+  };
+
+  const fetchAdminDisputes = async () => {
+    const { ok, data } = await apiCall('/admin/disputes');
+    if (ok) setAdminDisputes(data.disputes || []);
+    else showToast(data?.error || 'Errore caricamento contestazioni', 'err');
+  };
+  const resolveAdminDispute = async (productId: string, decision: 'refund_buyer' | 'release_seller') => {
+    const msg = decision === 'refund_buyer' ? 'Rimborsare TUTTO al compratore?' : 'Respingere la contestazione e pagare il venditore?';
+    if (!window.confirm(msg)) return;
+    const { ok, data } = await apiCall(`/admin/disputes/${productId}/resolve`, { method: 'POST', body: JSON.stringify({ decision }) });
+    if (ok && data?.success) { await fetchAdminDisputes(); showToast('Contestazione risolta ✓'); }
+    else showToast(data?.error || 'Errore', 'err');
   };
 
   const sendAdminReply = async (id: string) => {
@@ -2044,10 +2058,72 @@ export default function App() {
   // Compratore: conferma di aver ricevuto il pacco → sblocca il pagamento al venditore.
   const confirmDelivery = async () => {
     if (!activeConvo) return;
+    if (!window.confirm('Confermi di aver ricevuto l\'articolo come descritto? Il pagamento verrà sbloccato per il venditore.')) return;
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/confirm-delivery`, { method: 'POST', body: JSON.stringify({}) });
     if (ok && data?.success) { await reloadConversation(); showToast('Consegna confermata, grazie!', 'ok'); }
     else showToast(data?.error || 'Errore', 'err');
   };
+
+  // ---- Contestazioni / resi ----
+  const [disputeForm, setDisputeForm] = useState<{ open: boolean; reason: string; note: string; photos: string[] }>({ open: false, reason: 'NOT_AS_DESCRIBED', note: '', photos: [] });
+  const [disputeInfo, setDisputeInfo] = useState<any>(null); // dettaglio disputa per venditore/admin
+  const [disputeSaving, setDisputeSaving] = useState(false);
+  const DISPUTE_REASONS_FE: { v: string; l: string }[] = [
+    { v: 'NOT_AS_DESCRIBED', l: 'Non conforme alla descrizione' },
+    { v: 'COUNTERFEIT', l: 'Sospetto falso / contraffatto' },
+    { v: 'DAMAGED', l: 'Arrivato danneggiato' },
+    { v: 'NOT_ARRIVED', l: 'Mai arrivato' },
+    { v: 'WRONG_ITEM', l: 'Oggetto sbagliato' },
+  ];
+  const reasonLabelFE = (r?: string) => DISPUTE_REASONS_FE.find(x => x.v === r)?.l || 'Problema';
+
+  // Compratore: invia la contestazione
+  const submitDispute = async () => {
+    if (!activeConvo) return;
+    setDisputeSaving(true);
+    const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/dispute`, {
+      method: 'POST', body: JSON.stringify({ reason: disputeForm.reason, note: disputeForm.note.trim(), photos: disputeForm.photos }),
+    });
+    setDisputeSaving(false);
+    if (ok && data?.success) {
+      setDisputeForm({ open: false, reason: 'NOT_AS_DESCRIBED', note: '', photos: [] });
+      await reloadConversation();
+      showToast('Contestazione inviata. Il venditore deve rispondere.', 'ok');
+    } else showToast(data?.error || 'Errore', 'err');
+  };
+
+  // Carica il dettaglio disputa (per il banner venditore)
+  const loadDispute = async () => {
+    if (!activeConvo) { setDisputeInfo(null); return; }
+    const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/dispute`);
+    setDisputeInfo(ok && data?.open ? data : null);
+  };
+
+  // Venditore: risponde alla contestazione (refund / partial / contest)
+  const respondDispute = async (action: 'refund' | 'partial' | 'contest') => {
+    if (!activeConvo) return;
+    let body: any = { action };
+    if (action === 'refund' && !window.confirm('Confermi il rimborso TOTALE al compratore? L\'articolo tornerà invenduto nel tuo magazzino.')) return;
+    if (action === 'partial') {
+      const raw = window.prompt('Importo da rimborsare al compratore (€):', '');
+      const amount = Math.round((parseFloat((raw || '').replace(',', '.')) || 0) * 100) / 100;
+      if (!(amount > 0)) return;
+      body.amount = amount;
+    }
+    if (action === 'contest' && !window.confirm('Contestare apre una mediazione con l\'assistenza ResellerHQ. Procedere?')) return;
+    setDisputeSaving(true);
+    const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/dispute/respond`, { method: 'POST', body: JSON.stringify(body) });
+    setDisputeSaving(false);
+    if (ok && data?.success) { setDisputeInfo(null); await reloadConversation(); showToast('Fatto.', 'ok'); }
+    else showToast(data?.error || 'Errore', 'err');
+  };
+
+  // Carica/azzera il dettaglio disputa quando cambia conversazione o stato.
+  useEffect(() => {
+    if (currentView !== 'chat' || !activeConvo?.disputeStatus) { setDisputeInfo(null); return; }
+    loadDispute();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentView, activeConvo?.id, activeConvo?.disputeStatus]);
   const openPlanModal = async (tab: 'plans' | 'repricing' | 'offer' | 'channels' = 'plans') => {
     setPlanModalOpen(true);
     setProTab(tab);
@@ -5215,9 +5291,13 @@ export default function App() {
                       className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white flex items-center gap-1.5">
                       <DollarSign size={13} /> {activeConvo.productStatus === 'PAGATO' ? 'Spedisci' : 'Vendi e spedisci'}</button>
                   )}
-                  {activeConvo.role === 'buyer' && activeConvo.productStatus === 'PAGATO' && (
-                    <button onClick={confirmDelivery}
-                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8b5cf6] text-white flex items-center gap-1.5"><CheckCircle size={13} /> Consegnato</button>
+                  {activeConvo.role === 'buyer' && activeConvo.productStatus === 'PAGATO' && !activeConvo.disputeStatus && (
+                    <>
+                      <button onClick={confirmDelivery}
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8b5cf6] text-white flex items-center gap-1.5"><CheckCircle size={13} /> Consegnato</button>
+                      <button onClick={() => setDisputeForm(f => ({ ...f, open: true }))}
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-500/15 text-red-400 flex items-center gap-1.5"><AlertTriangle size={13} /> Problema</button>
+                    </>
                   )}
                   {activeConvo.role === 'buyer' && (!activeConvo.productStatus || activeConvo.productStatus === 'IN STOCK') && (
                     <button onClick={makeOffer}
@@ -5233,6 +5313,41 @@ export default function App() {
                       className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-500/15 text-blue-400">Traccia</button>
                     <button onClick={() => openDemoLabel(activeConvo.productName, activeConvo.role === 'seller' ? (user?.name || 'Venditore') : 'Venditore', activeConvo.role === 'buyer' ? (user?.name || 'Acquirente') : (activeConvo.otherName || 'Acquirente'), activeConvo.trackingCode, activeConvo.trackingCarrier || 'Corriere')}
                       className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#8b5cf6]/15 text-[#8b5cf6]">Etichetta</button>
+                  </div>
+                )}
+                {/* Banner contestazione */}
+                {activeConvo.disputeStatus && (
+                  <div className="px-3 py-2.5 border-b border-red-500/20 bg-red-500/10 shrink-0">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle size={15} className="text-red-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        {activeConvo.disputeStatus === 'OPEN' && (
+                          <>
+                            <p className="text-xs font-bold text-red-400">Contestazione aperta: {reasonLabelFE(activeConvo.disputeReason)}</p>
+                            {disputeInfo?.note && <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{disputeInfo.note}</p>}
+                            {disputeInfo?.photos?.length > 0 && (
+                              <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                                {disputeInfo.photos.map((p: string, i: number) => (
+                                  <img key={i} src={p} alt="" className="w-12 h-12 rounded-lg object-cover border border-[var(--border-2)]" />
+                                ))}
+                              </div>
+                            )}
+                            {activeConvo.role === 'seller' ? (
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                <button disabled={disputeSaving} onClick={() => respondDispute('refund')} className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-red-600 text-white disabled:opacity-50">Rimborsa tutto</button>
+                                <button disabled={disputeSaving} onClick={() => respondDispute('partial')} className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/20 text-amber-400 disabled:opacity-50">Rimborso parziale</button>
+                                <button disabled={disputeSaving} onClick={() => respondDispute('contest')} className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--fill)] text-[var(--text-muted)] border border-[var(--border-2)] disabled:opacity-50">Contesta</button>
+                              </div>
+                            ) : (
+                              <p className="text-[11px] text-[var(--text-soft)] mt-1">In attesa della risposta del venditore. I fondi restano bloccati.</p>
+                            )}
+                          </>
+                        )}
+                        {activeConvo.disputeStatus === 'ESCALATED' && (
+                          <p className="text-xs font-bold text-amber-400">⚖️ In mediazione con l'assistenza ResellerHQ. Riceverai presto una decisione.</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
                 <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
@@ -5307,6 +5422,63 @@ export default function App() {
                       <button onClick={confirmShip} disabled={shipping}
                         className="flex-1 py-3 rounded-xl bg-green-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-1.5">
                         {shipping ? <Loader2 className="animate-spin" size={18} /> : <><Package size={16} /> {activeConvo.productStatus === 'PAGATO' ? 'Conferma spedizione' : 'Conferma vendita'}</>}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ), document.body)}
+
+            {/* ========== MODALE: APRI CONTESTAZIONE (compratore) ========== */}
+            {disputeForm.open && activeConvo && createPortal((
+              <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !disputeSaving && setDisputeForm(f => ({ ...f, open: false }))}>
+                <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 max-h-[92dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                  <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+                  <h2 className="text-xl font-semibold mb-1 flex items-center gap-2"><AlertTriangle size={18} className="text-red-400" /> Segnala un problema</h2>
+                  <p className="text-xs text-[var(--text-soft)] mb-5">{activeConvo.productName} — i fondi restano bloccati finché non si risolve. Niente "ho cambiato idea": solo problemi reali.</p>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Motivo</label>
+                      <select value={disputeForm.reason} onChange={e => setDisputeForm(f => ({ ...f, reason: e.target.value }))}
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6]">
+                        {DISPUTE_REASONS_FE.map(r => <option key={r.v} value={r.v}>{r.l}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Descrivi il problema</label>
+                      <textarea value={disputeForm.note} onChange={e => setDisputeForm(f => ({ ...f, note: e.target.value.slice(0, 1000) }))} rows={3} placeholder="Cosa non va? Sii preciso."
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6] resize-none" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Foto prova (max 5)</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {disputeForm.photos.map((p, i) => (
+                          <div key={i} className="relative">
+                            <img src={p} alt="" className="w-16 h-16 rounded-lg object-cover border border-[var(--border-2)]" />
+                            <button onClick={() => setDisputeForm(f => ({ ...f, photos: f.photos.filter((_, j) => j !== i) }))}
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 text-white text-xs flex items-center justify-center">×</button>
+                          </div>
+                        ))}
+                        {disputeForm.photos.length < 5 && (
+                          <label className="w-16 h-16 rounded-lg border border-dashed border-[var(--border-2)] flex items-center justify-center cursor-pointer text-[var(--text-faint)]">
+                            <Camera size={18} />
+                            <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                              const file = e.target.files?.[0]; if (!file) return;
+                              const c = await compressImage(file, 1024, 0.6);
+                              setDisputeForm(f => ({ ...f, photos: [...f.photos, c].slice(0, 5) }));
+                              e.currentTarget.value = '';
+                            }} />
+                          </label>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-[var(--text-faint)] mt-1">Le foto vengono eliminate dal sistema a contestazione chiusa.</p>
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <button onClick={() => setDisputeForm(f => ({ ...f, open: false }))} disabled={disputeSaving}
+                        className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold disabled:opacity-50">Annulla</button>
+                      <button onClick={submitDispute} disabled={disputeSaving}
+                        className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-1.5">
+                        {disputeSaving ? <Loader2 className="animate-spin" size={18} /> : <><AlertTriangle size={16} /> Invia contestazione</>}
                       </button>
                     </div>
                   </div>
@@ -6157,6 +6329,13 @@ export default function App() {
                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'feedback' ? 'bg-white/25' : 'bg-[#8b5cf6] text-white'}`}>{adminFbNuove}</span>
                   )}
                 </button>
+                <button onClick={() => { setAdminView('disputes'); fetchAdminDisputes(); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'disputes' ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  Contestazioni
+                  {adminDisputes.filter(d => d.status === 'ESCALATED').length > 0 && (
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'disputes' ? 'bg-white/25' : 'bg-red-500 text-white'}`}>{adminDisputes.filter(d => d.status === 'ESCALATED').length}</span>
+                  )}
+                </button>
               </div>
 
               {adminView === 'users' && adminLoaded && (
@@ -6266,6 +6445,48 @@ export default function App() {
                           className="mt-2 text-xs font-bold text-[#8b5cf6] hover:text-[#a78bfa] transition-colors">
                           {f.reply ? 'Modifica risposta' : '↩ Rispondi'}
                         </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Vista CONTESTAZIONI */}
+              {adminView === 'disputes' && (
+                <div className="divide-y divide-[var(--border)] max-h-[40rem] overflow-y-auto">
+                  {adminDisputes.length === 0 ? (
+                    <p className="p-6 text-center text-xs text-[var(--text-faint)]">Nessuna contestazione aperta.</p>
+                  ) : adminDisputes.map(d => (
+                    <div key={d.productId} className="px-4 py-3">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {d.status === 'ESCALATED'
+                          ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500 text-white font-bold">DA DECIDERE</span>
+                          : <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold">in attesa venditore</span>}
+                        <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)]">{d.reasonLabel}</span>
+                        <span className="text-[11px] font-semibold truncate">{d.product}</span>
+                        <span className="text-[11px] text-[var(--text-soft)] num">{(d.amount || 0).toFixed(2)}€</span>
+                      </div>
+                      <p className="text-[10px] text-[var(--text-faint)] mt-1">
+                        Venditore: {d.seller?.name || '—'} · Compratore: {d.buyer?.name || '—'} · {d.openedAt ? new Date(d.openedAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }) : ''}
+                      </p>
+                      {d.note && <p className="text-sm text-[var(--text)] mt-2 whitespace-pre-wrap break-words">{d.note}</p>}
+                      {d.photos?.length > 0 && (
+                        <div className="flex gap-1.5 mt-2 flex-wrap">
+                          {d.photos.map((p: string, i: number) => (
+                            <img key={i} src={p} alt="" className="w-16 h-16 rounded-lg object-cover border border-[var(--border-2)]" />
+                          ))}
+                        </div>
+                      )}
+                      {d.status === 'ESCALATED' && (
+                        <div className="flex gap-2 mt-3">
+                          <button onClick={() => resolveAdminDispute(d.productId, 'refund_buyer')}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white">Rimborsa compratore</button>
+                          <button onClick={() => resolveAdminDispute(d.productId, 'release_seller')}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white">Paga venditore</button>
+                        </div>
+                      )}
+                      {d.status === 'OPEN' && (
+                        <p className="text-[10px] text-[var(--text-faint)] mt-2">In attesa che il venditore risponda (rimborso o contesta). Puoi intervenire solo se viene escalata.</p>
                       )}
                     </div>
                   ))}
