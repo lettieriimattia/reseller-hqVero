@@ -4271,8 +4271,16 @@ export default function App() {
                                 <p className="text-[10px] text-[var(--text-soft)]">{g.size} · {g.condition} · {(g.heldAmount ?? g.publicPrice ?? 0).toFixed(0)}€</p>
                               </div>
                             </div>
-                            <div className="px-4 pb-3">
-                              <p className="text-[10px] text-[var(--text-soft)]">💬 Spedisci dalla chat e inserisci il tracking. I soldi si sbloccano quando il compratore conferma la consegna.</p>
+                            <div className="px-4 pb-3 flex flex-col gap-2">
+                              <p className="text-[10px] text-[var(--text-soft)]">I soldi si sbloccano quando il compratore conferma la consegna.</p>
+                              {hasFeature('labels') ? (
+                                <button onClick={() => openShipping(g)}
+                                  className="w-full py-2 rounded-xl text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] hover:bg-[#8b5cf6]/25 transition-colors flex items-center justify-center gap-1.5">
+                                  <Package size={13} /> Crea etichetta e spedisci
+                                </button>
+                              ) : (
+                                <p className="text-[10px] text-[var(--text-faint)]">💬 Spedisci e inserisci il tracking dalla chat. (Etichetta automatica nel piano Pro)</p>
+                              )}
                             </div>
                           </div>
                         );
