@@ -4405,7 +4405,7 @@ export default function App() {
                         <div className="flex items-center gap-3 p-3.5">
                           {photoUrl
                             ? <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)]"><img src={photoUrl} alt="" className="w-full h-full object-cover" /></div>
-                            : <span className="text-3xl shrink-0 w-16 text-center">{getCategoryIcon(g.category)}</span>}
+                            : <span className="text-2xl shrink-0 w-16 text-center">{getCategoryIcon(g.category)}</span>}
                           <div className={`flex-1 min-w-0 ${!bulkMode ? 'cursor-pointer' : ''}`}
                             onClick={!bulkMode ? () => openEditModal(g) : undefined}>
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -4460,7 +4460,7 @@ export default function App() {
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                           {photoUrl
                             ? <img src={photoUrl} alt="" className="w-full h-full object-cover" />
-                            : <span className="text-5xl opacity-80">{getCategoryIcon(g.category)}</span>}
+                            : <span className="text-4xl opacity-80">{getCategoryIcon(g.category)}</span>}
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                             {g.quantity > 1 && <span className="text-[10px] bg-[#8b5cf6] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
                             {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-[var(--text)]' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-gray-300'}`}>{days}g</span>}
