@@ -124,7 +124,7 @@ function pickStockXPrice(m: any): number | null {
 
 // Valutazione StockX REALE: catalog search → (variant per taglia) → market data in EUR.
 // Difensiva: in caso di errore/forma diversa ritorna value null senza rompere l'app.
-export async function getStockXValuation(opts: { query: string; size?: string; sku?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; brand?: string; model?: string; image?: string | null; styleId?: string | null; sample?: number }> {
+export async function getStockXValuation(opts: { query: string; name?: string; size?: string; sku?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; brand?: string; model?: string; image?: string | null; styleId?: string | null; sample?: number }> {
   if (!isStockXConfigured()) return { configured: false, value: null, source: 'StockX (non configurato)' };
   const token = await getStockXAccessToken();
   if (!token) return { configured: true, connected: false, value: null, source: 'StockX (non connesso)' };
@@ -137,9 +137,14 @@ export async function getStockXValuation(opts: { query: string; size?: string; s
 
   // Pulisce la query: trattini "lunghi", separatori e doppi spazi confondono la ricerca StockX.
   const clean = (s: string) => (s || '').replace(/[–—]/g, ' ').replace(/[•|]/g, ' ').replace(/\s+/g, ' ').trim();
-  // Candidati in ordine di precisione: SKU/style code (match esatto) → query pulita → query grezza.
+  // Candidati in ordine di precisione:
+  //  1) SKU/style code (match esatto)
+  //  2) solo NOME (senza brand): es. "Air Jordan 4 Off-White Sail" — su StockX le Jordan
+  //     stanno sotto "Jordan", quindi anteporre "NIKE" spesso azzera i risultati.
+  //  3) query completa pulita (brand + nome)  4) query grezza
   const candidates = Array.from(new Set([
     opts.sku ? opts.sku.trim() : '',
+    opts.name ? clean(opts.name) : '',
     clean(opts.query),
     opts.query,
   ].filter(Boolean)));
