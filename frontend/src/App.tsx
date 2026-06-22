@@ -2155,13 +2155,13 @@ export default function App() {
   const [disputeInfo, setDisputeInfo] = useState<any>(null); // dettaglio disputa per venditore/admin
   const [disputeSaving, setDisputeSaving] = useState(false);
   const DISPUTE_REASONS_FE: { v: string; l: string }[] = [
-    { v: 'NOT_AS_DESCRIBED', l: 'Non conforme alla descrizione' },
-    { v: 'COUNTERFEIT', l: 'Sospetto falso / contraffatto' },
-    { v: 'DAMAGED', l: 'Arrivato danneggiato' },
-    { v: 'NOT_ARRIVED', l: 'Mai arrivato' },
-    { v: 'WRONG_ITEM', l: 'Oggetto sbagliato' },
+    { v: 'NOT_AS_DESCRIBED', l: t('dispute.rNotAsDescribed') },
+    { v: 'COUNTERFEIT', l: t('dispute.rCounterfeit') },
+    { v: 'DAMAGED', l: t('dispute.rDamaged') },
+    { v: 'NOT_ARRIVED', l: t('dispute.rNotArrived') },
+    { v: 'WRONG_ITEM', l: t('dispute.rWrongItem') },
   ];
-  const reasonLabelFE = (r?: string) => DISPUTE_REASONS_FE.find(x => x.v === r)?.l || 'Problema';
+  const reasonLabelFE = (r?: string) => DISPUTE_REASONS_FE.find(x => x.v === r)?.l || t('chat.problem');
 
   // Compratore: invia la contestazione
   const submitDispute = async () => {
@@ -5363,10 +5363,10 @@ export default function App() {
         {/* ========== CHAT ========== */}
         {currentView === 'chat' && (
           <div className="space-y-4">
-            <h2 className="text-3xl font-semibold">Messaggi</h2>
+            <h2 className="text-3xl font-semibold">{t('nav.messages')}</h2>
             {!activeConvo ? (
               conversations.length === 0 ? (
-                <div className="text-center py-16 text-[var(--text-soft)]">Nessuna conversazione. Contatta un venditore dal marketplace.</div>
+                <div className="text-center py-16 text-[var(--text-soft)]">{t('chat.empty')}</div>
               ) : (
                 <div className="space-y-2">
                   {conversations.map((c: any) => (
@@ -5377,7 +5377,7 @@ export default function App() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm truncate">{c.productName} · <span className="text-[var(--text-soft)]">{c.price != null ? `${c.price}€` : ''}</span></p>
-                        <p className="text-[11px] text-[var(--text-soft)] truncate">{c.role === 'seller' ? '🟢 Acquirente' : 'Venditore'}: {c.otherName} — {c.lastMessage || 'Nessun messaggio'}</p>
+                        <p className="text-[11px] text-[var(--text-soft)] truncate">{c.role === 'seller' ? '🟢 ' + t('chat.buyer') : t('market.seller')}: {c.otherName} — {c.lastMessage || t('chat.noMessage')}</p>
                       </div>
                     </button>
                   ))}
@@ -5388,7 +5388,7 @@ export default function App() {
                 <div className="flex items-center gap-2 p-3 border-b border-[var(--border)]">
                   <button onClick={() => { setActiveConvo(null); setChatMessages([]); }} className="p-1.5 hover:bg-[var(--fill)] rounded-lg"><ChevronDown size={18} className="rotate-90" /></button>
                   <div className="flex-1 min-w-0">
-                    <span className="font-bold text-sm truncate block">{activeConvo.otherName || activeConvo.productName || 'Conversazione'}</span>
+                    <span className="font-bold text-sm truncate block">{activeConvo.otherName || activeConvo.productName || t('chat.conversation')}</span>
                     {activeConvo.productName && <span className="text-[11px] text-[var(--text-soft)] truncate block">{activeConvo.productName}{activeConvo.price != null ? ` · ${activeConvo.price}€` : ''}</span>}
                   </div>
                   {/* Solo per articoli PAGATI: il venditore spedisce. La vendita avviene quando
@@ -5396,22 +5396,22 @@ export default function App() {
                   {activeConvo.role === 'seller' && activeConvo.productStatus === 'PAGATO' && (
                     <button onClick={() => setShipForm(f => ({ ...f, open: true, price: activeConvo.price != null ? String(activeConvo.price) : '' }))}
                       className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white flex items-center gap-1.5">
-                      <Package size={13} /> Spedisci</button>
+                      <Package size={13} /> {t('mag.ship')}</button>
                   )}
                   {activeConvo.role === 'buyer' && activeConvo.productStatus === 'PAGATO' && !activeConvo.disputeStatus && (
                     <>
                       <button onClick={confirmDelivery}
-                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8b5cf6] text-white flex items-center gap-1.5"><CheckCircle size={13} /> Consegnato</button>
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8b5cf6] text-white flex items-center gap-1.5"><CheckCircle size={13} /> {t('chat.delivered')}</button>
                       <button onClick={() => setDisputeForm(f => ({ ...f, open: true }))}
-                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-500/15 text-red-400 flex items-center gap-1.5"><AlertTriangle size={13} /> Problema</button>
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-500/15 text-red-400 flex items-center gap-1.5"><AlertTriangle size={13} /> {t('chat.problem')}</button>
                     </>
                   )}
                   {activeConvo.role === 'buyer' && (!activeConvo.productStatus || activeConvo.productStatus === 'IN STOCK') && (
                     <>
                       <button onClick={() => payProduct(activeConvo.productId)}
-                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white flex items-center gap-1.5"><DollarSign size={13} /> Compra</button>
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white flex items-center gap-1.5"><DollarSign size={13} /> {t('market.buy')}</button>
                       <button onClick={makeOffer}
-                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text)] border border-[var(--border-2)] flex items-center gap-1.5"><DollarSign size={13} /> Offerta</button>
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text)] border border-[var(--border-2)] flex items-center gap-1.5"><DollarSign size={13} /> {t('chat.offer')}</button>
                     </>
                   )}
                 </div>
@@ -5421,9 +5421,9 @@ export default function App() {
                     <Truck size={14} className="text-blue-400 shrink-0" />
                     <span className="text-[11px] text-[var(--text-soft)] truncate flex-1 num">{activeConvo.trackingCode}</span>
                     <button onClick={() => trackShipment(activeConvo.trackingCode)}
-                      className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-500/15 text-blue-400">Traccia</button>
-                    <button onClick={() => openDemoLabel(activeConvo.productName, activeConvo.role === 'seller' ? (user?.name || 'Venditore') : 'Venditore', activeConvo.role === 'buyer' ? (user?.name || 'Acquirente') : (activeConvo.otherName || 'Acquirente'), activeConvo.trackingCode, activeConvo.trackingCarrier || 'Corriere')}
-                      className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#8b5cf6]/15 text-[#8b5cf6]">Etichetta</button>
+                      className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-500/15 text-blue-400">{t('chat.track')}</button>
+                    <button onClick={() => openDemoLabel(activeConvo.productName, activeConvo.role === 'seller' ? (user?.name || t('market.seller')) : t('market.seller'), activeConvo.role === 'buyer' ? (user?.name || t('chat.buyer')) : (activeConvo.otherName || t('chat.buyer')), activeConvo.trackingCode, activeConvo.trackingCarrier || 'Corriere')}
+                      className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#8b5cf6]/15 text-[#8b5cf6]">{t('chat.label')}</button>
                   </div>
                 )}
                 {/* Banner contestazione */}
@@ -5434,7 +5434,7 @@ export default function App() {
                       <div className="flex-1 min-w-0">
                         {activeConvo.disputeStatus === 'OPEN' && (
                           <>
-                            <p className="text-xs font-bold text-red-400">Contestazione aperta: {reasonLabelFE(activeConvo.disputeReason)}</p>
+                            <p className="text-xs font-bold text-red-400">{t('dispute.opened')}: {reasonLabelFE(activeConvo.disputeReason)}</p>
                             {disputeInfo?.note && <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{disputeInfo.note}</p>}
                             {disputeInfo?.photos?.length > 0 && (
                               <div className="flex gap-1.5 mt-1.5 flex-wrap">
@@ -5445,17 +5445,17 @@ export default function App() {
                             )}
                             {activeConvo.role === 'seller' ? (
                               <div className="flex flex-wrap gap-2 mt-2">
-                                <button disabled={disputeSaving} onClick={() => respondDispute('refund')} className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-red-600 text-white disabled:opacity-50">Rimborsa tutto</button>
-                                <button disabled={disputeSaving} onClick={() => respondDispute('partial')} className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/20 text-amber-400 disabled:opacity-50">Rimborso parziale</button>
-                                <button disabled={disputeSaving} onClick={() => respondDispute('contest')} className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--fill)] text-[var(--text-muted)] border border-[var(--border-2)] disabled:opacity-50">Contesta</button>
+                                <button disabled={disputeSaving} onClick={() => respondDispute('refund')} className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-red-600 text-white disabled:opacity-50">{t('dispute.refundAll')}</button>
+                                <button disabled={disputeSaving} onClick={() => respondDispute('partial')} className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/20 text-amber-400 disabled:opacity-50">{t('dispute.partialRefund')}</button>
+                                <button disabled={disputeSaving} onClick={() => respondDispute('contest')} className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--fill)] text-[var(--text-muted)] border border-[var(--border-2)] disabled:opacity-50">{t('dispute.contest')}</button>
                               </div>
                             ) : (
-                              <p className="text-[11px] text-[var(--text-soft)] mt-1">In attesa della risposta del venditore. I fondi restano bloccati.</p>
+                              <p className="text-[11px] text-[var(--text-soft)] mt-1">{t('dispute.awaitingSeller')}</p>
                             )}
                           </>
                         )}
                         {activeConvo.disputeStatus === 'ESCALATED' && (
-                          <p className="text-xs font-bold text-amber-400">⚖️ In mediazione con l'assistenza ResellerHQ. Riceverai presto una decisione.</p>
+                          <p className="text-xs font-bold text-amber-400">{t('dispute.escalated')}</p>
                         )}
                       </div>
                     </div>
@@ -5466,16 +5466,16 @@ export default function App() {
                     m.offerAmount != null ? (
                       <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
                         <div className="max-w-[80%] px-3 py-2 rounded-2xl text-sm bg-[var(--surface-2)] border border-[#8b5cf6]/30">
-                          <p className="font-bold">💶 Offerta: {m.offerAmount.toFixed(2)}€</p>
-                          {m.offerStatus === 'accepted' && <p className="text-[11px] text-green-400 font-semibold mt-0.5">Accettata</p>}
-                          {m.offerStatus === 'declined' && <p className="text-[11px] text-red-400 font-semibold mt-0.5">Rifiutata</p>}
+                          <p className="font-bold">💶 {t('chat.offerLabel')}: {m.offerAmount.toFixed(2)}€</p>
+                          {m.offerStatus === 'accepted' && <p className="text-[11px] text-green-400 font-semibold mt-0.5">{t('chat.accepted')}</p>}
+                          {m.offerStatus === 'declined' && <p className="text-[11px] text-red-400 font-semibold mt-0.5">{t('chat.declined')}</p>}
                           {m.offerStatus === 'pending' && activeConvo.role === 'seller' && (
                             <div className="flex gap-2 mt-2">
-                              <button onClick={() => respondOffer(m.id, 'accept')} className="px-3 py-1 rounded-lg text-xs font-bold bg-green-600 text-white">Accetta</button>
-                              <button onClick={() => respondOffer(m.id, 'decline')} className="px-3 py-1 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)]">Rifiuta</button>
+                              <button onClick={() => respondOffer(m.id, 'accept')} className="px-3 py-1 rounded-lg text-xs font-bold bg-green-600 text-white">{t('chat.accept')}</button>
+                              <button onClick={() => respondOffer(m.id, 'decline')} className="px-3 py-1 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)]">{t('chat.decline')}</button>
                             </div>
                           )}
-                          {m.offerStatus === 'pending' && activeConvo.role === 'buyer' && <p className="text-[11px] text-[var(--text-soft)] mt-0.5">In attesa di risposta…</p>}
+                          {m.offerStatus === 'pending' && activeConvo.role === 'buyer' && <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{t('chat.awaitingResponse')}</p>}
                         </div>
                       </div>
                     ) : (
@@ -5484,15 +5484,15 @@ export default function App() {
                     </div>
                     )
                   ))}
-                  {chatMessages.length === 0 && <p className="text-center text-[var(--text-faint)] text-sm py-8">Scrivi il primo messaggio. Niente link o contatti esterni (anti-truffa).</p>}
+                  {chatMessages.length === 0 && <p className="text-center text-[var(--text-faint)] text-sm py-8">{t('chat.firstMessage')}</p>}
                 </div>
                 <div className="p-3 border-t border-[var(--border)] flex gap-2">
                   <input value={chatInput} onChange={e => setChatInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
-                    placeholder="Scrivi un messaggio…"
+                    placeholder={t('chat.messagePlaceholder')}
                     className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
                   <button onClick={sendMessage} disabled={chatSending || !chatInput.trim()}
-                    className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">Invia</button>
+                    className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">{t('chat.send')}</button>
                 </div>
               </div>
             )}
@@ -5501,38 +5501,38 @@ export default function App() {
               <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !shipping && setShipForm(f => ({ ...f, open: false }))}>
                 <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
                   <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-                  <h2 className="text-xl font-semibold mb-1">{activeConvo.productStatus === 'PAGATO' ? 'Spedisci articolo' : 'Vendi e spedisci'}</h2>
+                  <h2 className="text-xl font-semibold mb-1">{activeConvo.productStatus === 'PAGATO' ? t('ship.titlePaid') : t('ship.titleSell')}</h2>
                   <p className="text-xs text-[var(--text-soft)] mb-5">
                     {activeConvo.productStatus === 'PAGATO'
-                      ? `${activeConvo.productName} — già pagato. Inserisci il tracking; i soldi si sbloccano quando il compratore conferma la consegna.`
-                      : `${activeConvo.productName} — verrà segnato venduto e tolto dalla vetrina.`}
+                      ? `${activeConvo.productName} — ${t('ship.descPaid')}`
+                      : `${activeConvo.productName} — ${t('ship.descSell')}`}
                   </p>
                   <div className="space-y-4">
                     {activeConvo.productStatus === 'PAGATO' && (
                       <button onClick={shipTestLabel} disabled={shipping}
                         className="w-full py-3 rounded-xl bg-[#8b5cf6]/15 text-[#8b5cf6] font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
-                        {shipping ? <Loader2 className="animate-spin" size={16} /> : <Package size={16} />} Genera etichetta + tracking di PROVA
+                        {shipping ? <Loader2 className="animate-spin" size={16} /> : <Package size={16} />} {t('ship.genTestLabel')}
                       </button>
                     )}
                     {activeConvo.productStatus !== 'PAGATO' && (
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo di vendita concordato €</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('ship.agreedPrice')}</label>
                       <input type="number" step="0.01" value={shipForm.price} onChange={e => setShipForm(f => ({ ...f, price: e.target.value }))}
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6]" />
                     </div>
                     )}
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Codice tracking {activeConvo.productStatus === 'PAGATO' ? '' : '(opzionale)'}</label>
-                      <input value={shipForm.code} onChange={e => setShipForm(f => ({ ...f, code: e.target.value }))} placeholder="Es. da Poste/BRT/InPost…"
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.trackingCode')} {activeConvo.productStatus === 'PAGATO' ? '' : `(${t('form.optional')})`}</label>
+                      <input value={shipForm.code} onChange={e => setShipForm(f => ({ ...f, code: e.target.value }))} placeholder={t('ship.codePlaceholder')}
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6]" />
-                      <p className="text-[10px] text-[var(--text-faint)] mt-1">Niente link in chat (anti-truffa).</p>
+                      <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('ship.noLinks')}</p>
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => setShipForm(f => ({ ...f, open: false }))} disabled={shipping}
-                        className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold disabled:opacity-50">Annulla</button>
+                        className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold disabled:opacity-50">{t('common.cancel')}</button>
                       <button onClick={confirmShip} disabled={shipping}
                         className="flex-1 py-3 rounded-xl bg-green-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-1.5">
-                        {shipping ? <Loader2 className="animate-spin" size={18} /> : <><Package size={16} /> {activeConvo.productStatus === 'PAGATO' ? 'Conferma spedizione' : 'Conferma vendita'}</>}
+                        {shipping ? <Loader2 className="animate-spin" size={18} /> : <><Package size={16} /> {activeConvo.productStatus === 'PAGATO' ? t('ship.confirmShip') : t('ship.confirmSell')}</>}
                       </button>
                     </div>
                   </div>
@@ -5545,9 +5545,9 @@ export default function App() {
               <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setChatOffer(o => ({ ...o, open: false }))}>
                 <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
                   <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-                  <h2 className="text-xl font-semibold mb-1 flex items-center gap-2"><DollarSign size={18} className="text-[#8b5cf6]" /> Fai un'offerta</h2>
-                  <p className="text-xs text-[var(--text-soft)] mb-5">{activeConvo.productName}{activeConvo.price != null ? ` · prezzo ${activeConvo.price}€` : ''}</p>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">La tua offerta €</label>
+                  <h2 className="text-xl font-semibold mb-1 flex items-center gap-2"><DollarSign size={18} className="text-[#8b5cf6]" /> {t('offer.title')}</h2>
+                  <p className="text-xs text-[var(--text-soft)] mb-5">{activeConvo.productName}{activeConvo.price != null ? ` · ${t('offer.price')} ${activeConvo.price}€` : ''}</p>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('offer.yourOffer')}</label>
                   <input type="number" inputMode="decimal" step="0.01" autoFocus value={chatOffer.amount}
                     onChange={e => setChatOffer(o => ({ ...o, amount: e.target.value }))}
                     onKeyDown={e => { if (e.key === 'Enter') submitChatOffer(); }}
@@ -5555,9 +5555,9 @@ export default function App() {
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-lg font-bold num outline-none focus:border-[#8b5cf6]" />
                   <div className="flex gap-2 mt-5">
                     <button onClick={() => setChatOffer(o => ({ ...o, open: false }))}
-                      className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">Annulla</button>
+                      className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">{t('common.cancel')}</button>
                     <button onClick={submitChatOffer}
-                      className="flex-1 py-3 rounded-xl bg-[#8b5cf6] text-white font-bold flex items-center justify-center gap-1.5"><DollarSign size={16} /> Invia offerta</button>
+                      className="flex-1 py-3 rounded-xl bg-[#8b5cf6] text-white font-bold flex items-center justify-center gap-1.5"><DollarSign size={16} /> {t('offer.send')}</button>
                   </div>
                 </div>
               </div>
@@ -5568,23 +5568,23 @@ export default function App() {
               <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !disputeSaving && setDisputeForm(f => ({ ...f, open: false }))}>
                 <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 max-h-[92dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                   <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-                  <h2 className="text-xl font-semibold mb-1 flex items-center gap-2"><AlertTriangle size={18} className="text-red-400" /> Segnala un problema</h2>
-                  <p className="text-xs text-[var(--text-soft)] mb-5">{activeConvo.productName} — i fondi restano bloccati finché non si risolve. Niente "ho cambiato idea": solo problemi reali.</p>
+                  <h2 className="text-xl font-semibold mb-1 flex items-center gap-2"><AlertTriangle size={18} className="text-red-400" /> {t('dispute.title')}</h2>
+                  <p className="text-xs text-[var(--text-soft)] mb-5">{activeConvo.productName} — {t('dispute.descLong')}</p>
                   <div className="space-y-4">
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Motivo</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('dispute.reason')}</label>
                       <select value={disputeForm.reason} onChange={e => setDisputeForm(f => ({ ...f, reason: e.target.value }))}
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6]">
                         {DISPUTE_REASONS_FE.map(r => <option key={r.v} value={r.v}>{r.l}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Descrivi il problema</label>
-                      <textarea value={disputeForm.note} onChange={e => setDisputeForm(f => ({ ...f, note: e.target.value.slice(0, 1000) }))} rows={3} placeholder="Cosa non va? Sii preciso."
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('dispute.describe')}</label>
+                      <textarea value={disputeForm.note} onChange={e => setDisputeForm(f => ({ ...f, note: e.target.value.slice(0, 1000) }))} rows={3} placeholder={t('dispute.describePh')}
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6] resize-none" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Foto prova (max 5)</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('dispute.proofPhotos')}</label>
                       <div className="flex gap-2 flex-wrap">
                         {disputeForm.photos.map((p, i) => (
                           <div key={i} className="relative">
@@ -5605,14 +5605,14 @@ export default function App() {
                           </label>
                         )}
                       </div>
-                      <p className="text-[10px] text-[var(--text-faint)] mt-1">Le foto vengono eliminate dal sistema a contestazione chiusa.</p>
+                      <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('dispute.photosDeleted')}</p>
                     </div>
                     <div className="flex gap-2 pt-1">
                       <button onClick={() => setDisputeForm(f => ({ ...f, open: false }))} disabled={disputeSaving}
-                        className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold disabled:opacity-50">Annulla</button>
+                        className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold disabled:opacity-50">{t('common.cancel')}</button>
                       <button onClick={submitDispute} disabled={disputeSaving}
                         className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-1.5">
-                        {disputeSaving ? <Loader2 className="animate-spin" size={18} /> : <><AlertTriangle size={16} /> Invia contestazione</>}
+                        {disputeSaving ? <Loader2 className="animate-spin" size={18} /> : <><AlertTriangle size={16} /> {t('dispute.submit')}</>}
                       </button>
                     </div>
                   </div>
