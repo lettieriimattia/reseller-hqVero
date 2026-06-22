@@ -2701,6 +2701,14 @@ export default function App() {
       const photos = group.photos ? JSON.parse(group.photos) : [];
       setEditPhotos(Array.isArray(photos) ? photos : []);
     } catch { setEditPhotos([]); }
+    // La lista contiene solo la prima foto (per risparmiare memoria): carica le foto
+    // complete on-demand così nella Modifica le vedi/gestisci tutte.
+    const pid = group.ids?.[0] || group.id;
+    if (pid && !group.lotName) {
+      apiCall<any>(`/products/${pid}/photos`).then(({ ok, data }) => {
+        if (ok && Array.isArray(data?.photos)) setEditPhotos(data.photos);
+      }).catch(() => {});
+    }
     setEditIsPublic(!!group.isPublic);
     setEditPublicPrice(group.publicPrice != null ? String(group.publicPrice) : (group.salePrice != null ? String(group.salePrice) : ''));
     setEditShippingCost(group.shippingCost != null ? String(group.shippingCost) : '');

@@ -56,11 +56,35 @@ router.get('/', async (req: AuthRequest, res: Response) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    const sanitized = products.map(p => stripFinancials(p as any, isOwner));
+    // MEMORIA: le foto sono base64 pesanti. La lista (card) usa solo la PRIMA foto,
+    // quindi spediamo solo quella + il conteggio. Le foto complete si caricano on-demand
+    // all'apertura della Modifica (GET /products/:id/photos). Evita OOM con tanti prodotti/utenti.
+    const sanitized = products.map(p => {
+      const s = stripFinancials(p as any, isOwner) as any;
+      let first: string | null = null; let count = 0;
+      try { const arr = s.photos ? JSON.parse(s.photos) : []; if (Array.isArray(arr)) { count = arr.length; first = arr[0] || null; } } catch {}
+      s.photos = first ? JSON.stringify([first]) : null;
+      s.photoCount = count;
+      return s;
+    });
     res.json(sanitized);
   } catch (err: any) {
     logger.error('Errore GET /products', { err: err.message });
     res.status(500).json({ error: 'Errore database' });
+  }
+});
+
+// Foto complete di un prodotto (caricate on-demand dalla Modifica, non nella lista).
+router.get('/:id/photos', async (req: AuthRequest, res: Response) => {
+  try {
+    const { allowed, product } = await canAccessProduct(req.user!.userId, req.params.id);
+    if (!allowed || !product) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
+    let photos: string[] = [];
+    try { photos = (product as any).photos ? JSON.parse((product as any).photos) : []; } catch {}
+    res.json({ photos: Array.isArray(photos) ? photos : [] });
+  } catch (err: any) {
+    logger.error('Errore GET /products/:id/photos', { err: err.message });
+    res.status(500).json({ error: 'Errore' });
   }
 });
 
