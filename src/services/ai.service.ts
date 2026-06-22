@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
 import { isGeminiConfigured, geminiVision } from './gemini.service';
+import { searchStockXCandidates, isStockXConfigured as isStockXConfiguredSvc } from './stockx.service';
 
 
 // ==========================================
@@ -1358,7 +1359,52 @@ ${prompt}`;
     }
   }
 
+  // CONFERMA StockX↔IA (solo scarpe): invece di fidarci del nome generico dell'IA,
+  // cerchiamo i candidati su StockX e facciamo scegliere all'IA quello che corrisponde
+  // davvero alla FOTO. Così "Nike SB Dunk Low" generico diventa il modello esatto (es.
+  // Freddy Krueger) con il suo style code → prezzo corretto.
+  if (category === 'Scarpe' && result.brand && isStockXConfiguredSvc()) {
+    try {
+      const confirmed = await confirmSneakerWithStockX(imageBase64, `${result.brand} ${result.model || ''}`.trim());
+      if (confirmed) {
+        result.model = confirmed.title;
+        result.details = { ...(result.details || {}), styleCode: confirmed.styleId || (result.details as any)?.styleCode || null, stockxProductId: confirmed.productId };
+        result.confidence = 'HIGH';
+      }
+    } catch (e: any) { logger.warn('confirmSneakerWithStockX fallita', { err: e?.message }); }
+  }
+
   return result;
+}
+
+// Conferma il modello di sneaker confrontando la FOTO dell'utente con i candidati del
+// catalogo StockX: l'IA sceglie quello che corrisponde davvero (grounding sul catalogo reale).
+async function confirmSneakerWithStockX(imageBase64: string, query: string): Promise<{ title: string; styleId: string | null; productId: string | null } | null> {
+  const candidates = await searchStockXCandidates(query, { sneakersOnly: true, limit: 8 });
+  if (!candidates.length) return null;
+  // Una sola opzione: prendila senza interpellare l'IA.
+  if (candidates.length === 1) return candidates[0];
+
+  const list = candidates.map((c, i) => `${i + 1}. ${c.title}${c.styleId ? ` (${c.styleId})` : ''}`).join('\n');
+  const prompt = `Guarda la SCARPA nella foto. Qui sotto ci sono modelli reali dal catalogo StockX.
+Scegli il NUMERO del modello che corrisponde ESATTAMENTE alla scarpa in foto (stessa silhouette E stessa colorway/grafica).
+Se NESSUNO corrisponde con certezza, rispondi 0. Non tirare a indovinare: meglio 0 che un modello sbagliato.
+
+${list}
+
+Rispondi SOLO con JSON: {"choice": <numero>}`;
+  try {
+    const text = await visionComplete({
+      prompt, imageBase64, temperature: 0.0, maxTokens: 30,
+      groqModel: VISION_MODEL,
+    });
+    const parsed = safeParseJSON(text);
+    const choice = Number(parsed?.choice);
+    if (Number.isInteger(choice) && choice >= 1 && choice <= candidates.length) {
+      return candidates[choice - 1];
+    }
+    return null; // 0 o risposta non valida → nessun match certo
+  } catch { return null; }
 }
 
 // ==========================================

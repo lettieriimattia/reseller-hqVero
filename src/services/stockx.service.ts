@@ -139,6 +139,36 @@ function pickStockXPrice(md: any): number | null {
   return null;
 }
 
+export interface StockXCandidate { title: string; styleId: string | null; productId: string | null; image: string | null; productType: string | null; }
+
+// Ricerca catalogo StockX → lista candidati (per far scegliere all'IA quello giusto guardando la foto).
+export async function searchStockXCandidates(query: string, opts?: { sneakersOnly?: boolean; limit?: number }): Promise<StockXCandidate[]> {
+  if (!isStockXConfigured()) return [];
+  const token = await getStockXAccessToken();
+  if (!token) return [];
+  const headers = { Authorization: `Bearer ${token}`, 'x-api-key': process.env.STOCKX_API_KEY || '', Accept: 'application/json' };
+  const q = (query || '').replace(/[–—•|]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (q.length < 2) return [];
+  try {
+    const r = await fetch(`${STOCKX_API_BASE}/v2/catalog/search?query=${encodeURIComponent(q)}&pageNumber=1&pageSize=12`, { headers });
+    if (!r.ok) return [];
+    const d = await r.json() as any;
+    let products: any[] = d?.products || d?.data || d?.hits || [];
+    if (!Array.isArray(products)) return [];
+    const cand = products.map((p: any) => ({
+      title: (p.title || p.name || [p.brand, p.model].filter(Boolean).join(' ')).toString(),
+      styleId: (p.styleId || p.productAttributes?.styleId || null),
+      productId: (p.productId || p.id || p.urlKey || null),
+      image: (p.media?.thumbUrl || p.media?.imageUrl || p.media?.smallImageUrl || p.image || null),
+      productType: (p.productType || p.product_type || null),
+    } as StockXCandidate));
+    const filtered = opts?.sneakersOnly
+      ? cand.filter(c => { const t = (c.productType || '').toLowerCase(); return !t || t.includes('sneaker') || t.includes('shoe') || t.includes('footwear'); })
+      : cand;
+    return filtered.slice(0, opts?.limit || 8);
+  } catch { return []; }
+}
+
 // Valutazione StockX REALE: catalog search → (variant per taglia) → market data in EUR.
 // Difensiva: in caso di errore/forma diversa ritorna value null senza rompere l'app.
 export async function getStockXValuation(opts: { query: string; name?: string; size?: string; sku?: string; category?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; brand?: string; model?: string; image?: string | null; styleId?: string | null; sample?: number }> {
