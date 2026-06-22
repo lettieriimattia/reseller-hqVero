@@ -4269,20 +4269,20 @@ export default function App() {
             {/* Riga 1: titolo + toggle IN STOCK/VENDUTI accanto, ricerca inline su desktop */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center shrink-0 w-full lg:w-auto">
-                <h2 className="text-xl lg:text-3xl font-semibold">Magazzino</h2>
+                <h2 className="text-xl lg:text-3xl font-semibold">{t('mag.title')}</h2>
                 <div className="flex bg-[var(--surface)] p-1 rounded-xl border border-[var(--border-2)] w-full lg:w-auto">
                   <button onClick={() => { setMagazzinoView('instock'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
                       magazzinoView === 'instock' ? 'bg-[#8b5cf6] text-[var(--text)]' : 'text-[var(--text-soft)]'
-                    }`}>IN STOCK</button>
+                    }`}>{t('mag.inStock')}</button>
                   <button onClick={() => { setMagazzinoView('toship'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1 whitespace-nowrap ${
                       magazzinoView === 'toship' ? 'bg-[#8b5cf6] text-[var(--text)]' : 'text-[var(--text-soft)]'
-                    }`}>SPEDIRE{toShipItems.length > 0 && <span className="min-w-[15px] h-4 px-1 bg-amber-500 text-black rounded-full text-[9px] font-bold flex items-center justify-center">{toShipItems.length}</span>}</button>
+                    }`}>{t('mag.toShip')}{toShipItems.length > 0 && <span className="min-w-[15px] h-4 px-1 bg-amber-500 text-black rounded-full text-[9px] font-bold flex items-center justify-center">{toShipItems.length}</span>}</button>
                   <button onClick={() => { setMagazzinoView('sold'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
                       magazzinoView === 'sold' ? 'bg-green-600 text-[var(--text)]' : 'text-[var(--text-soft)]'
-                    }`}>VENDUTI</button>
+                    }`}>{t('mag.sold')}</button>
                 </div>
                 {bulkMode && (
                   <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
