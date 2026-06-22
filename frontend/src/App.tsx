@@ -5968,7 +5968,7 @@ export default function App() {
         {/* ========== SETTINGS ========== */}
         {currentView === 'settings' && (
           <div className="space-y-5">
-            <h2 className="text-3xl font-semibold">Impostazioni</h2>
+            <h2 className="text-3xl font-semibold">{t('set.title')}</h2>
 
             {/* SEZIONE: Piani & Pro */}
             <section className="bg-gradient-to-br from-[#8b5cf6]/10 to-[var(--surface)] border border-[#8b5cf6]/30 rounded-2xl p-6">
@@ -5976,15 +5976,15 @@ export default function App() {
                 <div className="flex items-start gap-3">
                   <Sparkles className="text-[#8b5cf6] mt-0.5" size={22} />
                   <div>
-                    <h3 className="text-lg font-bold tracking-tighter">Piani &amp; Strumenti Pro</h3>
+                    <h3 className="text-lg font-bold tracking-tighter">{t('set.plansTitle')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">
-                      Piano attuale: <b className="text-[var(--text)] uppercase">{myPlan}</b> · sblocca riprezzamento, assistente trattative e multi-canale.
+                      {t('set.currentPlan')}: <b className="text-[var(--text)] uppercase">{myPlan}</b> · {t('set.plansDesc')}
                     </p>
                   </div>
                 </div>
                 <button onClick={() => openPlanModal()}
                   className="px-4 py-2 rounded-xl text-xs font-bold bg-[#8b5cf6] hover:bg-[#a78bfa] text-white transition-colors whitespace-nowrap">
-                  Vedi piani
+                  {t('set.seePlans')}
                 </button>
               </div>
             </section>
@@ -5995,11 +5995,11 @@ export default function App() {
                 <div className="flex items-start gap-3">
                   <Bell className={pushEnabled ? 'text-[#8b5cf6] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
                   <div>
-                    <h3 className="text-lg font-bold tracking-tighter">Notifiche</h3>
+                    <h3 className="text-lg font-bold tracking-tighter">{t('set.notifications')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">
                       {pushEnabled
-                        ? '✓ Attive su questo dispositivo: vendite, spedizioni e avvisi anche ad app chiusa.'
-                        : 'Ricevi avvisi (vendite, spedizioni, prodotti fermi) direttamente sul dispositivo.'}
+                        ? t('set.pushOn')
+                        : t('set.pushOff')}
                     </p>
                   </div>
                 </div>
@@ -6007,22 +6007,22 @@ export default function App() {
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap disabled:opacity-40 ${
                     pushEnabled ? 'bg-red-600/20 hover:bg-red-600/30 text-red-400' : 'bg-[#8b5cf6] hover:bg-[#a78bfa] text-white'
                   }`}>
-                  {pushBusy ? <Loader2 size={14} className="animate-spin" /> : pushEnabled ? 'Disattiva' : 'Attiva'}
+                  {pushBusy ? <Loader2 size={14} className="animate-spin" /> : pushEnabled ? t('set.disable') : t('set.enable')}
                 </button>
               </div>
               <button onClick={openNotifPrefs}
                 className="mt-4 w-full py-2.5 rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors flex items-center justify-between px-4">
-                <span className="flex items-center gap-2"><Bell size={13} /> Gestisci quali notifiche ricevere</span>
+                <span className="flex items-center gap-2"><Bell size={13} /> {t('set.manageNotifs')}</span>
                 <ChevronDown size={16} className="-rotate-90" />
               </button>
               {pushEnabled && user?.warehouses?.some(w => w.role === 'OWNER') && (
                 <button onClick={sendTestPush} disabled={pushBusy}
                   className="mt-2 w-full py-2 rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
-                  <Bell size={13} /> Invia notifica di prova
+                  <Bell size={13} /> {t('set.testNotif')}
                 </button>
               )}
               {!pushSupported && (
-                <p className="text-[10px] text-[var(--text-faint)] mt-3">Su iPhone le notifiche funzionano solo se aggiungi l'app alla schermata Home.</p>
+                <p className="text-[10px] text-[var(--text-faint)] mt-3">{t('set.iosHint')}</p>
               )}
             </section>
 
@@ -6041,7 +6041,7 @@ export default function App() {
                   </button>
                 ))}
               </div>
-              <p className="text-[11px] text-[var(--text-faint)] mt-3">🇬🇧 English, 🇩🇪 Deutsch e 🇪🇸 Español in arrivo (li attiviamo appena la traduzione è completa).</p>
+              <p className="text-[11px] text-[var(--text-faint)] mt-3">{t('set.langNote')}</p>
             </section>
 
             {/* SEZIONE: Magazzino pubblico (auto-pubblicazione) */}
@@ -6050,11 +6050,11 @@ export default function App() {
                 <div className="flex items-start gap-3">
                   <Store className={autoPublishOn ? 'text-[#8b5cf6] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
                   <div>
-                    <h3 className="text-lg font-bold tracking-tighter">Magazzino pubblico</h3>
+                    <h3 className="text-lg font-bold tracking-tighter">{t('set.publicWh')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1 max-w-md">
                       {autoPublishOn
-                        ? '✓ Attivo: ogni nuovo prodotto che aggiungi va automaticamente in vetrina (Compra), con prezzo dalla stima di mercato o dal prezzo che inserisci.'
-                        : 'Attivalo per mettere in vetrina (Compra) automaticamente ogni nuovo prodotto che aggiungi, senza pubblicarlo a mano.'}
+                        ? t('set.publicWhOn')
+                        : t('set.publicWhOff')}
                     </p>
                   </div>
                 </div>
@@ -6064,7 +6064,7 @@ export default function App() {
                 </button>
               </div>
               {!hasFeature('marketplace') && (
-                <p className="text-[11px] text-amber-400 mt-3">⚠️ La vendita nel marketplace è inclusa dal piano Starter in su. Con un piano senza marketplace i prodotti non verranno pubblicati.</p>
+                <p className="text-[11px] text-amber-400 mt-3">{t('set.publicWhWarn')}</p>
               )}
             </section>
 
@@ -6072,13 +6072,13 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle className="text-yellow-500" size={18} />
-                <h3 className="text-lg font-bold tracking-tighter">Notifiche Prodotti Fermi</h3>
+                <h3 className="text-lg font-bold tracking-tighter">{t('set.staleTitle')}</h3>
               </div>
               <p className="text-xs text-[var(--text-soft)] mb-4">
-                Ricevi una notifica quando hai prodotti in magazzino da troppo tempo, con suggerimento di sconto basato sull'IA.
+                {t('set.staleDesc')}
               </p>
               <div className="flex items-center gap-3 mb-4">
-                <label className="text-sm text-[var(--text-muted)] flex-1">Avvisami dopo</label>
+                <label className="text-sm text-[var(--text-muted)] flex-1">{t('set.notifyAfter')}</label>
                 <input 
                   type="number" min="7" max="365" value={staleThreshold}
                   onChange={(e: any) => {
@@ -6088,31 +6088,31 @@ export default function App() {
                   }}
                   className="w-24 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm text-right focus:border-[#8b5cf6] outline-none"
                 />
-                <span className="text-sm text-[var(--text-muted)]">giorni</span>
+                <span className="text-sm text-[var(--text-muted)]">{t('set.days')}</span>
               </div>
               {staleProducts.length > 0 ? (
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3">
                   <p className="text-sm font-bold text-yellow-400 mb-2">
-                    ⏰ Hai {staleProducts.length} prodott{staleProducts.length === 1 ? 'o fermo' : 'i fermi'}
+                    ⏰ {t('set.youHave')} {staleProducts.length} {staleProducts.length === 1 ? t('set.staleOne') : t('set.staleMany')}
                   </p>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {staleProducts.slice(0, 10).map((sp: any) => (
                       <div key={sp.id} className="text-xs bg-[var(--surface-2)] p-2 rounded-lg">
                         <p className="text-[var(--text)] font-bold">{sp.brand} {sp.name}</p>
                         <p className="text-[var(--text-soft)]">
-                          {sp.daysInStock}g in stock • Sconto: <span className="text-yellow-400 font-bold">-{sp.suggestedDiscount}%</span> → <span className="text-green-400">€{sp.suggestedPrice}</span>
+                          {sp.daysInStock}{t('set.daysInStock')} • {t('set.discount')}: <span className="text-yellow-400 font-bold">-{sp.suggestedDiscount}%</span> → <span className="text-green-400">€{sp.suggestedPrice}</span>
                         </p>
                       </div>
                     ))}
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-[var(--text-faint)] italic">✓ Nessun prodotto fermo oltre la soglia</p>
+                <p className="text-xs text-[var(--text-faint)] italic">{t('set.noStale')}</p>
               )}
-              <button 
+              <button
                 onClick={checkStaleProducts}
                 className="mt-3 w-full bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 py-2 rounded-xl text-xs font-bold transition-colors">
-                Ricontrolla ora
+                {t('set.recheckNow')}
               </button>
             </section>
             
@@ -6122,23 +6122,23 @@ export default function App() {
                 <div className="flex items-start gap-3">
                   <Shield className={user.twoFactorEnabled ? 'text-green-400' : 'text-[var(--text-soft)]'} size={24} />
                   <div>
-                    <h3 className="text-lg font-bold tracking-tighter">Autenticazione a Due Fattori</h3>
+                    <h3 className="text-lg font-bold tracking-tighter">{t('set.twoFaTitle')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">
-                      {user.twoFactorEnabled 
-                        ? '✓ 2FA attivo. Il tuo account ha un livello di sicurezza extra.' 
-                        : 'Aggiungi un livello di sicurezza al tuo account.'}
+                      {user.twoFactorEnabled
+                        ? t('set.twoFaOn')
+                        : t('set.twoFaOff')}
                     </p>
                   </div>
                 </div>
                 {user.twoFactorEnabled ? (
                   <button onClick={handle2FADisable}
                     className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
-                    Disabilita
+                    {t('set.disableBtn')}
                   </button>
                 ) : (
                   <button onClick={handle2FASetupStart} disabled={twoFaLoading}
                     className="px-4 py-2 bg-[#8b5cf6] hover:bg-[#a78bfa] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
-                    Attiva 2FA
+                    {t('set.enable2fa')}
                   </button>
                 )}
               </div>
@@ -6150,13 +6150,13 @@ export default function App() {
                 <div className="flex items-start gap-3">
                   <Lock className="text-[var(--text-soft)] mt-0.5" size={22} />
                   <div>
-                    <h3 className="text-lg font-bold tracking-tighter">Password</h3>
-                    <p className="text-xs text-[var(--text-soft)] mt-1">Cambia la password del tuo account.</p>
+                    <h3 className="text-lg font-bold tracking-tighter">{t('set.password')}</h3>
+                    <p className="text-xs text-[var(--text-soft)] mt-1">{t('set.passwordDesc')}</p>
                   </div>
                 </div>
                 <button onClick={() => setChangePwdOpen(true)}
                   className="px-4 py-2 bg-[#8b5cf6] hover:bg-[#a78bfa] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
-                  Cambia
+                  {t('set.change')}
                 </button>
               </div>
             </section>
@@ -6166,8 +6166,8 @@ export default function App() {
               className="w-full text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 hover:border-[var(--border-2)] transition-colors flex items-center gap-3">
               <Wallet className="text-[#8b5cf6]" size={20} />
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold tracking-tighter">Portafoglio · Incassi marketplace</h3>
-                <p className="text-xs text-[var(--text-soft)]">Saldo da riscuotere {(wallet?.available ?? 0).toFixed(2)}€ · in attesa {(wallet?.pending ?? 0).toFixed(2)}€</p>
+                <h3 className="text-lg font-bold tracking-tighter">{t('set.walletTitle')}</h3>
+                <p className="text-xs text-[var(--text-soft)]">{t('set.walletBalance')} {(wallet?.available ?? 0).toFixed(2)}€ · {t('set.walletPending')} {(wallet?.pending ?? 0).toFixed(2)}€</p>
               </div>
               <ChevronDown size={18} className="-rotate-90 text-[var(--text-soft)]" />
             </button>
@@ -6177,12 +6177,12 @@ export default function App() {
               <button type="button" onClick={() => setRepartiOpen(o => !o)}
                 className="w-full flex items-center gap-2 mb-1 group">
                 <Layers className="text-[var(--text)]" size={18} />
-                <h3 className="text-lg font-bold tracking-tighter">I tuoi Magazzini</h3>
+                <h3 className="text-lg font-bold tracking-tighter">{t('set.myWarehouses')}</h3>
                 <span className="text-xs font-bold text-[var(--text-soft)] bg-[var(--fill)] px-2 py-0.5 rounded-full">{user.warehouses.filter((w: any) => !w.parentId).length}</span>
                 <ChevronDown size={18} className={`ml-auto text-[var(--text-soft)] transition-transform ${repartiOpen ? 'rotate-180' : ''}`} />
               </button>
               {!repartiOpen && (
-                <p className="text-xs text-[var(--text-faint)] mb-1">Tocca per vedere magazzini, soci e codici invito</p>
+                <p className="text-xs text-[var(--text-faint)] mb-1">{t('set.tapToSee')}</p>
               )}
 
               {repartiOpen && (<>
@@ -6195,13 +6195,13 @@ export default function App() {
                         <div>
                           <p className="font-bold">{w.name}</p>
                           <p className="text-[10px] text-[var(--text-soft)] uppercase">
-                            {w.role === 'OWNER' ? 'Fondatore' : 'Socio'} • Quota {w.percentage}%
+                            {w.role === 'OWNER' ? t('set.founder') : t('set.partner')} • {t('set.share')} {w.percentage}%
                           </p>
                         </div>
                       </div>
                       {w.inviteCode && (
                         <button
-                          onClick={() => { navigator.clipboard.writeText(w.inviteCode); showToast('Codice copiato!'); }}
+                          onClick={() => { navigator.clipboard.writeText(w.inviteCode); showToast(t('set.codeCopied')); }}
                           className="flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-3 py-2 rounded-lg text-xs font-mono">
                           <KeyRound size={12} /> {w.inviteCode} <Copy size={12} />
                         </button>
@@ -6215,11 +6215,11 @@ export default function App() {
                         <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2 min-w-0">
                             <Store size={14} className="text-[#8b5cf6] shrink-0" />
-                            <span className="text-xs text-[var(--text-soft)]">Vetrina: <b className="text-[var(--text)]">{pub}/{whProds.length}</b> pubblici</span>
+                            <span className="text-xs text-[var(--text-soft)]">{t('set.showcase')}: <b className="text-[var(--text)]">{pub}/{whProds.length}</b> {t('set.public')}</span>
                           </div>
                           <div className="flex gap-2 shrink-0">
-                            <button onClick={() => toggleWarehousePublic(w.id, true)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8b5cf6] text-white">Pubblica tutto</button>
-                            <button onClick={() => toggleWarehousePublic(w.id, false)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] border border-[var(--border-2)] text-[var(--text-soft)]">Rendi privato</button>
+                            <button onClick={() => toggleWarehousePublic(w.id, true)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8b5cf6] text-white">{t('set.publishAll')}</button>
+                            <button onClick={() => toggleWarehousePublic(w.id, false)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] border border-[var(--border-2)] text-[var(--text-soft)]">{t('set.makePrivate')}</button>
                           </div>
                         </div>
                       );
@@ -6231,26 +6231,26 @@ export default function App() {
               {isFounder && (
                 <div className="pt-5 border-t border-[var(--border-2)] space-y-4">
                   {/* Crea un nuovo MAGAZZINO (partnership): poi inviti i soci col codice */}
-                  <div className="flex items-center gap-2"><span className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest">Nuovo magazzino con soci</span>{!hasFeature('partners') && <PlanLock plan="Starter" />}</div>
+                  <div className="flex items-center gap-2"><span className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest">{t('set.newWhPartners')}</span>{!hasFeature('partners') && <PlanLock plan="Starter" />}</div>
                   <form onSubmit={handleAddWarehouse} className="flex flex-col sm:flex-row gap-3">
                     <input type="text" value={newWarehouseName}
                       onChange={(e: any) => setNewWarehouseName(e.target.value)}
-                      placeholder="Nuovo magazzino (es. Magazzino con Luca)"
+                      placeholder={t('set.newWhPlaceholder')}
                       className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#8b5cf6] outline-none" />
                     <button type="submit" disabled={isAddingWarehouse}
                       className="bg-[#8b5cf6] hover:bg-[#a78bfa] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap text-white">
-                      {isAddingWarehouse ? <Loader2 className="animate-spin" size={16} /> : '+ Aggiungi Magazzino'}
+                      {isAddingWarehouse ? <Loader2 className="animate-spin" size={16} /> : t('set.addWarehouse')}
                     </button>
                   </form>
                   {/* Crea una nuova CATEGORIA (trasversale): l'IA genera i campi giusti */}
                   <form onSubmit={handleAddCategory} className="flex flex-col sm:flex-row gap-3">
                     <input type="text" value={newCatName}
                       onChange={(e: any) => setNewCatName(e.target.value)}
-                      placeholder="Nuova categoria (es. Borse, Vinili, Elettronica...)"
+                      placeholder={t('set.newCatPlaceholder')}
                       className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#8b5cf6] outline-none" />
                     <button type="submit" disabled={isAddingCat}
                       className="bg-[var(--fill)] hover:bg-[var(--fill-2)] border border-[var(--border-2)] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap">
-                      {isAddingCat ? <Loader2 className="animate-spin" size={16} /> : '+ Aggiungi Categoria'}
+                      {isAddingCat ? <Loader2 className="animate-spin" size={16} /> : t('set.addCategory')}
                     </button>
                   </form>
                   {categories.length > 0 && (
@@ -6272,27 +6272,27 @@ export default function App() {
               <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="text-green-400" size={18} />
-                  <h3 className="text-lg font-bold tracking-tighter">Integrazioni · StockX</h3>
+                  <h3 className="text-lg font-bold tracking-tighter">{t('set.integrations')}</h3>
                 </div>
-                <p className="text-xs text-[var(--text-soft)] mb-4">Fonte prezzi sneaker (in EUR). Collegamento unico per tutta l'app.</p>
+                <p className="text-xs text-[var(--text-soft)] mb-4">{t('set.integrationsDesc')}</p>
                 {!stockxStatus?.configured ? (
                   <p className="text-xs text-[var(--text-faint)]">
-                    Non configurato. Aggiungi su Render le variabili <span className="font-mono">STOCKX_CLIENT_ID</span>, <span className="font-mono">STOCKX_CLIENT_SECRET</span>, <span className="font-mono">STOCKX_API_KEY</span>, poi ricarica.
+                    {t('set.stockxNotConfigured')} <span className="font-mono">STOCKX_CLIENT_ID</span>, <span className="font-mono">STOCKX_CLIENT_SECRET</span>, <span className="font-mono">STOCKX_API_KEY</span>, {t('set.stockxThenReload')}
                   </p>
                 ) : (stockxStatus?.connected && stockxStatus?.tokenOk) ? (
                   <div className="flex items-center gap-3 flex-wrap">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-green-400"><CheckCircle size={16} /> Collegato</div>
+                    <div className="flex items-center gap-2 text-sm font-semibold text-green-400"><CheckCircle size={16} /> {t('set.connected')}</div>
                     <button type="button" onClick={connectStockX} disabled={stockxConnecting}
-                      className="text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] underline">Riconnetti</button>
+                      className="text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] underline">{t('set.reconnect')}</button>
                   </div>
                 ) : (
                   <div>
                     {stockxStatus?.connected && !stockxStatus?.tokenOk && (
-                      <p className="text-xs text-amber-400 mb-2">⚠️ Sessione StockX scaduta. Riconnetti per riattivare le valutazioni.</p>
+                      <p className="text-xs text-amber-400 mb-2">{t('set.stockxExpired')}</p>
                     )}
                     <button type="button" onClick={connectStockX} disabled={stockxConnecting}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors disabled:opacity-50">
-                      {stockxConnecting ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />} {stockxStatus?.connected ? 'Riconnetti StockX' : 'Connetti StockX'}
+                      {stockxConnecting ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />} {stockxStatus?.connected ? t('set.reconnectStockx') : t('set.connectStockx')}
                     </button>
                   </div>
                 )}
@@ -6304,14 +6304,14 @@ export default function App() {
               <section key={team.warehouseId} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-5">
                   <Users className="text-blue-500" size={18} />
-                  <h3 className="text-lg font-bold tracking-tighter">Soci di {team.warehouseName}</h3>
+                  <h3 className="text-lg font-bold tracking-tighter">{t('set.partnersOf')} {team.warehouseName}</h3>
                 </div>
                 
                 {/* Intestazione colonne: Utili (divisione profitto) e Costi (chi paga l'acquisto) */}
                 <div className="flex items-center gap-3 px-3 mb-1">
                   <div className="flex-1" />
-                  <span className="w-20 text-[10px] font-bold text-[var(--text-soft)] uppercase text-center">Utili %</span>
-                  <span className="w-20 text-[10px] font-bold text-[var(--text-soft)] uppercase text-center">Costi %</span>
+                  <span className="w-20 text-[10px] font-bold text-[var(--text-soft)] uppercase text-center">{t('set.profitPct')}</span>
+                  <span className="w-20 text-[10px] font-bold text-[var(--text-soft)] uppercase text-center">{t('set.costPct')}</span>
                 </div>
                 <div className="space-y-3 mb-4">
                   {team.members.map((m: any) => (
@@ -6321,7 +6321,7 @@ export default function App() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm truncate">{m.name}</p>
-                        <p className="text-[10px] text-[var(--text-soft)] uppercase">{m.role === 'OWNER' ? 'Fondatore' : 'Socio'}</p>
+                        <p className="text-[10px] text-[var(--text-soft)] uppercase">{m.role === 'OWNER' ? t('set.founder') : t('set.partner')}</p>
                       </div>
                       <input type="number" min="0" max="100" value={m.percentage} title="Quota utili"
                         onChange={(e: any) => updateMemberPercentage(team.warehouseId, m.membershipId, e.target.value, 'percentage')}
@@ -6337,15 +6337,15 @@ export default function App() {
                   Math.round(team.members.reduce((s: number, m: any) => s + (Number(m.percentage) || 0), 0)) === 100
                     ? 'text-green-500' : 'text-yellow-500'
                 }`}>
-                  Utili: {team.members.reduce((s: number, m: any) => s + (Number(m.percentage) || 0), 0).toFixed(0)}%
-                  {Math.round(team.members.reduce((s: number, m: any) => s + (Number(m.percentage) || 0), 0)) !== 100 && ' (deve essere 100%)'}
+                  {t('set.profits')}: {team.members.reduce((s: number, m: any) => s + (Number(m.percentage) || 0), 0).toFixed(0)}%
+                  {Math.round(team.members.reduce((s: number, m: any) => s + (Number(m.percentage) || 0), 0)) !== 100 && ' ' + t('set.mustBe100Inline')}
                 </p>
                 {(() => {
                   const ct = team.members.reduce((s: number, m: any) => s + (Number(m.costPercentage) || 0), 0);
-                  if (ct === 0) return <p className="text-[11px] text-[var(--text-faint)] mb-3">Costi: non impostati (di default seguono gli utili).</p>;
+                  if (ct === 0) return <p className="text-[11px] text-[var(--text-faint)] mb-3">{t('set.costsNotSet')}</p>;
                   return (
                     <p className={`text-xs font-bold mb-3 ${Math.round(ct) === 100 ? 'text-green-500' : 'text-yellow-500'}`}>
-                      Costi: {ct.toFixed(0)}%{Math.round(ct) !== 100 && ' (deve essere 100%)'}
+                      {t('set.costs')}: {ct.toFixed(0)}%{Math.round(ct) !== 100 && ' ' + t('set.mustBe100Inline')}
                     </p>
                   );
                 })()}
@@ -6353,7 +6353,7 @@ export default function App() {
                 <button onClick={() => savePercentages(team.warehouseId, team.members)}
                   disabled={isSavingTeam}
                   className="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2">
-                  {isSavingTeam ? <Loader2 className="animate-spin" size={16} /> : 'Salva Quote'}
+                  {isSavingTeam ? <Loader2 className="animate-spin" size={16} /> : t('set.saveShares')}
                 </button>
 
                 {/* Elimina magazzino — solo OWNER, piccolo e discreto */}
@@ -6361,14 +6361,14 @@ export default function App() {
                   <div className="mt-4 pt-4 border-t border-[var(--border)] flex justify-end">
                     <button
                       onClick={async () => {
-                        if (!confirm(`Eliminare il magazzino "${team.warehouseName}"? Tutti i prodotti associati verranno rimossi.`)) return;
+                        if (!confirm(t('set.deleteWhConfirm').replace('{name}', team.warehouseName))) return;
                         const { ok, data } = await apiCall(`/warehouses/${team.warehouseId}`, { method: 'DELETE' });
-                        if (ok) { setUser(data.user); await fetchTeam(); showToast('Magazzino eliminato'); }
+                        if (ok) { setUser(data.user); await fetchTeam(); showToast(t('set.whDeleted')); }
                         else showToast(data.error || 'Errore', 'err');
                       }}
                       className="text-[11px] text-red-500/40 hover:text-red-400/70 transition-colors flex items-center gap-1"
                     >
-                      <Trash2 size={11} /> Elimina reparto
+                      <Trash2 size={11} /> {t('set.deleteWh')}
                     </button>
                   </div>
                 )}
@@ -6379,20 +6379,20 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-1">
                 <UserPlus size={15} className="text-[var(--text-muted)]" />
-                <h3 className="font-semibold text-sm">Entra in un Magazzino</h3>
+                <h3 className="font-semibold text-sm">{t('set.joinWh')}</h3>
               </div>
-              <p className="text-[11px] text-[var(--text-faint)] mb-4">Hai ricevuto un codice invito? Inseriscilo qui per unirti al team.</p>
+              <p className="text-[11px] text-[var(--text-faint)] mb-4">{t('set.joinWhDesc')}</p>
               <form onSubmit={handleJoinWarehouse} className="flex flex-col gap-2">
                 <input
                   value={joinCodeInput}
                   onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
-                  placeholder="Codice invito (es: ABC123XY)"
+                  placeholder={t('set.joinWhPlaceholder')}
                   maxLength={20}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-3 text-sm font-mono tracking-widest focus:border-[var(--border-3)] outline-none uppercase"
                 />
                 <button type="submit" disabled={isJoining || !joinCodeInput.trim()}
                   className="w-full py-3 bg-white text-black rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-40">
-                  {isJoining ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Entra nel Magazzino'}
+                  {isJoining ? <Loader2 size={16} className="animate-spin mx-auto" /> : t('set.joinWhBtn')}
                 </button>
               </form>
             </section>
@@ -6401,12 +6401,12 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-1">
                 <Download size={15} className="text-[var(--text-muted)]" />
-                <h3 className="font-semibold text-sm">Dati</h3>
+                <h3 className="font-semibold text-sm">{t('set.data')}</h3>
               </div>
-              <p className="text-[11px] text-[var(--text-faint)] mb-4">Importa prodotti da Excel/CSV nel tuo magazzino.</p>
+              <p className="text-[11px] text-[var(--text-faint)] mb-4">{t('set.dataDesc')}</p>
               <div className="flex flex-wrap gap-2">
                 <label className="px-4 py-2.5 text-xs font-bold rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] text-gray-300 hover:text-[var(--text)] hover:border-[var(--border-3)] cursor-pointer transition-colors flex items-center gap-2">
-                  <Download size={14} /> Importa Excel
+                  <Download size={14} /> {t('set.importExcel')}
                   <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelFile} />
                 </label>
               </div>
@@ -6416,17 +6416,17 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-1">
                 <Mail size={18} className="text-[#8b5cf6]" />
-                <h3 className="text-lg font-bold tracking-tighter">Aiuto & Assistenza</h3>
+                <h3 className="text-lg font-bold tracking-tighter">{t('set.helpTitle')}</h3>
               </div>
               <p className="text-xs text-[var(--text-soft)] mb-4">
-                Hai una domanda, un'idea o hai trovato un problema? Scrivici: il messaggio arriva direttamente a noi.
+                {t('set.helpDesc')}
               </p>
               <div className="flex flex-wrap gap-2 mb-3">
                 {([
-                  { v: 'idea', label: 'Idea', Icon: Lightbulb },
-                  { v: 'bug', label: 'Problema', Icon: Bug },
-                  { v: 'domanda', label: 'Domanda', Icon: HelpCircle },
-                  { v: 'altro', label: 'Altro', Icon: MoreHorizontal },
+                  { v: 'idea', label: t('set.fbIdea'), Icon: Lightbulb },
+                  { v: 'bug', label: t('set.fbBug'), Icon: Bug },
+                  { v: 'domanda', label: t('set.fbQuestion'), Icon: HelpCircle },
+                  { v: 'altro', label: t('set.fbOther'), Icon: MoreHorizontal },
                 ] as const).map(o => (
                   <button key={o.v} type="button" onClick={() => setFeedbackType(o.v)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
@@ -6440,14 +6440,14 @@ export default function App() {
               </div>
               <textarea value={feedbackMsg} onChange={(e: any) => setFeedbackMsg(e.target.value)}
                 maxLength={4000} rows={4}
-                placeholder="Scrivi qui il tuo messaggio…"
+                placeholder={t('set.fbPlaceholder')}
                 className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none resize-none" />
               <div className="flex items-center justify-between gap-3 mt-3">
                 <span className="text-[10px] text-[var(--text-faint)]">{feedbackMsg.length}/4000</span>
                 <button onClick={sendFeedback} disabled={feedbackSending || feedbackMsg.trim().length < 3}
                   className="px-5 py-2 bg-[#8b5cf6] hover:bg-[#a78bfa] rounded-xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center gap-2">
                   {feedbackSending ? <Loader2 className="animate-spin" size={16} /> : <Mail size={15} />}
-                  Invia
+                  {t('set.send')}
                 </button>
               </div>
             </section>
@@ -6458,8 +6458,8 @@ export default function App() {
                 <div className="flex items-start gap-3">
                   {theme === 'light' ? <Sun className="text-[#8b5cf6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#8b5cf6] mt-0.5" size={22} /> : <Moon className="text-[#8b5cf6] mt-0.5" size={22} />}
                   <div>
-                    <h3 className="text-lg font-bold tracking-tighter">Aspetto</h3>
-                    <p className="text-xs text-[var(--text-soft)] mt-1">Scegli il tema: scuro, chiaro o vetro.</p>
+                    <h3 className="text-lg font-bold tracking-tighter">{t('set.appearance')}</h3>
+                    <p className="text-xs text-[var(--text-soft)] mt-1">{t('set.appearanceDesc')}</p>
                   </div>
                 </div>
                 <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] shrink-0 self-center sm:self-auto">
@@ -6467,19 +6467,19 @@ export default function App() {
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
                       theme === 'dark' ? 'bg-[#8b5cf6] text-white' : 'text-[var(--text-soft)]'
                     }`}>
-                    <Moon size={13} /> Scuro
+                    <Moon size={13} /> {t('set.themeDark')}
                   </button>
                   <button onClick={() => setTheme('light')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
                       theme === 'light' ? 'bg-[#8b5cf6] text-white' : 'text-[var(--text-soft)]'
                     }`}>
-                    <Sun size={13} /> Chiaro
+                    <Sun size={13} /> {t('set.themeLight')}
                   </button>
                   <button onClick={() => setTheme('glass')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
                       theme === 'glass' ? 'bg-[#8b5cf6] text-white' : 'text-[var(--text-soft)]'
                     }`}>
-                    <Sparkles size={13} /> Glass
+                    <Sparkles size={13} /> {t('set.themeGlass')}
                   </button>
                 </div>
               </div>
@@ -6489,14 +6489,14 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-red-500/30 rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle size={15} className="text-red-500" />
-                <h3 className="font-semibold text-sm text-red-500">Eliminazione Account</h3>
+                <h3 className="font-semibold text-sm text-red-500">{t('set.deleteAccount')}</h3>
               </div>
               <p className="text-[11px] text-[var(--text-muted)] mb-4">
-                L'eliminazione dell'account è permanente e irreversibile. Tutti i tuoi prodotti, dati e accessi verranno cancellati definitivamente.
+                {t('set.deleteAccountDesc')}
               </p>
               <button onClick={() => setDeleteAccountStep(1)}
                 className="px-4 py-2 rounded-xl border border-red-500/40 text-red-500 text-xs font-semibold hover:bg-red-500 hover:text-white transition-colors">
-                Elimina il mio account
+                {t('set.deleteAccountBtn')}
               </button>
             </section>
 
