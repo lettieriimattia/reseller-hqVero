@@ -9,8 +9,8 @@ import { uploadImage, isCloudinaryConfigured } from './upload.service';
 import { logger } from '../utils/logger';
 
 const FLAG_KEY = 'photoMigrationCloudinaryV1';
-const BATCH = 5;            // pochi prodotti per volta → niente picchi di RAM
-const PAUSE_MS = 1500;      // respiro tra un lotto e l'altro
+const BATCH = 2;            // pochissimi per volta → picco di RAM minimo (sicuro anche su 512MB)
+const PAUSE_MS = 2500;      // respiro tra un lotto e l'altro (lascia liberare la memoria)
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
