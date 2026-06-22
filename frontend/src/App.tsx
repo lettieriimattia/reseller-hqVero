@@ -585,13 +585,13 @@ export default function App() {
   const [notifPrefsOpen, setNotifPrefsOpen] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>({});
   const NOTIF_LABELS: { key: string; label: string; desc: string }[] = [
-    { key: 'offers', label: 'Offerte', desc: 'Quando ricevi o ti rispondono a un\'offerta' },
-    { key: 'messages', label: 'Messaggi', desc: 'Nuovi messaggi in chat' },
-    { key: 'sales', label: 'Vendite e pagamenti', desc: 'Quando un articolo viene pagato/venduto' },
-    { key: 'shipping', label: 'Spedizioni e consegne', desc: 'Stato spedizione e consegne confermate' },
-    { key: 'disputes', label: 'Resi e contestazioni', desc: 'Contestazioni aperte o risolte' },
-    { key: 'team', label: 'Soci e magazzino', desc: 'Nuovi soci, prodotti aggiunti dal team' },
-    { key: 'insights', label: 'Suggerimenti e avvisi', desc: 'Prodotti fermi, consigli di prezzo' },
+    { key: 'offers', label: t('notif.offers'), desc: t('notif.offersDesc') },
+    { key: 'messages', label: t('notif.messages'), desc: t('notif.messagesDesc') },
+    { key: 'sales', label: t('notif.sales'), desc: t('notif.salesDesc') },
+    { key: 'shipping', label: t('notif.shipping'), desc: t('notif.shippingDesc') },
+    { key: 'disputes', label: t('notif.disputes'), desc: t('notif.disputesDesc') },
+    { key: 'team', label: t('notif.team'), desc: t('notif.teamDesc') },
+    { key: 'insights', label: t('notif.insights'), desc: t('notif.insightsDesc') },
   ];
   // Magazzino pubblico (auto-pubblicazione dei nuovi prodotti in vetrina)
   const [autoPublishOn, setAutoPublishOn] = useState(false);
@@ -6733,10 +6733,10 @@ export default function App() {
         <div className="fixed inset-0 z-[220] bg-[var(--bg)] overflow-y-auto">
           <div className="sticky top-0 z-10 bg-[var(--bg)]/95 backdrop-blur border-b border-[var(--border)] px-4 py-3 flex items-center gap-3">
             <button onClick={() => setNotifPrefsOpen(false)} className="p-1.5 hover:bg-[var(--fill)] rounded-lg"><ChevronDown size={20} className="rotate-90" /></button>
-            <h2 className="text-lg font-bold">Notifiche</h2>
+            <h2 className="text-lg font-bold">{t('set.notifications')}</h2>
           </div>
           <div className="max-w-md mx-auto p-4 space-y-2.5">
-            <p className="text-xs text-[var(--text-soft)] px-1 mb-2">Scegli quali notifiche ricevere sul dispositivo. Le notifiche di sicurezza arrivano sempre.</p>
+            <p className="text-xs text-[var(--text-soft)] px-1 mb-2">{t('notif.choose')}</p>
             {NOTIF_LABELS.map(c => {
               const on = notifPrefs[c.key] !== false;
               return (
@@ -6753,7 +6753,7 @@ export default function App() {
               );
             })}
             {!pushEnabled && (
-              <p className="text-[11px] text-amber-400 px-1 pt-2">⚠️ Le notifiche push non sono attive su questo dispositivo. Attivale in Impostazioni → Notifiche per riceverle.</p>
+              <p className="text-[11px] text-amber-400 px-1 pt-2">{t('notif.pushOffWarn')}</p>
             )}
           </div>
         </div>
@@ -6767,7 +6767,7 @@ export default function App() {
             <h2 className="text-lg font-bold mb-2">{confirmState.title}</h2>
             <p className="text-sm text-[var(--text-soft)] mb-6">{confirmState.message}</p>
             <div className="flex gap-2">
-              <button onClick={() => closeConfirm(false)} className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">Annulla</button>
+              <button onClick={() => closeConfirm(false)} className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">{t('common.cancel')}</button>
               <button onClick={() => closeConfirm(true)} className={`flex-1 py-3 rounded-xl text-white font-bold ${confirmState.danger ? 'bg-red-600' : 'bg-[#8b5cf6]'}`}>{confirmState.confirmLabel}</button>
             </div>
           </div>
@@ -6786,8 +6786,8 @@ export default function App() {
               onKeyDown={e => { if (e.key === 'Enter') closePrompt(promptState.value); }}
               className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-base outline-none focus:border-[#8b5cf6]" />
             <div className="flex gap-2 mt-5">
-              <button onClick={() => closePrompt(null)} className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">Annulla</button>
-              <button onClick={() => closePrompt(promptState.value)} className="flex-1 py-3 rounded-xl bg-[#8b5cf6] text-white font-bold">Conferma</button>
+              <button onClick={() => closePrompt(null)} className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">{t('common.cancel')}</button>
+              <button onClick={() => closePrompt(promptState.value)} className="flex-1 py-3 rounded-xl bg-[#8b5cf6] text-white font-bold">{t('common.confirm')}</button>
             </div>
           </div>
         </div>
@@ -8446,26 +8446,26 @@ export default function App() {
                     <AlertTriangle size={20} className="text-red-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Eliminare l'account?</h3>
-                    <p className="text-[11px] text-[var(--text-soft)]">Questa azione è permanente e irreversibile</p>
+                    <h3 className="font-semibold">{t('del.title')}</h3>
+                    <p className="text-[11px] text-[var(--text-soft)]">{t('del.permanent')}</p>
                   </div>
                 </div>
                 <div className="bg-red-500/[0.06] border border-red-500/[0.15] rounded-xl p-4 mb-5 space-y-1.5">
-                  {['Tutti i tuoi prodotti e dati di vendita', 'Le foto dei prodotti', 'La tua cronologia e audit log', 'L\'accesso a tutti i magazzini', 'Il tuo account e le credenziali'].map(item => (
+                  {[t('del.item1'), t('del.item2'), t('del.item3'), t('del.item4'), t('del.item5')].map(item => (
                     <div key={item} className="flex items-start gap-2 text-[12px] text-red-300/70">
                       <span className="text-red-500 mt-0.5 shrink-0">×</span> {item}
                     </div>
                   ))}
                 </div>
-                <p className="text-[11px] text-[var(--text-faint)] mb-5">I tuoi soci non verranno eliminati. I prodotti condivisi resteranno visibili al team.</p>
+                <p className="text-[11px] text-[var(--text-faint)] mb-5">{t('del.partnersNote')}</p>
                 <div className="flex gap-2">
                   <button onClick={() => setDeleteAccountStep(0)}
                     className="flex-1 py-3 rounded-xl border border-[var(--border-2)] text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
-                    Annulla
+                    {t('common.cancel')}
                   </button>
                   <button onClick={() => setDeleteAccountStep(2)}
                     className="flex-1 py-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-sm font-semibold hover:bg-red-500/25 transition-colors">
-                    Continua
+                    {t('del.continue')}
                   </button>
                 </div>
               </div>
@@ -8474,31 +8474,31 @@ export default function App() {
             {/* STEP 2: Conferma email */}
             {deleteAccountStep === 2 && (
               <div className="p-6">
-                <h3 className="font-semibold mb-1">Conferma la tua email</h3>
-                <p className="text-[12px] text-[var(--text-soft)] mb-4">Scrivi la tua email per confermare l'eliminazione</p>
+                <h3 className="font-semibold mb-1">{t('del.confirmEmail')}</h3>
+                <p className="text-[12px] text-[var(--text-soft)] mb-4">{t('del.confirmEmailDesc')}</p>
                 <p className="text-xs text-[var(--text-faint)] bg-[var(--fill)] border border-[var(--border)] rounded-xl p-3 mb-4 font-mono">{user?.email}</p>
                 <input
                   value={deleteEmailConfirm}
                   onChange={e => setDeleteEmailConfirm(e.target.value)}
-                  placeholder="Scrivi qui la tua email"
+                  placeholder={t('del.emailPlaceholder')}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-red-500/40 outline-none mb-4"
                   autoFocus
                 />
                 <div className="flex gap-2">
                   <button onClick={() => setDeleteAccountStep(1)}
                     className="flex-1 py-3 rounded-xl border border-[var(--border-2)] text-sm text-[var(--text-muted)] transition-colors">
-                    Indietro
+                    {t('del.back')}
                   </button>
                   <button
                     onClick={() => {
                       if (deleteEmailConfirm.toLowerCase() !== user?.email?.toLowerCase()) {
-                        showToast('Email non corrisponde', 'err'); return;
+                        showToast(t('del.emailMismatch'), 'err'); return;
                       }
                       setDeleteAccountStep(3);
                     }}
                     disabled={!deleteEmailConfirm}
                     className="flex-1 py-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-sm font-semibold disabled:opacity-40 transition-colors">
-                    Continua
+                    {t('del.continue')}
                   </button>
                 </div>
               </div>
@@ -8507,26 +8507,26 @@ export default function App() {
             {/* STEP 3: Inserisci password */}
             {deleteAccountStep === 3 && (
               <div className="p-6">
-                <h3 className="font-semibold mb-1">Inserisci la tua password</h3>
-                <p className="text-[12px] text-[var(--text-soft)] mb-4">Per sicurezza conferma la tua password attuale</p>
+                <h3 className="font-semibold mb-1">{t('del.enterPwd')}</h3>
+                <p className="text-[12px] text-[var(--text-soft)] mb-4">{t('del.enterPwdDesc')}</p>
                 <input
                   type="password"
                   value={deletePasswordConfirm}
                   onChange={e => setDeletePasswordConfirm(e.target.value)}
-                  placeholder="Password attuale"
+                  placeholder={t('pwd.current')}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-red-500/40 outline-none mb-4"
                   autoFocus
                 />
                 <div className="flex gap-2">
                   <button onClick={() => setDeleteAccountStep(2)}
                     className="flex-1 py-3 rounded-xl border border-[var(--border-2)] text-sm text-[var(--text-muted)] transition-colors">
-                    Indietro
+                    {t('del.back')}
                   </button>
                   <button
                     onClick={() => { if (deletePasswordConfirm.length >= 6) setDeleteAccountStep(4); }}
                     disabled={deletePasswordConfirm.length < 6}
                     className="flex-1 py-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-sm font-semibold disabled:opacity-40 transition-colors">
-                    Continua
+                    {t('del.continue')}
                   </button>
                 </div>
               </div>
@@ -8540,24 +8540,24 @@ export default function App() {
                     <Trash2 size={24} className="text-red-400" />
                   </div>
                 </div>
-                <h3 className="font-semibold text-center mb-1">Ultima conferma</h3>
-                <p className="text-[12px] text-[var(--text-soft)] text-center mb-5">Una volta eliminato non potrai recuperare nulla</p>
+                <h3 className="font-semibold text-center mb-1">{t('del.lastConfirm')}</h3>
+                <p className="text-[12px] text-[var(--text-soft)] text-center mb-5">{t('del.noRecover')}</p>
                 <label className="flex items-start gap-3 cursor-pointer mb-5 p-3 bg-red-500/[0.05] border border-red-500/[0.12] rounded-xl">
                   <input type="checkbox" checked={deleteCheckbox} onChange={e => setDeleteCheckbox(e.target.checked)}
                     className="mt-0.5 shrink-0 w-4 h-4 accent-red-500" />
                   <span className="text-[12px] text-[var(--text-muted)] leading-relaxed">
-                    Capisco che questa azione è permanente e che perderò tutti i miei dati, prodotti e accessi senza possibilità di recupero.
+                    {t('del.checkbox')}
                   </span>
                 </label>
                 <div className="flex gap-2">
                   <button onClick={() => { setDeleteAccountStep(0); setDeleteEmailConfirm(''); setDeletePasswordConfirm(''); setDeleteCheckbox(false); }}
                     className="flex-1 py-3 rounded-xl border border-[var(--border-2)] text-sm text-[var(--text-muted)] transition-colors">
-                    Annulla
+                    {t('common.cancel')}
                   </button>
                   <button onClick={handleDeleteAccount}
                     disabled={!deleteCheckbox || isDeletingAccount}
                     className="flex-1 py-3 rounded-xl bg-red-600 text-[var(--text)] text-sm font-semibold disabled:opacity-40 hover:bg-red-700 transition-colors">
-                    {isDeletingAccount ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Elimina Account'}
+                    {isDeletingAccount ? <Loader2 size={16} className="animate-spin mx-auto" /> : t('del.deleteBtn')}
                   </button>
                 </div>
               </div>
@@ -8573,11 +8573,11 @@ export default function App() {
             <div className="flex items-start gap-3 mb-4">
               <div className="text-lg shrink-0">🍪</div>
               <div>
-                <p className="text-sm font-semibold text-[var(--text)] mb-1">Informativa Cookie</p>
+                <p className="text-sm font-semibold text-[var(--text)] mb-1">{t('cookie.title')}</p>
                 <p className="text-[12px] text-[var(--text-soft)] leading-relaxed">
-                  Usiamo solo cookie <span className="text-gray-300">strettamente necessari</span> per l'autenticazione e il funzionamento dell'app. Nessun cookie di marketing o profilazione.{' '}
+                  {t('cookie.bodyPre')} <span className="text-gray-300">{t('cookie.strictlyNecessary')}</span> {t('cookie.bodyPost')}{' '}
                   <button onClick={() => setPrivacyOpen(true)} className="text-[var(--text)] underline underline-offset-2 hover:no-underline">
-                    Privacy Policy
+                    {t('cookie.privacy')}
                   </button>
                 </p>
               </div>
@@ -8585,11 +8585,11 @@ export default function App() {
             <div className="flex gap-2">
               <button onClick={() => setPrivacyOpen(true)}
                 className="flex-1 py-2 rounded-xl border border-[var(--border-2)] text-xs text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
-                Leggi tutto
+                {t('cookie.readAll')}
               </button>
               <button onClick={() => { localStorage.setItem('hq_cookie_consent', '1'); setCookieConsent(true); }}
                 className="flex-1 py-2 rounded-xl bg-white text-black text-xs font-semibold hover:bg-gray-200 transition-colors">
-                Accetta e Continua
+                {t('cookie.accept')}
               </button>
             </div>
           </div>
