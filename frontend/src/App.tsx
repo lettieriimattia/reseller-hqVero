@@ -4034,7 +4034,7 @@ export default function App() {
               {hasAdvancedAnalytics ? (
               <section className="hidden lg:flex lg:flex-col lg:col-span-2 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold">Andamento Vendite</h3>
+                  <h3 className="font-semibold">{t('an.salesTrend')}</h3>
                   <div className="flex gap-1 bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)]">
                     {(['1D', '1W', '1M', '1Y', 'MAX'] as const).map(tf => (
                       <button key={tf} onClick={() => setChartTimeframe(tf)}
@@ -4047,7 +4047,7 @@ export default function App() {
                 {trendData.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
                     <BarChart3 className="text-[var(--text-faint)] mb-3" size={36} />
-                    <p className="text-[var(--text-soft)] text-sm">Nessun dato per questo periodo</p>
+                    <p className="text-[var(--text-soft)] text-sm">{t('an.noDataPeriod')}</p>
                   </div>
                 ) : (
                   <Suspense fallback={<div className="h-[280px] flex items-center justify-center"><Loader2 className="animate-spin text-[var(--text-faint)]" size={28} /></div>}>
@@ -4731,20 +4731,20 @@ export default function App() {
         {/* Gating: ROI, trend e performance sono incluse dal piano Pro in su. */}
         {currentView === 'analytics' && !hasAdvancedAnalytics && (
           <div className="space-y-5">
-            <h2 className="text-3xl font-semibold">Analytics</h2>
+            <h2 className="text-3xl font-semibold">{t('nav.analytics')}</h2>
             <section className="bg-[var(--surface)] border border-[#8b5cf6]/30 rounded-2xl p-8 text-center relative overflow-hidden">
               <div className="absolute inset-0 bg-[#8b5cf6]/[0.05] pointer-events-none" />
               <div className="relative max-w-md mx-auto">
                 <div className="w-14 h-14 rounded-2xl bg-[#8b5cf6]/15 flex items-center justify-center mx-auto mb-4"><BarChart3 size={26} className="text-[#8b5cf6]" /></div>
-                <h3 className="text-xl font-bold mb-2">Analytics — dallo Starter</h3>
-                <p className="text-sm text-[var(--text-soft)] mb-5">Scopri quanto guadagni davvero: ROI, andamento nel tempo, performance per categoria e piattaforma, sell-through e giorni medi di vendita.</p>
+                <h3 className="text-xl font-bold mb-2">{t('an.lockedTitle')}</h3>
+                <p className="text-sm text-[var(--text-soft)] mb-5">{t('an.lockedDesc')}</p>
                 <ul className="text-sm text-[var(--text-muted)] text-left space-y-2 mb-6 inline-block">
-                  {['ROI e margine reali', 'Grafico andamento (trend storico)', 'Performance per categoria e piattaforma', 'Sell-through % e giorni medi di vendita', 'Report e analisi per socio (Business)'].map(x => (
+                  {[t('an.feat1'), t('an.feat2'), t('an.feat3'), t('an.feat4'), t('an.feat5')].map(x => (
                     <li key={x} className="flex items-center gap-2"><CheckCircle size={15} className="text-[#8b5cf6] shrink-0" /> {x}</li>
                   ))}
                 </ul>
-                <button onClick={() => openPlanModal()} className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-6 py-3 rounded-xl font-bold text-sm transition-colors">Sblocca con Starter</button>
-                <p className="text-[11px] text-[var(--text-faint)] mt-4">I tuoi numeri principali (profitto, stock, vendite) restano sempre nella Dashboard.</p>
+                <button onClick={() => openPlanModal()} className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-6 py-3 rounded-xl font-bold text-sm transition-colors">{t('an.unlockStarter')}</button>
+                <p className="text-[11px] text-[var(--text-faint)] mt-4">{t('an.lockedNote')}</p>
               </div>
             </section>
           </div>
@@ -4752,10 +4752,10 @@ export default function App() {
         {currentView === 'analytics' && hasAdvancedAnalytics && (
           <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-3xl font-semibold">Analytics</h2>
+              <h2 className="text-3xl font-semibold">{t('nav.analytics')}</h2>
               <button onClick={downloadAccountantCsv}
                 className="flex items-center gap-2 bg-[var(--surface)] border border-[var(--border-2)] hover:border-[var(--border-3)] px-4 py-2 rounded-xl text-sm font-bold transition-colors text-[var(--text-soft)] hover:text-[var(--text)] active:scale-95">
-                <Download size={15} /> CSV commercialista
+                <Download size={15} /> {t('an.accountantCsv')}
               </button>
             </div>
 
@@ -4763,23 +4763,23 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
               <button type="button" onClick={() => setExpensesOpen(o => !o)} className="w-full flex items-center gap-2">
                 <Wallet size={18} className="text-amber-400" />
-                <h3 className="text-lg font-bold tracking-tighter">Costi extra</h3>
+                <h3 className="text-lg font-bold tracking-tighter">{t('an.extraCosts')}</h3>
                 {!hasFeature('accounting') && <PlanLock plan="Pro" />}
                 <span className="text-[11px] text-[var(--text-faint)] ml-auto num">
-                  {expenses.length > 0 ? `${expenses.length} voci · -${expenses.reduce((a: number, e: any) => a + (e.amount || 0), 0).toFixed(0)}€` : 'Nessuno'}
+                  {expenses.length > 0 ? `${expenses.length} ${t('an.entries')} · -${expenses.reduce((a: number, e: any) => a + (e.amount || 0), 0).toFixed(0)}€` : t('an.none')}
                 </span>
                 <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${expensesOpen ? 'rotate-180' : ''}`} />
               </button>
-              {!expensesOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">Tocca per aggiungere sacchetti, spedizioni, materiali… (inclusi nell'utile netto e nel CSV)</p>}
+              {!expensesOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('an.extraCostsHint')}</p>}
               {expensesOpen && (<>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 mt-4">
                 <input type="number" step="0.01" min="0" value={expAmount} onChange={e => setExpAmount(e.target.value)}
-                  placeholder="Importo €" className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                  placeholder={t('an.amount')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
                 <input type="text" value={expDesc} onChange={e => setExpDesc(e.target.value)}
-                  placeholder="Descrizione" className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                  placeholder={t('an.description')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
                 <select value={expCat} onChange={e => setExpCat(e.target.value)}
                   className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]">
-                  {['Sacchetti', 'Spedizioni', 'Materiali', 'Commissioni', 'Altro'].map(c => <option key={c} value={c}>{c}</option>)}
+                  {[['Sacchetti', t('an.catBags')], ['Spedizioni', t('an.catShipping')], ['Materiali', t('an.catMaterials')], ['Commissioni', t('an.catFees')], ['Altro', t('an.catOther')]].map(([v, lbl]) => <option key={v} value={v}>{lbl}</option>)}
                 </select>
                 {warehouses.filter((w: any) => !w.parentId).length > 1 ? (
                   <select value={expWarehouse || baseWarehouse?.id || ''} onChange={e => setExpWarehouse(e.target.value)}
@@ -4790,7 +4790,7 @@ export default function App() {
               </div>
               <button onClick={addExpense} disabled={isAddingExp}
                 className="w-full sm:w-auto px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors disabled:opacity-50 mb-3">
-                {isAddingExp ? <Loader2 className="animate-spin inline" size={16} /> : '+ Aggiungi costo'}
+                {isAddingExp ? <Loader2 className="animate-spin inline" size={16} /> : t('an.addCost')}
               </button>
               {expenses.length > 0 && (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto">
@@ -4853,7 +4853,7 @@ export default function App() {
                 a.href = url; a.download = `report-${reportMonth.y}-${String(reportMonth.m + 1).padStart(2, '0')}.csv`; a.click();
                 URL.revokeObjectURL(url);
               };
-              const label = new Date(reportMonth.y, reportMonth.m, 1).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+              const label = new Date(reportMonth.y, reportMonth.m, 1).toLocaleDateString(lang === 'it' ? 'it-IT' : lang === 'es' ? 'es-ES' : lang === 'de' ? 'de-DE' : 'en-US', { month: 'long', year: 'numeric' });
               const shift = (delta: number) => setReportMonth(({ y, m }) => {
                 const nm = m + delta;
                 return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 };
@@ -4871,12 +4871,12 @@ export default function App() {
               return (
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center justify-between mb-4 gap-2">
-                    <h3 className="font-semibold">Conto economico</h3>
+                    <h3 className="font-semibold">{t('an.incomeStatement')}</h3>
                     <div className="flex items-center gap-2">
                       {monthSold.length > 0 && (
                         <button onClick={exportMonth} title="Esporta CSV del mese"
                           className="flex items-center gap-1.5 bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--text-soft)] hover:text-[var(--text)] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors">
-                          <Download size={13} /> <span className="hidden sm:inline">Esporta</span>
+                          <Download size={13} /> <span className="hidden sm:inline">{t('an.export')}</span>
                         </button>
                       )}
                       <div className="flex items-center gap-1">
@@ -4888,37 +4888,37 @@ export default function App() {
                     </div>
                   </div>
                   {monthSold.length === 0 ? (
-                    <p className="text-center py-8 text-sm text-[var(--text-soft)] capitalize">Nessuna vendita in {label}</p>
+                    <p className="text-center py-8 text-sm text-[var(--text-soft)] capitalize">{t('an.noSalesIn')} {label}</p>
                   ) : (
                     <>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                       <div className="bg-[var(--surface-2)] rounded-xl p-4">
-                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">Ricavi</p>
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">{t('an.revenue')}</p>
                         <p className="text-2xl font-bold num">{ricavi.toFixed(0)}€</p>
-                        <p className="text-[11px] text-[var(--text-soft)] mt-1">{monthSold.length} {monthSold.length === 1 ? 'vendita' : 'vendite'}</p>
+                        <p className="text-[11px] text-[var(--text-soft)] mt-1">{monthSold.length} {monthSold.length === 1 ? t('dash.sale') : t('dash.salesPlural')}</p>
                       </div>
                       <div className="bg-[var(--surface-2)] rounded-xl p-4">
-                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">Costi + Fee</p>
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">{t('an.costsFees')}</p>
                         <p className="text-2xl font-bold num text-[var(--text-soft)]">-{(costo + fees).toFixed(0)}€</p>
-                        <p className="text-[11px] text-[var(--text-soft)] mt-1">{costo.toFixed(0)}€ merce · {fees.toFixed(0)}€ fee</p>
+                        <p className="text-[11px] text-[var(--text-soft)] mt-1">{costo.toFixed(0)}€ {t('an.goods')} · {fees.toFixed(0)}€ {t('an.fee')}</p>
                       </div>
                       <div className="bg-[var(--surface-2)] rounded-xl p-4">
-                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">Profitto netto</p>
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">{t('an.netProfit')}</p>
                         <p className={`text-2xl font-bold num ${netto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{netto >= 0 ? '+' : ''}{netto.toFixed(0)}€</p>
                         <p className="text-[11px] text-[var(--text-soft)] mt-1">
                           ROI {roi >= 0 ? '+' : ''}{roi.toFixed(0)}%
-                          {hasPrev && <span className={`ml-1.5 font-bold ${deltaPct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{deltaPct >= 0 ? '▲' : '▼'}{Math.abs(deltaPct).toFixed(0)}% <span className="font-normal text-[var(--text-faint)]">vs mese prec.</span></span>}
+                          {hasPrev && <span className={`ml-1.5 font-bold ${deltaPct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{deltaPct >= 0 ? '▲' : '▼'}{Math.abs(deltaPct).toFixed(0)}% <span className="font-normal text-[var(--text-faint)]">{t('an.vsPrevMonth')}</span></span>}
                         </p>
                       </div>
                       <div className="bg-[var(--surface-2)] rounded-xl p-4">
-                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">Top piattaforma</p>
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">{t('an.topPlatform')}</p>
                         <p className="text-2xl font-bold truncate">{topPlat ? topPlat[0] : '—'}</p>
-                        {topPlat && <p className="text-[11px] text-[var(--text-soft)] mt-1 num">{topPlat[1] >= 0 ? '+' : ''}{topPlat[1].toFixed(0)}€ profitto</p>}
+                        {topPlat && <p className="text-[11px] text-[var(--text-soft)] mt-1 num">{topPlat[1] >= 0 ? '+' : ''}{topPlat[1].toFixed(0)}€ {t('an.profit')}</p>}
                       </div>
                     </div>
                     {catRows.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-[var(--border)]">
-                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-3">Profitto per reparto</p>
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-3">{t('an.profitByDept')}</p>
                         <div className="space-y-2">
                           {catRows.map(([cat, val]) => (
                             <div key={cat} className="flex items-center gap-3">
@@ -4945,28 +4945,28 @@ export default function App() {
                   <TrendingUp size={10} /> ROI
                 </p>
                 <p className={`text-2xl lg:text-3xl font-bold num ${parseFloat(roi) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{roi}%</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Return on Investment</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.roiSub')}</p>
               </div>
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
-                  <Wallet size={10} /> Profitto Netto
+                  <Wallet size={10} /> {t('an.netProfitKpi')}
                 </p>
                 <p className={`text-2xl lg:text-3xl font-bold num ${profittoNetto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{profittoNetto.toFixed(0)}€</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Dopo fees · {ricaviTotali.toFixed(0)}€ ricavi</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.afterFees')} · {ricaviTotali.toFixed(0)}€ {t('an.revenueLower')}</p>
               </div>
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
-                  <Layers size={10} /> Stock
+                  <Layers size={10} /> {t('dash.stock')}
                 </p>
                 <p className="text-2xl lg:text-3xl font-bold num">{stockValore.toFixed(0)}€</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Capitale immobilizzato</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.capitalLocked')}</p>
               </div>
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
-                  <DollarSign size={10} /> Vendite
+                  <DollarSign size={10} /> {t('an.sales')}
                 </p>
                 <p className="text-2xl lg:text-3xl font-bold text-violet-400 num">{soldItemsTotal.length}</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Totali · {sellThroughRate}% sell-through</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.totals')} · {sellThroughRate}% sell-through</p>
               </div>
             </div>
 
@@ -4977,15 +4977,15 @@ export default function App() {
                   {avgMarginPct >= 0 ? '+' : ''}{avgMarginPct.toFixed(1)}%
                 </p>
                 <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
-                  <span className="sm:hidden">Margine</span>
-                  <span className="hidden sm:inline">Margine Medio</span>
+                  <span className="sm:hidden">{t('an.marginShort')}</span>
+                  <span className="hidden sm:inline">{t('an.marginAvg')}</span>
                 </p>
               </div>
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
                 <p className="text-xl font-bold text-violet-400 num">{Math.round(avgDaysToSell)}</p>
                 <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
-                  <span className="sm:hidden">Gg/vendita</span>
-                  <span className="hidden sm:inline">Giorni medi vendita</span>
+                  <span className="sm:hidden">{t('an.daysPerSaleShort')}</span>
+                  <span className="hidden sm:inline">{t('an.daysPerSaleLong')}</span>
                 </p>
               </div>
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
@@ -4997,7 +4997,7 @@ export default function App() {
             {/* Grafico */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-                <h3 className="font-semibold">Andamento Vendite</h3>
+                <h3 className="font-semibold">{t('an.salesTrend')}</h3>
                 <div className="flex gap-1 bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)]">
                   {(['1D', '1W', '1M', '1Y', 'MAX'] as const).map(tf => (
                     <button key={tf} onClick={() => setChartTimeframe(tf)}
@@ -5010,7 +5010,7 @@ export default function App() {
               {trendData.length === 0 ? (
                 <div className="text-center py-10">
                   <BarChart3 className="mx-auto text-gray-800 mb-3" size={36} />
-                  <p className="text-[var(--text-soft)] text-sm">Nessun dato per questo periodo</p>
+                  <p className="text-[var(--text-soft)] text-sm">{t('an.noDataPeriod')}</p>
                 </div>
               ) : (
                 <Suspense fallback={<div className="h-[280px] flex items-center justify-center"><Loader2 className="animate-spin text-gray-700" size={28} /></div>}>
@@ -5018,8 +5018,8 @@ export default function App() {
                 </Suspense>
               )}
               <div className="flex items-center gap-5 mt-3 justify-end">
-                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-green-500 rounded-full inline-block" />Ricavi</div>
-                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#8b5cf6] rounded-full inline-block" />Profitto</div>
+                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-green-500 rounded-full inline-block" />{t('an.revenue')}</div>
+                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#8b5cf6] rounded-full inline-block" />{t('dash.profit')}</div>
               </div>
             </section>
 
@@ -5029,7 +5029,7 @@ export default function App() {
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <Store className="text-[var(--text)]" size={15} />
-                    <h3 className="font-semibold">Piattaforme</h3>
+                    <h3 className="font-semibold">{t('an.platforms')}</h3>
                   </div>
                   <div className="space-y-4">
                     {platformBreakdown.map(([plat, stats]) => {
@@ -5040,7 +5040,7 @@ export default function App() {
                           <div className="flex items-center justify-between mb-1.5">
                             <span className="text-sm font-bold">{plat}</span>
                             <div className="flex items-center gap-3">
-                              <span className="text-[10px] text-[var(--text-soft)]">{stats.count} vend.</span>
+                              <span className="text-[10px] text-[var(--text-soft)]">{stats.count} {t('an.salesAbbr')}</span>
                               <span className="text-sm font-semibold text-green-400">+{stats.profit.toFixed(0)}€</span>
                             </div>
                           </div>
@@ -5049,8 +5049,8 @@ export default function App() {
                               style={{ width: `${(stats.revenue / maxRev) * 100}%` }} />
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-[10px] text-[var(--text-faint)]">{stats.revenue.toFixed(0)}€ ricavi · {stats.fees.toFixed(0)}€ fee</span>
-                            <span className="text-[10px] text-[var(--text-soft)]">{platMargin >= 0 ? '+' : ''}{platMargin.toFixed(0)}€/vend.</span>
+                            <span className="text-[10px] text-[var(--text-faint)]">{stats.revenue.toFixed(0)}€ {t('an.revenueLower')} · {stats.fees.toFixed(0)}€ {t('an.fee')}</span>
+                            <span className="text-[10px] text-[var(--text-soft)]">{platMargin >= 0 ? '+' : ''}{platMargin.toFixed(0)}€/{t('an.salesAbbr')}</span>
                           </div>
                         </div>
                       );
@@ -5063,7 +5063,7 @@ export default function App() {
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <Users className="text-violet-400" size={15} />
-                    <h3 className="font-semibold">Soci</h3>
+                    <h3 className="font-semibold">{t('an.partners')}</h3>
                   </div>
                   <div className="space-y-4">
                     {Object.values(sociProfits)
@@ -5081,7 +5081,7 @@ export default function App() {
                                 </div>
                                 <span className="text-sm font-bold">{socio.name}</span>
                                 {socio.name === user.name && (
-                                  <span className="text-[9px] bg-[#8b5cf6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full">TU</span>
+                                  <span className="text-[9px] bg-[#8b5cf6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full">{t('an.you')}</span>
                                 )}
                               </div>
                               <span className="font-semibold text-green-400">{socio.profit.toFixed(0)}€</span>
@@ -5109,7 +5109,7 @@ export default function App() {
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <Trophy className="text-[var(--text)]" size={15} />
-                    <h3 className="font-semibold">Top 3 Vendite</h3>
+                    <h3 className="font-semibold">{t('an.top3')}</h3>
                   </div>
                   <div className="space-y-3">
                     {top.map((p, i) => {
@@ -5153,13 +5153,13 @@ export default function App() {
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <PieChartIcon className="text-[var(--text)]" size={15} />
-                    <h3 className="font-semibold">Reparti</h3>
+                    <h3 className="font-semibold">{t('an.depts')}</h3>
                   </div>
                   <div className="overflow-x-auto -mx-1">
                     <table className="w-full text-[11px]">
                       <thead>
                         <tr className="border-b border-[var(--border-2)]">
-                          {['Reparto', 'Totale', 'Venduti', 'Stock', 'Sell-through', 'Capitale', 'Profitto', 'Gg/vendita'].map(h => (
+                          {[t('an.thDept'), t('an.thTotal'), t('an.thSold'), t('an.thStock'), t('an.sellThrough'), t('an.thCapital'), t('an.thProfit'), t('an.daysPerSaleShort')].map(h => (
                             <th key={h} className="text-left text-[var(--text-faint)] font-semibold uppercase tracking-wider py-2 pr-4 last:pr-0">{h}</th>
                           ))}
                         </tr>
@@ -5197,10 +5197,10 @@ export default function App() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="text-yellow-500" size={15} />
-                    <h3 className="font-semibold">Dead Stock Alert</h3>
-                    <span className="bg-yellow-500/10 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded-full">{staleProducts.length} prodotti</span>
+                    <h3 className="font-semibold">{t('an.deadStock')}</h3>
+                    <span className="bg-yellow-500/10 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded-full">{staleProducts.length} {t('an.products')}</span>
                   </div>
-                  <span className="text-[10px] text-[var(--text-faint)]">fermi da +{staleThreshold} giorni · {staleProducts.reduce((s: number, p: any) => s + (p.purchasePrice || 0), 0).toFixed(0)}€ immobilizzati</span>
+                  <span className="text-[10px] text-[var(--text-faint)]">{t('an.staleFor')}{staleThreshold} {t('an.daysLocked')} · {staleProducts.reduce((s: number, p: any) => s + (p.purchasePrice || 0), 0).toFixed(0)}€ {t('an.locked')}</span>
                 </div>
                 <div className="space-y-2">
                   {staleProducts.slice(0, 5).map((p: any) => {
@@ -5216,13 +5216,13 @@ export default function App() {
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-semibold text-[var(--text)]">{(p.purchasePrice || 0).toFixed(0)}€</p>
-                          <p className="text-[10px] text-yellow-600">{days} giorni</p>
+                          <p className="text-[10px] text-yellow-600">{days} {t('an.days')}</p>
                         </div>
                       </div>
                     );
                   })}
                   {staleProducts.length > 5 && (
-                    <p className="text-[11px] text-[var(--text-faint)] text-center pt-1">+{staleProducts.length - 5} altri prodotti fermi</p>
+                    <p className="text-[11px] text-[var(--text-faint)] text-center pt-1">+{staleProducts.length - 5} {t('an.moreStale')}</p>
                   )}
                 </div>
               </section>
