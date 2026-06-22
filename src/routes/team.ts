@@ -127,7 +127,22 @@ router.put('/percentage', validate(teamPercentageSchema), async (req: AuthReques
         })
       )
     );
-    
+
+    // Ri-applica le nuove quote allo STOCK INVENDUTO di questo magazzino: ogni prodotto
+    // aveva uno "snapshot" delle percentuali di quando fu aggiunto, quindi le modifiche non
+    // si vedevano. Ora i prodotti non ancora venduti adottano le quote correnti (le vendite
+    // GIÀ fatte restano com'erano = storico corretto).
+    try {
+      const members = await prisma.membership.findMany({
+        where: { warehouseId }, include: { user: { select: { id: true, name: true } } },
+      });
+      const newShares = JSON.stringify(members.map(m => ({ userId: m.userId, name: m.user.name, percentage: m.percentage })));
+      await prisma.product.updateMany({
+        where: { warehouseId, status: { in: ['IN STOCK', 'RESERVED', 'PAGATO'] }, deletedAt: null },
+        data: { customShares: newShares },
+      });
+    } catch (e: any) { logger.warn('Re-sync customShares post-quote fallito', { err: e.message }); }
+
     await audit({ action: 'TEAM_PERCENTAGE_UPDATE', userId: req.user!.userId, req,
       resource: warehouseId, metadata: { updates } });
     
