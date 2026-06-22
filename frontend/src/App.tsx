@@ -408,6 +408,8 @@ export default function App() {
   const [marketCats, setMarketCats] = useState<string[]>([]);
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketDetail, setMarketDetail] = useState<any>(null);
+  const [marketPhotoIdx, setMarketPhotoIdx] = useState(0);
+  useEffect(() => { setMarketPhotoIdx(0); }, [marketDetail?.id]);
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeConvo, setActiveConvo] = useState<any>(null);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
@@ -5627,9 +5629,27 @@ export default function App() {
               </div>
               {/* Contenuto scrollabile */}
               <div className="flex-1 overflow-y-auto overscroll-contain">
-                <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
-                  {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
-                </div>
+                {(() => {
+                  const photos: string[] = Array.isArray(marketDetail.photos) ? marketDetail.photos : [];
+                  const idx = Math.min(marketPhotoIdx, Math.max(0, photos.length - 1));
+                  return (
+                    <>
+                      <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
+                        {photos[idx] ? <img src={photos[idx]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
+                      </div>
+                      {photos.length > 1 && (
+                        <div className="flex gap-2 p-3 overflow-x-auto">
+                          {photos.map((ph, i) => (
+                            <button key={i} onClick={() => setMarketPhotoIdx(i)}
+                              className={`w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-colors ${i === idx ? 'border-[#8b5cf6]' : 'border-[var(--border-2)]'}`}>
+                              <img src={ph} alt="" className="w-full h-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
                 <div className="p-5">
                   <p className="text-xl font-bold">{marketDetail.brand} {marketDetail.name}</p>
                   <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
