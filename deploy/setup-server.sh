@@ -10,9 +10,9 @@ set -e
 echo "==> Aggiorno il sistema"
 apt-get update -y && apt-get upgrade -y
 
-echo "==> Installo Node.js 20 + git"
+echo "==> Installo Node.js 20 + git + strumenti di build (servono per moduli nativi es. bcrypt)"
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt-get install -y nodejs git ufw
+apt-get install -y nodejs git ufw build-essential python3
 
 echo "==> Installo pm2 (mantiene l'app accesa e la riavvia ai crash/riavvii)"
 npm install -g pm2
