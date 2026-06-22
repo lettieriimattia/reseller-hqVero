@@ -7990,7 +7990,7 @@ export default function App() {
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="border-b border-[var(--border-2)] p-5 flex items-center justify-between">
               <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Shield className="text-[var(--text)]" size={20} /> Attiva 2FA
+                <Shield className="text-[var(--text)]" size={20} /> {t('twofa.enable')}
               </h2>
               <button onClick={() => { setTwoFaSetupOpen(false); setTwoFaBackupCodes(null); setTwoFaCode(''); }}
                 className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors">
@@ -8002,9 +8002,9 @@ export default function App() {
               {!twoFaBackupCodes ? (
                 <>
                   <div className="space-y-2 text-sm text-[var(--text-muted)]">
-                    <p>1. Scarica un'app come <span className="text-[var(--text)] font-bold">Google Authenticator</span> o <span className="text-[var(--text)] font-bold">Authy</span></p>
-                    <p>2. Scansiona il QR qui sotto</p>
-                    <p>3. Inserisci il codice generato dall'app</p>
+                    <p>{t('twofa.step1')} <span className="text-[var(--text)] font-bold">Google Authenticator</span> {t('twofa.or')} <span className="text-[var(--text)] font-bold">Authy</span></p>
+                    <p>{t('twofa.step2')}</p>
+                    <p>{t('twofa.step3')}</p>
                   </div>
                   
                   {twoFaQR && (
@@ -8014,7 +8014,7 @@ export default function App() {
                   )}
                   
                   <div>
-                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Codice dall'app</label>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('twofa.codeFromApp')}</label>
                     <input type="text" inputMode="numeric" value={twoFaCode}
                       onChange={(e: any) => setTwoFaCode(e.target.value)}
                       placeholder="000000" maxLength={6}
@@ -8023,20 +8023,20 @@ export default function App() {
                   
                   <button onClick={handle2FAVerify} disabled={twoFaLoading || twoFaCode.length !== 6}
                     className="w-full bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
-                    {twoFaLoading ? <Loader2 className="animate-spin" size={20} /> : 'Attiva 2FA'}
+                    {twoFaLoading ? <Loader2 className="animate-spin" size={20} /> : t('twofa.enable')}
                   </button>
                 </>
               ) : (
                 <>
                   <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
                     <p className="font-bold text-green-400 mb-1 flex items-center gap-2">
-                      <CheckCircle size={16} /> 2FA attivato!
+                      <CheckCircle size={16} /> {t('twofa.activated')}
                     </p>
-                    <p className="text-xs text-gray-300">Salva questi codici di backup in un posto sicuro. Ti permetteranno di accedere se perdi l'authenticator.</p>
+                    <p className="text-xs text-gray-300">{t('twofa.saveCodes')}</p>
                   </div>
-                  
+
                   <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-4">
-                    <p className="text-xs font-bold text-[var(--text-soft)] mb-3 uppercase tracking-widest">Codici di Backup</p>
+                    <p className="text-xs font-bold text-[var(--text-soft)] mb-3 uppercase tracking-widest">{t('twofa.backupCodes')}</p>
                     <div className="grid grid-cols-2 gap-2 font-mono text-sm">
                       {twoFaBackupCodes.map((c: string, i: number) => (
                         <div key={i} className="bg-[var(--surface)] p-2 rounded text-center">{c}</div>
@@ -8044,20 +8044,20 @@ export default function App() {
                     </div>
                     <button onClick={() => {
                       navigator.clipboard.writeText(twoFaBackupCodes.join('\n'));
-                      showToast('Codici copiati!');
+                      showToast(t('twofa.codesCopied'));
                     }}
                       className="mt-3 w-full bg-[var(--fill)] hover:bg-[var(--fill)] py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2">
-                      <Copy size={12} /> Copia tutti i codici
+                      <Copy size={12} /> {t('twofa.copyAll')}
                     </button>
                   </div>
-                  
+
                   <p className="text-xs text-yellow-400 bg-yellow-500/10 p-3 rounded-xl">
-                    ⚠️ Ogni codice è usabile UNA SOLA VOLTA. Stampali o salvali in un password manager.
+                    {t('twofa.onceWarning')}
                   </p>
-                  
+
                   <button onClick={() => { setTwoFaSetupOpen(false); setTwoFaBackupCodes(null); setTwoFaCode(''); }}
                     className="w-full bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl font-bold transition-colors">
-                    Ho salvato i codici
+                    {t('twofa.savedCodes')}
                   </button>
                 </>
               )}
@@ -8073,18 +8073,18 @@ export default function App() {
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center gap-2 mb-5">
               <Shield className="text-red-400" size={20} />
-              <h3 className="text-lg font-semibold">Disabilita 2FA</h3>
+              <h3 className="text-lg font-semibold">{t('twofa.disableTitle')}</h3>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Password account</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('twofa.accountPwd')}</label>
                 <input type="password" value={twoFaDisablePwd}
                   onChange={e => setTwoFaDisablePwd(e.target.value)}
                   placeholder="••••••••"
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-red-500" />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Codice dall'app 2FA</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('twofa.codeFrom2fa')}</label>
                 <input type="text" inputMode="numeric" value={twoFaDisableOtp}
                   onChange={e => setTwoFaDisableOtp(e.target.value)}
                   maxLength={6} placeholder="000000"
@@ -8093,11 +8093,11 @@ export default function App() {
               <button onClick={confirm2FADisable}
                 disabled={!twoFaDisablePwd || twoFaDisableOtp.length < 6}
                 className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-40 py-3 rounded-xl font-bold text-sm transition-colors">
-                Conferma disabilitazione
+                {t('twofa.confirmDisable')}
               </button>
               <button onClick={() => setTwoFaDisableOpen(false)}
                 className="w-full bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
-                Annulla
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -9012,26 +9012,26 @@ export default function App() {
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center gap-3 mb-5">
               <Lock className="text-[var(--text)]" size={22} />
-              <h3 className="font-semibold text-base">Cambia Password</h3>
+              <h3 className="font-semibold text-base">{t('pwd.title')}</h3>
             </div>
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Password attuale</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('pwd.current')}</label>
                 <input type="password" required value={changePwdCurrent}
                   onChange={e => setChangePwdCurrent(e.target.value)}
                   placeholder="••••••••"
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#8b5cf6]" />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nuova password</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('pwd.new')}</label>
                 <input type="password" required value={changePwdNew}
                   onChange={e => setChangePwdNew(e.target.value)}
                   placeholder="••••••••"
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#8b5cf6]" />
-                <p className="text-[10px] text-[var(--text-soft)] mt-1">Min. 10 caratteri, maiuscola, numero e carattere speciale.</p>
+                <p className="text-[10px] text-[var(--text-soft)] mt-1">{t('pwd.rule')}</p>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Conferma nuova password</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('pwd.confirm')}</label>
                 <input type="password" required value={changePwdConfirm}
                   onChange={e => setChangePwdConfirm(e.target.value)}
                   placeholder="••••••••"
@@ -9042,11 +9042,11 @@ export default function App() {
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => { setChangePwdOpen(false); setChangePwdCurrent(''); setChangePwdNew(''); setChangePwdConfirm(''); }}
                   className="flex-1 bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
-                  Annulla
+                  {t('common.cancel')}
                 </button>
                 <button type="submit" disabled={changePwdLoading || (!!changePwdConfirm && changePwdNew !== changePwdConfirm)}
                   className="flex-1 bg-[#8b5cf6] hover:bg-[#a78bfa] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center">
-                  {changePwdLoading ? <Loader2 className="animate-spin" size={16} /> : 'Salva'}
+                  {changePwdLoading ? <Loader2 className="animate-spin" size={16} /> : t('common.save')}
                 </button>
               </div>
             </form>
