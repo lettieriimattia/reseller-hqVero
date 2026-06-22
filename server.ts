@@ -380,9 +380,12 @@ serverInstance.listen(PORT, () => {
     logger.info('📦 Tracking automatico attivo (poll ogni 2 ore)');
   }
 
-  // Migrazione foto vecchie base64 → Cloudinary (in background, a lotti). Gira una volta
-  // sola (flag in Setting), solo se Cloudinary è configurato. Non blocca l'avvio.
-  setTimeout(() => { migratePhotosToCloudinary().catch(() => {}); }, 20_000);
+  // Migrazione foto base64 → Cloudinary: DISATTIVATA di default perché su 512MB (Free)
+  // l'upload delle base64 fa esaurire la RAM (OOM/crash loop). Si attiva SOLO manualmente
+  // impostando RUN_PHOTO_MIGRATION=1 su Render, idealmente con un'istanza più grande.
+  if (process.env.RUN_PHOTO_MIGRATION === '1') {
+    setTimeout(() => { migratePhotosToCloudinary().catch(() => {}); }, 30_000);
+  }
 
   // Auto-conferma escrow: sblocca i fondi degli acquisti la cui finestra è scaduta
   // (5gg dalla consegna, o fallback dalla spedizione) e senza contestazioni aperte.
