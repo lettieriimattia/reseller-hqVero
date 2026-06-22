@@ -9256,14 +9256,14 @@ export default function App() {
           setIsRegenerating(warehouseId);
           const { ok, data } = await apiCall(`/warehouses/${warehouseId}/regenerate-invite`, { method: 'POST' });
           setIsRegenerating(null);
-          if (ok) { await apiCall('/auth/me').then(r => r.ok && setUser(r.data.user)); showToast('Codice invito rigenerato'); }
-          else showToast(data.error || 'Errore rigenerazione', 'err');
+          if (ok) { await apiCall('/auth/me').then(r => r.ok && setUser(r.data.user)); showToast(t('tp.inviteRegen')); }
+          else showToast(data.error || t('tp.regenError'), 'err');
         };
 
         const kickMember = async (membershipId: string) => {
           const { ok, data } = await apiCall(`/team/members/${membershipId}`, { method: 'DELETE' });
-          if (ok) { await fetchTeam(); setKickConfirm(null); showToast('Membro rimosso dal team'); }
-          else showToast(data.error || 'Errore', 'err');
+          if (ok) { await fetchTeam(); setKickConfirm(null); showToast(t('tp.memberRemoved')); }
+          else showToast(data.error || t('tp.error'), 'err');
         };
 
         const saveEditedQuotes = async (team: any) => {
@@ -9272,14 +9272,14 @@ export default function App() {
             percentage: Number(editQuoteValues[m.membershipId] ?? m.percentage),
           }));
           const total = updates.reduce((s: number, u: any) => s + u.percentage, 0);
-          if (Math.round(total) !== 100) { showToast('La somma deve essere 100%', 'err'); return; }
+          if (Math.round(total) !== 100) { showToast(t('tp.sumMustBe100'), 'err'); return; }
           setIsSavingTeam(true);
           const { ok, data } = await apiCall('/team/percentage', {
             method: 'PUT', body: JSON.stringify({ warehouseId: team.warehouseId, updates }),
           });
           setIsSavingTeam(false);
-          if (ok) { fetchTeam(); setEditQuoteWarehouse(null); showToast('Quote aggiornate'); }
-          else showToast(data.error || 'Errore', 'err');
+          if (ok) { fetchTeam(); setEditQuoteWarehouse(null); showToast(t('tp.sharesUpdated')); }
+          else showToast(data.error || t('tp.error'), 'err');
         };
 
         return (
@@ -9296,8 +9296,8 @@ export default function App() {
                     <Users className="text-violet-400" size={18} />
                   </div>
                   <div>
-                    <h2 className="font-semibold text-base leading-none">Il Tuo Team</h2>
-                    <p className="text-[10px] text-[var(--text-faint)] mt-0.5">{totalSoci} {totalSoci === 1 ? 'socio' : 'soci'} · {teamData.length} {teamData.length === 1 ? 'reparto' : 'reparti'}</p>
+                    <h2 className="font-semibold text-base leading-none">{t('tp.title')}</h2>
+                    <p className="text-[10px] text-[var(--text-faint)] mt-0.5">{totalSoci} {totalSoci === 1 ? t('tp.member') : t('tp.members')} · {teamData.length} {teamData.length === 1 ? t('tp.dept') : t('tp.depts')}</p>
                   </div>
                 </div>
                 <button onClick={() => setTeamPanelOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
@@ -9308,10 +9308,10 @@ export default function App() {
               {/* Stats rapide globali */}
               <div className="grid grid-cols-4 gap-2 p-4 border-b border-[var(--border)]">
                 {[
-                  { label: 'Soci', value: totalSoci, color: 'text-violet-400' },
-                  { label: 'In Stock', value: totalStock, color: 'text-[var(--text)]' },
-                  { label: 'Venduti', value: totalSoldCount, color: 'text-blue-400' },
-                  { label: 'Profitto', value: (totalProfit >= 0 ? '+' : '') + totalProfit.toFixed(0) + '€', color: totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' },
+                  { label: t('an.partners'), value: totalSoci, color: 'text-violet-400' },
+                  { label: t('tp.inStock'), value: totalStock, color: 'text-[var(--text)]' },
+                  { label: t('an.thSold'), value: totalSoldCount, color: 'text-blue-400' },
+                  { label: t('dash.profit'), value: (totalProfit >= 0 ? '+' : '') + totalProfit.toFixed(0) + '€', color: totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' },
                 ].map(s => (
                   <div key={s.label} className="bg-[var(--surface-2)] rounded-xl p-2.5 text-center">
                     <p className={`text-sm font-bold num ${s.color}`}>{s.value}</p>
@@ -9371,14 +9371,14 @@ export default function App() {
                             </div>
                             <div>
                               <p className="font-bold">{team.warehouseName}</p>
-                              <p className="text-[10px] text-[var(--text-faint)]">{team.members.length} soci · {teamStock.length} stock · {teamSold.length} vendite</p>
+                              <p className="text-[10px] text-[var(--text-faint)]">{team.members.length} {t('tp.partnersWord')} · {teamStock.length} {t('tp.stockWord')} · {teamSold.length} {t('tp.salesWord')}</p>
                             </div>
                           </div>
                           <div className="text-right">
                             <p className={`font-semibold num ${teamProfit > 0 ? 'text-emerald-400' : teamProfit < 0 ? 'text-red-400' : 'text-[var(--text-faint)]'}`}>
                               {teamProfit > 0 ? '+' : ''}{teamProfit.toFixed(0)}€
                             </p>
-                            <p className="text-[10px] text-[var(--text-faint)] mt-0.5">{teamRevenue.toFixed(0)}€ ricavi · {sellThrough}% sell-through</p>
+                            <p className="text-[10px] text-[var(--text-faint)] mt-0.5">{teamRevenue.toFixed(0)}€ {t('an.revenueLower')} · {sellThrough}% sell-through</p>
                           </div>
                         </div>
 
@@ -9411,14 +9411,14 @@ export default function App() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-bold text-sm">{m.name}</span>
-                                    {isMe && <span className="text-[8px] bg-[#8b5cf6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-semibold">TU</span>}
+                                    {isMe && <span className="text-[8px] bg-[#8b5cf6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-semibold">{t('an.you')}</span>}
                                     <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${m.role === 'OWNER' ? 'bg-[#8b5cf6]/15 text-[var(--text)]/80' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
-                                      {m.role === 'OWNER' ? 'Owner' : 'Socio'}
+                                      {m.role === 'OWNER' ? t('tp.owner') : t('set.partner')}
                                     </span>
                                   </div>
                                   {/* Contribuzione */}
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-[10px] text-[var(--text-faint)]">{m.productsAdded ?? 0} aggiunti · {m.productsSold ?? 0} venduti</span>
+                                    <span className="text-[10px] text-[var(--text-faint)]">{m.productsAdded ?? 0} {t('tp.added')} · {m.productsSold ?? 0} {t('tp.sold')}</span>
                                   </div>
                                 </div>
 
@@ -9441,7 +9441,7 @@ export default function App() {
                                     <button
                                       onClick={() => setKickConfirm(m.membershipId)}
                                       className="w-6 h-6 flex items-center justify-center hover:bg-red-500/10 rounded-lg transition-colors text-gray-700 hover:text-red-400 ml-0.5"
-                                      title="Rimuovi dal team">
+                                      title={t('tp.remove')}>
                                       <X size={12} />
                                     </button>
                                   )}
@@ -9451,10 +9451,10 @@ export default function App() {
                               {/* Conferma kick */}
                               {kickConfirm === m.membershipId && (
                                 <div className="mx-3.5 mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between gap-3">
-                                  <p className="text-xs text-red-300">Rimuovere <strong>{m.name}</strong>?</p>
+                                  <p className="text-xs text-red-300">{t('tp.removeConfirm')} <strong>{m.name}</strong>?</p>
                                   <div className="flex gap-2">
-                                    <button onClick={() => setKickConfirm(null)} className="text-[11px] text-[var(--text-soft)] hover:text-[var(--text)] px-2 py-1 rounded-lg hover:bg-[var(--fill)]">Annulla</button>
-                                    <button onClick={() => kickMember(m.membershipId)} className="text-[11px] text-red-300 hover:text-red-200 bg-red-500/20 hover:bg-red-500/30 px-3 py-1 rounded-lg font-bold">Rimuovi</button>
+                                    <button onClick={() => setKickConfirm(null)} className="text-[11px] text-[var(--text-soft)] hover:text-[var(--text)] px-2 py-1 rounded-lg hover:bg-[var(--fill)]">{t('common.cancel')}</button>
+                                    <button onClick={() => kickMember(m.membershipId)} className="text-[11px] text-red-300 hover:text-red-200 bg-red-500/20 hover:bg-red-500/30 px-3 py-1 rounded-lg font-bold">{t('tp.remove')}</button>
                                   </div>
                                 </div>
                               )}
@@ -9471,8 +9471,8 @@ export default function App() {
                           <div className="bg-[var(--surface-2)] rounded-xl p-3">
                             <div className="flex items-center gap-1.5 mb-2.5">
                               <DollarSign size={11} className="text-emerald-500" />
-                              <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Pareggio conti</p>
-                              <span className="ml-auto text-[10px] text-[var(--text-faint)] num">ricavi {teamRevenue.toFixed(0)}€ · costi {teamCosts.toFixed(0)}€ · utile {teamProfit.toFixed(0)}€</span>
+                              <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{t('tp.settle')}</p>
+                              <span className="ml-auto text-[10px] text-[var(--text-faint)] num">{t('tp.revenueW')} {teamRevenue.toFixed(0)}€ · {t('tp.costsW')} {teamCosts.toFixed(0)}€ · {t('tp.profitW')} {teamProfit.toFixed(0)}€</span>
                             </div>
                             <div className="space-y-1.5">
                               {settleAmounts.map((m: any) => (
@@ -9483,7 +9483,7 @@ export default function App() {
                                     </div>
                                     <span className="text-xs text-[var(--text-muted)] truncate">{m.name}</span>
                                     {m.hasCostSplit
-                                      ? <span className="text-[10px] text-gray-700 shrink-0">utile {m.percentage}% · costi {m.costPercentage ?? 0}%</span>
+                                      ? <span className="text-[10px] text-gray-700 shrink-0">{t('tp.profitW')} {m.percentage}% · {t('tp.costsW')} {m.costPercentage ?? 0}%</span>
                                       : <span className="text-[10px] text-gray-700 shrink-0">{m.percentage}%</span>}
                                   </div>
                                   <span className={`text-sm font-bold num shrink-0 ${m.spettante >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -9492,7 +9492,7 @@ export default function App() {
                                 </div>
                               ))}
                             </div>
-                            <p className="text-[9px] text-[var(--text-faint)] mt-2">Quanto spetta a ciascuno (quota utile + rimborso dei costi sostenuti).</p>
+                            <p className="text-[9px] text-[var(--text-faint)] mt-2">{t('tp.settleHint')}</p>
                           </div>
                         )}
 
@@ -9502,20 +9502,20 @@ export default function App() {
                             <div className="space-y-2">
                               <div className="flex items-center justify-between text-[10px]">
                                 <span className="text-[var(--text-faint)]">
-                                  Totale: {team.members.reduce((s: number, m: any) => s + (Number(editQuoteValues[m.membershipId] ?? m.percentage) || 0), 0)}%
+                                  {t('form.total')}: {team.members.reduce((s: number, m: any) => s + (Number(editQuoteValues[m.membershipId] ?? m.percentage) || 0), 0)}%
                                   {Math.round(team.members.reduce((s: number, m: any) => s + (Number(editQuoteValues[m.membershipId] ?? m.percentage) || 0), 0)) !== 100 && (
-                                    <span className="text-red-400 ml-1">· deve essere 100%</span>
+                                    <span className="text-red-400 ml-1">{t('tp.mustBe100')}</span>
                                   )}
                                 </span>
                               </div>
                               <div className="flex gap-2">
                                 <button onClick={() => { setEditQuoteWarehouse(null); setEditQuoteValues({}); }}
                                   className="flex-1 py-2 text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] bg-[var(--fill)] hover:bg-[var(--fill)] rounded-xl transition-colors">
-                                  Annulla
+                                  {t('common.cancel')}
                                 </button>
                                 <button onClick={() => saveEditedQuotes(team)} disabled={isSavingTeam}
                                   className="flex-1 py-2 text-xs font-bold text-[var(--text)] bg-[#8b5cf6]/80 hover:bg-[#8b5cf6] rounded-xl transition-colors disabled:opacity-40">
-                                  {isSavingTeam ? 'Salvo...' : 'Salva Quote'}
+                                  {isSavingTeam ? t('tp.saving') : t('set.saveShares')}
                                 </button>
                               </div>
                             </div>
@@ -9527,7 +9527,7 @@ export default function App() {
                               setEditQuoteValues(init);
                             }}
                               className="w-full py-2 text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] bg-[var(--fill)] hover:bg-[var(--fill)] rounded-xl border border-[var(--border)] hover:border-[var(--border-2)] transition-colors flex items-center justify-center gap-1.5">
-                              <Edit size={11} /> Modifica Quote
+                              <Edit size={11} /> {t('tp.editShares')}
                             </button>
                           )
                         )}
@@ -9536,7 +9536,7 @@ export default function App() {
                         {isOwnerHere && team.inviteCode && (
                           <div className="bg-[var(--surface-2)] rounded-xl p-3 border border-[var(--border)]">
                             <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                              <UserPlus size={10} /> Invita un socio
+                              <UserPlus size={10} /> {t('tp.invitePartner')}
                             </p>
                             <div className="flex gap-2">
                               <div className="flex-1 bg-[#111] border border-[var(--border-2)] rounded-xl px-3 py-2 flex items-center gap-2 overflow-hidden">
@@ -9544,7 +9544,7 @@ export default function App() {
                                 <span className="font-mono text-xs text-gray-300 truncate">{team.inviteCode}</span>
                               </div>
                               <button
-                                onClick={() => { navigator.clipboard.writeText(team.inviteCode); showToast('Codice copiato!'); }}
+                                onClick={() => { navigator.clipboard.writeText(team.inviteCode); showToast(t('set.codeCopied')); }}
                                 className="px-3 bg-[var(--fill)] hover:bg-[var(--fill-2)] border border-[var(--border-2)] rounded-xl text-[var(--text-muted)] hover:text-[var(--text)] transition-colors active:scale-95">
                                 <Copy size={14} />
                               </button>
@@ -9552,13 +9552,13 @@ export default function App() {
                                 onClick={() => regenerateInvite(team.warehouseId)}
                                 disabled={isRegenerating === team.warehouseId}
                                 className="px-3 bg-[var(--fill)] hover:bg-[var(--fill-2)] border border-[var(--border-2)] rounded-xl text-[var(--text-muted)] hover:text-[var(--text)] transition-colors disabled:opacity-40 active:scale-95"
-                                title="Rigenera codice">
+                                title={t('tp.inviteRegen')}>
                                 {isRegenerating === team.warehouseId
                                   ? <Loader2 size={14} className="animate-spin" />
                                   : <ArrowUpDown size={14} />}
                               </button>
                             </div>
-                            <p className="text-[10px] text-gray-700 mt-1.5">Condividi questo codice — il tuo socio lo userà durante la registrazione</p>
+                            <p className="text-[10px] text-gray-700 mt-1.5">{t('tp.shareCode')}</p>
                           </div>
                         )}
                       </div>
@@ -9569,17 +9569,17 @@ export default function App() {
                 {/* Entra in un team esistente */}
                 <section className="bg-[var(--bg)] rounded-2xl border border-[var(--border)] p-4">
                   <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                    <UserPlus size={10} className="text-blue-400" /> Entra in un Team
+                    <UserPlus size={10} className="text-blue-400" /> {t('tp.joinTeam')}
                   </p>
                   <form onSubmit={handleJoinWarehouse} className="flex gap-2">
                     <input
                       type="text" value={joinCodeInput} onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
-                      placeholder="Inserisci codice invito"
+                      placeholder={t('tp.enterInvite')}
                       className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-blue-500/50 font-mono"
                     />
                     <button type="submit" disabled={isJoining || !joinCodeInput.trim()}
                       className="px-4 py-2 bg-blue-600/80 hover:bg-blue-600 rounded-xl text-xs font-bold text-[var(--text)] transition-colors disabled:opacity-40 active:scale-95">
-                      {isJoining ? <Loader2 size={14} className="animate-spin" /> : 'Entra'}
+                      {isJoining ? <Loader2 size={14} className="animate-spin" /> : t('tp.join')}
                     </button>
                   </form>
                 </section>
@@ -9601,7 +9601,7 @@ export default function App() {
             {/* Header */}
             <div className="sticky top-0 bg-[var(--surface-blur)] backdrop-blur-xl border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <div>
-                <h2 className="font-semibold flex items-center gap-2"><Package size={16} className="text-violet-400" /> Spedizione</h2>
+                <h2 className="font-semibold flex items-center gap-2"><Package size={16} className="text-violet-400" /> {t('sh.title')}</h2>
                 <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{shippingProduct.brand} {shippingProduct.name} · {shippingProduct.size}</p>
               </div>
               <button onClick={() => setShippingProduct(null)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
@@ -9616,14 +9616,14 @@ export default function App() {
 
                 {/* Mittente */}
                 <div>
-                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-2">Mittente (tu)</p>
+                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-2">{t('sh.senderYou')}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { key: 'name',    label: 'Nome',     placeholder: 'Mario Rossi',   span: 2 },
-                      { key: 'address', label: 'Indirizzo',placeholder: 'Via Roma 1',    span: 2 },
-                      { key: 'city',    label: 'Città',    placeholder: 'Milano',        span: 1 },
-                      { key: 'zip',     label: 'CAP',      placeholder: '20100',         span: 1 },
-                      { key: 'phone',   label: 'Telefono', placeholder: '+393331234567', span: 2 },
+                      { key: 'name',    label: t('sh.fName'),    placeholder: 'Mario Rossi',   span: 2 },
+                      { key: 'address', label: t('sh.fAddress'), placeholder: 'Via Roma 1',    span: 2 },
+                      { key: 'city',    label: t('sh.fCity'),    placeholder: 'Milano',        span: 1 },
+                      { key: 'zip',     label: t('sh.fZip'),     placeholder: '20100',         span: 1 },
+                      { key: 'phone',   label: t('sh.fPhone'),   placeholder: '+393331234567', span: 2 },
                     ].map(f => (
                       <div key={f.key} className={f.span === 2 ? 'col-span-2' : ''}>
                         <label className="text-[10px] text-[var(--text-faint)] block mb-1">{f.label}</label>
@@ -9640,14 +9640,14 @@ export default function App() {
 
                 {/* Destinatario */}
                 <div>
-                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-2">Destinatario</p>
+                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-2">{t('sh.recipient')}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { key: 'name',    label: 'Nome',     placeholder: 'Luca Bianchi',  span: 2 },
-                      { key: 'address', label: 'Indirizzo',placeholder: 'Via Milano 5',  span: 2 },
-                      { key: 'city',    label: 'Città',    placeholder: 'Roma',          span: 1 },
-                      { key: 'zip',     label: 'CAP',      placeholder: '00100',         span: 1 },
-                      { key: 'phone',   label: 'Telefono', placeholder: '+393339876543', span: 2 },
+                      { key: 'name',    label: t('sh.fName'),    placeholder: 'Luca Bianchi',  span: 2 },
+                      { key: 'address', label: t('sh.fAddress'), placeholder: 'Via Milano 5',  span: 2 },
+                      { key: 'city',    label: t('sh.fCity'),    placeholder: 'Roma',          span: 1 },
+                      { key: 'zip',     label: t('sh.fZip'),     placeholder: '00100',         span: 1 },
+                      { key: 'phone',   label: t('sh.fPhone'),   placeholder: '+393339876543', span: 2 },
                     ].map(f => (
                       <div key={f.key} className={f.span === 2 ? 'col-span-2' : ''}>
                         <label className="text-[10px] text-[var(--text-faint)] block mb-1">{f.label}</label>
@@ -9664,7 +9664,7 @@ export default function App() {
 
                 {/* Pacco preset */}
                 <div>
-                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-2">Dimensioni pacco</p>
+                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-2">{t('sh.packSize')}</p>
                   <div className="grid grid-cols-4 gap-2">
                     {SHIPPING_PRESETS.map(p => (
                       <button key={p.label} onClick={() => setShipPreset(p)}
@@ -9683,14 +9683,14 @@ export default function App() {
 
                 <button onClick={fetchRates} disabled={isLoadingRates}
                   className="w-full py-3.5 bg-violet-600/80 hover:bg-violet-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
-                  {isLoadingRates ? <><Loader2 size={15} className="animate-spin" /> Cerco tariffe…</> : <><Package size={15} /> Vedi tariffe corrieri</>}
+                  {isLoadingRates ? <><Loader2 size={15} className="animate-spin" /> {t('sh.findingRates')}</> : <><Package size={15} /> {t('sh.seeRates')}</>}
                 </button>
               </>)}
 
               {/* STEP: RATES */}
               {shippingStep === 'rates' && (<>
                 <button onClick={() => setShippingStep('form')} className="text-xs text-[var(--text-soft)] hover:text-[var(--text)] flex items-center gap-1 transition-colors">
-                  ← Modifica dati
+                  {t('sh.editData')}
                 </button>
                 <div className="space-y-2">
                   {shippingRates.map(r => (
@@ -9714,10 +9714,10 @@ export default function App() {
                   <button onClick={bookShipment} disabled={isBooking}
                     className="w-full py-3.5 bg-violet-600/80 hover:bg-violet-600 disabled:opacity-40 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                     {isBooking
-                      ? <><Loader2 size={15} className="animate-spin" /> Generazione…</>
+                      ? <><Loader2 size={15} className="animate-spin" /> {t('sh.generating')}</>
                       : selectedRate.demo
-                        ? <><Download size={15} /> Genera etichetta demo · {selectedRate.price.toFixed(2)}€</>
-                        : <><Download size={15} /> Prenota e scarica etichetta · {selectedRate.price.toFixed(2)}€</>}
+                        ? <><Download size={15} /> {t('sh.genDemoLabel')} · {selectedRate.price.toFixed(2)}€</>
+                        : <><Download size={15} /> {t('sh.bookDownload')} · {selectedRate.price.toFixed(2)}€</>}
                   </button>
                 )}
               </>)}
@@ -9729,24 +9729,24 @@ export default function App() {
                     <CheckCircle className="text-green-400" size={24} />
                   </div>
                   <div>
-                    <p className="font-bold text-[var(--text)]">{shippingRef?.startsWith('HQ-DEMO') ? 'Etichetta demo generata!' : 'Spedizione prenotata!'}</p>
+                    <p className="font-bold text-[var(--text)]">{shippingRef?.startsWith('HQ-DEMO') ? t('sh.demoGenerated') : t('sh.shipmentBooked')}</p>
                     {shippingRef && <p className="text-xs text-[var(--text-soft)] mt-1 font-mono">{shippingRef}</p>}
                     <p className="text-xs text-[var(--text-faint)] mt-2">
                       {shippingRef?.startsWith('HQ-DEMO')
-                        ? 'Modalità demo — etichetta aperta per la stampa. Aggiungi le credenziali Sendcloud per spedizioni reali.'
-                        : 'Il tracking è stato salvato automaticamente sul prodotto.'}
+                        ? t('sh.demoNote')
+                        : t('sh.trackingSaved')}
                     </p>
                   </div>
                   {shippingLabel
                     ? <a href={shippingLabel} target="_blank" rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 w-full py-3 bg-white hover:bg-gray-100 rounded-2xl text-sm font-bold text-black transition-colors">
-                        <Download size={15} /> Scarica etichetta PDF
+                        <Download size={15} /> {t('sh.downloadPdf')}
                       </a>
-                    : <p className="text-xs text-[var(--text-soft)]">L'etichetta sarà disponibile sul sito Packlink.</p>
+                    : <p className="text-xs text-[var(--text-soft)]">{t('sh.labelOnPacklink')}</p>
                   }
                   <button onClick={() => setShippingProduct(null)}
                     className="w-full py-2.5 bg-[var(--fill)] hover:bg-[var(--fill-2)] rounded-2xl text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
-                    Chiudi
+                    {t('common.close')}
                   </button>
                 </div>
               )}
@@ -9766,7 +9766,7 @@ export default function App() {
             {/* Header */}
             <div className="sticky top-0 bg-[var(--surface-blur)] backdrop-blur-xl border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <div>
-                <h2 className="font-semibold">Genera Annuncio</h2>
+                <h2 className="font-semibold">{t('lst.title')}</h2>
                 <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{listingModalProduct.brand} {listingModalProduct.name} · {listingModalProduct.size}</p>
               </div>
               <button onClick={() => { setListingModalProduct(null); setListingResult(null); }}
@@ -9778,7 +9778,7 @@ export default function App() {
             <div className="p-5 space-y-4">
               {/* Selezione piattaforma */}
               <div>
-                <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-3">Scegli la piattaforma</p>
+                <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider mb-3">{t('lst.choosePlatform')}</p>
                 <div className="grid grid-cols-5 gap-2">
                   {([
                     { id: 'vinted',   label: 'Vinted',    emoji: '🟢' },
@@ -9807,8 +9807,8 @@ export default function App() {
                 disabled={isGeneratingListing}
                 className="w-full py-3.5 bg-violet-600/80 hover:bg-violet-600 disabled:bg-violet-600/30 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                 {isGeneratingListing
-                  ? <><Loader2 size={16} className="animate-spin" /> Generazione in corso…</>
-                  : <><Sparkles size={16} /> Genera con IA</>}
+                  ? <><Loader2 size={16} className="animate-spin" /> {t('lst.generating')}</>
+                  : <><Sparkles size={16} /> {t('lst.generateAI')}</>}
               </button>
 
               {/* Risultato */}
@@ -9818,27 +9818,27 @@ export default function App() {
                   {/* Titolo */}
                   <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-2xl p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider">Titolo</p>
+                      <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider">{t('lst.heading')}</p>
                       <button onClick={() => copyToClipboard(listingResult.title, 'title')}
                         className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
                           copiedField === 'title' ? 'bg-green-500/20 text-green-400' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)]'
                         }`}>
-                        <Copy size={11} /> {copiedField === 'title' ? 'Copiato!' : 'Copia'}
+                        <Copy size={11} /> {copiedField === 'title' ? t('lst.copied') : t('lst.copy')}
                       </button>
                     </div>
                     <p className="text-sm font-semibold text-[var(--text)] leading-snug">{listingResult.title}</p>
-                    <p className="text-[10px] text-gray-700 mt-1">{listingResult.title.length}/80 caratteri</p>
+                    <p className="text-[10px] text-gray-700 mt-1">{listingResult.title.length}/80 {t('lst.chars')}</p>
                   </div>
 
                   {/* Descrizione */}
                   <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-2xl p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider">Descrizione</p>
+                      <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider">{t('lst.description')}</p>
                       <button onClick={() => copyToClipboard(listingResult.description, 'desc')}
                         className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
                           copiedField === 'desc' ? 'bg-green-500/20 text-green-400' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)]'
                         }`}>
-                        <Copy size={11} /> {copiedField === 'desc' ? 'Copiato!' : 'Copia'}
+                        <Copy size={11} /> {copiedField === 'desc' ? t('lst.copied') : t('lst.copy')}
                       </button>
                     </div>
                     <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{listingResult.description}</p>
@@ -9848,12 +9848,12 @@ export default function App() {
                   {listingResult.hashtags?.length > 0 && (
                     <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-2xl p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider">Hashtag</p>
+                        <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-wider">{t('lst.hashtags')}</p>
                         <button onClick={() => copyToClipboard(listingResult.hashtags.join(' '), 'tags')}
                           className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
                             copiedField === 'tags' ? 'bg-green-500/20 text-green-400' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)]'
                           }`}>
-                          <Copy size={11} /> {copiedField === 'tags' ? 'Copiato!' : 'Copia'}
+                          <Copy size={11} /> {copiedField === 'tags' ? t('lst.copied') : t('lst.copy')}
                         </button>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
@@ -9876,7 +9876,7 @@ export default function App() {
                   {listingResult.deepLink && (
                     <a href={listingResult.deepLink} target="_blank" rel="noopener noreferrer"
                       className="flex items-center justify-center gap-2 w-full py-3 bg-[var(--fill)] hover:bg-[var(--fill-2)] border border-[var(--border-2)] rounded-2xl text-sm font-bold text-[var(--text)] transition-colors active:scale-[0.98]">
-                      <Store size={15} /> Apri {(['vinted','ebay','depop','wallapop','subito'].find(p => p === listingResult.platform) || '').charAt(0).toUpperCase() + (listingResult.platform || '').slice(1)} →
+                      <Store size={15} /> {t('lst.open')} {(['vinted','ebay','depop','wallapop','subito'].find(p => p === listingResult.platform) || '').charAt(0).toUpperCase() + (listingResult.platform || '').slice(1)} →
                     </a>
                   )}
 
