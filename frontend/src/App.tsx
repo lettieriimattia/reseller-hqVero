@@ -5810,12 +5810,12 @@ export default function App() {
           const exceptions = allTracked.filter(p => p.trackingStatus === 'EXCEPTION' || p.trackingStatus === 'RETURNED');
 
           const statusLabel = (s?: string) => {
-            if (s === 'IN_TRANSIT') return { text: 'In transito', cls: 'bg-blue-500/20 text-blue-400', dot: 'bg-blue-400' };
-            if (s === 'OUT_FOR_DELIVERY') return { text: 'In consegna', cls: 'bg-violet-500/20 text-violet-400', dot: 'bg-violet-400' };
-            if (s === 'DELIVERED') return { text: 'Consegnato', cls: 'bg-green-500/20 text-green-400', dot: 'bg-green-400' };
-            if (s === 'EXCEPTION') return { text: 'Eccezione', cls: 'bg-red-500/20 text-red-400', dot: 'bg-red-400' };
-            if (s === 'RETURNED') return { text: 'Reso', cls: 'bg-violet-500/20 text-violet-400', dot: 'bg-violet-400' };
-            return { text: 'In attesa', cls: 'bg-[var(--fill)] text-[var(--text-soft)]', dot: 'bg-gray-600' };
+            if (s === 'IN_TRANSIT') return { text: t('track.stInTransit'), cls: 'bg-blue-500/20 text-blue-400', dot: 'bg-blue-400' };
+            if (s === 'OUT_FOR_DELIVERY') return { text: t('track.stOutForDelivery'), cls: 'bg-violet-500/20 text-violet-400', dot: 'bg-violet-400' };
+            if (s === 'DELIVERED') return { text: t('track.stDelivered'), cls: 'bg-green-500/20 text-green-400', dot: 'bg-green-400' };
+            if (s === 'EXCEPTION') return { text: t('track.stException'), cls: 'bg-red-500/20 text-red-400', dot: 'bg-red-400' };
+            if (s === 'RETURNED') return { text: t('track.stReturned'), cls: 'bg-violet-500/20 text-violet-400', dot: 'bg-violet-400' };
+            return { text: t('track.stPending'), cls: 'bg-[var(--fill)] text-[var(--text-soft)]', dot: 'bg-gray-600' };
           };
 
           const TrackCard = ({ p }: { p: Product }) => {
@@ -5826,10 +5826,10 @@ export default function App() {
             const updatedAgo = p.trackingUpdatedAt
               ? (() => {
                   const mins = Math.floor((Date.now() - new Date(p.trackingUpdatedAt).getTime()) / 60000);
-                  if (mins < 60) return `${mins}m fa`;
+                  if (mins < 60) return `${mins}m ${t('track.ago')}`;
                   const hrs = Math.floor(mins / 60);
-                  if (hrs < 24) return `${hrs}h fa`;
-                  return `${Math.floor(hrs / 24)}g fa`;
+                  if (hrs < 24) return `${hrs}h ${t('track.ago')}`;
+                  return `${Math.floor(hrs / 24)}${t('track.agoDay')} ${t('track.ago')}`;
                 })()
               : null;
 
@@ -5849,7 +5849,7 @@ export default function App() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-bold text-sm">{p.brand} {p.name}</p>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${dir === 'OUTBOUND' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-blue-500/15 text-blue-400'}`}>
-                        {dir === 'OUTBOUND' ? '📤 Vendita' : '📥 In arrivo'}
+                        {dir === 'OUTBOUND' ? t('track.dirSale') : t('track.dirIncoming')}
                       </span>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0 ${st.cls}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
@@ -5859,7 +5859,7 @@ export default function App() {
                     <p className="text-xs text-[var(--text-soft)] mt-0.5 font-mono truncate">{p.trackingCode}</p>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <span className="text-[10px] text-[var(--text-faint)] bg-[var(--fill)] px-2 py-0.5 rounded-full">{p.trackingCarrier}</span>
-                      {updatedAgo && <span className="text-[10px] text-[var(--text-faint)]">aggiornato {updatedAgo}</span>}
+                      {updatedAgo && <span className="text-[10px] text-[var(--text-faint)]">{t('track.updated')} {updatedAgo}</span>}
                     </div>
                   </div>
                   <button
@@ -5870,11 +5870,11 @@ export default function App() {
                 </div>
                 {p.status === 'VENDUTO' && p.salePrice === 0 && (
                   <div className="border-t border-yellow-800/40 bg-yellow-900/10 px-4 py-2.5 flex items-center justify-between">
-                    <p className="text-xs text-yellow-400 font-bold">📦 Spedizione consegnata — vendita da completare</p>
+                    <p className="text-xs text-yellow-400 font-bold">{t('track.deliveredSaleToComplete')}</p>
                     <button
                       onClick={() => openSellModal([p.id], `${p.brand} ${p.name}`, p)}
                       className="text-[10px] bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 px-3 py-1.5 rounded-xl font-bold transition-colors">
-                      Completa
+                      {t('track.complete')}
                     </button>
                   </div>
                 )}
@@ -5887,19 +5887,19 @@ export default function App() {
               {/* Header */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-3xl font-semibold">Tracking</h2>
-                  <p className="text-[var(--text-soft)] text-sm mt-1">Monitora le tue spedizioni</p>
+                  <h2 className="text-3xl font-semibold">{t('nav.tracking')}</h2>
+                  <p className="text-[var(--text-soft)] text-sm mt-1">{t('track.subtitle')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={openIncoming}
                     className="flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-colors">
-                    <Plus size={16} /> <span className="hidden sm:inline">Acquisto in arrivo</span><span className="sm:hidden">In arrivo</span>
+                    <Plus size={16} /> <span className="hidden sm:inline">{t('track.incoming')}</span><span className="sm:hidden">{t('track.incomingShort')}</span>
                   </button>
                   {active.length > 0 && (
                     <button onClick={handleRefreshAllTrackings} disabled={isRefreshingAll}
                       className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors">
                       {isRefreshingAll ? <Loader2 className="animate-spin" size={16} /> : <Truck size={16} />}
-                      <span className="hidden sm:inline">{isRefreshingAll ? 'Aggiornamento...' : 'Aggiorna tutto'}</span>
+                      <span className="hidden sm:inline">{isRefreshingAll ? t('track.refreshing') : t('track.refreshAll')}</span>
                     </button>
                   )}
                 </div>
@@ -5908,9 +5908,9 @@ export default function App() {
               {/* Stats */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Attive', value: active.length, color: 'text-blue-400', bg: 'bg-[var(--surface)] border-blue-500/20', glow: 'bg-blue-500/8' },
-                  { label: 'Consegnate', value: delivered.length, color: 'text-emerald-400', bg: 'bg-[var(--surface)] border-green-500/20', glow: 'bg-green-500/8' },
-                  { label: 'Eccezioni', value: exceptions.length, color: 'text-red-400', bg: 'bg-[var(--surface)] border-red-500/20', glow: 'bg-red-500/8' },
+                  { label: t('track.active'), value: active.length, color: 'text-blue-400', bg: 'bg-[var(--surface)] border-blue-500/20', glow: 'bg-blue-500/8' },
+                  { label: t('track.delivered'), value: delivered.length, color: 'text-emerald-400', bg: 'bg-[var(--surface)] border-green-500/20', glow: 'bg-green-500/8' },
+                  { label: t('track.exceptions'), value: exceptions.length, color: 'text-red-400', bg: 'bg-[var(--surface)] border-red-500/20', glow: 'bg-red-500/8' },
                 ].map(s => (
                   <div key={s.label} className={`${s.bg} border rounded-2xl p-4 text-center relative overflow-hidden`}>
                     <div className={`absolute inset-0 ${s.glow} pointer-events-none`} />
@@ -5924,8 +5924,8 @@ export default function App() {
               {allTracked.length === 0 && (
                 <div className="text-center py-16 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
                   <Truck className="mx-auto text-gray-800 mb-3" size={44} />
-                  <p className="text-[var(--text-muted)] font-semibold">Nessuna spedizione tracciata</p>
-                  <p className="text-[var(--text-faint)] text-sm mt-1">Usa "Acquisto in arrivo" qui sopra, oppure traccia da Magazzino → Track</p>
+                  <p className="text-[var(--text-muted)] font-semibold">{t('track.none')}</p>
+                  <p className="text-[var(--text-faint)] text-sm mt-1">{t('track.noneHint')}</p>
                 </div>
               )}
 
@@ -5934,7 +5934,7 @@ export default function App() {
                 <div className="space-y-3">
                   <h3 className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-2">
                     <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-                    Spedizioni attive ({active.length})
+                    {t('track.activeShipments')} ({active.length})
                   </h3>
                   {active.map(p => <TrackCard key={p.id} p={p} />)}
                 </div>
@@ -5945,7 +5945,7 @@ export default function App() {
                 <div className="space-y-3">
                   <h3 className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-2">
                     <span className="w-2 h-2 bg-red-400 rounded-full" />
-                    Eccezioni / Resi ({exceptions.length})
+                    {t('track.exceptionsReturns')} ({exceptions.length})
                   </h3>
                   {exceptions.map(p => <TrackCard key={p.id} p={p} />)}
                 </div>
@@ -5956,7 +5956,7 @@ export default function App() {
                 <div className="space-y-3">
                   <h3 className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-2">
                     <span className="w-2 h-2 bg-green-400 rounded-full" />
-                    Consegnate ({delivered.length})
+                    {t('track.deliveredSection')} ({delivered.length})
                   </h3>
                   {delivered.map(p => <TrackCard key={p.id} p={p} />)}
                 </div>
@@ -9064,8 +9064,8 @@ export default function App() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[var(--accent)]/15 flex items-center justify-center"><Truck className="text-[var(--accent)]" size={20} /></div>
                 <div>
-                  <h3 className="font-semibold text-base">Acquisto in arrivo</h3>
-                  <p className="text-xs text-[var(--text-soft)]">Lo metto in stock e ne traccio l'arrivo</p>
+                  <h3 className="font-semibold text-base">{t('track.incoming')}</h3>
+                  <p className="text-xs text-[var(--text-soft)]">{t('track.incomingSub')}</p>
                 </div>
               </div>
               <button onClick={() => setIncomingOpen(false)}><X size={20} className="text-[var(--text-soft)] hover:text-[var(--text)]" /></button>
@@ -9073,30 +9073,30 @@ export default function App() {
 
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nome</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.name')}</label>
                 <input value={incName} onChange={(e: any) => setIncName(e.target.value)} placeholder="Es. Air Jordan 1 Chicago" autoFocus
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none" />
-                <p className="text-[10px] text-[var(--text-faint)] mt-1">Reparto, brand e prezzo li aggiungi dopo dalla Modifica (facoltativi).</p>
+                <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('track.incNameHint')}</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Codice tracking</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.trackingCode')}</label>
                   <input value={incTrackCode} onChange={(e: any) => setIncTrackCode(e.target.value)} placeholder="ABC123..."
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Vettore</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('track.carrier')}</label>
                   <select value={incTrackCarrier} onChange={(e: any) => setIncTrackCarrier(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none">
                     {(carrierList.length ? carrierList.map(c => c.key) : ['Auto','BRT','GLS','Poste Italiane','SDA','DHL','UPS','FedEx','TNT','Amazon Logistics','Nexive']).map(k => (
-                      <option key={k} value={k}>{k === 'Auto' ? 'Auto-rileva' : k}</option>
+                      <option key={k} value={k}>{k === 'Auto' ? t('sell.autoDetect') : k}</option>
                     ))}
                   </select>
                 </div>
               </div>
               <button onClick={createIncoming} disabled={incSaving}
                 className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                {incSaving ? <Loader2 className="animate-spin" size={18} /> : <><Plus size={16} /> Aggiungi e traccia</>}
+                {incSaving ? <Loader2 className="animate-spin" size={18} /> : <><Plus size={16} /> {t('track.addAndTrack')}</>}
               </button>
             </div>
           </div>
@@ -9113,7 +9113,7 @@ export default function App() {
                   <Truck className="text-blue-400" size={20} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-base">{trackingProduct.status === 'VENDUTO' ? 'Spedizione di vendita' : 'Spedizione in arrivo'}</h3>
+                  <h3 className="font-semibold text-base">{trackingProduct.status === 'VENDUTO' ? t('track.saleShipment') : t('track.incomingShipment')}</h3>
                   <p className="text-xs text-[var(--text-soft)]">{trackingProduct.brand} {trackingProduct.name}</p>
                 </div>
               </div>
@@ -9125,10 +9125,10 @@ export default function App() {
             {/* Stato spedizione — stepper tappabile: mostra l'avanzamento e si aggiorna con un tap */}
             {trackingProduct.trackingCode && (() => {
               const steps = [
-                { key: 'PENDING', label: 'In attesa', icon: '⏳' },
-                { key: 'IN_TRANSIT', label: 'In transito', icon: '🚚' },
-                { key: 'OUT_FOR_DELIVERY', label: 'In consegna', icon: '📦' },
-                { key: 'DELIVERED', label: 'Consegnato', icon: '✅' },
+                { key: 'PENDING', label: t('track.stPending'), icon: '⏳' },
+                { key: 'IN_TRANSIT', label: t('track.stInTransit'), icon: '🚚' },
+                { key: 'OUT_FOR_DELIVERY', label: t('track.stOutForDelivery'), icon: '📦' },
+                { key: 'DELIVERED', label: t('track.stDelivered'), icon: '✅' },
               ];
               const cur = trackingProduct.trackingStatus || 'PENDING';
               const isException = cur === 'EXCEPTION';
@@ -9136,10 +9136,10 @@ export default function App() {
               return (
                 <div className="mb-5">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest">Stato spedizione</p>
+                    <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest">{t('track.shipmentStatus')}</p>
                     <button onClick={handleRefreshTracking} disabled={isRefreshingTracking}
                       className="flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 font-bold disabled:opacity-50">
-                      {isRefreshingTracking ? <Loader2 className="animate-spin" size={11} /> : <Truck size={11} />} Aggiorna
+                      {isRefreshingTracking ? <Loader2 className="animate-spin" size={11} /> : <Truck size={11} />} {t('track.refresh')}
                     </button>
                   </div>
                   {/* Progressione a 4 step: pieni fino allo stato corrente. Tap = imposta lo stato. */}
@@ -9158,14 +9158,14 @@ export default function App() {
                   <div className="flex gap-2 mt-2.5">
                     <button onClick={() => setManualStatus('EXCEPTION')}
                       className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${isException ? 'bg-red-500 text-white' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'}`}>
-                      ⚠️ Problema
+                      {t('track.problemBtn')}
                     </button>
                     <a href={trackingPublicUrl(trackingProduct.trackingCode)} target="_blank" rel="noopener noreferrer"
                       className="flex-1 py-2 rounded-xl text-xs font-bold bg-[var(--surface-2)] border border-[var(--border-2)] text-[var(--text-soft)] hover:text-[var(--text)] flex items-center justify-center gap-1 transition-colors">
-                      Vedi sul corriere ↗
+                      {t('track.viewCarrier')}
                     </a>
                   </div>
-                  <p className="text-[10px] text-[var(--text-faint)] mt-2 text-center">Tocca uno step per aggiornare · {trackingProduct.trackingCarrier} • {trackingProduct.trackingCode}</p>
+                  <p className="text-[10px] text-[var(--text-faint)] mt-2 text-center">{t('track.tapStep')} · {trackingProduct.trackingCarrier} • {trackingProduct.trackingCode}</p>
                 </div>
               );
             })()}
@@ -9173,7 +9173,7 @@ export default function App() {
             {/* Storico eventi */}
             {trackingDetail?.history?.length > 0 && (
               <div className="mb-5">
-                <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest mb-3">Storico eventi</p>
+                <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest mb-3">{t('track.history')}</p>
                 <div className="space-y-0 max-h-44 overflow-y-auto pr-1">
                   {(trackingDetail.history as any[]).map((ev: any, i: number) => (
                     <div key={i} className="flex gap-3 text-xs">
@@ -9195,7 +9195,7 @@ export default function App() {
             {/* Form aggiungi/modifica tracking */}
             <div className="space-y-3 mb-5">
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Codice Tracking</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('track.trackingCodeLabel')}</label>
                 <input type="text" value={trackingInput}
                   onChange={e => setTrackingInput(e.target.value.toUpperCase())}
                   placeholder="ES: BRT123456789IT"
@@ -9203,7 +9203,7 @@ export default function App() {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Vettore</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('track.carrier')}</label>
                 <select value={trackingCarrierSel} onChange={e => setTrackingCarrierSel(e.target.value)}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-blue-500">
                   {(carrierList.length > 0 ? carrierList : [
@@ -9229,11 +9229,11 @@ export default function App() {
               )}
               <button onClick={() => setTrackingModalOpen(false)}
                 className="flex-1 bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
-                Annulla
+                {t('common.cancel')}
               </button>
               <button onClick={handleSaveTracking} disabled={!trackingInput.trim() || isSavingTracking}
                 className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2">
-                {isSavingTracking ? <Loader2 className="animate-spin" size={16} /> : <><Truck size={15} /> Salva</>}
+                {isSavingTracking ? <Loader2 className="animate-spin" size={16} /> : <><Truck size={15} /> {t('common.save')}</>}
               </button>
             </div>
           </div>
