@@ -3495,11 +3495,11 @@ export default function App() {
                   <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
                   {marketDetail.breakdown && (
                     <p className="text-sm font-bold text-[#8b5cf6] mt-0.5">
-                      Totale {marketDetail.breakdown.total.toFixed(2)}€
-                      <span className="font-normal text-[var(--text-soft)]"> · incl. spedizione e commissioni</span>
+                      {t('market.total')} {marketDetail.breakdown.total.toFixed(2)}€
+                      <span className="font-normal text-[var(--text-soft)]"> · {t('market.totalIncl')}</span>
                     </p>
                   )}
-                  <p className="text-xs text-[var(--text-soft)] mt-1">Venditore: {marketDetail.sellerName}</p>
+                  <p className="text-xs text-[var(--text-soft)] mt-1">{t('market.seller')}: {marketDetail.sellerName}</p>
                 </div>
               </div>
               <div className="border-t border-[var(--border)] p-3 shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
@@ -5234,8 +5234,8 @@ export default function App() {
         {currentView === 'market' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h2 className="text-3xl font-semibold">Compra</h2>
-              <span className="text-xs text-[var(--text-faint)]">{marketItems.length} articoli in vetrina</span>
+              <h2 className="text-3xl font-semibold">{t('market.title')}</h2>
+              <span className="text-xs text-[var(--text-faint)]">{marketItems.length} {t('market.itemsCount')}</span>
             </div>
             {/* Ricerca + categorie */}
             <div className="flex gap-2">
@@ -5243,14 +5243,14 @@ export default function App() {
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
                 <input value={marketQuery} onChange={e => setMarketQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') fetchMarket(); }}
-                  placeholder="Cerca modello, colore, SKU…"
+                  placeholder={t('market.searchPlaceholder')}
                   className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-[#8b5cf6]" />
               </div>
-              <button onClick={fetchMarket} className="px-4 py-2.5 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold">Cerca</button>
+              <button onClick={fetchMarket} className="px-4 py-2.5 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold">{t('market.searchBtn')}</button>
             </div>
             {marketCats.length > 0 && (
               <div className="flex gap-2 flex-wrap">
-                <button onClick={() => { setMarketCat(''); }} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${!marketCat ? 'bg-[#8b5cf6]/10 border-[#8b5cf6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>Tutte</button>
+                <button onClick={() => { setMarketCat(''); }} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${!marketCat ? 'bg-[#8b5cf6]/10 border-[#8b5cf6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{t('market.all')}</button>
                 {marketCats.map((c: string) => (
                   <button key={c} onClick={() => setMarketCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${marketCat === c ? 'bg-[#8b5cf6]/10 border-[#8b5cf6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{c}</button>
                 ))}
@@ -5259,7 +5259,7 @@ export default function App() {
             {marketLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="animate-spin text-[#8b5cf6]" size={28} /></div>
             ) : marketItems.length === 0 ? (
-              <div className="text-center py-16 text-[var(--text-soft)]">Nessun articolo in vetrina.</div>
+              <div className="text-center py-16 text-[var(--text-soft)]">{t('market.empty')}</div>
             ) : (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {marketItems.map((it: any) => (
@@ -5285,26 +5285,26 @@ export default function App() {
           <div className="space-y-4 max-w-2xl">
             <div className="flex items-center gap-2">
               <Wallet className="text-[#8b5cf6]" size={26} />
-              <h2 className="text-3xl font-semibold">Portafoglio</h2>
+              <h2 className="text-3xl font-semibold">{t('nav.wallet')}</h2>
               {connectStatus?.chargesEnabled
-                ? <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">Conto attivo</span>
+                ? <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">{t('wallet.accountActive')}</span>
                 : connectStatus?.connected
-                  ? <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/15 px-2 py-0.5 rounded-full">Da completare</span>
+                  ? <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/15 px-2 py-0.5 rounded-full">{t('wallet.toComplete')}</span>
                   : null}
             </div>
 
             {connectStatus?.configured === false ? (
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 text-sm text-[var(--text-soft)]">I pagamenti non sono ancora attivi sulla piattaforma.</div>
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 text-sm text-[var(--text-soft)]">{t('wallet.notActive')}</div>
             ) : (
               <>
                 {/* Saldo — due righe separate, così anche cifre grandi entrano */}
                 <div className="flex flex-col gap-3">
                   <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 flex items-center justify-between gap-3">
-                    <p className="text-[11px] text-[var(--text-soft)] uppercase tracking-widest shrink-0">Da riscuotere</p>
+                    <p className="text-[11px] text-[var(--text-soft)] uppercase tracking-widest shrink-0">{t('wallet.toCollect')}</p>
                     <p className="text-2xl sm:text-3xl font-bold num truncate text-right">{(wallet?.available ?? 0).toFixed(2)}€</p>
                   </div>
                   <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 flex items-center justify-between gap-3">
-                    <p className="text-[11px] text-[var(--text-soft)] uppercase tracking-widest shrink-0">In attesa di consegna</p>
+                    <p className="text-[11px] text-[var(--text-soft)] uppercase tracking-widest shrink-0">{t('wallet.awaitingDelivery')}</p>
                     <p className="text-2xl sm:text-3xl font-bold num truncate text-right text-[var(--text-soft)]">{(wallet?.pending ?? 0).toFixed(2)}€</p>
                   </div>
                 </div>
@@ -5312,18 +5312,18 @@ export default function App() {
                 <button type="button" onClick={withdrawFunds} disabled={withdrawing || (wallet?.available ?? 0) <= 0}
                   className="w-full py-3 bg-[#8b5cf6] hover:bg-[#7c3aed] rounded-2xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
                   {withdrawing ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}
-                  {(wallet?.available ?? 0) > 0 ? `Riscuoti ${(wallet?.available ?? 0).toFixed(2)}€` : 'Niente da riscuotere'}
+                  {(wallet?.available ?? 0) > 0 ? `${t('wallet.collect')} ${(wallet?.available ?? 0).toFixed(2)}€` : t('wallet.nothingToCollect')}
                 </button>
                 <p className="text-[11px] text-[var(--text-faint)]">
                   {connectStatus?.chargesEnabled
-                    ? 'Conto verificato: il bonifico parte in automatico quando riscuoti.'
-                    : 'Al primo prelievo Stripe ti chiederà solo il minimo (IBAN + dati base). I soldi entrano qui quando il compratore conferma la consegna.'}
+                    ? t('wallet.verifiedHint')
+                    : t('wallet.firstWithdrawHint')}
                 </p>
 
                 {/* Pronti da riscuotere */}
                 {(wallet?.readyItems?.length ?? 0) > 0 && (
                   <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
-                    <p className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest mb-2">Pronti da riscuotere</p>
+                    <p className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest mb-2">{t('wallet.readyToCollect')}</p>
                     <div className="space-y-1.5">
                       {wallet!.readyItems.map((it: any) => (
                         <div key={it.id} className="flex justify-between text-sm">
@@ -5338,7 +5338,7 @@ export default function App() {
                 {/* In attesa di consegna */}
                 {(wallet?.pendingItems?.length ?? 0) > 0 && (
                   <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
-                    <p className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest mb-2">In attesa che il compratore confermi</p>
+                    <p className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest mb-2">{t('wallet.awaitingBuyerConfirm')}</p>
                     <div className="space-y-1.5">
                       {wallet!.pendingItems.map((it: any) => (
                         <div key={it.id} className="flex justify-between text-sm">
@@ -5352,7 +5352,7 @@ export default function App() {
 
                 {(wallet?.readyItems?.length ?? 0) === 0 && (wallet?.pendingItems?.length ?? 0) === 0 && (
                   <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-8 text-center text-sm text-[var(--text-soft)]">
-                    Nessun incasso ancora. Quando vendi nel marketplace, qui trovi i soldi da riscuotere.
+                    {t('wallet.noIncome')}
                   </div>
                 )}
               </>
@@ -5663,43 +5663,43 @@ export default function App() {
                   <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
                   {marketDetail.breakdown && (
                     <p className="text-sm font-bold text-[#8b5cf6] mt-0.5">
-                      Totale {marketDetail.breakdown.total.toFixed(2)}€
-                      <span className="font-normal text-[var(--text-soft)]"> · incl. spedizione e commissioni</span>
+                      {t('market.total')} {marketDetail.breakdown.total.toFixed(2)}€
+                      <span className="font-normal text-[var(--text-soft)]"> · {t('market.totalIncl')}</span>
                     </p>
                   )}
-                  <p className="text-xs text-[var(--text-soft)] mt-1">Venditore: {marketDetail.sellerName}</p>
+                  <p className="text-xs text-[var(--text-soft)] mt-1">{t('market.seller')}: {marketDetail.sellerName}</p>
                 </div>
               </div>
               {/* Barra azioni FISSA in basso (sempre raggiungibile) */}
               <div className="border-t border-[var(--border)] p-3 shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
                 {isAuthenticated && marketDetail.sellerId && user?.id === marketDetail.sellerId ? (
-                  <div className="text-center py-2 text-sm text-[var(--text-soft)] font-semibold">Questo è un tuo articolo in vetrina</div>
+                  <div className="text-center py-2 text-sm text-[var(--text-soft)] font-semibold">{t('market.yourItem')}</div>
                 ) : isAuthenticated ? (
                   <>
                   {marketDetail.payEnabled && marketDetail.breakdown && (
                     <div className="mb-3 text-xs bg-[var(--surface-2)] rounded-xl p-3 space-y-1">
-                      <div className="flex justify-between"><span className="text-[var(--text-soft)]">Articolo</span><span className="font-semibold">{marketDetail.breakdown.itemPrice.toFixed(2)}€</span></div>
-                      {marketDetail.breakdown.shipping > 0 && <div className="flex justify-between"><span className="text-[var(--text-soft)]">Spedizione</span><span className="font-semibold">{marketDetail.breakdown.shipping.toFixed(2)}€</span></div>}
-                      <div className="flex justify-between"><span className="text-[var(--text-soft)]">Servizio + commissioni</span><span className="font-semibold">{(marketDetail.breakdown.serviceFee + marketDetail.breakdown.fees).toFixed(2)}€</span></div>
-                      <div className="flex justify-between pt-1 border-t border-[var(--border)] text-sm"><span className="font-bold">Totale</span><span className="font-bold">{marketDetail.breakdown.total.toFixed(2)}€</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--text-soft)]">{t('market.item')}</span><span className="font-semibold">{marketDetail.breakdown.itemPrice.toFixed(2)}€</span></div>
+                      {marketDetail.breakdown.shipping > 0 && <div className="flex justify-between"><span className="text-[var(--text-soft)]">{t('market.shipping')}</span><span className="font-semibold">{marketDetail.breakdown.shipping.toFixed(2)}€</span></div>}
+                      <div className="flex justify-between"><span className="text-[var(--text-soft)]">{t('market.serviceFees')}</span><span className="font-semibold">{(marketDetail.breakdown.serviceFee + marketDetail.breakdown.fees).toFixed(2)}€</span></div>
+                      <div className="flex justify-between pt-1 border-t border-[var(--border)] text-sm"><span className="font-bold">{t('market.total')}</span><span className="font-bold">{marketDetail.breakdown.total.toFixed(2)}€</span></div>
                     </div>
                   )}
                   <div className="flex gap-2">
                     {marketDetail.payEnabled ? (
                       <button onClick={() => payProduct(marketDetail.id)}
-                        className="flex-1 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">Compra ora</button>
+                        className="flex-1 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">{t('market.buyNow')}</button>
                     ) : (
-                      <button onClick={() => contactSeller(marketDetail.id, `Ciao! Vorrei comprare "${marketDetail.brand} ${marketDetail.name}". È disponibile?`)}
-                        className="flex-1 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">Compra</button>
+                      <button onClick={() => contactSeller(marketDetail.id, `${t('market.buyMsgPre')}${marketDetail.brand} ${marketDetail.name}${t('market.buyMsgPost')}`)}
+                        className="flex-1 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">{t('market.buy')}</button>
                     )}
                     <button onClick={() => contactSeller(marketDetail.id)}
-                      className="flex-1 py-3 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] font-bold transition-colors">Contatta venditore</button>
+                      className="flex-1 py-3 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] font-bold transition-colors">{t('market.contactSeller')}</button>
                   </div>
-                  <p className="text-[10px] text-[var(--text-faint)] text-center mt-2">{marketDetail.payEnabled ? 'Pagamento sicuro con Stripe · il venditore riceve i soldi sul suo conto' : 'In chat niente link o foto — prima difesa contro le truffe.'}</p>
+                  <p className="text-[10px] text-[var(--text-faint)] text-center mt-2">{marketDetail.payEnabled ? t('market.securePay') : t('market.chatSafe')}</p>
                   </>
                 ) : (
                   <button onClick={() => { setMarketDetail(null); setPublicMarket(false); }}
-                    className="w-full py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">Accedi per acquistare</button>
+                    className="w-full py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">{t('market.loginToBuy')}</button>
                 )}
               </div>
             </div>
