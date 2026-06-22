@@ -417,6 +417,7 @@ export default function App() {
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketDetail, setMarketDetail] = useState<any>(null);
   const [marketPhotoIdx, setMarketPhotoIdx] = useState(0);
+  const [dashWhId, setDashWhId] = useState<string>('all'); // magazzino selezionato nella card profitto dashboard
   useEffect(() => { setMarketPhotoIdx(0); }, [marketDetail?.id]);
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeConvo, setActiveConvo] = useState<any>(null);
@@ -1563,6 +1564,19 @@ export default function App() {
     }
   });
   
+  // Profitto per MAGAZZINO (per la card dashboard con selettore: vedi quale magazzino rende di più).
+  const warehouseProfits: Record<string, { name: string; profit: number }> = {};
+  globalSold.forEach(p => {
+    const profit = (p.salePrice || 0) - p.purchasePrice - (p.fees || 0);
+    const wid = p.warehouseId || 'altro';
+    const team = teamData.find((t: any) => t.warehouseId === p.warehouseId);
+    const name = (team?.warehouseName || 'Magazzino').replace('Magazzino ', '');
+    if (!warehouseProfits[wid]) warehouseProfits[wid] = { name, profit: 0 };
+    warehouseProfits[wid].profit += profit;
+  });
+  const warehouseProfitList = Object.entries(warehouseProfits).map(([id, v]) => ({ id, ...v }));
+  const dashWhProfit = dashWhId === 'all' ? globalProfitto : (warehouseProfits[dashWhId]?.profit ?? 0);
+
   const filterByTimeframe = (dateString?: string) => {
     if (!dateString) return true;
     const date = new Date(dateString);
@@ -3996,16 +4010,22 @@ export default function App() {
                 <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Quote personali</p>
               </div>
 
-              {/* Team — clickable per team panel */}
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] transition-colors group"
-                onClick={() => setTeamPanelOpen(true)}>
-                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
-                  <Users size={10} /> Team
-                </p>
-                <p className="text-2xl lg:text-3xl font-bold text-violet-400 num">{globalProfitto.toFixed(0)}€</p>
+              {/* Profitto per magazzino — selettore per vedere quale magazzino rende di più */}
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-3 gap-2">
+                  <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-1.5">
+                    <Users size={10} /> Profitto
+                  </p>
+                  <select value={dashWhId} onChange={e => setDashWhId(e.target.value)} onClick={e => e.stopPropagation()}
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-1 text-[11px] font-bold text-[var(--text-soft)] outline-none focus:border-[#8b5cf6] max-w-[55%] truncate">
+                    <option value="all">Tutti i magazzini</option>
+                    {warehouseProfitList.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                </div>
+                <p className="text-2xl lg:text-3xl font-bold text-violet-400 num">{dashWhProfit.toFixed(0)}€</p>
                 <div className="flex items-center justify-between mt-1.5">
-                  <p className="text-[11px] text-[var(--text-faint)]">Profitto totale</p>
-                  <span className="text-[9px] text-[var(--text-faint)] group-hover:text-[var(--text-muted)] transition-colors">Dettaglio →</span>
+                  <p className="text-[11px] text-[var(--text-faint)]">{dashWhId === 'all' ? 'Profitto totale' : 'Profitto magazzino'}</p>
+                  <button onClick={() => setTeamPanelOpen(true)} className="text-[9px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">Dettaglio →</button>
                 </div>
               </div>
 
