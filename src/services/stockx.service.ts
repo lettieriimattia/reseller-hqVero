@@ -171,6 +171,15 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
   const toks = (s: string) => clean(s).toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length > 1);
   const nameStr = (opts.name || opts.query || '').toLowerCase();
   const qSet = new Set(toks(opts.name || opts.query));
+
+  // Parole "generiche" (brand + silhouette): da sole NON identificano un modello preciso.
+  // Es: "Nike SB Dunk Low" → potrebbe essere una SB da 100€ o una Freddy Krueger da 5000€.
+  // Se non c'è uno SKU e il nome è SOLO parole generiche → non diamo un prezzo (sarebbe a caso).
+  const GENERIC = new Set(['nike', 'jordan', 'air', 'sb', 'dunk', 'low', 'high', 'mid', 'force', 'max', 'retro', 'og', 'sp', 'new', 'balance', 'nb', 'adidas', 'yeezy', 'boost', 'samba', 'gazelle', 'spezial', 'campus', 'asics', 'gel', 'scarpe', 'scarpa', 'sneaker', 'sneakers', 'shoe', 'shoes', 'pro', 'wmns', 'gs', 'ps', 'td']);
+  const distinctive = Array.from(qSet).filter(t => !GENERIC.has(t) && !/^\d+$/.test(t));
+  if (!opts.sku && distinctive.length === 0) {
+    return { configured: true, connected: true, value: null, source: 'StockX (modello troppo generico — specifica la colorway)' };
+  }
   // Collab/edizioni speciali: se sono nel titolo StockX ma NON nel nome riconosciuto,
   // è quasi certo un modello diverso (e molto più caro) → forte penalità.
   const COLLAB = ['travis scott', 'off-white', 'off white', 'dior', 'fragment', 'union', 'tiffany', 'louis vuitton', 'ben & jerry', 'a ma maniere', 'sacai', 'supreme', 'kaws'];

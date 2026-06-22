@@ -440,6 +440,7 @@ Panda (DD1391-100 bianco/nero), Cacao Wow (DX2953-001), Paisley (DH4401-600 viol
 
 NIKE SB DUNK (prefix DH/FB/BQ/BV):
 Travis Scott (CT5053-001 reverse Swoosh brown), Ben & Jerry's Chunky Dunky (CU3244-100 mucca), Tiffany & Co (DZ4397-335 verde Tiffany), Parra (AT2022-002 multicolor), Concepts Purple Lobster, Civilist (CN4504-001 verde), Medicom (BV0833-114), ACG Terra (CU4565-300)
+SB DUNK GRAIL/RARE (valgono MIGLIAIA di €, identifica la colorway specifica): Freddy Krueger (rosso/verde a righe stile maglione + suola "sangue", mai rilasciata ufficialmente — GRAIL da migliaia di €), Heineken (verde/rosso/bianco birra), Pigeon NYC (grigio/arancio, Jeff Staple), Paris (Bernard Buffet multicolor pittura — la SB più costosa), Reese Forbes Denim, FLOM "What The Dunk", Supreme Stars/Rumpus, De La Soul, Unkle, Buck (cervo), Send Help. ⚠️ Una SB Dunk con grafica/colorway particolare può valere 10-100x una SB normale: NON darle un prezzo generico, identifica SEMPRE la colorway.
 
 YEEZY BOOST 350 V2 (codici: FU9006/EH5361/ecc.):
 Zebra (CP9654 bianco/nero), Bred (CP9652 nero), Static Non-Reflective (EF2905), Static Reflective (EF2367), Clay (EG7490 terracotta/rosa), Beluga 2.0 (BB6041 grigio/arancio), Sesame (F99710 nocciola), Butter (F36980 giallo chiaro), Blue Tint (B37571 azzurro), Peanut Butter (EE6203 marrone caldo), Oreo (CP9652 bianco/nero simile Zebra ma diverso), Carbon (FZ5000 grigio scuro), Ash Pearl (GY7658 grigio madre perla), Ash Stone (GW0089 pietra), MX Rock (GW3774 mimetico pietra), Natural (FZ5246 beige naturale), Sand Taupe (FX9028 sabbia), Onyx (HQ4540 nero totale), Sulfur (FY5346 giallo senape), Mx Oat (HQ4426 avena), Bone (HQ6316 bianco osseo), Carbon Beluga (HQ7045 grigio/arancio), Granite (HQ4540 grigio granito), Light (3BF 3M reflective all white), Lundmark (FU9161 chiaro rosa), Citrin (FW3042 giallo ocra), Yecheil (FW5190 multicolor pastello), Israfil (FZ5421 verde/grigio), Cinder (FY2903 grigio scuro), Jade Ash (HQ2790 verde oliva), Bone White versioni varie
@@ -1155,6 +1156,18 @@ ${prompt}`;
       category, confidence: 'LOW', rawText,
       warnings: ['IA non ha restituito una risposta strutturata. Compila manualmente.'],
     };
+  }
+
+  // L'IA a volte restituisce la STRINGA "null"/"none"/"n/a" invece di null vero:
+  // così filter(Boolean) non li scarta e il nome diventa "Modello – null – null"
+  // e la confidenza risulta falsamente alta. Normalizziamo a null vero.
+  if (parsed && typeof parsed === 'object') {
+    for (const k of Object.keys(parsed)) {
+      const v = parsed[k];
+      if (typeof v === 'string' && ['null', 'none', 'n/a', 'n/d', 'na', '-', '—', 'unknown', 'sconosciuto'].includes(v.trim().toLowerCase())) {
+        parsed[k] = null;
+      }
+    }
   }
 
   const result: ScanResult = { category, rawText, confidence: 'MEDIUM', details: parsed };
