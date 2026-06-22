@@ -186,6 +186,28 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Stato app (pubblico): il frontend lo legge per mostrare la schermata di manutenzione.
+app.get('/api/status', (_req, res) => {
+  res.json({ maintenance: process.env.MAINTENANCE_MODE === '1' });
+});
+
+// Modalità manutenzione: blocca le API "pesanti" (così durante la migrazione foto il
+// server non viene caricato). Restano attivi: /health, /api/status e i file statici (per
+// mostrare la schermata di manutenzione). Risponde 503 con {maintenance:true}.
+app.use((req, res, next) => {
+  if (process.env.MAINTENANCE_MODE !== '1') return next();
+  const p = req.path;
+  if (p === '/health' || p === '/api/status') return next();
+  // Lascia passare le richieste di pagine/asset (GET non-API) → serve la schermata manutenzione.
+  const isApi = p.startsWith('/api') || p.startsWith('/auth') || p.startsWith('/products') ||
+    p.startsWith('/team') || p.startsWith('/warehouses') || p.startsWith('/notifications') ||
+    p.startsWith('/tracking') || p.startsWith('/market') || p.startsWith('/chat') ||
+    p.startsWith('/billing') || p.startsWith('/admin') || p.startsWith('/shipping') ||
+    p.startsWith('/analytics') || p.startsWith('/upload') || p.startsWith('/feedback') || p.startsWith('/push');
+  if (isApi) return res.status(503).json({ maintenance: true, error: 'Aggiornamento in corso, riprova tra poco.' });
+  return next();
+});
+
 // Test email (solo admin)
 app.post('/api/test-email', async (req, res) => {
   const recipients: string[] = req.body?.to
@@ -380,11 +402,10 @@ serverInstance.listen(PORT, () => {
     logger.info('📦 Tracking automatico attivo (poll ogni 2 ore)');
   }
 
-  // Migrazione foto base64 → Cloudinary: DISATTIVATA di default perché su 512MB (Free)
-  // l'upload delle base64 fa esaurire la RAM (OOM/crash loop). Si attiva SOLO manualmente
-  // impostando RUN_PHOTO_MIGRATION=1 su Render, idealmente con un'istanza più grande.
-  if (process.env.RUN_PHOTO_MIGRATION === '1') {
-    setTimeout(() => { migratePhotosToCloudinary().catch(() => {}); }, 30_000);
+  // Migrazione foto base64 → Cloudinary. Si attiva con RUN_PHOTO_MIGRATION=1 OPPURE in
+  // MAINTENANCE_MODE=1 (app in manutenzione = nessun carico utenti → migrazione sicura anche su 512MB).
+  if (process.env.RUN_PHOTO_MIGRATION === '1' || process.env.MAINTENANCE_MODE === '1') {
+    setTimeout(() => { migratePhotosToCloudinary().catch(() => {}); }, 15_000);
   }
 
   // Auto-conferma escrow: sblocca i fondi degli acquisti la cui finestra è scaduta

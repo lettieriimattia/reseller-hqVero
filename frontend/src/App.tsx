@@ -201,6 +201,14 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!cachedUser);
   const [user, setUser] = useState<AppUser | null>(cachedUser);
   const [bootLoading, setBootLoading] = useState(!cachedUser);
+  // Modalità manutenzione (durante la migrazione foto): il server espone /api/status.
+  const [maintenance, setMaintenance] = useState(false);
+  useEffect(() => {
+    const check = () => apiCall<any>('/api/status').then(({ ok, data }) => { if (ok) setMaintenance(!!data?.maintenance); }).catch(() => {});
+    check();
+    const iv = setInterval(check, 20000);
+    return () => clearInterval(iv);
+  }, []);
   const [cookieConsent, setCookieConsent] = useState<boolean>(() => !!localStorage.getItem('hq_cookie_consent'));
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -6690,6 +6698,19 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* ========== SCHERMATA: MANUTENZIONE (globale, copre tutto) ========== */}
+      {maintenance && createPortal((
+        <div className="fixed inset-0 z-[400] bg-[var(--bg)] flex items-center justify-center p-6 text-center">
+          <div className="max-w-sm">
+            <div className="text-4xl font-black tracking-tight mb-4">HQ</div>
+            <div className="text-5xl mb-4">🛠️</div>
+            <h1 className="text-2xl font-bold mb-2">Aggiornamento in corso</h1>
+            <p className="text-[var(--text-soft)] text-sm">Stiamo migliorando l'app. Torna tra qualche minuto — i tuoi dati sono al sicuro.</p>
+            <div className="mt-6 flex justify-center"><Loader2 className="animate-spin text-[#8b5cf6]" size={24} /></div>
+          </div>
+        </div>
+      ), document.body)}
 
       {/* ========== SCHERMATA: PREFERENZE NOTIFICHE (globale) ========== */}
       {notifPrefsOpen && createPortal((
