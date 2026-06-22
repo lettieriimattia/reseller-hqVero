@@ -6,11 +6,14 @@
 
 export type Lang = 'it' | 'en' | 'es' | 'de';
 
-export const LANGUAGES: { code: Lang; label: string; flag: string }[] = [
-  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+// `ready`: la lingua appare nel selettore SOLO quando è completa.
+// Italiano = lingua base (sempre). Inglese si attiva quando la traduzione è finita;
+// poi Tedesco, poi Spagnolo.
+export const LANGUAGES: { code: Lang; label: string; flag: string; ready: boolean }[] = [
+  { code: 'it', label: 'Italiano', flag: '🇮🇹', ready: true },
+  { code: 'en', label: 'English', flag: '🇬🇧', ready: false },
+  { code: 'es', label: 'Español', flag: '🇪🇸', ready: false },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪', ready: false },
 ];
 
 type Dict = Record<string, string>;

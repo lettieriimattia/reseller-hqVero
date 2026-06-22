@@ -6034,13 +6034,14 @@ export default function App() {
               </div>
               <p className="text-xs text-[var(--text-soft)] mb-4">{t('settings.languageDesc')}</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {LANGUAGES.map(l => (
+                {LANGUAGES.filter(l => l.ready).map(l => (
                   <button key={l.code} onClick={() => changeLang(l.code)}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold border transition-colors ${lang === l.code ? 'bg-[#8b5cf6] text-white border-[#8b5cf6]' : 'bg-[var(--surface-2)] text-[var(--text-soft)] border-[var(--border-2)] hover:text-[var(--text)]'}`}>
                     <span className="text-lg">{l.flag}</span> {l.label}
                   </button>
                 ))}
               </div>
+              <p className="text-[11px] text-[var(--text-faint)] mt-3">🇬🇧 English, 🇩🇪 Deutsch e 🇪🇸 Español in arrivo (li attiviamo appena la traduzione è completa).</p>
             </section>
 
             {/* SEZIONE: Magazzino pubblico (auto-pubblicazione) */}
