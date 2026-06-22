@@ -3969,7 +3969,7 @@ export default function App() {
             <button onClick={openSourcing}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-[#8b5cf6]/30 bg-[#8b5cf6]/[0.06] hover:bg-[#8b5cf6]/[0.12] text-sm font-bold text-[var(--text)] transition-colors">
               <DollarSign size={16} className="text-[#8b5cf6]" />
-              Ricerca valore <span className="text-[var(--text-soft)] font-medium hidden sm:inline">· prezzo di mercato e max d'acquisto</span>
+              {t('dash.valueLookup')} <span className="text-[var(--text-soft)] font-medium hidden sm:inline">· {t('dash.valueLookupSub')}</span>
             </button>
             )}
 
@@ -3978,17 +3978,17 @@ export default function App() {
               <section className="bg-[var(--surface)] border border-[#8b5cf6]/30 rounded-2xl p-6 lg:p-7 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[#8b5cf6]/[0.04] pointer-events-none" />
                 <div className="relative">
-                  <p className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5"><Sparkles size={12} /> Benvenuto in HQ</p>
-                  <h3 className="text-xl lg:text-2xl font-bold mb-1.5">Iniziamo dal primo prodotto</h3>
-                  <p className="text-sm text-[var(--text-soft)] mb-5 max-w-md">In pochi secondi aggiungi un articolo e HQ inizia a tracciare stock, vendite, profitti e spedizioni. Tutto in automatico.</p>
+                  <p className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5"><Sparkles size={12} /> {t('dash.welcome')}</p>
+                  <h3 className="text-xl lg:text-2xl font-bold mb-1.5">{t('dash.welcomeTitle')}</h3>
+                  <p className="text-sm text-[var(--text-soft)] mb-5 max-w-md">{t('dash.welcomeDesc')}</p>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => openAddForm()}
                       className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
-                      <Plus size={16} /> Aggiungi il primo prodotto
+                      <Plus size={16} /> {t('dash.addFirst')}
                     </button>
                     <button onClick={() => navigateTo('settings')}
                       className="bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--text-soft)] hover:text-[var(--text)] px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors">
-                      <Download size={15} /> Importa da Excel
+                      <Download size={15} /> {t('mag.importExcel')}
                     </button>
                   </div>
                 </div>
@@ -4261,8 +4261,8 @@ export default function App() {
               return (
                 <button onClick={() => openPlanModal('repricing')}
                   className="w-full flex items-center justify-between gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl px-4 py-3 hover:bg-yellow-500/15 transition-colors">
-                  <span className="flex items-center gap-2 text-sm font-bold text-yellow-500"><AlertTriangle size={16} /> {staleCount} prodotti fermi da oltre 30 giorni</span>
-                  <span className="text-xs font-bold text-yellow-400 shrink-0">Riprezza →</span>
+                  <span className="flex items-center gap-2 text-sm font-bold text-yellow-500"><AlertTriangle size={16} /> {staleCount} {t('mag.staleProducts')}</span>
+                  <span className="text-xs font-bold text-yellow-400 shrink-0">{t('mag.reprice')}</span>
                 </button>
               );
             })()}
@@ -4287,7 +4287,7 @@ export default function App() {
                 {bulkMode && (
                   <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className="px-3 py-1.5 text-xs font-bold rounded-xl border bg-[#8b5cf6] border-[#8b5cf6] text-[var(--text)] transition-colors">
-                    ✕ Annulla
+                    ✕ {t('common.cancel')}
                   </button>
                 )}
               </div>
@@ -4296,13 +4296,13 @@ export default function App() {
               <div className="flex flex-col lg:flex-row gap-2 lg:gap-3 lg:flex-1 lg:justify-end mt-2 lg:mt-0">
                 <div className="relative flex-1 lg:max-w-md">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)]" size={16} />
-                  <input type="text" placeholder="Cerca brand o modello..."
+                  <input type="text" placeholder={t('mag.searchPlaceholder')}
                     value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
                     className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#8b5cf6] outline-none" />
                 </div>
                 <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
                   className="w-full lg:w-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#8b5cf6] outline-none shrink-0">
-                  <option value="all">Tutti i reparti</option>
+                  <option value="all">{t('mag.allDepartments')}</option>
                   {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -4313,7 +4313,7 @@ export default function App() {
                 {/* Ordina */}
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className="w-full lg:w-auto text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex items-center gap-1">
-                    <ArrowUpDown size={12} /> Ordina:
+                    <ArrowUpDown size={12} /> {t('mag.sortBy')}
                   </span>
                   {(['date','price','name'] as const).map(f => (
                     <button key={f} onClick={() => {
@@ -4323,7 +4323,7 @@ export default function App() {
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
                         sortField === f ? 'bg-[#8b5cf6] text-[var(--text)]' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
                       }`}>
-                      {f === 'date' ? 'Data' : f === 'price' ? 'Prezzo' : f === 'name' ? 'Nome' : 'Margine'}
+                      {f === 'date' ? t('mag.sortDate') : f === 'price' ? t('mag.sortPrice') : f === 'name' ? t('mag.sortName') : t('mag.sortMargin')}
                       {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
                     </button>
                   ))}
@@ -4332,13 +4332,13 @@ export default function App() {
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
                       staleOnly ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
                     }`}>
-                    <AlertTriangle size={12} /> Fermi
+                    <AlertTriangle size={12} /> {t('dash.stale')}
                   </button>
                 </div>
                 {/* Condizione */}
                 <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
                   className="w-full lg:w-auto lg:ml-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#8b5cf6] outline-none text-[var(--text-muted)]">
-                  <option value="all">Condizione</option>
+                  <option value="all">{t('mag.condition')}</option>
                   <option value="DS">DS</option>
                   <option value="VNDS">VNDS</option>
                   <option value="Used">Used</option>
