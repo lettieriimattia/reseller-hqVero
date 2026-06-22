@@ -1,0 +1,10 @@
+# HQ — Caddy reverse proxy + HTTPS automatico
+# Sostituisci IL_TUO_DOMINIO con il tuo (es. hqcoresystem.duckdns.org o hqcoresystem.com)
+# Poi copia questo file in /etc/caddy/Caddyfile e fai: systemctl reload caddy
+#
+# Caddy ottiene da solo il certificato HTTPS (Let's Encrypt) e inoltra all'app su :3000.
+
+IL_TUO_DOMINIO {
+    encode gzip
+    reverse_proxy localhost:3000
+}
