@@ -31,7 +31,10 @@ const VERIFY_TTL_MS = 30 * 60 * 1000; // codice valido 30 minuti
 
 // La verifica email è attiva solo se l'invio email è configurato (BREVO_API_KEY).
 // Così, se l'email non è pronta, le registrazioni non si bloccano.
-function emailConfigured() { return !!process.env.BREVO_API_KEY; }
+// TEMPORANEO: verifica email DISATTIVATA → qualsiasi email (anche inventata) può entrare.
+// Per riattivarla: metti EMAIL_VERIFICATION_ENABLED = true (e configura BREVO_API_KEY).
+const EMAIL_VERIFICATION_ENABLED = false;
+function emailConfigured() { return EMAIL_VERIFICATION_ENABLED && !!process.env.BREVO_API_KEY; }
 function genVerifyCode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
 
 // Genera + salva + invia il codice di verifica a un utente.
