@@ -6,12 +6,10 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  // App runtime: connessione POOLED (host con -pooler) → regge tante connessioni insieme.
-  url       = env("DATABASE_URL")
-  // Migrazioni / db push: connessione DIRETTA (host senza -pooler) → necessaria perché
-  // il pooler (PgBouncer) non supporta bene le operazioni di schema.
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // NB: per usare il pooler Neon riattiveremo `directUrl = env("DIRECT_URL")` QUI,
+  // ma SOLO dopo aver impostato la variabile DIRECT_URL su Render (altrimenti il deploy fallisce).
 }
 
 // ==========================================
