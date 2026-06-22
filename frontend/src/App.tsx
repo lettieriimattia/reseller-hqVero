@@ -1517,6 +1517,19 @@ export default function App() {
       return p.customShares && p.customShares !== '[]' ? JSON.parse(p.customShares) : null;
     } catch { return null; }
   };
+
+  // Frazione (0-1) del profitto di un prodotto che spetta A ME (in base alle quote socio).
+  const myProfitFactor = (p: Product) => {
+    const shares = getShares(p);
+    if (shares && shares.length > 0) {
+      const myShare = shares.find((s: any) => s.userId === user?.id);
+      return (myShare?.percentage || 0) / 100;
+    }
+    const team = teamData.find((t: any) => t.warehouseId === (p as any).warehouseId);
+    const myMember = team?.members?.find((m: any) => m.userId === user?.id);
+    const myPct = myMember?.percentage ?? (team?.members?.length > 0 ? 100 / team.members.length : 100);
+    return myPct / 100;
+  };
   
   const activeProducts = filterCat === 'all' ? products : products.filter(p => p.category === filterCat);
   const stockValore = activeProducts.filter(p => p.status === 'IN STOCK').reduce((acc, p) => acc + p.purchasePrice, 0);
@@ -1532,16 +1545,7 @@ export default function App() {
   
   const mioProfitto = globalSold.reduce((acc, p) => {
     const profit = (p.salePrice || 0) - p.purchasePrice - (p.fees || 0);
-    const shares = getShares(p);
-    if (shares && shares.length > 0) {
-      const myShare = shares.find((s: any) => s.userId === user?.id);
-      return acc + (profit * ((myShare?.percentage || 0) / 100));
-    } else {
-      const team = teamData.find((t: any) => t.warehouseId === p.warehouseId) || teamData.find((t: any) => t.warehouseName.replace('Magazzino ', '') === p.category);
-      const myMember = team?.members?.find((m: any) => m.userId === user?.id);
-      const myPct = myMember?.percentage ?? (team?.members?.length > 0 ? 100 / team.members.length : 100);
-      return acc + (profit * (myPct / 100));
-    }
+    return acc + (profit * myProfitFactor(p));
   }, 0);
   
   const sociProfits: Record<string, { name: string, profit: number }> = {};
@@ -1620,7 +1624,8 @@ export default function App() {
   const staleCount = inStockItems.filter(p => p.createdAt && Math.floor((Date.now() - new Date(p.createdAt).getTime()) / 86400000) > 30).length;
   const week7d = new Date(Date.now() - 7 * 86400000);
   const weekSales = globalSold.filter(p => p.soldAt && new Date(p.soldAt) >= week7d);
-  const weekProfit = weekSales.reduce((a, p) => a + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)), 0);
+  // Profitto settimanale PERSONALE (la mia quota, non il totale del team).
+  const weekProfit = weekSales.reduce((a, p) => a + (((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)) * myProfitFactor(p)), 0);
   const totalItems = products.length;
   const sellThroughRate = totalItems > 0 ? Math.round((globalSold.length / totalItems) * 100) : 0;
   const avgMarginPct = globalSold.length > 0
