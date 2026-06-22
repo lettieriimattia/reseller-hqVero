@@ -40,6 +40,7 @@ import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
 import { startEmailJobs } from './src/services/email-jobs.service';
 import { releaseExpiredHolds } from './src/services/dispute.service';
+import { migratePhotosToCloudinary } from './src/services/photo-migration.service';
 
 import { logger } from './src/utils/logger';
 
@@ -378,6 +379,10 @@ serverInstance.listen(PORT, () => {
     }, TWO_HOURS);
     logger.info('📦 Tracking automatico attivo (poll ogni 2 ore)');
   }
+
+  // Migrazione foto vecchie base64 → Cloudinary (in background, a lotti). Gira una volta
+  // sola (flag in Setting), solo se Cloudinary è configurato. Non blocca l'avvio.
+  setTimeout(() => { migratePhotosToCloudinary().catch(() => {}); }, 20_000);
 
   // Auto-conferma escrow: sblocca i fondi degli acquisti la cui finestra è scaduta
   // (5gg dalla consegna, o fallback dalla spedizione) e senza contestazioni aperte.
