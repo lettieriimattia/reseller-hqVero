@@ -336,6 +336,7 @@ const it: Dict = {
   'track.tapStep': 'Tocca uno step per aggiornare',
   'track.history': 'Storico eventi',
   'track.trackingCodeLabel': 'Codice Tracking',
+  'track.buyerConfirms': 'La consegna la conferma il compratore dalla chat.',
   // ===== Impostazioni =====
   'set.title': 'Impostazioni',
   'set.plansTitle': 'Piani & Strumenti Pro',
@@ -847,6 +848,7 @@ const en: Dict = {
   'track.tapStep': 'Tap a step to update',
   'track.history': 'Event history',
   'track.trackingCodeLabel': 'Tracking Code',
+  'track.buyerConfirms': 'The buyer confirms delivery from the chat.',
   // ===== Settings =====
   'set.title': 'Settings',
   'set.plansTitle': 'Plans & Pro Tools',

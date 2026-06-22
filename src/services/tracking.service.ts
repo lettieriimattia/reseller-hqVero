@@ -231,6 +231,13 @@ export async function setTrackingStatusManual(productId: string, status: string)
   if (!VALID_STATUSES.includes(status)) return { success: false, error: 'Stato non valido' };
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product) return { success: false, error: 'Prodotto non trovato' };
+  // Escrow marketplace: sugli articoli pagati in-app la consegna la CONFERMA solo il
+  // compratore (in chat → /confirm-delivery). Il venditore non può auto-dichiarare
+  // "Consegnato" a mano (eviterebbe il controllo del compratore e avvierebbe da solo
+  // lo sblocco fondi). Lo stato reale del corriere passa invece da refreshTracking.
+  if (status === 'DELIVERED' && product.status === 'PAGATO') {
+    return { success: false, error: 'Per gli articoli pagati in-app la consegna la conferma il compratore dalla chat.' };
+  }
   await prisma.product.update({
     where: { id: productId },
     data: { trackingStatus: status, trackingUpdatedAt: new Date() },

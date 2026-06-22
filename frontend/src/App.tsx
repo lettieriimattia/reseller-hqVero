@@ -9124,11 +9124,14 @@ export default function App() {
 
             {/* Stato spedizione — stepper tappabile: mostra l'avanzamento e si aggiorna con un tap */}
             {trackingProduct.trackingCode && (() => {
+              // Escrow: sugli articoli pagati in-app la consegna la conferma SOLO il
+              // compratore (chat). Il venditore non vede lo step "Consegnato".
+              const isEscrow = trackingProduct.status === 'PAGATO';
               const steps = [
                 { key: 'PENDING', label: t('track.stPending'), icon: '⏳' },
                 { key: 'IN_TRANSIT', label: t('track.stInTransit'), icon: '🚚' },
                 { key: 'OUT_FOR_DELIVERY', label: t('track.stOutForDelivery'), icon: '📦' },
-                { key: 'DELIVERED', label: t('track.stDelivered'), icon: '✅' },
+                ...(isEscrow ? [] : [{ key: 'DELIVERED', label: t('track.stDelivered'), icon: '✅' }]),
               ];
               const cur = trackingProduct.trackingStatus || 'PENDING';
               const isException = cur === 'EXCEPTION';
@@ -9142,8 +9145,8 @@ export default function App() {
                       {isRefreshingTracking ? <Loader2 className="animate-spin" size={11} /> : <Truck size={11} />} {t('track.refresh')}
                     </button>
                   </div>
-                  {/* Progressione a 4 step: pieni fino allo stato corrente. Tap = imposta lo stato. */}
-                  <div className="grid grid-cols-4 gap-1.5">
+                  {/* Progressione a step: pieni fino allo stato corrente. Tap = imposta lo stato. */}
+                  <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
                     {steps.map((s, i) => {
                       const done = !isException && i <= curIdx;
                       return (
@@ -9166,6 +9169,7 @@ export default function App() {
                     </a>
                   </div>
                   <p className="text-[10px] text-[var(--text-faint)] mt-2 text-center">{t('track.tapStep')} · {trackingProduct.trackingCarrier} • {trackingProduct.trackingCode}</p>
+                  {isEscrow && <p className="text-[10px] text-[var(--text-faint)] mt-1 text-center">{t('track.buyerConfirms')}</p>}
                 </div>
               );
             })()}
