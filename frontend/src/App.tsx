@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { DynamicForm } from './components/DynamicForm';
+import { getLang, setLangStorage, translate, LANGUAGES, type Lang } from './i18n';
 // xlsx caricato on-demand (import dinamico) dentro gli handler: resta fuori dal bundle iniziale
 // Grafico caricato in lazy: recharts finisce in un chunk separato, fuori dal bundle iniziale
 const TrendChart = lazy(() => import('./components/TrendChart'));
@@ -201,6 +202,10 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!cachedUser);
   const [user, setUser] = useState<AppUser | null>(cachedUser);
   const [bootLoading, setBootLoading] = useState(!cachedUser);
+  // Lingua app (it/en/es/de). t(key) traduce; cambio lingua → re-render immediato.
+  const [lang, setLang] = useState<Lang>(getLang());
+  const t = (key: string) => translate(lang, key);
+  const changeLang = (l: Lang) => { setLang(l); setLangStorage(l); };
   // Modalità manutenzione (durante la migrazione foto): il server espone /api/status.
   const [maintenance, setMaintenance] = useState(false);
   useEffect(() => {
@@ -417,7 +422,6 @@ export default function App() {
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketDetail, setMarketDetail] = useState<any>(null);
   const [marketPhotoIdx, setMarketPhotoIdx] = useState(0);
-  const [dashWhId, setDashWhId] = useState<string>('all'); // magazzino selezionato nella card profitto dashboard
   useEffect(() => { setMarketPhotoIdx(0); }, [marketDetail?.id]);
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeConvo, setActiveConvo] = useState<any>(null);
@@ -1568,19 +1572,6 @@ export default function App() {
     }
   });
   
-  // Profitto per MAGAZZINO (per la card dashboard con selettore: vedi quale magazzino rende di più).
-  const warehouseProfits: Record<string, { name: string; profit: number }> = {};
-  globalSold.forEach(p => {
-    const profit = (p.salePrice || 0) - p.purchasePrice - (p.fees || 0);
-    const wid = p.warehouseId || 'altro';
-    const team = teamData.find((t: any) => t.warehouseId === p.warehouseId);
-    const name = (team?.warehouseName || 'Magazzino').replace('Magazzino ', '');
-    if (!warehouseProfits[wid]) warehouseProfits[wid] = { name, profit: 0 };
-    warehouseProfits[wid].profit += profit;
-  });
-  const warehouseProfitList = Object.entries(warehouseProfits).map(([id, v]) => ({ id, ...v }));
-  const dashWhProfit = dashWhId === 'all' ? globalProfitto : (warehouseProfits[dashWhId]?.profit ?? 0);
-
   const filterByTimeframe = (dateString?: string) => {
     if (!dateString) return true;
     const date = new Date(dateString);
@@ -3733,12 +3724,12 @@ export default function App() {
         {/* Nav */}
         <nav className="flex flex-col gap-1">
           {[
-            { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-            { id: 'magazzino', label: 'Magazzino', icon: Package },
-            { id: 'market', label: 'Compra', icon: Store },
-            { id: 'chat', label: 'Messaggi', icon: Mail },
-            { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-            { id: 'tracking', label: 'Tracking', icon: Truck },
+            { id: 'dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
+            { id: 'magazzino', label: t('nav.magazzino'), icon: Package },
+            { id: 'market', label: t('nav.market'), icon: Store },
+            { id: 'chat', label: t('nav.messages'), icon: Mail },
+            { id: 'analytics', label: t('nav.analytics'), icon: BarChart3 },
+            { id: 'tracking', label: t('nav.tracking'), icon: Truck },
           ].map(tab => {
             const Icon = tab.icon;
             const active = currentView === tab.id;
@@ -3942,32 +3933,32 @@ export default function App() {
               {/* Centro: saluto + data */}
               <div className="sm:flex-1 sm:text-center min-w-0">
                 <h2 className="text-3xl lg:text-4xl font-bold">
-                  Ciao, <span className="text-[var(--text)]">{user.name.split(' ')[0]}</span>
+                  {t('dash.hello')}, <span className="text-[var(--text)]">{user.name.split(' ')[0]}</span>
                 </h2>
                 <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1.5 capitalize">{new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
               </div>
               {/* Destra: cluster stat — riempie l'header su desktop */}
               <div className="hidden sm:flex sm:flex-1 items-stretch justify-end gap-5 lg:gap-7">
                 <div className="flex flex-col items-end justify-center">
-                  <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">Settimana</p>
+                  <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">{t('dash.week')}</p>
                   <p className={`text-xl lg:text-2xl font-bold num ${weekProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                     {weekProfit >= 0 ? '+' : ''}{weekProfit.toFixed(0)}€
                   </p>
-                  <p className="text-[11px] text-[var(--text-faint)]">{weekSales.length} {weekSales.length === 1 ? 'vendita' : 'vendite'}</p>
+                  <p className="text-[11px] text-[var(--text-faint)]">{weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')}</p>
                 </div>
                 <div className="hidden lg:block w-px bg-[var(--border-2)]" />
                 <div className="hidden lg:flex flex-col items-end justify-center">
-                  <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">Da spedire</p>
+                  <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">{t('dash.toShip')}</p>
                   <p className="text-xl lg:text-2xl font-bold num text-blue-400">
                     {products.filter(p => p.trackingCode && ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING')).length}
                   </p>
-                  <p className="text-[11px] text-[var(--text-faint)]">in transito</p>
+                  <p className="text-[11px] text-[var(--text-faint)]">{t('dash.inTransit')}</p>
                 </div>
                 <div className="hidden lg:block w-px bg-[var(--border-2)]" />
                 <div className="hidden lg:flex flex-col items-end justify-center">
-                  <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">Fermi</p>
+                  <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">{t('dash.stale')}</p>
                   <p className={`text-xl lg:text-2xl font-bold num ${staleCount > 0 ? 'text-red-400' : 'text-[var(--text-faint)]'}`}>{staleCount}</p>
-                  <p className="text-[11px] text-[var(--text-faint)]">oltre 30gg</p>
+                  <p className="text-[11px] text-[var(--text-faint)]">{t('dash.over30')}</p>
                 </div>
               </div>
             </div>
@@ -4005,53 +3996,35 @@ export default function App() {
             )}
 
             {/* KPI principali */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               {/* Mio profitto */}
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 hover:border-[var(--border-2)] transition-colors">
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
-                  <Wallet size={10} /> Personale
+                  <Wallet size={10} /> {t('dash.personal')}
                 </p>
                 <p className="text-2xl lg:text-3xl font-bold text-[var(--text)] num">{mioProfitto.toFixed(0)}€</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Quote personali</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('dash.personalQuotas')}</p>
               </div>
 
-              {/* Profitto per magazzino — selettore per vedere quale magazzino rende di più */}
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-3 gap-2">
-                  <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-1.5">
-                    <Users size={10} /> Profitto
-                  </p>
-                  <select value={dashWhId} onChange={e => setDashWhId(e.target.value)} onClick={e => e.stopPropagation()}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-1 text-[11px] font-bold text-[var(--text-soft)] outline-none focus:border-[#8b5cf6] max-w-[55%] truncate">
-                    <option value="all">Tutti i magazzini</option>
-                    {warehouseProfitList.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                  </select>
-                </div>
-                <p className="text-2xl lg:text-3xl font-bold text-violet-400 num">{dashWhProfit.toFixed(0)}€</p>
-                <div className="flex items-center justify-between mt-1.5">
-                  <p className="text-[11px] text-[var(--text-faint)]">{dashWhId === 'all' ? 'Profitto totale' : 'Profitto magazzino'}</p>
-                  <button onClick={() => setTeamPanelOpen(true)} className="text-[9px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">Dettaglio →</button>
-                </div>
-              </div>
 
               {/* Stock */}
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] transition-colors group"
                 onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); }}>
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
-                  <Layers size={10} /> Stock
+                  <Layers size={10} /> {t('dash.stock')}
                 </p>
                 <p className="text-2xl lg:text-3xl font-bold num">{stockValore.toFixed(0)}€</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{inStockItems.length} pezzi · <span className="group-hover:text-[var(--text-muted)] transition-colors">Vedi →</span></p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{inStockItems.length} {t('dash.pieces')} · <span className="group-hover:text-[var(--text-muted)] transition-colors">{t('dash.see')} →</span></p>
               </div>
 
               {/* Vendite */}
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] transition-colors group"
                 onClick={() => { setCurrentView('magazzino'); setMagazzinoView('sold'); }}>
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
-                  <TrendingUp size={10} /> Vendite
+                  <TrendingUp size={10} /> {t('dash.sales')}
                 </p>
                 <p className="text-2xl lg:text-3xl font-bold text-emerald-400 num">{soldItemsTotal.length}</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{ricaviTotali.toFixed(0)}€ ricavi · <span className="group-hover:text-[var(--text-muted)] transition-colors">Vedi →</span></p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{ricaviTotali.toFixed(0)}€ {t('dash.revenue')} · <span className="group-hover:text-[var(--text-muted)] transition-colors">{t('dash.see')} →</span></p>
               </div>
             </div>
 
@@ -6051,6 +6024,23 @@ export default function App() {
               {!pushSupported && (
                 <p className="text-[10px] text-[var(--text-faint)] mt-3">Su iPhone le notifiche funzionano solo se aggiungi l'app alla schermata Home.</p>
               )}
+            </section>
+
+            {/* SEZIONE: Lingua */}
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Glasses className="text-[#8b5cf6]" size={18} />
+                <h3 className="text-lg font-bold tracking-tighter">{t('settings.language')}</h3>
+              </div>
+              <p className="text-xs text-[var(--text-soft)] mb-4">{t('settings.languageDesc')}</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {LANGUAGES.map(l => (
+                  <button key={l.code} onClick={() => changeLang(l.code)}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold border transition-colors ${lang === l.code ? 'bg-[#8b5cf6] text-white border-[#8b5cf6]' : 'bg-[var(--surface-2)] text-[var(--text-soft)] border-[var(--border-2)] hover:text-[var(--text)]'}`}>
+                    <span className="text-lg">{l.flag}</span> {l.label}
+                  </button>
+                ))}
+              </div>
             </section>
 
             {/* SEZIONE: Magazzino pubblico (auto-pubblicazione) */}
