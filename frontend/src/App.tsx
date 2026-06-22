@@ -8603,7 +8603,7 @@ export default function App() {
             <div className="p-5 border-b border-[var(--border)] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Sparkles className="text-[#8b5cf6]" size={20} />
-                <h2 className="font-semibold text-base">Piani &amp; Strumenti Pro</h2>
+                <h2 className="font-semibold text-base">{t('set.plansTitle')}</h2>
                 <span className="text-[10px] uppercase font-bold bg-[var(--fill)] px-2 py-0.5 rounded-full">{myPlan}</span>
               </div>
               <button onClick={() => setPlanModalOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors"><X size={18} /></button>
@@ -8611,7 +8611,7 @@ export default function App() {
 
             {/* Tabs */}
             <div className="flex gap-1.5 p-3 border-b border-[var(--border)] overflow-x-auto shrink-0">
-              {([['plans','Piani'],['repricing','Stock fermo'],['offer','Trattative'],['channels','Multi-canale']] as [typeof proTab,string][]).map(([id,label]) => (
+              {([['plans',t('plan.tabPlans')],['repricing',t('plan.tabRepricing')],['offer',t('plan.tabOffer')],['channels',t('plan.tabChannels')]] as [typeof proTab,string][]).map(([id,label]) => (
                 <button key={id} onClick={() => setProTab(id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${proTab === id ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   {label}
@@ -8627,7 +8627,7 @@ export default function App() {
                     <div key={p.id} className={`rounded-2xl border p-4 ${p.id === myPlan ? 'border-[#8b5cf6] bg-[#8b5cf6]/5' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
                       <div className="flex items-baseline justify-between">
                         <h3 className="font-bold text-lg">{p.name}</h3>
-                        <span className="font-bold num">{p.priceMonthly === 0 ? 'Gratis' : `${p.priceMonthly}€`}<span className="text-[10px] text-[var(--text-faint)] font-normal">{p.priceMonthly === 0 ? '' : '/mese'}</span></span>
+                        <span className="font-bold num">{p.priceMonthly === 0 ? t('plan.free') : `${p.priceMonthly}€`}<span className="text-[10px] text-[var(--text-faint)] font-normal">{p.priceMonthly === 0 ? '' : t('plan.perMonth')}</span></span>
                       </div>
                       <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{p.tagline}</p>
                       <ul className="mt-3 space-y-1.5">
@@ -8639,18 +8639,18 @@ export default function App() {
                       </ul>
                       {p.id === myPlan ? (
                         <>
-                          <p className="mt-3 text-center text-[10px] font-bold text-[#8b5cf6] uppercase">Piano attuale</p>
+                          <p className="mt-3 text-center text-[10px] font-bold text-[#8b5cf6] uppercase">{t('set.currentPlan')}</p>
                           {p.priceMonthly > 0 && (
-                            <button onClick={manageBilling} className="mt-2 w-full py-2 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] text-xs font-bold text-[var(--text-soft)]">Gestisci abbonamento</button>
+                            <button onClick={manageBilling} className="mt-2 w-full py-2 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] text-xs font-bold text-[var(--text-soft)]">{t('plan.manageSub')}</button>
                           )}
                         </>
                       ) : p.priceMonthly > 0 && (
-                        <button onClick={() => subscribeToPlan(p.id)} className="mt-3 w-full py-2.5 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-sm font-bold transition-colors">Abbonati</button>
+                        <button onClick={() => subscribeToPlan(p.id)} className="mt-3 w-full py-2.5 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-sm font-bold transition-colors">{t('plan.subscribe')}</button>
                       )}
                     </div>
                   ))}
                   {isAdminEmail(user?.email) && (
-                    <p className="sm:col-span-2 text-[10px] text-[var(--text-faint)] text-center mt-1">Modalità admin: cambia il piano (anche il tuo) dal Pannello Admin → Utenti per testare le funzioni.</p>
+                    <p className="sm:col-span-2 text-[10px] text-[var(--text-faint)] text-center mt-1">{t('plan.adminNote')}</p>
                   )}
                 </div>
               )}
@@ -8662,18 +8662,18 @@ export default function App() {
                 ) : (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs text-[var(--text-soft)]">Prodotti fermi da oltre 30 giorni con prezzo consigliato.</p>
+                      <p className="text-xs text-[var(--text-soft)]">{t('plan.repricingDesc')}</p>
                       <button onClick={loadRepricing} disabled={repricingLoading}
                         className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#8b5cf6] hover:bg-[#a78bfa] text-white disabled:opacity-40">
-                        {repricingLoading ? <Loader2 size={14} className="animate-spin" /> : 'Analizza'}
+                        {repricingLoading ? <Loader2 size={14} className="animate-spin" /> : t('plan.analyze')}
                       </button>
                     </div>
-                    {repricingList && repricingList.length === 0 && <p className="text-xs text-center text-[var(--text-faint)] py-6">Nessun prodotto fermo.</p>}
+                    {repricingList && repricingList.length === 0 && <p className="text-xs text-center text-[var(--text-faint)] py-6">{t('plan.noStale')}</p>}
                     {repricingList && repricingList.map((r: any) => (
                       <div key={r.id} className="flex items-center justify-between bg-[var(--surface-2)] rounded-xl p-3">
                         <div className="min-w-0">
                           <p className="text-sm font-bold truncate">{r.brand} {r.name}</p>
-                          <p className="text-[10px] text-[var(--text-faint)]">{r.daysInStock} giorni · taglia {r.size}</p>
+                          <p className="text-[10px] text-[var(--text-faint)]">{r.daysInStock} {t('plan.daysWord')} · {t('plan.sizeWord')} {r.size}</p>
                         </div>
                         <div className="text-right shrink-0 ml-3">
                           <p className="text-sm font-bold text-[#8b5cf6] num">{r.suggestedPrice}€</p>
@@ -8693,34 +8693,34 @@ export default function App() {
                   <div className="space-y-3">
                     <select value={offerProductId} onChange={e => setOfferProductId(e.target.value)}
                       className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#8b5cf6]">
-                      <option value="">Scegli un prodotto in stock…</option>
+                      <option value="">{t('plan.chooseProduct')}</option>
                       {products.filter((p: any) => p.status === 'IN STOCK').map((p: any) => (
                         <option key={p.id} value={p.id}>{p.brand} {p.name} ({p.size})</option>
                       ))}
                     </select>
                     <div className="flex gap-2">
-                      <input type="number" inputMode="decimal" value={offerAmount} onChange={e => setOfferAmount(e.target.value)} placeholder="Offerta ricevuta €"
+                      <input type="number" inputMode="decimal" value={offerAmount} onChange={e => setOfferAmount(e.target.value)} placeholder={t('plan.offerReceived')}
                         className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#8b5cf6]" />
-                      <input type="number" inputMode="decimal" value={offerMargin} onChange={e => setOfferMargin(e.target.value)} placeholder="Margine % min"
+                      <input type="number" inputMode="decimal" value={offerMargin} onChange={e => setOfferMargin(e.target.value)} placeholder={t('plan.minMargin')}
                         className="w-28 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#8b5cf6]" />
                     </div>
                     <button onClick={runOffer} disabled={offerLoading}
                       className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#8b5cf6] hover:bg-[#a78bfa] text-white disabled:opacity-40 flex items-center justify-center gap-2">
-                      {offerLoading ? <Loader2 size={16} className="animate-spin" /> : 'Cosa rispondo?'}
+                      {offerLoading ? <Loader2 size={16} className="animate-spin" /> : t('plan.whatReply')}
                     </button>
                     {offerResult && (
                       <div className="space-y-2 bg-[var(--surface-2)] rounded-xl p-3">
                         <div className="flex items-center gap-2">
                           <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${offerResult.decision === 'accept' ? 'bg-green-500/15 text-green-400' : offerResult.decision === 'counter' ? 'bg-yellow-500/15 text-yellow-500' : 'bg-red-500/15 text-red-400'}`}>
-                            {offerResult.decision === 'accept' ? 'Accetta' : offerResult.decision === 'counter' ? `Contro-offerta ${offerResult.counterPrice}€` : `Rifiuta (proponi ${offerResult.counterPrice}€)`}
+                            {offerResult.decision === 'accept' ? t('plan.accept') : offerResult.decision === 'counter' ? `${t('plan.counter')} ${offerResult.counterPrice}€` : `${t('plan.rejectPropose')} ${offerResult.counterPrice}€)`}
                           </span>
-                          <span className="text-[10px] text-[var(--text-faint)]">min {offerResult.minPrice}€ · margine {offerResult.offerMargin}€</span>
+                          <span className="text-[10px] text-[var(--text-faint)]">{t('plan.min')} {offerResult.minPrice}€ · {t('plan.margin')} {offerResult.offerMargin}€</span>
                         </div>
                         <p className="text-sm text-[var(--text)] bg-[var(--fill)] rounded-lg p-2.5">{offerResult.message}</p>
                         <div className="flex items-center justify-between">
                           <p className="text-[10px] text-[var(--text-faint)] italic">{offerResult.reasoning}</p>
-                          <button onClick={() => { navigator.clipboard?.writeText(offerResult.message); showToast('Messaggio copiato'); }}
-                            className="flex items-center gap-1 text-[10px] font-bold text-[#8b5cf6]"><Copy size={12} /> Copia</button>
+                          <button onClick={() => { navigator.clipboard?.writeText(offerResult.message); showToast(t('plan.msgCopied')); }}
+                            className="flex items-center gap-1 text-[10px] font-bold text-[#8b5cf6]"><Copy size={12} /> {t('plan.copy')}</button>
                         </div>
                       </div>
                     )}
@@ -8734,10 +8734,10 @@ export default function App() {
                   proLocked('crossposting')
                 ) : (
                   <div className="space-y-3">
-                    <p className="text-xs text-[var(--text-soft)]">Segna su quali canali hai pubblicato il prodotto. Quando si vende, ti ricordi di ritirarlo dagli altri.</p>
+                    <p className="text-xs text-[var(--text-soft)]">{t('plan.channelsDesc')}</p>
                     <select value={chProductId} onChange={e => setChProductId(e.target.value)}
                       className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#8b5cf6]">
-                      <option value="">Scegli un prodotto in stock…</option>
+                      <option value="">{t('plan.chooseProduct')}</option>
                       {products.filter((p: any) => p.status === 'IN STOCK').map((p: any) => (
                         <option key={p.id} value={p.id}>{p.brand} {p.name} ({p.size})</option>
                       ))}
@@ -8755,7 +8755,7 @@ export default function App() {
                     </div>
                     <button onClick={saveChannels} disabled={chSaving}
                       className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#8b5cf6] hover:bg-[#a78bfa] text-white disabled:opacity-40 flex items-center justify-center gap-2">
-                      {chSaving ? <Loader2 size={16} className="animate-spin" /> : <><Store size={15} /> Salva canali</>}
+                      {chSaving ? <Loader2 size={16} className="animate-spin" /> : <><Store size={15} /> {t('plan.saveChannels')}</>}
                     </button>
                   </div>
                 )
