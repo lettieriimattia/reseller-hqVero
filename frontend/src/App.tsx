@@ -7037,11 +7037,11 @@ export default function App() {
             </div>
             <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <div>
-                <h2 className="text-xl font-semibold">Aggiungi Prodotto</h2>
+                <h2 className="text-xl font-semibold">{t('form.addTitle')}</h2>
                 <button type="button"
                   onClick={() => { setIsFormOpen(false); setLotCategory(userCategories[0] || ''); setLotOpen(true); }}
                   className="text-[11px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors mt-0.5 flex items-center gap-1">
-                  <Layers size={10} /> Stai comprando un lotto? Clicca qui
+                  <Layers size={10} /> {t('form.buyingLot')}
                 </button>
               </div>
               <button onClick={() => setIsFormOpen(false)}
@@ -7058,7 +7058,7 @@ export default function App() {
                 {/* Selettore MAGAZZINO (partnership). Mostrato se l'utente ha più di un magazzino. */}
                 {warehouses.filter((w: any) => !w.parentId).length > 1 && (
                   <div className="mb-3">
-                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Magazzino</label>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.warehouse')}</label>
                     <div className="flex flex-wrap gap-2">
                       {warehouses.filter((w: any) => !w.parentId).map((w: any) => {
                         const isSel = (selectedWarehouseId || baseWarehouse?.id) === w.id;
@@ -7078,16 +7078,16 @@ export default function App() {
                   <span className="text-[11px] text-[var(--text-soft)] flex items-center gap-1.5 min-w-0">
                     <Sparkles size={12} className="text-violet-400 shrink-0" />
                     {category && category !== AUTO_CATEGORY ? (
-                      <>Categoria: <b className="text-[var(--text)]">{category}</b></>
+                      <>{t('form.category')}: <b className="text-[var(--text)]">{category}</b></>
                     ) : detectedReparto ? (
-                      <>Rilevata: <b className="text-[var(--text)]">{detectedReparto}</b>…</>
+                      <>{t('form.detected')}: <b className="text-[var(--text)]">{detectedReparto}</b>…</>
                     ) : (
-                      <>L'IA capisce la categoria dalla foto</>
+                      <>{t('form.aiUnderstands')}</>
                     )}
                   </span>
                   <button type="button" onClick={() => { setShowRepartoGrid(v => !v); setFormCatInput(''); }}
                     className="text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors shrink-0">
-                    {showRepartoGrid ? 'Annulla' : 'Scrivi categoria a mano'}
+                    {showRepartoGrid ? t('common.cancel') : t('form.writeCategory')}
                   </button>
                 </div>
 
@@ -7097,14 +7097,14 @@ export default function App() {
                   <div className="mt-2 flex gap-2">
                     <input list="form-cat-suggestions" value={formCatInput} onChange={e => setFormCatInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); useManualCategory(); } }}
-                      placeholder="Es. Scarpe, Borse, Elettronica…" autoFocus
+                      placeholder={t('form.catPlaceholder')} autoFocus
                       className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
                     <datalist id="form-cat-suggestions">
                       {userCategories.map((c: string) => <option key={c} value={c} />)}
                     </datalist>
                     <button type="button" onClick={useManualCategory} disabled={isAddingCat || !formCatInput.trim()}
                       className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">
-                      {isAddingCat ? <Loader2 size={14} className="animate-spin" /> : 'Usa'}
+                      {isAddingCat ? <Loader2 size={14} className="animate-spin" /> : t('form.use')}
                     </button>
                   </div>
                 )}
@@ -7115,21 +7115,21 @@ export default function App() {
                 <div className="flex items-center justify-between mb-2">
                   <label className="flex items-center gap-2">
                     <Sparkles className="text-violet-400" size={16} />
-                    <span className="text-xs font-bold text-[var(--text)]">Foto + Analisi IA</span>
+                    <span className="text-xs font-bold text-[var(--text)]">{t('form.photoAI')}</span>
                   </label>
-                  <span className="text-[10px] text-[var(--text-soft)]">{productPhotos.length}/5 foto</span>
+                  <span className="text-[10px] text-[var(--text-soft)]">{productPhotos.length}/5 {t('form.photos')}</span>
                 </div>
                 <p className="text-[10px] text-[var(--text-muted)] mb-3">
                   {category === AUTO_CATEGORY
-                    ? "Scatta o carica una foto: l'IA capisce categoria, brand e modello e prepara i campi giusti."
-                    : "Aggiungi 1–5 foto. La prima scatena l'IA che riconosce brand e modello. Puoi ri-scansionare qualsiasi foto."}
+                    ? t('form.photoHintAuto')
+                    : t('form.photoHintManual')}
                 </p>
 
                 {/* Scansiona barcode: legge il codice e prova a riconoscere il prodotto */}
                 <button type="button" onClick={openBarcodeScanner} disabled={barcodeBusy}
                   className="w-full mb-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[#8b5cf6] text-sm font-bold text-[var(--text)] transition-colors disabled:opacity-50">
                   {barcodeBusy ? <Loader2 size={15} className="animate-spin" /> : <ScanLine size={15} className="text-[#8b5cf6]" />}
-                  Scansiona barcode
+                  {t('form.scanBarcode')}
                 </button>
 
                 {/* Griglia foto */}
@@ -7144,7 +7144,7 @@ export default function App() {
                       <button type="button" onClick={() => runAIScan(photo, category)}
                         disabled={isScanning}
                         className="absolute bottom-0 left-0 right-0 bg-violet-600/80 hover:bg-violet-500/90 py-0.5 text-[9px] font-bold text-center transition-colors disabled:opacity-40">
-                        Scansiona
+                        {t('form.scan')}
                       </button>
                     </div>
                   ))}
@@ -7158,7 +7158,7 @@ export default function App() {
                       ) : (
                         <>
                           <Camera size={18} className="text-violet-400 mb-1" />
-                          <span className="text-[9px] text-[var(--text-soft)]">Scatta</span>
+                          <span className="text-[9px] text-[var(--text-soft)]">{t('form.take')}</span>
                         </>
                       )}
                     </label>
@@ -7171,13 +7171,13 @@ export default function App() {
                     <input type="file" accept="image/*" multiple className="hidden"
                       onChange={(e: any) => handlePhotoAdd(e, false)} disabled={isScanning} />
                     <ImageIcon size={13} className="text-violet-400" />
-                    Scegli dalla libreria
+                    {t('form.chooseLibrary')}
                   </label>
                 )}
 
                 {isScanning && (
                   <p className="text-xs text-violet-400 flex items-center gap-2 mb-2">
-                    <Loader2 className="animate-spin" size={12} /> Analisi IA in corso...
+                    <Loader2 className="animate-spin" size={12} /> {t('form.aiAnalyzing')}
                   </p>
                 )}
 
@@ -7188,9 +7188,9 @@ export default function App() {
                       scanResult.confidence === 'MEDIUM' ? 'bg-yellow-500/10 text-yellow-400' :
                       'bg-red-500/10 text-red-400'
                     }`}>
-                      <span className="font-bold">Riconoscimento: {scanResult.confidence}</span>
+                      <span className="font-bold">{t('form.recognition')}: {scanResult.confidence}</span>
                       {scanResult.autoDetected && scanResult.detectedCategory && (
-                        <p className="opacity-90">Categoria rilevata: <b>{scanResult.detectedCategory}</b></p>
+                        <p className="opacity-90">{t('form.detectedCategory')}: <b>{scanResult.detectedCategory}</b></p>
                       )}
                       {scanResult.brand && <p>{scanResult.brand} {scanResult.model}</p>}
                       {scanResult.warnings?.map((w: any, i: number) => <p key={i}>⚠️ {w}</p>)}
@@ -7209,7 +7209,7 @@ export default function App() {
                       ) : (
                         <div className="p-2 rounded-lg bg-[var(--surface-2)] text-[var(--text-soft)] flex items-center gap-1.5">
                           <Search size={13} className="shrink-0" />
-                          <span>Nessun valore trovato — controlla nome/modello.</span>
+                          <span>{t('form.noValueFound')}</span>
                         </div>
                       )
                     )}
@@ -7219,12 +7219,12 @@ export default function App() {
                         <div className="flex items-center gap-2.5">
                           <img src={scanStockxMatch.image} alt="" className="w-14 h-14 rounded-lg object-cover bg-white/5 shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">StockX dice</p>
+                            <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">{t('form.stockxSays')}</p>
                             <p className="font-bold text-[var(--text)] truncate">{scanStockxMatch.title}</p>
                             <p className="text-[11px] text-[var(--text-soft)]">{scanStockxMatch.sku ? `${scanStockxMatch.sku} · ` : ''}{scanStockxMatch.price != null ? `${scanStockxMatch.price}€` : ''}</p>
                           </div>
                         </div>
-                        <p className="text-[10px] text-[var(--text-faint)] mt-1.5">Confronta con la tua foto: è la stessa scarpa? Se no, correggi brand/modello.</p>
+                        <p className="text-[10px] text-[var(--text-faint)] mt-1.5">{t('form.compareShoe')}</p>
                       </div>
                     )}
                     {/* Tabella dinamica: attributi estratti dall'IA */}
@@ -7430,14 +7430,14 @@ export default function App() {
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Brand</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.brand')}</label>
                       <input type="text" required value={brand}
                         onChange={(e: any) => setBrand(e.target.value)}
                         placeholder={category === 'Scarpe' ? 'Nike' : category === 'Vestiti' ? 'Supreme' : 'Louis Vuitton'}
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Modello</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.model')}</label>
                       <input type="text" required value={name}
                         onChange={(e: any) => setName(e.target.value)}
                         placeholder={category === 'Scarpe' ? 'Air Jordan 1 Chicago' : category === 'Vestiti' ? 'Box Logo Hoodie' : 'Neverfull MM'}
@@ -7448,7 +7448,7 @@ export default function App() {
                     <div>
                       {/* Taglia — sempre input libero con suggerimenti datalist */}
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">
-                        {category === 'Scarpe' ? 'Taglia (EU)' : category === 'Vestiti' ? 'Taglia' : 'Dimensione / Taglia'}
+                        {category === 'Scarpe' ? t('form.sizeEU') : category === 'Vestiti' ? t('form.size') : t('form.sizeDim')}
                       </label>
                       <input
                         list={`size-suggestions-${category}`}
@@ -7470,14 +7470,14 @@ export default function App() {
                       </datalist>
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('mag.condition')}</label>
                       <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
-                        <option value="">— Non specificata (aggiungi dopo)</option>
-                        <option value="DS">DS (Nuovo)</option>
-                        <option value="VNDS">VNDS (Quasi nuovo)</option>
-                        <option value="Used">Used (Usato)</option>
-                        <option value="Worn">Worn (Molto usato)</option>
+                        <option value="">{t('form.conditionNone')}</option>
+                        <option value="DS">{t('form.condDS')}</option>
+                        <option value="VNDS">{t('form.condVNDS')}</option>
+                        <option value="Used">{t('form.condUsed')}</option>
+                        <option value="Worn">{t('form.condWorn')}</option>
                       </select>
                     </div>
                   </div>
@@ -7486,7 +7486,7 @@ export default function App() {
                     <div className="border-t border-[var(--border-2)] pt-4">
                       <button type="button" onClick={() => setShowCatDetails(v => !v)}
                         className="w-full flex items-center justify-between text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest">
-                        <span>Dettagli categoria <span className="text-[var(--text-faint)] normal-case">(opzionale)</span></span>
+                        <span>{t('form.catDetails')} <span className="text-[var(--text-faint)] normal-case">({t('form.optional')})</span></span>
                         <ChevronDown size={16} className={`transition-transform ${showCatDetails ? 'rotate-180' : ''}`} />
                       </button>
                       {showCatDetails && (
@@ -7506,13 +7506,13 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo Acquisto €</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.purchasePrice')}</label>
                   <input type="number" step="0.01" required value={price}
                     onChange={(e: any) => setPrice(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Quantità</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.quantity')}</label>
                   <input type="number" min="1" required value={quantity}
                     onChange={(e: any) => setQuantity(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
@@ -7524,23 +7524,23 @@ export default function App() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Store size={14} className="text-[#8b5cf6]" />
-                    <span className="text-sm font-bold">Conto vendita</span>
+                    <span className="text-sm font-bold">{t('form.consignment')}</span>
                   </div>
                   <button type="button" onClick={() => setIsConsignment(v => !v)}
                     className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${isConsignment ? 'bg-[#8b5cf6]' : 'bg-[var(--fill-3)]'}`}>
                     <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${isConsignment ? 'translate-x-5' : ''}`} />
                   </button>
                 </div>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1">Attivalo se il prodotto è di un'altra persona e lo vendi per conto suo</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('form.consignmentHint')}</p>
                 {isConsignment && (
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nome <span className="text-red-400">*</span></label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.name')} <span className="text-red-400">*</span></label>
                       <input type="text" value={consignmentName} onChange={(e: any) => setConsignmentName(e.target.value)} placeholder="es. Marco R."
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Percentuale % <span className="text-[var(--text-faint)] normal-case font-medium">(facolt.)</span></label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.percent')} <span className="text-[var(--text-faint)] normal-case font-medium">({t('form.optionalShort')})</span></label>
                       <input type="number" min="0" max="100" step="1" value={consignmentPercent} onChange={(e: any) => setConsignmentPercent(e.target.value)} placeholder="es. 20"
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                     </div>
@@ -7558,19 +7558,19 @@ export default function App() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Users size={14} className="text-blue-400" />
-                        <span className="text-sm font-bold">Quote del Team</span>
+                        <span className="text-sm font-bold">{t('form.teamShares')}</span>
                       </div>
                       {!isSharedPurchase ? (
                         <button type="button"
                           onClick={() => setIsSharedPurchase(true)}
                           className="text-xs text-[var(--text)] hover:text-[#a78bfa] font-bold transition-colors">
-                          Cambia percentuali
+                          {t('form.changePercent')}
                         </button>
                       ) : (
                         <button type="button"
                           onClick={() => { setIsSharedPurchase(false); setProductShares([]); }}
                           className="text-xs text-[var(--text-soft)] hover:text-[var(--text)] font-bold transition-colors">
-                          Ripristina default
+                          {t('form.restoreDefault')}
                         </button>
                       )}
                     </div>
@@ -7583,7 +7583,7 @@ export default function App() {
                             <span className="text-[var(--text-muted)] text-sm font-bold w-12 text-right">{m.percentage}%</span>
                           </div>
                         ))}
-                        <p className="text-[10px] text-[var(--text-faint)] mt-1">Quote default del team — modifica in Impostazioni</p>
+                        <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('form.teamDefaultHint')}</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -7604,7 +7604,7 @@ export default function App() {
                           Math.round(productShares.reduce((s, x) => s + (Number(x.percentage) || 0), 0)) === 100
                             ? 'text-green-500' : 'text-yellow-500'
                         }`}>
-                          Totale: {productShares.reduce((s, x) => s + (Number(x.percentage) || 0), 0).toFixed(0)}% (deve essere 100%)
+                          {t('form.total')}: {productShares.reduce((s, x) => s + (Number(x.percentage) || 0), 0).toFixed(0)}% {t('form.mustBe100')}
                         </p>
                       </div>
                     )}
@@ -7614,7 +7614,7 @@ export default function App() {
               
               <button type="submit" disabled={isSaving}
                 className="w-full bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
-                {isSaving ? <Loader2 className="animate-spin" size={20} /> : 'Salva Prodotto'}
+                {isSaving ? <Loader2 className="animate-spin" size={20} /> : t('form.saveProduct')}
               </button>
               </>)}
             </form>
@@ -7628,7 +7628,7 @@ export default function App() {
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Registra Vendita</h2>
+              <h2 className="text-xl font-semibold">{t('sell.title')}</h2>
               <button onClick={() => setSellModalOpen(false)}
                 className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors">
                 <X size={20} />
@@ -7641,14 +7641,14 @@ export default function App() {
               
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Quantità</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.quantity')}</label>
                   <input type="number" min="1" max={productToSell.maxQty}
                     value={sellQuantity} onChange={(e: any) => setSellQuantity(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
-                  <p className="text-[10px] text-[var(--text-soft)] mt-1">Max disponibile: {productToSell.maxQty}</p>
+                  <p className="text-[10px] text-[var(--text-soft)] mt-1">{t('sell.maxAvailable')}: {productToSell.maxQty}</p>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo Totale €</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.totalPrice')}</label>
                   <input type="number" step="0.01" required value={sellPrice}
                     onChange={(e: any) => setSellPrice(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
@@ -7656,29 +7656,29 @@ export default function App() {
               </div>
               
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Piattaforma</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.platform')}</label>
                 <select value={sellPlatform} onChange={(e: any) => setSellPlatform(e.target.value)}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
                   <option value="Vinted">Vinted</option>
                   <option value="Subito">Subito</option>
                   <option value="StockX">StockX (12% fee)</option>
                   <option value="eBay">eBay</option>
-                  <option value="Privato">Privato</option>
+                  <option value="Privato">{t('sell.platformPrivate')}</option>
                 </select>
               </div>
               
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Metodo Pagamento</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.paymentMethod')}</label>
                 <select value={sellPaymentMethod} onChange={(e: any) => setSellPaymentMethod(e.target.value)}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
-                  <option>Nessuna Fee (Contanti/Bonifico)</option>
-                  <option>PayPal Beni e Servizi</option>
+                  <option value="Nessuna Fee (Contanti/Bonifico)">{t('sell.noFee')}</option>
+                  <option value="PayPal Beni e Servizi">{t('sell.paypal')}</option>
                 </select>
               </div>
               
               <div className="bg-[var(--surface-2)] p-3 rounded-xl space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-[var(--text-soft)]">Fees calcolate</span>
+                  <span className="text-[var(--text-soft)]">{t('sell.feesCalc')}</span>
                   <span className="font-bold text-red-400">-{sellFees}€</span>
                 </div>
                 {productToSell?.purchasePrice && sellPrice && (() => {
@@ -7691,13 +7691,13 @@ export default function App() {
                   return (
                     <>
                       <div className="flex justify-between text-xs border-t border-[var(--border-2)] pt-1.5">
-                        <span className="text-[var(--text-soft)]">Profitto atteso</span>
+                        <span className="text-[var(--text-soft)]">{t('sell.expectedProfit')}</span>
                         <span className={`font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {profit >= 0 ? '+' : ''}{profit.toFixed(2)}€
                         </span>
                       </div>
                       <div className="flex justify-between text-xs">
-                        <span className="text-[var(--text-soft)]">Margine</span>
+                        <span className="text-[var(--text-soft)]">{t('sell.margin')}</span>
                         <span className={`font-bold ${margin >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {margin >= 0 ? '+' : ''}{margin.toFixed(1)}%
                         </span>
@@ -7710,25 +7710,25 @@ export default function App() {
               {/* Tracking spedizione (opzionale) — la spedizione al compratore */}
               <div className="border-t border-[var(--border-2)] pt-4">
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex items-center gap-1.5 mb-2">
-                  <Truck size={12} /> Tracking spedizione <span className="text-[var(--text-faint)] normal-case font-normal">(opzionale)</span>
+                  <Truck size={12} /> {t('sell.shipTracking')} <span className="text-[var(--text-faint)] normal-case font-normal">({t('form.optional')})</span>
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <input type="text" value={sellTrackingCode} onChange={(e: any) => setSellTrackingCode(e.target.value)}
-                    placeholder="Codice tracking"
+                    placeholder={t('sell.trackingCode')}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                   <select value={sellTrackingCarrier} onChange={(e: any) => setSellTrackingCarrier(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
                     {['Auto','BRT','GLS','Poste Italiane','SDA','DHL','UPS','FedEx','TNT','Amazon Logistics','Nexive'].map(c => (
-                      <option key={c} value={c}>{c === 'Auto' ? 'Auto-rileva' : c}</option>
+                      <option key={c} value={c}>{c === 'Auto' ? t('sell.autoDetect') : c}</option>
                     ))}
                   </select>
                 </div>
-                <p className="text-[10px] text-[var(--text-faint)] mt-1.5">Lascia vuoto se spedisci dopo: potrai aggiungerlo dalla card del venduto.</p>
+                <p className="text-[10px] text-[var(--text-faint)] mt-1.5">{t('sell.trackingHint')}</p>
               </div>
 
               <button type="submit"
                 className="w-full bg-green-600 hover:bg-green-500 py-3 rounded-xl font-bold transition-colors">
-                Conferma Vendita
+                {t('sell.confirm')}
               </button>
             </form>
           </div>
@@ -7741,7 +7741,7 @@ export default function App() {
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Modifica Prodotto</h2>
+              <h2 className="text-xl font-semibold">{t('form.editTitle')}</h2>
               <button onClick={() => setEditModalOpen(false)}
                 className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors">
                 <X size={20} />
@@ -7751,13 +7751,13 @@ export default function App() {
             <form onSubmit={handleSaveEdit} className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Brand</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.brand')}</label>
                   <input type="text" required value={editBrand}
                     onChange={(e: any) => setEditBrand(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nome</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.name')}</label>
                   <input type="text" required value={editName}
                     onChange={(e: any) => setEditName(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
@@ -7765,13 +7765,13 @@ export default function App() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Taglia</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.size')}</label>
                   <input type="text" value={editSize}
                     onChange={(e: any) => setEditSize(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('mag.condition')}</label>
                   <input type="text" value={editCondition}
                     onChange={(e: any) => setEditCondition(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
@@ -7783,38 +7783,38 @@ export default function App() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <TrendingUp size={15} className="text-[#8b5cf6] shrink-0" />
-                    <span className="text-sm font-bold">Valutazione di mercato</span>
+                    <span className="text-sm font-bold">{t('val.title')}</span>
                     {!hasFeature('stockx_pricing') && <PlanLock plan="Pro" />}
                   </div>
                   <button type="button" onClick={() => fetchValuation(productToEdit)} disabled={valLoading}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#8b5cf6] text-white hover:bg-[#7c3aed] disabled:opacity-50 transition-colors flex items-center gap-1.5">
-                    {valLoading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />} Valuta
+                    {valLoading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />} {t('val.evaluate')}
                   </button>
                 </div>
                 {valuation && (
                   <div className="mt-3">
                     {valuation.configured === false ? (
-                      <p className="text-[var(--text-soft)] text-xs">Fonte prezzi non ancora attiva. Quando sarà attiva qui vedrai la valutazione reale di mercato — autenticata e anti-falsi.</p>
+                      <p className="text-[var(--text-soft)] text-xs">{t('val.notActive')}</p>
                     ) : valuation.value == null ? (
                       (valuation.source && /non connesso|non configurato|ricerca fallita|errore|billing|shipping|market-data|nessun prezzo|generico/i.test(valuation.source)) ? (
-                        <p className="text-amber-400 text-xs">⚠️ StockX non disponibile — {valuation.source}. {isAdminUser ? 'Collega/verifica in Impostazioni → Integrazioni · StockX.' : 'La fonte prezzi è in fase di attivazione.'}</p>
+                        <p className="text-amber-400 text-xs">⚠️ {t('val.stockxUnavail')} — {valuation.source}. {isAdminUser ? t('val.linkAdmin') : t('val.sourceActivating')}</p>
                       ) : (
-                        <p className="text-[var(--text-soft)] text-xs">Nessuna quotazione trovata per questo articolo su StockX.</p>
+                        <p className="text-[var(--text-soft)] text-xs">{t('val.noQuote')}</p>
                       )
                     ) : (
                       <div className="flex items-end justify-between gap-2">
                         <div>
                           <p className="text-2xl font-bold num">{valuation.value}€</p>
-                          <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{valuation.source} · {valuation.sample} comp{valuation.authenticatedOnly ? ' autenticate' : ''}</p>
+                          <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{valuation.source} · {valuation.sample} {t('val.comp')}{valuation.authenticatedOnly ? ' ' + t('val.authenticated') : ''}</p>
                         </div>
-                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${valuation.confidence === 'alta' ? 'bg-emerald-500/20 text-emerald-400' : valuation.confidence === 'media' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>confidenza {valuation.confidence}</span>
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${valuation.confidence === 'alta' ? 'bg-emerald-500/20 text-emerald-400' : valuation.confidence === 'media' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>{t('val.confidence')} {valuation.confidence}</span>
                       </div>
                     )}
                   </div>
                 )}
               </div>
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo Acquisto €</label>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.purchasePrice')}</label>
                 <input type="number" step="0.01" required value={editPrice}
                   onChange={(e: any) => setEditPrice(e.target.value)}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
@@ -7826,13 +7826,13 @@ export default function App() {
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5">
                     <Layers size={11} className="text-[#8b5cf6]" />
-                    {productToEdit.lotName ? `Pezzi nel lotto "${productToEdit.lotName}"` : 'Quantità pezzi'}
+                    {productToEdit.lotName ? `${t('edit.lotPieces')} "${productToEdit.lotName}"` : t('edit.qtyPieces')}
                   </label>
                   <input type="number" min="1" step="1" value={editQuantity}
                     onChange={(e: any) => setEditQuantity(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                   <p className="text-[11px] text-[var(--text-faint)] mt-1.5">
-                    Attuale: {productToEdit.lotName ? editLotIds.length : (productToEdit.ids?.length || 1)} pezzi · riducendo elimini i pezzi in eccesso, aumentando ne aggiungi.
+                    {t('edit.current')}: {productToEdit.lotName ? editLotIds.length : (productToEdit.ids?.length || 1)} {t('edit.qtyHint')}
                   </p>
                 </div>
               )}
@@ -7842,7 +7842,7 @@ export default function App() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Camera size={14} className="text-violet-400" />
-                    <span className="text-sm font-bold">Foto</span>
+                    <span className="text-sm font-bold">{t('edit.photos')}</span>
                   </div>
                   <span className="text-[10px] text-[var(--text-soft)]">{editPhotos.length}/5</span>
                 </div>
@@ -7861,7 +7861,7 @@ export default function App() {
                       <input type="file" accept="image/*" multiple className="hidden"
                         onChange={(e: any) => handlePhotoAdd(e, true)} />
                       <Camera size={16} className="text-[var(--text-soft)] mb-0.5" />
-                      <span className="text-[9px] text-[var(--text-soft)]">Aggiungi</span>
+                      <span className="text-[9px] text-[var(--text-soft)]">{t('common.add')}</span>
                     </label>
                   )}
                 </div>
@@ -7872,30 +7872,30 @@ export default function App() {
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
                     <Store size={15} className="text-[#8b5cf6]" />
-                    <span className="text-sm font-bold">Marketplace pubblico</span>
+                    <span className="text-sm font-bold">{t('edit.marketplacePublic')}</span>
                     {!hasFeature('marketplace') && <PlanLock plan="Starter" />}
                   </div>
-                  {editIsPublic && <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">PUBBLICO</span>}
+                  {editIsPublic && <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">{t('edit.public')}</span>}
                 </div>
-                <p className="text-[11px] text-[var(--text-faint)] mb-3">Mettilo in vetrina: chiunque potrà trovarlo, pagarlo in-app (se hai collegato gli incassi) o contattarti in chat.</p>
+                <p className="text-[11px] text-[var(--text-faint)] mb-3">{t('edit.publishHint')}</p>
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <input type="number" step="0.01" min="0" value={editPublicPrice}
                     onChange={(e: any) => setEditPublicPrice(e.target.value)}
-                    placeholder="Prezzo pubblico €"
+                    placeholder={t('edit.publicPrice')}
                     className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
                   <input type="number" step="0.01" min="0" value={editShippingCost}
                     onChange={(e: any) => setEditShippingCost(e.target.value)}
-                    placeholder="Spedizione €"
+                    placeholder={t('edit.shippingCost')}
                     className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
                 </div>
                 <div className="flex gap-2">
                   {editIsPublic ? (
                     <button type="button" onClick={() => savePublish(productToEdit, false)} disabled={isPublishing}
-                      className="px-4 py-2 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] text-sm font-bold disabled:opacity-50">Ritira</button>
+                      className="px-4 py-2 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] text-sm font-bold disabled:opacity-50">{t('edit.withdraw')}</button>
                   ) : (
                     <button type="button" onClick={() => savePublish(productToEdit, true)} disabled={isPublishing}
                       className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">
-                      {isPublishing ? <Loader2 size={15} className="animate-spin" /> : 'Pubblica'}
+                      {isPublishing ? <Loader2 size={15} className="animate-spin" /> : t('mag.publish')}
                     </button>
                   )}
                 </div>
@@ -7910,7 +7910,7 @@ export default function App() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Users size={14} className="text-blue-400" />
-                        <span className="text-sm font-bold">Quote del Team</span>
+                        <span className="text-sm font-bold">{t('form.teamShares')}</span>
                       </div>
                       {!isEditShared ? (
                         <button type="button"
@@ -7921,13 +7921,13 @@ export default function App() {
                             })));
                           }}
                           className="text-xs text-[var(--text)] hover:text-[#a78bfa] font-bold transition-colors">
-                          Cambia percentuali
+                          {t('form.changePercent')}
                         </button>
                       ) : (
                         <button type="button"
                           onClick={() => { setIsEditShared(false); setEditShares([]); }}
                           className="text-xs text-[var(--text-soft)] hover:text-[var(--text)] font-bold transition-colors">
-                          Ripristina default
+                          {t('form.restoreDefault')}
                         </button>
                       )}
                     </div>
@@ -7939,7 +7939,7 @@ export default function App() {
                             <span className="text-[var(--text-muted)] text-sm font-bold w-12 text-right">{m.percentage}%</span>
                           </div>
                         ))}
-                        <p className="text-[10px] text-[var(--text-faint)] mt-1">Quote default del team — modifica in Impostazioni</p>
+                        <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('form.teamDefaultHint')}</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -7960,7 +7960,7 @@ export default function App() {
                           Math.round(editShares.reduce((s, x) => s + (Number(x.percentage) || 0), 0)) === 100
                             ? 'text-green-500' : 'text-yellow-500'
                         }`}>
-                          Totale: {editShares.reduce((s, x) => s + (Number(x.percentage) || 0), 0).toFixed(0)}% (deve essere 100%)
+                          {t('form.total')}: {editShares.reduce((s, x) => s + (Number(x.percentage) || 0), 0).toFixed(0)}% {t('form.mustBe100')}
                         </p>
                       </div>
                     )}
@@ -7971,7 +7971,7 @@ export default function App() {
               <div className="flex gap-3">
                 <button type="submit" disabled={isSaving}
                   className="flex-1 bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
-                  {isSaving ? <Loader2 className="animate-spin" size={20} /> : 'Salva Modifiche'}
+                  {isSaving ? <Loader2 className="animate-spin" size={20} /> : t('edit.save')}
                 </button>
                 <button type="button"
                   onClick={() => { setProductToDelete(productToEdit); setDeleteConfirmOpen(true); }}
