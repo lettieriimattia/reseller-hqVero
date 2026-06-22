@@ -4361,8 +4361,8 @@ export default function App() {
               const costo = groupedInStockArray.reduce((a: number, g: any) => a + g.purchasePrice * g.quantity, 0);
               return (
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-sm">
-                  <span className="text-[var(--text-soft)]"><span className="font-bold text-[var(--text)] num">{pezzi}</span> pezzi · <span className="font-bold text-[var(--text)] num">{groupedInStockArray.length}</span> modelli</span>
-                  <span className="text-[var(--text-soft)] sm:ml-auto">Valore stock <span className="font-bold text-[var(--text)] num">{costo.toFixed(0)}€</span></span>
+                  <span className="text-[var(--text-soft)]"><span className="font-bold text-[var(--text)] num">{pezzi}</span> {t('mag.pieces')} · <span className="font-bold text-[var(--text)] num">{groupedInStockArray.length}</span> {t('mag.models')}</span>
+                  <span className="text-[var(--text-soft)] sm:ml-auto">{t('mag.stockValue')} <span className="font-bold text-[var(--text)] num">{costo.toFixed(0)}€</span></span>
                 </div>
               );
             })()}
@@ -4373,8 +4373,8 @@ export default function App() {
                 toShipItems.length === 0 ? (
                   <div className="text-center py-16 px-5 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
                     <Truck className="mx-auto text-[var(--text-faint)] mb-3" size={40} />
-                    <p className="font-bold">Niente da spedire</p>
-                    <p className="text-sm text-[var(--text-soft)] mt-1">Qui trovi gli articoli pagati nel marketplace e quelli che marchi "Da spedire" perché venduti fuori dall'app.</p>
+                    <p className="font-bold">{t('mag.noShip')}</p>
+                    <p className="text-sm text-[var(--text-soft)] mt-1">{t('mag.noShipDesc')}</p>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2.5">
@@ -4391,25 +4391,25 @@ export default function App() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-bold text-sm truncate">{p.brand} {p.name}</span>
-                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${paid ? 'text-[#8b5cf6] bg-[#8b5cf6]/15' : 'text-amber-400 bg-amber-500/15'}`}>{paid ? 'Pagato in-app' : 'Venduto fuori dall\'app'}</span>
-                                {p.trackingCode && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase text-green-400 bg-green-500/15">Spedito</span>}
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${paid ? 'text-[#8b5cf6] bg-[#8b5cf6]/15' : 'text-amber-400 bg-amber-500/15'}`}>{paid ? t('mag.paidInApp') : t('mag.soldOutside')}</span>
+                                {p.trackingCode && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase text-green-400 bg-green-500/15">{t('mag.shipped')}</span>}
                               </div>
                               <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition}</p>
                               {p.trackingCode
-                                ? <p className="text-[11px] text-blue-400 mt-0.5">📦 {p.trackingCode}{paid ? ' · in attesa che il compratore confermi' : ''}</p>
-                                : <p className="text-[11px] text-[var(--text-faint)] mt-0.5">Da spedire — crea l'etichetta o aggiungi il tracking</p>}
+                                ? <p className="text-[11px] text-blue-400 mt-0.5">📦 {p.trackingCode}{paid ? t('mag.awaitingBuyer') : ''}</p>
+                                : <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{t('mag.toShipHint')}</p>}
                             </div>
                           </div>
                           <div className="flex gap-2 mt-3">
                             {hasFeature('labels') ? (
                               (p.trackingCode || p.shippingLabel)
-                                ? <button onClick={() => viewSavedLabel(p)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] flex items-center justify-center gap-1.5"><Package size={13} /> Vedi etichetta</button>
-                                : <button onClick={() => openShipping(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] flex items-center justify-center gap-1.5"><Package size={13} /> Crea etichetta</button>
+                                ? <button onClick={() => viewSavedLabel(p)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] flex items-center justify-center gap-1.5"><Package size={13} /> {t('mag.viewLabel')}</button>
+                                : <button onClick={() => openShipping(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] flex items-center justify-center gap-1.5"><Package size={13} /> {t('mag.createLabel')}</button>
                             ) : (
-                              <button onClick={() => openTrackingModal(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)] flex items-center justify-center gap-1.5"><Truck size={13} /> Tracking</button>
+                              <button onClick={() => openTrackingModal(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)] flex items-center justify-center gap-1.5"><Truck size={13} /> {t('mag.tracking')}</button>
                             )}
                             {!paid && (
-                              <button onClick={() => toggleToShip(g, false)} className="px-3 py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)]">Spedito</button>
+                              <button onClick={() => toggleToShip(g, false)} className="px-3 py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)]">{t('mag.shipped')}</button>
                             )}
                           </div>
                         </div>
@@ -4423,16 +4423,16 @@ export default function App() {
                     /* Magazzino davvero vuoto → onboarding */
                     <div className="text-center py-16 px-5 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
                       <Package className="mx-auto text-[var(--text-faint)] mb-3" size={44} />
-                      <p className="font-bold text-lg">Il tuo magazzino è vuoto</p>
-                      <p className="text-sm text-[var(--text-soft)] mt-1 mb-5 max-w-sm mx-auto">Aggiungi il primo prodotto per iniziare a tracciare stock, vendite e profitti.</p>
+                      <p className="font-bold text-lg">{t('mag.empty')}</p>
+                      <p className="text-sm text-[var(--text-soft)] mt-1 mb-5 max-w-sm mx-auto">{t('mag.emptyDesc')}</p>
                       <div className="flex flex-wrap gap-2 justify-center">
                         <button onClick={() => openAddForm()}
                           className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
-                          <Plus size={16} /> Aggiungi prodotto
+                          <Plus size={16} /> {t('mag.addProduct')}
                         </button>
                         <button onClick={() => navigateTo('settings')}
                           className="bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--text-soft)] hover:text-[var(--text)] px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors">
-                          <Download size={15} /> Importa da Excel
+                          <Download size={15} /> {t('mag.importExcel')}
                         </button>
                       </div>
                     </div>
@@ -4440,11 +4440,11 @@ export default function App() {
                     /* Filtri/ricerca attivi → nessun risultato */
                     <div className="text-center py-16 px-5 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
                       <Search className="mx-auto text-[var(--text-faint)] mb-3" size={40} />
-                      <p className="font-bold">Nessun risultato</p>
-                      <p className="text-sm text-[var(--text-soft)] mt-1 mb-4">Prova a modificare ricerca o filtri.</p>
+                      <p className="font-bold">{t('mag.noResults')}</p>
+                      <p className="text-sm text-[var(--text-soft)] mt-1 mb-4">{t('mag.noResultsDesc')}</p>
                       <button onClick={() => { setSearchTerm(''); setFilterCat('all'); setFilterCondition('all'); setFilterPriceMin(''); setFilterPriceMax(''); setStaleOnly(false); }}
                         className="bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--text-soft)] hover:text-[var(--text)] px-4 py-2 rounded-xl font-bold text-xs transition-colors">
-                        Azzera filtri
+                        {t('mag.clearFilters')}
                       </button>
                     </div>
                   )
@@ -4496,18 +4496,18 @@ export default function App() {
                             {!bulkMode && (
                               <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
                                 className={`mt-1 text-[11px] flex items-center gap-1 max-w-full w-full overflow-hidden ${g.notes ? 'text-[var(--text-soft)]' : 'text-gray-700'}`}>
-                                <StickyNote size={10} className="shrink-0" /><span className="truncate">{g.notes || 'Aggiungi nota…'}</span>
+                                <StickyNote size={10} className="shrink-0" /><span className="truncate">{g.notes || t('mag.addNote')}</span>
                               </button>
                             )}
                           </div>
                           {!bulkMode && (
                             <div className="flex flex-col gap-1 shrink-0">
-                              <button onClick={() => openTrackingModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">Track</button>
+                              <button onClick={() => openTrackingModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">{t('mag.track')}</button>
                               <button onClick={() => toggleToShip(g, !g.toShip)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>{g.toShip ? 'In lista' : 'Da spedire'}</button>
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>{g.toShip ? t('mag.inList') : t('dash.toShip')}</button>
                               <button onClick={() => quickTogglePublic(g)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.isPublic ? 'bg-[#8b5cf6]/20 text-[#8b5cf6]' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>
-                                {g.isPublic ? 'Pubblico' : 'Pubblica'}
+                                {g.isPublic ? t('mag.published') : t('mag.publish')}
                               </button>
                             </div>
                           )}
@@ -4517,11 +4517,11 @@ export default function App() {
                           <div className="flex border-t border-[var(--border)]">
                             {isAdmin && (
                               <>
-                                <button onClick={() => openShipping(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-violet-400 hover:bg-violet-900/15"><Package size={13} /> Spedisci</button>
+                                <button onClick={() => openShipping(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-violet-400 hover:bg-violet-900/15"><Package size={13} /> {t('mag.ship')}</button>
                                 <div className="w-px bg-[var(--fill)]" />
                               </>
                             )}
-                            <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> Vendi</button>
+                            <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> {t('mag.sell')}</button>
                           </div>
                         )}
                       </div>
@@ -4542,7 +4542,7 @@ export default function App() {
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                             {g.quantity > 1 && <span className="text-[10px] bg-[#8b5cf6] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
                             {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-[var(--text)]' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-gray-300'}`}>{days}g</span>}
-                            {g.trackingStatus && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500 text-[var(--text)]' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500 text-[var(--text)]' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500 text-[var(--text)]' : 'bg-black/50 backdrop-blur text-gray-300'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? 'Transito' : g.trackingStatus === 'DELIVERED' ? 'Consegnato' : g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' : 'Track'}</span>}
+                            {g.trackingStatus && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500 text-[var(--text)]' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500 text-[var(--text)]' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500 text-[var(--text)]' : 'bg-black/50 backdrop-blur text-gray-300'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? t('mag.trTransit') : g.trackingStatus === 'DELIVERED' ? t('mag.trDelivered') : g.trackingStatus === 'OUT_FOR_DELIVERY' ? t('mag.trOutForDelivery') : t('mag.track')}</span>}
                           </div>
                           {bulkMode && (
                             <div className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#8b5cf6] border-[#8b5cf6]' : 'border-[var(--border-3)] bg-black/40 backdrop-blur'}`}>
@@ -4558,28 +4558,28 @@ export default function App() {
                           {!bulkMode && (
                             <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
                               className={`mt-2 text-xs flex items-center justify-start gap-1 max-w-full ${g.notes ? 'text-[var(--text-soft)] hover:text-gray-300' : 'text-gray-700 hover:text-[var(--text-soft)]'}`}>
-                              <StickyNote size={11} className="shrink-0" /><span className="truncate">{g.notes || 'Aggiungi nota…'}</span>
+                              <StickyNote size={11} className="shrink-0" /><span className="truncate">{g.notes || t('mag.addNote')}</span>
                             </button>
                           )}
                         </div>
                         {!bulkMode && (
                           <div className="border-t border-[var(--border)] p-2.5 flex flex-col gap-1.5">
                             <div className="grid grid-cols-2 gap-1.5">
-                              <button onClick={() => openTrackingModal(g)} className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.trackingCode ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> Track</button>
+                              <button onClick={() => openTrackingModal(g)} className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.trackingCode ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> {t('mag.track')}</button>
                               <button onClick={() => toggleToShip(g, !g.toShip)}
-                                className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> {g.toShip ? 'In lista' : 'Da spedire'}</button>
+                                className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> {g.toShip ? t('mag.inList') : t('dash.toShip')}</button>
                             </div>
                             {isAdmin ? (
                               <div className="grid grid-cols-2 gap-1.5">
-                                <button onClick={() => openShipping(g)} className="py-2 rounded-lg text-xs font-bold bg-violet-500/15 text-violet-400 hover:bg-violet-500/25 hover:text-violet-300 transition-colors flex items-center justify-center gap-1"><Package size={12} /> Spedisci</button>
-                                <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1"><DollarSign size={12} /> Vendi</button>
+                                <button onClick={() => openShipping(g)} className="py-2 rounded-lg text-xs font-bold bg-violet-500/15 text-violet-400 hover:bg-violet-500/25 hover:text-violet-300 transition-colors flex items-center justify-center gap-1"><Package size={12} /> {t('mag.ship')}</button>
+                                <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1"><DollarSign size={12} /> {t('mag.sell')}</button>
                               </div>
                             ) : (
-                              <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> Vendi</button>
+                              <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> {t('mag.sell')}</button>
                             )}
                             <button onClick={() => quickTogglePublic(g)}
                               className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.isPublic ? 'bg-[#8b5cf6]/20 text-[#8b5cf6]' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)]'}`}>
-                              <Store size={12} /> {g.isPublic ? 'In vetrina' : 'Pubblica'}
+                              <Store size={12} /> {g.isPublic ? t('mag.inShowcase') : t('mag.publish')}
                             </button>
                           </div>
                         )}
@@ -4594,11 +4594,11 @@ export default function App() {
                 groupedSoldArray.length === 0 ? (
                   <div className="text-center py-16 px-5 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
                     <CheckCircle className="mx-auto text-[var(--text-faint)] mb-4" size={40} />
-                    <p className="text-[var(--text-muted)] font-semibold">Nessuna vendita ancora</p>
-                    <p className="text-[var(--text-faint)] text-sm mt-1 mb-5">Registra la tua prima vendita dalla sezione IN STOCK</p>
+                    <p className="text-[var(--text-muted)] font-semibold">{t('mag.soldNoneTitle')}</p>
+                    <p className="text-[var(--text-faint)] text-sm mt-1 mb-5">{t('mag.soldNoneDesc')}</p>
                     <button onClick={() => setMagazzinoView('instock')}
                       className="bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--text-soft)] hover:text-[var(--text)] px-5 py-2.5 rounded-xl font-bold text-sm transition-colors">
-                      Vai a IN STOCK
+                      {t('mag.goInStock')}
                     </button>
                   </div>
                 ) : (
@@ -4630,20 +4630,20 @@ export default function App() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <p className="font-bold text-sm truncate">{g.brand} {g.name}</p>
-                                  <span className="text-[9px] font-bold text-[#8b5cf6] bg-[#8b5cf6]/15 px-1.5 py-0.5 rounded-full uppercase">Pagato · in attesa</span>
+                                  <span className="text-[9px] font-bold text-[#8b5cf6] bg-[#8b5cf6]/15 px-1.5 py-0.5 rounded-full uppercase">{t('mag.paidPending')}</span>
                                 </div>
                                 <p className="text-[10px] text-[var(--text-soft)]">{g.size} · {g.condition} · {(g.heldAmount ?? g.publicPrice ?? 0).toFixed(0)}€</p>
                               </div>
                             </div>
                             <div className="px-4 pb-3 flex flex-col gap-2">
-                              <p className="text-[10px] text-[var(--text-soft)]">I soldi si sbloccano quando il compratore conferma la consegna.</p>
+                              <p className="text-[10px] text-[var(--text-soft)]">{t('mag.fundsReleaseHint')}</p>
                               {hasFeature('labels') ? (
                                 <button onClick={() => openShipping(g)}
                                   className="w-full py-2 rounded-xl text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] hover:bg-[#8b5cf6]/25 transition-colors flex items-center justify-center gap-1.5">
-                                  <Package size={13} /> Crea etichetta e spedisci
+                                  <Package size={13} /> {t('mag.createLabelShip')}
                                 </button>
                               ) : (
-                                <p className="text-[10px] text-[var(--text-faint)]">💬 Spedisci e inserisci il tracking dalla chat. (Etichetta automatica nel piano Pro)</p>
+                                <p className="text-[10px] text-[var(--text-faint)]">{t('mag.shipFromChatHint')}</p>
                               )}
                             </div>
                           </div>
