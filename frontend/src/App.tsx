@@ -3331,6 +3331,27 @@ export default function App() {
     } else showToast(data?.error || 'Errore aggiornamento stato', 'err');
   };
 
+  // Swipe dal bordo sinistro → destra per tornare indietro (gesto stile iOS).
+  // Si applica ai pannelli a schermo intero con {...swipeBack(closeFn)}.
+  const swipeBack = (onBack: () => void) => {
+    let startX = 0, startY = 0, tracking = false;
+    return {
+      onTouchStart: (e: any) => {
+        const tch = e.touches[0];
+        startX = tch.clientX; startY = tch.clientY;
+        tracking = startX <= 40; // parte solo dal bordo sinistro
+      },
+      onTouchEnd: (e: any) => {
+        if (!tracking) return;
+        tracking = false;
+        const tch = e.changedTouches[0];
+        const dx = tch.clientX - startX;
+        const dy = Math.abs(tch.clientY - startY);
+        if (dx > 80 && dy < 60) onBack(); // trascinamento orizzontale deciso
+      },
+    };
+  };
+
   // Link pubblico di tracciamento (nessun account/API): apre un tracker universale
   const trackingPublicUrl = (code: string) => `https://parcelsapp.com/en/tracking/${encodeURIComponent(code)}`;
 
@@ -3477,7 +3498,7 @@ export default function App() {
           )}
         </div>
         {marketDetail && (
-          <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setMarketDetail(null)}>
+          <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setMarketDetail(null)} {...swipeBack(() => setMarketDetail(null))}>
             <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0"
                 style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
@@ -5497,7 +5518,7 @@ export default function App() {
             )}
             {/* Modale: completa vendita + spedizione dalla chat (venditore) */}
             {shipForm.open && activeConvo && createPortal((
-              <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !shipping && setShipForm(f => ({ ...f, open: false }))}>
+              <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !shipping && setShipForm(f => ({ ...f, open: false }))} {...swipeBack(() => { if (!shipping) setShipForm(f => ({ ...f, open: false })); })}>
                 <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
                   <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
                   <h2 className="text-xl font-semibold mb-1">{activeConvo.productStatus === 'PAGATO' ? t('ship.titlePaid') : t('ship.titleSell')}</h2>
@@ -5541,7 +5562,7 @@ export default function App() {
 
             {/* ========== MODALE: FAI UN'OFFERTA (compratore) ========== */}
             {chatOffer.open && activeConvo && createPortal((
-              <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setChatOffer(o => ({ ...o, open: false }))}>
+              <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setChatOffer(o => ({ ...o, open: false }))} {...swipeBack(() => setChatOffer(o => ({ ...o, open: false })))}>
                 <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
                   <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
                   <h2 className="text-xl font-semibold mb-1 flex items-center gap-2"><DollarSign size={18} className="text-[#8b5cf6]" /> {t('offer.title')}</h2>
@@ -5564,7 +5585,7 @@ export default function App() {
 
             {/* ========== MODALE: APRI CONTESTAZIONE (compratore) ========== */}
             {disputeForm.open && activeConvo && createPortal((
-              <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !disputeSaving && setDisputeForm(f => ({ ...f, open: false }))}>
+              <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !disputeSaving && setDisputeForm(f => ({ ...f, open: false }))} {...swipeBack(() => { if (!disputeSaving) setDisputeForm(f => ({ ...f, open: false })); })}>
                 <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 max-h-[92dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                   <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
                   <h2 className="text-xl font-semibold mb-1 flex items-center gap-2"><AlertTriangle size={18} className="text-red-400" /> {t('dispute.title')}</h2>
@@ -5623,7 +5644,7 @@ export default function App() {
 
         {/* ========== MODALE: DETTAGLIO ARTICOLO MARKETPLACE (portal → copre header/nav) ========== */}
         {marketDetail && createPortal((
-          <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setMarketDetail(null)}>
+          <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setMarketDetail(null)} {...swipeBack(() => setMarketDetail(null))}>
             <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
               {/* Header con chiudi (sempre visibile, sotto la status bar) */}
               <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0"
@@ -5707,7 +5728,7 @@ export default function App() {
 
         {/* ========== MODALE: ETICHETTA DI PROVA (in-app, niente nuova finestra) ========== */}
         {labelData && createPortal((
-          <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setLabelData(null)}>
+          <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setLabelData(null)} {...swipeBack(() => setLabelData(null))}>
             <div className="bg-white text-black rounded-2xl w-full max-w-sm p-6 relative" onClick={e => e.stopPropagation()}>
               <button onClick={() => setLabelData(null)} aria-label="Chiudi"
                 className="absolute top-3 right-3 p-2 rounded-lg hover:bg-black/5 active:scale-95"><X size={20} /></button>
@@ -5729,7 +5750,7 @@ export default function App() {
 
         {/* ========== MODALE: DETTAGLIO LOTTO (lista pezzi) ========== */}
         {lotDetail && createPortal((
-          <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setLotDetail(null)}>
+          <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setLotDetail(null)} {...swipeBack(() => setLotDetail(null))}>
             <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0"
                 style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
@@ -6729,9 +6750,10 @@ export default function App() {
 
       {/* ========== SCHERMATA: PREFERENZE NOTIFICHE (globale) ========== */}
       {notifPrefsOpen && createPortal((
-        <div className="fixed inset-0 z-[220] bg-[var(--bg)] overflow-y-auto">
-          <div className="sticky top-0 z-10 bg-[var(--bg)]/95 backdrop-blur border-b border-[var(--border)] px-4 py-3 flex items-center gap-3">
-            <button onClick={() => setNotifPrefsOpen(false)} className="p-1.5 hover:bg-[var(--fill)] rounded-lg"><ChevronDown size={20} className="rotate-90" /></button>
+        <div className="fixed inset-0 z-[220] bg-[var(--bg)] overflow-y-auto" {...swipeBack(() => setNotifPrefsOpen(false))}>
+          <div className="sticky top-0 z-10 bg-[var(--bg)]/95 backdrop-blur border-b border-[var(--border)] px-4 py-3 flex items-center gap-3"
+            style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
+            <button onClick={() => setNotifPrefsOpen(false)} className="p-1.5 hover:bg-[var(--fill)] rounded-lg active:scale-90 transition-transform"><ChevronDown size={20} className="rotate-90" /></button>
             <h2 className="text-lg font-bold">{t('set.notifications')}</h2>
           </div>
           <div className="max-w-md mx-auto p-4 space-y-2.5">
@@ -6760,7 +6782,7 @@ export default function App() {
 
       {/* ========== DIALOG CONFERMA (in-app, sostituisce window.confirm) ========== */}
       {confirmState && createPortal((
-        <div className="fixed inset-0 z-[240] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => closeConfirm(false)}>
+        <div className="fixed inset-0 z-[240] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => closeConfirm(false)} {...swipeBack(() => closeConfirm(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <h2 className="text-lg font-bold mb-2">{confirmState.title}</h2>
@@ -6775,7 +6797,7 @@ export default function App() {
 
       {/* ========== DIALOG PROMPT (in-app, sostituisce window.prompt) ========== */}
       {promptState && createPortal((
-        <div className="fixed inset-0 z-[240] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => closePrompt(null)}>
+        <div className="fixed inset-0 z-[240] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => closePrompt(null)} {...swipeBack(() => closePrompt(null))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <h2 className="text-lg font-bold mb-1">{promptState.title}</h2>
@@ -6839,7 +6861,7 @@ export default function App() {
         const close = () => { setCmdOpen(false); setCmdQuery(''); setCmdIndex(0); };
         const choose = (i: number) => { const it = items[i]; if (it) { it.run(); close(); } };
         return (
-          <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-[12vh] bg-black/60 backdrop-blur-sm" onClick={close}>
+          <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-[12vh] bg-black/60 backdrop-blur-sm" onClick={close} {...swipeBack(close)}>
             <div className="w-full max-w-xl bg-[var(--surface)] border border-[var(--border-2)] rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
               <div className="flex items-center gap-3 px-4 border-b border-[var(--border)]">
                 <Search size={18} className="text-[var(--text-faint)] shrink-0" />
@@ -6891,7 +6913,7 @@ export default function App() {
 
       {/* ========== MODALE: QUANTO LO PAGO? (sourcing) ========== */}
       {sourcingOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setSourcingOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
@@ -7028,7 +7050,7 @@ export default function App() {
       
       {/* ========== MODALE: AGGIUNGI PRODOTTO ========== */}
       {isFormOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setIsFormOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
             {/* Drag handle (solo mobile) */}
             <div className="flex justify-center pt-3 pb-1 sm:hidden">
@@ -7623,7 +7645,7 @@ export default function App() {
       
       {/* ========== MODALE: VENDI ========== */}
       {sellModalOpen && productToSell && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setSellModalOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between">
@@ -7736,7 +7758,7 @@ export default function App() {
       
       {/* ========== MODALE: MODIFICA PRODOTTO ========== */}
       {editModalOpen && productToEdit && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setEditModalOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between">
@@ -7985,7 +8007,7 @@ export default function App() {
 
       {/* ========== MODALE: 2FA SETUP ========== */}
       {twoFaSetupOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" {...swipeBack(() => { setTwoFaSetupOpen(false); setTwoFaBackupCodes(null); setTwoFaCode(''); })}>
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="border-b border-[var(--border-2)] p-5 flex items-center justify-between">
               <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -8067,7 +8089,7 @@ export default function App() {
 
       {/* ========== MODALE: DISABILITA 2FA ========== */}
       {twoFaDisableOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setTwoFaDisableOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6">
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center gap-2 mb-5">
@@ -8145,7 +8167,7 @@ export default function App() {
 
       {/* ========== MODALE: BULK VENDI ========== */}
       {bulkSellOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setBulkSellOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6">
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <h2 className="text-xl font-semibold mb-1">Vendi in Blocco</h2>
@@ -8192,7 +8214,7 @@ export default function App() {
 
       {/* ========== MODALE: BULK ELIMINA ========== */}
       {bulkDeleteConfirmOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setBulkDeleteConfirmOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6">
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center gap-3 mb-4">
@@ -8220,7 +8242,7 @@ export default function App() {
 
       {/* ========== MODALE: IMPORT EXCEL ========== */}
       {importOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setImportOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
@@ -8317,7 +8339,7 @@ export default function App() {
 
       {/* ========== MODALE: CREA LOTTO ========== */}
       {lotOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setLotOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="p-5 border-b border-[var(--border)] flex items-center justify-between">
@@ -8433,7 +8455,7 @@ export default function App() {
 
       {/* ========== MODALE: ELIMINA ACCOUNT (multi-step) ========== */}
       {deleteAccountStep > 0 && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[80] p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[80] p-0 sm:p-4" {...swipeBack(() => setDeleteAccountStep(s => s > 1 ? s - 1 : 0))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
 
@@ -8597,7 +8619,7 @@ export default function App() {
 
       {/* ========== MODALE: PIANI & STRUMENTI PRO ========== */}
       {planModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setPlanModalOpen(false)}>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setPlanModalOpen(false)} {...swipeBack(() => setPlanModalOpen(false))}>
           <div className="bg-[var(--surface)] border border-[var(--border)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-2xl max-h-[92vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-5 border-b border-[var(--border)] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
@@ -8767,7 +8789,7 @@ export default function App() {
       {/* ========== MODALE: PRIVACY POLICY ========== */}
       {/* ===== MODALE GUIDA RAPIDA ===== */}
       {guideOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4" onClick={() => setGuideOpen(false)}>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4" onClick={() => setGuideOpen(false)} {...swipeBack(() => setGuideOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)] shrink-0">
               <div>
@@ -8808,7 +8830,7 @@ export default function App() {
       )}
 
       {privacyOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4" {...swipeBack(() => setPrivacyOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)] shrink-0">
               <div>
@@ -8932,7 +8954,7 @@ export default function App() {
 
       {/* ========== MODALE: NOTE PRODOTTO ========== */}
       {notesModalProduct && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4" {...swipeBack(() => setNotesModalProduct(null))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="p-5">
@@ -8974,7 +8996,7 @@ export default function App() {
 
       {/* ========== MODALE: ELIMINA PRODOTTO ========== */}
       {deleteConfirmOpen && productToDelete && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4" {...swipeBack(() => setDeleteConfirmOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6">
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center gap-3 mb-4">
@@ -9006,7 +9028,7 @@ export default function App() {
 
       {/* ========== MODALE: CAMBIA PASSWORD ========== */}
       {changePwdOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4" {...swipeBack(() => setChangePwdOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6">
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center gap-3 mb-5">
@@ -9056,7 +9078,7 @@ export default function App() {
       {/* ========== MODALE: TRACKING SPEDIZIONE ========== */}
       {/* ========== MODALE: ACQUISTO IN ARRIVO ========== */}
       {incomingOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4" onClick={() => setIncomingOpen(false)}>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4" onClick={() => setIncomingOpen(false)} {...swipeBack(() => setIncomingOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center justify-between mb-5">
@@ -9103,7 +9125,7 @@ export default function App() {
       )}
 
       {trackingModalOpen && trackingProduct && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4" {...swipeBack(() => setTrackingModalOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center justify-between mb-5">
@@ -9283,7 +9305,7 @@ export default function App() {
 
         return (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[70] flex items-end lg:justify-end"
-            onClick={() => setTeamPanelOpen(false)}>
+            onClick={() => setTeamPanelOpen(false)} {...swipeBack(() => setTeamPanelOpen(false))}>
             <div
               className="bg-[var(--surface)] border-t lg:border-t-0 lg:border-l border-[var(--border-2)] w-full lg:w-[460px] max-h-[92vh] lg:h-full overflow-y-auto rounded-t-3xl lg:rounded-none animate-slide-up lg:animate-slide-right"
               onClick={e => e.stopPropagation()}>
@@ -9593,7 +9615,7 @@ export default function App() {
       {/* ========== SPEDIZIONE PACKLINK (solo admin) ========== */}
       {shippingProduct && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
-          onClick={() => setShippingProduct(null)}>
+          onClick={() => setShippingProduct(null)} {...swipeBack(() => setShippingProduct(null))}>
           <div className="bg-[var(--surface)] border border-[var(--border-2)] w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto animate-slide-up"
             onClick={e => e.stopPropagation()}>
 
@@ -9758,7 +9780,7 @@ export default function App() {
       {/* ========== GENERATORE ANNUNCI ========== */}
       {listingModalProduct && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
-          onClick={() => { setListingModalProduct(null); setListingResult(null); }}>
+          onClick={() => { setListingModalProduct(null); setListingResult(null); }} {...swipeBack(() => { setListingModalProduct(null); setListingResult(null); })}>
           <div className="bg-[var(--surface)] border border-[var(--border-2)] w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto animate-slide-up"
             onClick={e => e.stopPropagation()}>
 
@@ -9902,7 +9924,7 @@ export default function App() {
       {/* ========== PROFIT SHARING MODAL ========== */}
       {showProfitSharesModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={() => setShowProfitSharesModal(false)}>
+          onClick={() => setShowProfitSharesModal(false)} {...swipeBack(() => setShowProfitSharesModal(false))}>
           <div className="bg-[var(--card)] rounded-3xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
@@ -10026,7 +10048,7 @@ export default function App() {
       {/* ========== MODALE: SCANSIONA BARCODE ========== */}
       {barcodeModalOpen && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-          onClick={() => setBarcodeModalOpen(false)}>
+          onClick={() => setBarcodeModalOpen(false)} {...swipeBack(() => setBarcodeModalOpen(false))}>
           <div className="bg-[var(--card)] rounded-3xl p-5 w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-[var(--text)] flex items-center gap-2">
