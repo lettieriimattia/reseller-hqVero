@@ -556,6 +556,7 @@ export default function App() {
   const [importOpen, setImportOpen] = useState(false);
   const [importRows, setImportRows] = useState<any[]>([]);
   const [importCategory, setImportCategory] = useState('');
+  const [importWarehouseId, setImportWarehouseId] = useState(''); // magazzino per l'import (default: base)
   const [isImporting, setIsImporting] = useState(false);
   const [importErrors, setImportErrors] = useState<string[]>([]);
 
@@ -1028,6 +1029,7 @@ export default function App() {
   const [incPrice, setIncPrice] = useState('');
   const [incTrackCode, setIncTrackCode] = useState('');
   const [incTrackCarrier, setIncTrackCarrier] = useState('Auto');
+  const [incWarehouseId, setIncWarehouseId] = useState(''); // magazzino per il prodotto in arrivo (default: base)
   const [incSaving, setIncSaving] = useState(false);
   
   // ----- DERIVED -----
@@ -1045,6 +1047,14 @@ export default function App() {
     || warehouses.find(w => !w.parentId && w.role === 'OWNER')
     || warehouses[0]
     || null;
+  // Snapshot delle quote (percentuali soci) di un magazzino, per applicarle ai prodotti
+  // creati: usato da prodotto singolo, lotto, import e "in arrivo" così sono coerenti.
+  const snapshotSharesFor = (whId?: string | null): { userId: string; name: string; percentage: any }[] | undefined => {
+    const team = teamData.find((t: any) => t.warehouseId === (whId || baseWarehouse?.id));
+    return team?.members?.length > 0
+      ? team.members.map((m: any) => ({ userId: m.userId, name: m.name, percentage: m.percentage }))
+      : undefined;
+  };
   // Icona di una categoria dal catalogo (emoji del template), se presente.
   const categoryIcon = (name: string) => categories.find(c => c.name === name)?.icon || null;
 
@@ -3277,6 +3287,9 @@ export default function App() {
     });
     if (errors.length > 0 && valid.length === 0) { setImportErrors(errors); return; }
     setIsImporting(true);
+    // Magazzino scelto (default base) + quote di quel magazzino, applicate a tutte le righe.
+    const impWhId = importWarehouseId || baseWarehouse?.id;
+    const impShares = snapshotSharesFor(impWhId);
     let success = 0, fail = 0;
     for (const row of valid) {
       const cat = row.category && userCategories.includes(row.category) ? row.category : importCategory;
@@ -3285,6 +3298,8 @@ export default function App() {
         body: JSON.stringify({
           category: cat, brand: row.brand, name: row.name,
           size: row.size || 'Unisize', condition: row.condition || 'DS', price: row.price,
+          warehouseId: impWhId || undefined,
+          customShares: impShares,
         }),
       });
       ok ? success++ : fail++;
@@ -3380,9 +3395,14 @@ export default function App() {
     setIncSaving(true);
     // Minimal: serve solo il nome. Reparto/brand/prezzo si mettono dopo dalla Modifica.
     const cat = incCategory || userCategories[0] || 'Altro';
+    const incWhId = incWarehouseId || baseWarehouse?.id;
     const { ok, data } = await apiCall<any>('/products', {
       method: 'POST',
-      body: JSON.stringify({ category: cat, brand: incBrand.trim() || '-', name: incName.trim(), price: parseFloat(incPrice) || 0 }),
+      body: JSON.stringify({
+        category: cat, brand: incBrand.trim() || '-', name: incName.trim(), price: parseFloat(incPrice) || 0,
+        warehouseId: incWhId || undefined,
+        customShares: snapshotSharesFor(incWhId),
+      }),
     });
     if (!ok || !data?.id) { setIncSaving(false); showToast(data?.error || t('ts.createProductError'), 'err'); return; }
     const trk = await apiCall(`/tracking/${data.id}`, {
@@ -8397,6 +8417,17 @@ export default function App() {
                 </select>
               </div>
 
+              {/* Magazzino di destinazione (le sue percentuali vanno su tutti i prodotti importati). */}
+              {warehouses.filter((w: any) => !w.parentId).length > 1 && (
+                <div className="flex items-center gap-3">
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex-1">{t('form.warehouse')}</label>
+                  <select value={importWarehouseId || baseWarehouse?.id || ''} onChange={e => setImportWarehouseId(e.target.value)}
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm focus:border-[#8b5cf6] outline-none">
+                    {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                </div>
+              )}
+
               {importRows.length > 0 && (
                 <>
                   <p className="text-sm font-bold">
@@ -9260,6 +9291,16 @@ export default function App() {
                   </select>
                 </div>
               </div>
+              {/* Magazzino di destinazione (con le sue percentuali soci). Solo se >1 magazzino. */}
+              {warehouses.filter((w: any) => !w.parentId).length > 1 && (
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.warehouse')}</label>
+                  <select value={incWarehouseId || baseWarehouse?.id || ''} onChange={(e: any) => setIncWarehouseId(e.target.value)}
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[var(--accent)] outline-none">
+                    {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                </div>
+              )}
               <button onClick={createIncoming} disabled={incSaving}
                 className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                 {incSaving ? <Loader2 className="animate-spin" size={18} /> : <><Plus size={16} /> {t('track.addAndTrack')}</>}
