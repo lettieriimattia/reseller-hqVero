@@ -17,7 +17,7 @@ export const MARKETPLACE_ENABLED = false;
 // poi Tedesco, poi Spagnolo.
 export const LANGUAGES: { code: Lang; label: string; flag: string; ready: boolean }[] = [
   { code: 'it', label: 'Italiano', flag: '🇮🇹', ready: true },
-  { code: 'en', label: 'English', flag: '🇬🇧', ready: false },
+  { code: 'en', label: 'English', flag: '🇬🇧', ready: true },
   { code: 'es', label: 'Español', flag: '🇪🇸', ready: false },
   { code: 'de', label: 'Deutsch', flag: '🇩🇪', ready: false },
 ];
@@ -357,7 +357,7 @@ const it: Dict = {
   'set.manageNotifs': 'Gestisci quali notifiche ricevere',
   'set.testNotif': 'Invia notifica di prova',
   'set.iosHint': 'Su iPhone le notifiche funzionano solo se aggiungi l\'app alla schermata Home.',
-  'set.langNote': '🇬🇧 English, 🇩🇪 Deutsch e 🇪🇸 Español in arrivo (li attiviamo appena la traduzione è completa).',
+  'set.langNote': '🇩🇪 Deutsch e 🇪🇸 Español in arrivo (li attiviamo appena la traduzione è completa).',
   'set.publicWh': 'Magazzino pubblico',
   'set.publicWhOn': '✓ Attivo: ogni nuovo prodotto che aggiungi va automaticamente in vetrina (Compra), con prezzo dalla stima di mercato o dal prezzo che inserisci.',
   'set.publicWhOff': 'Attivalo per mettere in vetrina (Compra) automaticamente ogni nuovo prodotto che aggiungi, senza pubblicarlo a mano.',
@@ -1184,7 +1184,7 @@ const en: Dict = {
   'set.manageNotifs': 'Manage which notifications you receive',
   'set.testNotif': 'Send a test notification',
   'set.iosHint': 'On iPhone notifications only work if you add the app to the Home screen.',
-  'set.langNote': '🇬🇧 English, 🇩🇪 Deutsch and 🇪🇸 Español coming soon (we enable them as soon as the translation is complete).',
+  'set.langNote': '🇩🇪 Deutsch and 🇪🇸 Español coming soon (we enable them as soon as the translation is complete).',
   'set.publicWh': 'Public inventory',
   'set.publicWhOn': '✓ Active: every new product you add automatically goes to the showcase (Shop), priced from the market estimate or the price you enter.',
   'set.publicWhOff': 'Enable it to automatically list every new product you add in the showcase (Shop), without publishing it manually.',
