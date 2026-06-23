@@ -2526,9 +2526,13 @@ export default function App() {
     if (isEdit) {
       setEditPhotos(prev => [...prev, ...newPhotos]);
     } else {
+      const wasEmpty = current.length === 0;
       setProductPhotos(prev => [...prev, ...newPhotos]);
-      // Sempre re-scan con la nuova foto (reset risultati precedenti)
-      if (newPhotos.length > 0 && category) {
+      // Lo scan IA parte SOLO sulla prima foto. Le foto aggiunte dopo si accodano alla
+      // galleria SENZA interrompere il riconoscimento in corso: così puoi continuare a
+      // caricare foto mentre l'IA "ragiona". Per ri-scansionare una foto specifica c'è
+      // il pulsante "Scan" sulla miniatura.
+      if (wasEmpty && newPhotos.length > 0 && category) {
         setScanResult(null);
         setPriceEstimate(null);
         runAIScan(newPhotos[0], category);
@@ -7244,27 +7248,24 @@ export default function App() {
                     </div>
                   ))}
                   {productPhotos.length < 5 && (
-                    // Tile principale: apre DIRETTAMENTE la fotocamera (capture) su mobile
-                    <label className={`aspect-square rounded-xl border-2 border-dashed border-violet-500/30 hover:border-violet-500 flex flex-col items-center justify-center cursor-pointer transition-colors ${isScanning ? 'pointer-events-none opacity-40' : ''}`}>
+                    // Tile principale: apre DIRETTAMENTE la fotocamera (capture) su mobile.
+                    // Resta attivo anche durante lo scan: puoi aggiungere altre foto mentre
+                    // l'IA ragiona (si accodano alla galleria, non interrompono il riconoscimento).
+                    <label className="aspect-square rounded-xl border-2 border-dashed border-violet-500/30 hover:border-violet-500 flex flex-col items-center justify-center cursor-pointer transition-colors">
                       <input type="file" accept="image/*" capture="environment" className="hidden"
-                        onChange={(e: any) => handlePhotoAdd(e, false)} disabled={isScanning} />
-                      {isScanning ? (
-                        <Loader2 className="animate-spin text-violet-400" size={18} />
-                      ) : (
-                        <>
-                          <Camera size={18} className="text-violet-400 mb-1" />
-                          <span className="text-[9px] text-[var(--text-soft)]">{t('form.take')}</span>
-                        </>
-                      )}
+                        onChange={(e: any) => handlePhotoAdd(e, false)} />
+                      <Camera size={18} className="text-violet-400 mb-1" />
+                      <span className="text-[9px] text-[var(--text-soft)]">{t('form.take')}</span>
                     </label>
                   )}
                 </div>
 
-                {/* Alternativa: scegli dalla libreria (senza capture → galleria/file) */}
-                {productPhotos.length < 5 && !isScanning && (
+                {/* Alternativa: scegli dalla libreria (senza capture → galleria/file).
+                    Disponibile anche durante lo scan per aggiungere altre foto. */}
+                {productPhotos.length < 5 && (
                   <label className="flex items-center justify-center gap-2 w-full mb-3 py-2 rounded-xl border border-violet-500/30 hover:border-violet-500 text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] cursor-pointer transition-colors">
                     <input type="file" accept="image/*" multiple className="hidden"
-                      onChange={(e: any) => handlePhotoAdd(e, false)} disabled={isScanning} />
+                      onChange={(e: any) => handlePhotoAdd(e, false)} />
                     <ImageIcon size={13} className="text-violet-400" />
                     {t('form.chooseLibrary')}
                   </label>
