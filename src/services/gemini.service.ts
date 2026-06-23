@@ -67,6 +67,7 @@ function parseImageData(imageBase64: string): { mimeType: string; data: string }
 export interface GeminiVisionOpts {
   prompt: string;
   imageBase64: string;
+  extraImages?: string[]; // immagini aggiuntive (es. foto dei candidati StockX da confrontare)
   temperature?: number;
   maxTokens?: number;
   json?: boolean;        // forza output JSON valido (responseMimeType)
@@ -76,11 +77,16 @@ export interface GeminiVisionOpts {
 export async function geminiVision(opts: GeminiVisionOpts): Promise<string> {
   if (GEMINI_KEYS.length === 0) throw new Error('Nessuna chiave GEMINI_API_KEY configurata');
   const { mimeType, data } = parseImageData(opts.imageBase64);
+  const extraParts = (opts.extraImages || []).map(img => {
+    const p = parseImageData(img);
+    return { inline_data: { mime_type: p.mimeType, data: p.data } };
+  });
   const body = {
     contents: [{
       parts: [
         { text: opts.prompt },
         { inline_data: { mime_type: mimeType, data } },
+        ...extraParts,
       ],
     }],
     generationConfig: {

@@ -113,6 +113,7 @@ export function getVisionStatus() {
 async function visionComplete(opts: {
   prompt: string;
   imageBase64: string;
+  extraImages?: string[]; // immagini aggiuntive (es. foto candidati StockX da confrontare)
   temperature: number;
   maxTokens: number;
   groqModel: string;
@@ -122,6 +123,7 @@ async function visionComplete(opts: {
       return await geminiVision({
         prompt: opts.prompt,
         imageBase64: opts.imageBase64,
+        extraImages: opts.extraImages,
         temperature: opts.temperature,
         maxTokens: opts.maxTokens,
         json: true,
@@ -137,6 +139,7 @@ async function visionComplete(opts: {
         content: [
           { type: 'text', text: opts.prompt },
           { type: 'image_url', image_url: { url: opts.imageBase64 } },
+          ...(opts.extraImages || []).map(img => ({ type: 'image_url' as const, image_url: { url: img } })),
         ],
       }],
       model: opts.groqModel,
@@ -1412,14 +1415,62 @@ ${prompt}`;
   return result;
 }
 
-// Conferma il modello di sneaker confrontando la FOTO dell'utente con i candidati del
-// catalogo StockX: l'IA sceglie quello che corrisponde davvero (grounding sul catalogo reale).
+// Scarica un'immagine (URL pubblico del catalogo StockX) come data URL base64,
+// così possiamo passarla al modello vision per il confronto foto-contro-foto.
+async function fetchImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const ct = (r.headers.get('content-type') || 'image/jpeg').split(';')[0];
+    if (!ct.startsWith('image/')) return null;
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length === 0 || buf.length > 4_000_000) return null; // vuota o troppo grande
+    return `data:${ct};base64,${buf.toString('base64')}`;
+  } catch { return null; }
+}
+
+// Conferma il modello di sneaker confrontando la FOTO dell'utente con le FOTO reali dei
+// candidati del catalogo StockX (confronto immagine-contro-immagine, molto più preciso del
+// solo titolo): l'IA sceglie il prodotto la cui foto combacia per silhouette E colorway.
 async function confirmSneakerWithStockX(imageBase64: string, query: string): Promise<{ title: string; styleId: string | null; productId: string | null } | null> {
-  const candidates = await searchStockXCandidates(query, { sneakersOnly: true, limit: 8 });
+  const candidates = await searchStockXCandidates(query, { sneakersOnly: true, limit: 6 });
   if (!candidates.length) return null;
   // Una sola opzione: prendila senza interpellare l'IA.
   if (candidates.length === 1) return candidates[0];
 
+  // Scarica le foto dei candidati (in parallelo) per il confronto visivo.
+  const withImg = (await Promise.all(
+    candidates.map(async c => (c.image ? { c, dataUrl: await fetchImageAsDataUrl(c.image) } : { c, dataUrl: null }))
+  )).filter((x): x is { c: typeof candidates[number]; dataUrl: string } => !!x.dataUrl);
+
+  // CASO MIGLIORE: abbiamo le foto → confronto foto-contro-foto.
+  if (withImg.length >= 2) {
+    const list = withImg.map((x, i) => `Foto ${i + 1} = ${x.c.title}${x.c.styleId ? ` (${x.c.styleId})` : ''}`).join('\n');
+    const prompt = `La PRIMA immagine è la scarpa da identificare (foto dell'utente).
+Le immagini SUCCESSIVE sono foto reali di modelli dal catalogo StockX, in questo ordine:
+${list}
+
+Confronta la PRIMA immagine con ognuna delle foto successive. Scegli il NUMERO della foto che
+mostra la STESSA identica scarpa: stessa silhouette/modello E stessa colorway/grafica/materiali.
+Se nessuna corrisponde con certezza, rispondi 0. Meglio 0 che un modello sbagliato.
+
+Rispondi SOLO con JSON: {"choice": <numero>}`;
+    try {
+      const text = await visionComplete({
+        prompt, imageBase64, extraImages: withImg.map(x => x.dataUrl),
+        temperature: 0.0, maxTokens: 1200, groqModel: VISION_MODEL,
+      });
+      const parsed = safeParseJSON(text);
+      const choice = Number(parsed?.choice);
+      if (Number.isInteger(choice) && choice >= 1 && choice <= withImg.length) {
+        logger.info('Scarpa confermata via confronto foto StockX', { model: withImg[choice - 1].c.title });
+        return withImg[choice - 1].c;
+      }
+      return null;
+    } catch { return null; }
+  }
+
+  // FALLBACK: nessuna foto disponibile → confronto sui titoli (come prima).
   const list = candidates.map((c, i) => `${i + 1}. ${c.title}${c.styleId ? ` (${c.styleId})` : ''}`).join('\n');
   const prompt = `Guarda la SCARPA nella foto. Qui sotto ci sono modelli reali dal catalogo StockX.
 Scegli il NUMERO del modello che corrisponde ESATTAMENTE alla scarpa in foto (stessa silhouette E stessa colorway/grafica).
