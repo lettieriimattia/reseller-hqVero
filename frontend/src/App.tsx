@@ -320,6 +320,10 @@ export default function App() {
   const [scanResult, setScanResult] = useState<any>(null);
   const [scanMarket, setScanMarket] = useState<any>(null); // verifica eBay del riconoscimento (valore di mercato)
   const [scanStockxMatch, setScanStockxMatch] = useState<any>(null); // conferma visiva StockX (foto+nome del modello riconosciuto)
+  // Annullamento scan: se rimuovi la foto in analisi (o le togli tutte), abortiamo la
+  // richiesta in corso così l'IA smette di "pensare" e non ripopola i campi.
+  const scanAbortRef = useRef<AbortController | null>(null);
+  const scanningImageRef = useRef<string | null>(null); // quale immagine è attualmente in scansione
   const [priceEstimate, setPriceEstimate] = useState<any>(null); // rimasto per compatibilità reset, non più usato in UI
   
   // Input categoria scritta a mano nel form (crea o seleziona la categoria)
@@ -2359,7 +2363,8 @@ export default function App() {
   // ==========================================
   // FOTO & IA — multi-photo (1-5)
   // ==========================================
-  const applyAIScanResult = async (data: any, cat: string) => {
+  const applyAIScanResult = async (data: any, cat: string, signal?: AbortSignal) => {
+    if (signal?.aborted) return; // foto rimossa durante lo scan → non applicare
     const scan = data.scan;
     setScanResult(scan);
     setScanMarket(null);
@@ -2426,6 +2431,7 @@ export default function App() {
     if (valName.toString().length >= 2 || scan.brand) {
       apiCall<any>('/api/ai/value', {
         method: 'POST',
+        signal,
         body: JSON.stringify({
           category: effCat,
           game: effCat === 'Pokemon' ? (d.game || 'pokemon') : undefined,
@@ -2437,7 +2443,7 @@ export default function App() {
           condition: condition || undefined,
           sku: detectedSku || undefined,
         }),
-      }).then(r => { if (r.ok) setScanMarket(r.data); }).catch(() => {});
+      }).then(r => { if (r.ok && !signal?.aborted) setScanMarket(r.data); }).catch(() => {});
     }
 
     // === Conferma visiva StockX (qualsiasi categoria): StockX copre anche elettronica,
@@ -2447,8 +2453,9 @@ export default function App() {
     if (matchQuery.length >= 2) {
       apiCall<any>('/api/ai/stockx-match', {
         method: 'POST',
+        signal,
         body: JSON.stringify({ query: matchQuery, size: (d.size || '').toString() || undefined, category: effCat, sku: detectedSku || undefined }),
-      }).then(r => { if (r.ok && r.data?.found) setScanStockxMatch(r.data); }).catch(() => {});
+      }).then(r => { if (r.ok && r.data?.found && !signal?.aborted) setScanStockxMatch(r.data); }).catch(() => {});
     }
   };
 
@@ -2465,7 +2472,19 @@ export default function App() {
     if (ok) setScanMarket(data);
   };
 
+  // Annulla lo scan in corso (richiesta IA): usato quando si rimuove la foto in analisi.
+  const cancelAIScan = () => {
+    if (scanAbortRef.current) { scanAbortRef.current.abort(); scanAbortRef.current = null; }
+    scanningImageRef.current = null;
+    setIsScanning(false);
+  };
+
   const runAIScan = async (imageBase64: string, cat: string) => {
+    // Annulla un eventuale scan precedente ancora in volo prima di partire col nuovo.
+    if (scanAbortRef.current) scanAbortRef.current.abort();
+    const controller = new AbortController();
+    scanAbortRef.current = controller;
+    scanningImageRef.current = imageBase64;
     setIsScanning(true);
     setScanResult(null); setScanMarket(null); setPriceEstimate(null);
     try {
@@ -2474,12 +2493,22 @@ export default function App() {
       const isAuto = !cat || cat === AUTO_CATEGORY;
       const { ok, data } = await apiCall('/api/ai/full-scan', {
         method: 'POST',
+        signal: controller.signal,
         body: JSON.stringify(isAuto ? { imageBase64, existingCategories: userCategories } : { imageBase64, category: cat }),
       });
-      if (ok) await applyAIScanResult(data, cat);
+      // Se nel frattempo la foto è stata rimossa (scan annullato), non applicare nulla.
+      if (controller.signal.aborted) return;
+      if (ok) await applyAIScanResult(data, cat, controller.signal);
       else showToast(data.error || 'Errore IA', 'err');
-    } catch { showToast(t('ts.aiError'), 'err'); }
-    finally { setIsScanning(false); }
+    } catch (err: any) {
+      // Abort = annullamento volontario (foto rimossa): nessun errore da mostrare.
+      if (err?.name === 'AbortError' || controller.signal.aborted) return;
+      showToast(t('ts.aiError'), 'err');
+    }
+    finally {
+      // Pulisci solo se siamo ancora "noi" lo scan attivo (non un nuovo scan partito dopo).
+      if (scanAbortRef.current === controller) { scanAbortRef.current = null; scanningImageRef.current = null; setIsScanning(false); }
+    }
   };
 
   const handlePhotoAdd = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
@@ -2512,9 +2541,18 @@ export default function App() {
     if (isEdit) {
       setEditPhotos(prev => prev.filter((_, i) => i !== index));
     } else {
-      setProductPhotos(prev => prev.filter((_, i) => i !== index));
+      setProductPhotos(prev => {
+        const removed = prev[index];
+        const next = prev.filter((_, i) => i !== index);
+        // Se sto rimuovendo proprio l'immagine in scansione, o resto senza foto,
+        // annullo lo scan in corso così l'IA smette di elaborarla.
+        if (removed === scanningImageRef.current || next.length === 0) cancelAIScan();
+        return next;
+      });
       // Reset risultati IA quando si rimuove una foto
       setScanResult(null);
+      setScanMarket(null);
+      setScanStockxMatch(null);
       setPriceEstimate(null);
     }
   };
