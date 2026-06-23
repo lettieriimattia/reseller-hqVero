@@ -1068,7 +1068,7 @@ Se davvero non capisci, usa {"category":"Generico","type":"oggetto non identific
       prompt,
       imageBase64,
       temperature: 0.05,
-      maxTokens: 120,
+      maxTokens: 1000, // spazio per il "thinking" dei modelli 3.x (altrimenti il JSON categoria si tronca)
       groqModel: 'meta-llama/llama-4-scout-17b-16e-instruct', // Scout: veloce, sufficiente per classificare
     });
     const parsed = safeParseJSON(text);
@@ -1123,9 +1123,12 @@ ${prompt}`;
     ? 'meta-llama/llama-4-scout-17b-16e-instruct'  // Scout: più veloce per OCR carta
     : VISION_MODEL;                                  // Maverick: più preciso per oggetti
 
-  // Tetto token risposta: il JSON dello scan raramente supera ~500-700 token.
-  // Cap più basso = nessuna generazione "a vuoto" oltre il necessario (meno latenza).
-  const maxTok = isPokemon ? 600 : category === 'Orologi' ? 1100 : category === 'Vestiti' ? 1100 : 1100;
+  // Tetto token risposta. Il JSON dello scan è piccolo (~500-700 token), MA i modelli
+  // con "thinking" attivo (Gemini 3.x) spendono token di ragionamento che contano nel
+  // budget di output: con un cap basso il JSON finale verrebbe troncato → parsing fallito.
+  // Diamo quindi spazio abbondante (il modello si ferma comunque quando il JSON è chiuso,
+  // quindi non aggiunge latenza inutile su Groq/2.5 dove il thinking è spento).
+  const maxTok = isPokemon ? 1500 : 3000;
 
   let rawText = '';
   try {
@@ -1411,7 +1414,7 @@ ${list}
 Rispondi SOLO con JSON: {"choice": <numero>}`;
   try {
     const text = await visionComplete({
-      prompt, imageBase64, temperature: 0.0, maxTokens: 30,
+      prompt, imageBase64, temperature: 0.0, maxTokens: 1200,
       groqModel: VISION_MODEL,
     });
     const parsed = safeParseJSON(text);

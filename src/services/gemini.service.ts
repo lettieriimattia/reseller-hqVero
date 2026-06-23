@@ -65,11 +65,17 @@ export async function geminiVision(opts: GeminiVisionOpts): Promise<string> {
     }],
     generationConfig: {
       temperature: opts.temperature ?? 0.05,
-      maxOutputTokens: opts.maxTokens ?? 1024,
+      maxOutputTokens: opts.maxTokens ?? 2048,
       ...(opts.json ? { responseMimeType: 'application/json' } : {}),
-      // I modelli 2.5 di default "ragionano" prima di rispondere: aggiunge molti
-      // secondi. Per lo scan (classificazione visiva) il thinking non serve → lo
-      // disattiviamo (budget 0). Override via GEMINI_THINKING_BUDGET se necessario.
+      // Thinking (ragionamento prima della risposta):
+      // - Modelli 2.5: di default ragionano e rallentano molto → lo DISATTIVIAMO
+      //   (budget 0) perché lo scan è una classificazione visiva veloce.
+      // - Modelli 3.x (3, 3.1, 3.5...): il ragionamento li rende NETTAMENTE più
+      //   precisi nel riconoscere brand/modello dalla foto → lo lasciamo ATTIVO
+      //   (dynamic thinking di default). NB: non inviamo thinkingBudget ai 3.x
+      //   perché usano un parametro diverso e un valore non supportato farebbe
+      //   fallire la chiamata (con conseguente fallback a Groq, meno preciso).
+      // Override manuale via GEMINI_THINKING_BUDGET solo per i 2.5.
       ...(GEMINI_VISION_MODEL.includes('2.5')
         ? { thinkingConfig: { thinkingBudget: THINKING_BUDGET } }
         : {}),
