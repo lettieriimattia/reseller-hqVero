@@ -724,6 +724,25 @@ const it: Dict = {
   'hdr.noNotifs': 'Nessuna notifica',
   'hdr.pushOn': 'Notifiche attivate ✓',
   'hdr.pushOff': 'Notifiche disattivate',
+  // Schede prodotto di nicchia (Pokemon/Orologi/dinamiche)
+  'nf.cardName': 'Nome Carta',
+  'nf.cardNumber': 'Numero carta',
+  'nf.forExactPrice': '(per il prezzo esatto)',
+  'nf.priceBtn': 'Prezzo',
+  'nf.cardNumHint': 'Lo legge l\'IA dalla carta. Se sbagliato, correggilo e premi "Prezzo".',
+  'nf.graded': 'Gradata?',
+  'nf.gradedNo': 'No (Raw)',
+  'nf.gradedYes': 'Sì',
+  'nf.grade': 'Grade',
+  'nf.case': 'Cassa',
+  'nf.strap': 'Cinturino',
+  'nf.material': 'Materiale',
+  'nf.cdFullSet': 'Full Set',
+  'nf.cdBoxOnly': 'Solo Box',
+  'nf.cdPapersOnly': 'Solo Carta',
+  'nf.cdNaked': 'Naked',
+  'nf.optShort': '(opz.)',
+  'nf.select': 'Seleziona...',
 };
 
 const en: Dict = {
@@ -1432,6 +1451,25 @@ const en: Dict = {
   'hdr.noNotifs': 'No notifications',
   'hdr.pushOn': 'Notifications enabled ✓',
   'hdr.pushOff': 'Notifications disabled',
+  // Niche product forms (Pokemon/Watches/dynamic)
+  'nf.cardName': 'Card Name',
+  'nf.cardNumber': 'Card number',
+  'nf.forExactPrice': '(for the exact price)',
+  'nf.priceBtn': 'Price',
+  'nf.cardNumHint': 'The AI reads it from the card. If wrong, fix it and press "Price".',
+  'nf.graded': 'Graded?',
+  'nf.gradedNo': 'No (Raw)',
+  'nf.gradedYes': 'Yes',
+  'nf.grade': 'Grade',
+  'nf.case': 'Case',
+  'nf.strap': 'Strap',
+  'nf.material': 'Material',
+  'nf.cdFullSet': 'Full Set',
+  'nf.cdBoxOnly': 'Box only',
+  'nf.cdPapersOnly': 'Papers only',
+  'nf.cdNaked': 'Naked',
+  'nf.optShort': '(opt.)',
+  'nf.select': 'Select...',
 };
 
 const es: Dict = {

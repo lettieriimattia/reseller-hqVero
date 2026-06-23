@@ -7267,7 +7267,7 @@ export default function App() {
                     {/* Tabella dinamica: attributi estratti dall'IA */}
                     {(() => {
                       const d = scanResult.details || {};
-                      const LABELS: Record<string, string> = {
+                      const LABELS: Record<string, string> = lang === 'it' ? {
                         type: 'Tipo', material: 'Materiale', color: 'Colore', size: 'Taglia/Misura',
                         condition: 'Condizione', collaboration: 'Collab', styleCode: 'Codice',
                         metal: 'Metallo', hallmark: 'Punzone', stones: 'Pietre', serial: 'Seriale',
@@ -7287,6 +7287,26 @@ export default function App() {
                         publisher: 'Editore', issueNumber: 'Numero', edition: 'Edizione',
                         isbn: 'ISBN', stampCondition: 'Stato', catalogRef: 'Catalogo',
                         priceTier: 'Fascia', walletType: 'Tipo',
+                      } : {
+                        type: 'Type', material: 'Material', color: 'Color', size: 'Size',
+                        condition: 'Condition', collaboration: 'Collab', styleCode: 'Code',
+                        metal: 'Metal', hallmark: 'Hallmark', stones: 'Stones', serial: 'Serial',
+                        serialNumber: 'Serial', lensType: 'Lenses', frameMaterial: 'Frame',
+                        lensColor: 'Lens color', modelCode: 'Model code', pattern: 'Pattern',
+                        dateCode: 'Date code', hardwareColor: 'Hardware', sizeName: 'Size',
+                        buckleType: 'Buckle', beltSize: 'Size', concentration: 'Concentr.',
+                        volumeMl: 'Volume', batchCode: 'Batch', storage: 'Storage',
+                        modelNumber: 'Model', generation: 'Gen.', game: 'Game', rarity: 'Rarity',
+                        graded: 'Grading', cardNumber: 'Number', artist: 'Artist', title: 'Title',
+                        format: 'Format', catalogNumber: 'Catalog', pressing: 'Pressing',
+                        itemNumber: 'Number', series: 'Series', exclusive: 'Exclusive', style: 'Style',
+                        hatSize: 'Size',
+                        country: 'Country', denomination: 'Denomination', year: 'Year', mintMark: 'Mint mark',
+                        productType: 'Product', shade: 'Shade', volume: 'Volume',
+                        instrumentType: 'Instrument', finish: 'Finish',
+                        publisher: 'Publisher', issueNumber: 'Number', edition: 'Edition',
+                        isbn: 'ISBN', stampCondition: 'Condition', catalogRef: 'Catalog',
+                        priceTier: 'Tier', walletType: 'Type',
                       };
                       const SKIP = new Set(['notes', 'logoDescription', 'authenticityMarkers', 'rawText', 'priceRange', 'luxuryMarkers']);
                       const rows = Object.entries(d).filter(([k, v]) =>
@@ -7298,7 +7318,7 @@ export default function App() {
                           {rows.map(([k, v]) => (
                             <div key={k} className="flex justify-between gap-2 min-w-0">
                               <span className="text-[var(--text-faint)] shrink-0">{LABELS[k] || k}</span>
-                              <span className="text-[var(--text-muted)] font-medium text-right truncate">{v === true ? 'Sì' : String(v)}</span>
+                              <span className="text-[var(--text-muted)] font-medium text-right truncate">{v === true ? (lang === 'it' ? 'Sì' : 'Yes') : String(v)}</span>
                             </div>
                           ))}
                         </div>
@@ -7316,7 +7336,7 @@ export default function App() {
               {category === 'Pokemon' ? (
                 <>
                   <div>
-                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Nome Carta</label>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.cardName')}</label>
                     <input type="text" required value={pokeName}
                       onChange={(e: any) => setPokeName(e.target.value)}
                       placeholder="Es. Charizard"
@@ -7325,7 +7345,7 @@ export default function App() {
                   {/* Numero carta — rilevato dall'IA, correggibile: serve per il prezzo esatto */}
                   <div>
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">
-                      Numero carta <span className="text-[var(--text-faint)] normal-case font-medium">(per il prezzo esatto)</span>
+                      {t('nf.cardNumber')} <span className="text-[var(--text-faint)] normal-case font-medium">{t('nf.forExactPrice')}</span>
                     </label>
                     <div className="flex gap-2">
                       <input type="text" value={cardNumber} onChange={(e: any) => setCardNumber(e.target.value)}
@@ -7333,23 +7353,23 @@ export default function App() {
                         className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm font-mono focus:border-[#8b5cf6] outline-none" />
                       <button type="button" onClick={revalueCard} disabled={revaluingCard}
                         className="px-4 rounded-xl bg-[#8b5cf6]/15 text-[#8b5cf6] text-xs font-bold hover:bg-[#8b5cf6]/25 disabled:opacity-50 transition-colors flex items-center gap-1.5 whitespace-nowrap">
-                        {revaluingCard ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />} Prezzo
+                        {revaluingCard ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />} {t('nf.priceBtn')}
                       </button>
                     </div>
-                    <p className="text-[10px] text-[var(--text-faint)] mt-1">Lo legge l'IA dalla carta. Se sbagliato, correggilo e premi "Prezzo".</p>
+                    <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('nf.cardNumHint')}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Gradata?</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.graded')}</label>
                       <select value={pokeGraded} onChange={(e: any) => setPokeGraded(e.target.value)}
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
-                        <option value="No">No (Raw)</option>
-                        <option value="Si">Sì</option>
+                        <option value="No">{t('nf.gradedNo')}</option>
+                        <option value="Si">{t('nf.gradedYes')}</option>
                       </select>
                     </div>
                     {pokeGraded === 'Si' && (
                       <div>
-                        <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Grade</label>
+                        <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.grade')}</label>
                         <input type="text" value={pokeGrade}
                           onChange={(e: any) => setPokeGrade(e.target.value)}
                           placeholder="10, 9.5..."
@@ -7362,14 +7382,14 @@ export default function App() {
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Brand</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.brand')}</label>
                       <input type="text" required value={watchBrand}
                         onChange={(e: any) => setWatchBrand(e.target.value)}
-                        placeholder="Rolex" 
+                        placeholder="Rolex"
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Modello</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.model')}</label>
                       <input type="text" required value={watchModel}
                         onChange={(e: any) => setWatchModel(e.target.value)}
                         placeholder="Submariner"
@@ -7378,21 +7398,21 @@ export default function App() {
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Cassa</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.case')}</label>
                       <input type="text" value={watchCase}
                         onChange={(e: any) => setWatchCase(e.target.value)}
                         placeholder="41mm"
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Cinturino</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.strap')}</label>
                       <input type="text" value={watchStrap}
                         onChange={(e: any) => setWatchStrap(e.target.value)}
                         placeholder="Oyster"
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Materiale</label>
+                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.material')}</label>
                       <input type="text" value={watchMaterial}
                         onChange={(e: any) => setWatchMaterial(e.target.value)}
                         placeholder="Acciaio"
@@ -7400,14 +7420,14 @@ export default function App() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('mag.condition')}</label>
                     <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
                       className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
-                      <option value="">— Non specificata (aggiungi dopo)</option>
-                      <option value="Full Set">Full Set</option>
-                      <option value="Solo Box">Solo Box</option>
-                      <option value="Solo Carta">Solo Carta</option>
-                      <option value="Naked">Naked</option>
+                      <option value="">{t('form.conditionNone')}</option>
+                      <option value="Full Set">{t('nf.cdFullSet')}</option>
+                      <option value="Solo Box">{t('nf.cdBoxOnly')}</option>
+                      <option value="Solo Carta">{t('nf.cdPapersOnly')}</option>
+                      <option value="Naked">{t('nf.cdNaked')}</option>
                     </select>
                   </div>
                 </>
@@ -7428,13 +7448,13 @@ export default function App() {
                           return (
                             <div key={f.name} className={f.name === 'model' || f.type === 'text' && f.placeholder?.length > 20 ? 'col-span-2' : ''}>
                               <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">
-                                {f.label}{!f.required && <span className="text-gray-700 normal-case font-normal ml-1">(opz.)</span>}
+                                {f.label}{!f.required && <span className="text-gray-700 normal-case font-normal ml-1">{t('nf.optShort')}</span>}
                               </label>
                               {f.type === 'select' ? (
                                 <select value={val} onChange={(e: any) => setVal(e.target.value)}
                                   required={f.required}
                                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
-                                  <option value="">Seleziona...</option>
+                                  <option value="">{t('nf.select')}</option>
                                   {(f.options || []).map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
                               ) : (
@@ -7449,10 +7469,10 @@ export default function App() {
                         })}
                         {/* Condizione dal config AI */}
                         <div>
-                          <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Condizione</label>
+                          <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('mag.condition')}</label>
                           <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
                             className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
-                            <option value="">— Non specificata (aggiungi dopo)</option>
+                            <option value="">{t('form.conditionNone')}</option>
                             {(catConfig.conditionOptions || ['Nuovo','Ottimo','Buono','Usato']).map((opt: string) => (
                               <option key={opt} value={opt}>{opt}</option>
                             ))}
