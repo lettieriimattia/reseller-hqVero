@@ -1534,9 +1534,25 @@ export default function App() {
     const myPct = myMember?.percentage ?? (team?.members?.length > 0 ? 100 / team.members.length : 100);
     return myPct / 100;
   };
-  
+
+  // Frazione (0-1) del COSTO d'acquisto di un prodotto che ho pagato IO.
+  // Se il team ha quote costi separate (costPercentage) le uso; altrimenti i costi
+  // seguono le quote utili (myProfitFactor, che rispetta anche le customShares).
+  const myCostFactor = (p: Product) => {
+    const team = teamData.find((t: any) => t.warehouseId === (p as any).warehouseId);
+    if (team?.members?.length) {
+      const hasCostSplit = team.members.some((m: any) => Number(m.costPercentage) > 0);
+      if (hasCostSplit) {
+        const myMember = team.members.find((m: any) => m.userId === user?.id);
+        return (Number(myMember?.costPercentage) || 0) / 100;
+      }
+    }
+    return myProfitFactor(p);
+  };
+
   const activeProducts = filterCat === 'all' ? products : products.filter(p => p.category === filterCat);
-  const stockValore = activeProducts.filter(p => p.status === 'IN STOCK').reduce((acc, p) => acc + p.purchasePrice, 0);
+  // Valore stock PERSONALE: capitale immobilizzato in base alla mia quota di costo.
+  const stockValore = activeProducts.filter(p => p.status === 'IN STOCK').reduce((acc, p) => acc + p.purchasePrice * myCostFactor(p), 0);
   const soldItemsTotal = activeProducts.filter(p => p.status === 'VENDUTO');
   const ricaviTotali = soldItemsTotal.reduce((acc, p) => acc + (p.salePrice || 0), 0);
   const costoVenduto = soldItemsTotal.reduce((acc, p) => acc + p.purchasePrice, 0);
