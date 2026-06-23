@@ -568,7 +568,15 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
     }
     if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
 
-    const { category, brand, name, size, condition, purchasePrice, customShares, photos, notes, attributes, consignmentName, consignmentPercent } = req.body;
+    const { category, brand, name, size, condition, purchasePrice, customShares, photos, notes, attributes, consignmentName, consignmentPercent, warehouseId: newWarehouseId } = req.body;
+
+    // Spostamento in un altro magazzino: consentito solo se l'utente ne è membro.
+    let warehouseMove: string | undefined = undefined;
+    if (newWarehouseId && newWarehouseId !== product.warehouseId) {
+      const member = await prisma.membership.findFirst({ where: { userId: req.user!.userId, warehouseId: newWarehouseId } });
+      if (!member) return res.status(403).json({ error: 'Non sei membro del magazzino di destinazione.' });
+      warehouseMove = newWarehouseId;
+    }
 
     // Log variazione prezzo d'acquisto (dato sensibile)
     if (purchasePrice !== undefined && purchasePrice !== product.purchasePrice) {
@@ -615,6 +623,7 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
         size: (size || '').trim() || '—',
         condition: (condition || '').trim() || '—',
         purchasePrice,
+        ...(warehouseMove ? { warehouseId: warehouseMove } : {}),
         customShares: parsedShares,
         profitShareOverride: parsedProfitOverride,
         photos: parsedPhotos,

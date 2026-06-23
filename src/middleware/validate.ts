@@ -98,6 +98,7 @@ export const editProductSchema = z.object({
   consignmentName: z.string().max(120).nullable().optional(),
   consignmentPercent: z.number().min(0).max(100).nullable().optional(),
   profitShareOverride: sharesSchema,
+  warehouseId: z.string().cuid().optional(), // sposta il prodotto in un altro magazzino
 });
 
 export const sellProductSchema = z.object({

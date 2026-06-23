@@ -393,6 +393,7 @@ export default function App() {
   const [editSize, setEditSize] = useState('');
   const [editCondition, setEditCondition] = useState('');
   const [editPrice, setEditPrice] = useState('');
+  const [editWarehouseId, setEditWarehouseId] = useState(''); // magazzino del prodotto (per spostarlo)
   const [isEditShared, setIsEditShared] = useState(false);
   const [editShares, setEditShares] = useState<{userId: string, name: string, percentage: string | number}[]>([]);
   
@@ -2802,6 +2803,7 @@ export default function App() {
     setEditBrand(group.brand); setEditName(group.name);
     setEditSize(group.size); setEditCondition(group.condition);
     setEditPrice(group.purchasePrice.toString());
+    setEditWarehouseId(group.warehouseId || baseWarehouse?.id || '');
     // Quantità pezzi: per un lotto consideriamo TUTTI i pezzi in stock con lo stesso lotName
     // (i pezzi di un lotto non si raggruppano perché hanno nome "lotName #N").
     if (group.lotName) {
@@ -2962,13 +2964,14 @@ export default function App() {
     // (così non vengono sovrascritte con null nel DB)
     const originalShares = productToEdit.customShares && productToEdit.customShares !== '[]'
       ? JSON.parse(productToEdit.customShares) : undefined;
-    const editTeam = teamData.find(t => t.warehouseId === productToEdit.warehouseId);
-    const editSnapshotShares = editTeam?.members?.length > 0
-      ? editTeam.members.map((m: any) => ({ userId: m.userId, name: m.name, percentage: m.percentage }))
-      : undefined;
+    // Spostamento magazzino: se cambia, le quote seguono il NUOVO magazzino (re-snapshot).
+    const warehouseChanged = !!editWarehouseId && editWarehouseId !== productToEdit.warehouseId;
+    const editSnapshotShares = warehouseChanged
+      ? snapshotSharesFor(editWarehouseId)
+      : snapshotSharesFor(productToEdit.warehouseId);
     const finalEditShares = isEditShared && editShares.length > 0
       ? editShares
-      : (originalShares ?? editSnapshotShares);
+      : (warehouseChanged ? editSnapshotShares : (originalShares ?? editSnapshotShares));
 
     setIsSaving(true);
     let hasError = false;
@@ -2981,6 +2984,7 @@ export default function App() {
           name: editName, size: editSize, condition: editCondition,
           purchasePrice: parseFloat(editPrice),
           customShares: finalEditShares,
+          ...(warehouseChanged ? { warehouseId: editWarehouseId } : {}),
           photos: editPhotos.length > 0 ? editPhotos : undefined,
         }),
       });
@@ -7929,6 +7933,16 @@ export default function App() {
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
                 </div>
               </div>
+              {/* Sposta in un altro magazzino: cambiandolo, il prodotto eredita le percentuali soci del nuovo magazzino. */}
+              {warehouses.filter((w: any) => !w.parentId).length > 1 && (
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.warehouse')}</label>
+                  <select value={editWarehouseId || baseWarehouse?.id || ''} onChange={(e: any) => setEditWarehouseId(e.target.value)}
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
+                    {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.size')}</label>
