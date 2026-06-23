@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { DynamicForm } from './components/DynamicForm';
-import { getLang, setLangStorage, translate, LANGUAGES, type Lang } from './i18n';
+import { getLang, setLangStorage, translate, LANGUAGES, MARKETPLACE_ENABLED, type Lang } from './i18n';
 // xlsx caricato on-demand (import dinamico) dentro gli handler: resta fuori dal bundle iniziale
 // Grafico caricato in lazy: recharts finisce in un chunk separato, fuori dal bundle iniziale
 const TrendChart = lazy(() => import('./components/TrendChart'));
@@ -1300,6 +1300,13 @@ export default function App() {
     const staleInterval = setInterval(checkStaleProducts, 60 * 60 * 1000);
     return () => { clearInterval(interval); clearInterval(staleInterval); };
   }, [isAuthenticated, fetchProducts, fetchTeam, fetchCategories, fetchExpenses, fetchNotifications, checkStaleProducts]);
+
+  // Se Marketplace/Chat sono disattivati, non lasciare l'utente su quelle viste.
+  useEffect(() => {
+    if (!MARKETPLACE_ENABLED && (currentView === 'market' || currentView === 'chat')) {
+      setCurrentView('dashboard');
+    }
+  }, [currentView]);
 
   // Marketplace: carica vetrina e categorie quando si apre la sezione o cambia la ricerca
   useEffect(() => {
@@ -3762,8 +3769,10 @@ export default function App() {
           {[
             { id: 'dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
             { id: 'magazzino', label: t('nav.magazzino'), icon: Package },
-            { id: 'market', label: t('nav.market'), icon: Store },
-            { id: 'chat', label: t('nav.messages'), icon: Mail },
+            ...(MARKETPLACE_ENABLED ? [
+              { id: 'market', label: t('nav.market'), icon: Store },
+              { id: 'chat', label: t('nav.messages'), icon: Mail },
+            ] : []),
             { id: 'analytics', label: t('nav.analytics'), icon: BarChart3 },
             { id: 'tracking', label: t('nav.tracking'), icon: Truck },
           ].map(tab => {
@@ -7029,12 +7038,14 @@ export default function App() {
         {/* Separatore appena percettibile */}
         <div className="absolute top-0 left-0 right-0 h-px bg-[var(--fill)]" />
 
-        <div className="relative grid grid-cols-6 px-1">
+        <div className={`relative grid ${MARKETPLACE_ENABLED ? 'grid-cols-6' : 'grid-cols-4'} px-1`}>
           {[
             { id: 'dashboard',  icon: LayoutDashboard },
             { id: 'magazzino',  icon: Package },
-            { id: 'market',     icon: Store },
-            { id: 'chat',       icon: Mail },
+            ...(MARKETPLACE_ENABLED ? [
+              { id: 'market',     icon: Store },
+              { id: 'chat',       icon: Mail },
+            ] : []),
             { id: 'analytics',  icon: BarChart3 },
             { id: 'tracking',   icon: Truck },
           ].map(tab => {
