@@ -1385,40 +1385,40 @@ ${prompt}`;
     }
   }
 
-  // IDENTIFICAZIONE StockX (solo scarpe): StockX è la fonte di verità, non il nome
-  // "a vista" dell'IA (che spesso sbaglia il modello pur azzeccando il codice).
-  //  1) STYLE CODE → match ESATTO sul catalogo: il codice articolo (es. DH4692-003)
-  //     identifica univocamente il modello. È il caso migliore (e più veloce: niente
-  //     seconda chiamata vision).
-  //  2) Senza codice: conferma VISIVA tra i candidati del nome (l'IA sceglie guardando
-  //     la foto). Così "Nike SB Dunk Low" generico diventa il modello esatto.
-  if (category === 'Scarpe' && isStockXConfiguredSvc()) {
+  // IDENTIFICAZIONE StockX (scarpe E vestiti/streetwear): StockX è la fonte di verità,
+  // non il nome "a vista" dell'IA. StockX copre anche l'abbigliamento (Supreme, hoodie,
+  // tee, collab...), quindi vale anche per i Vestiti.
+  //  1) STYLE CODE → match ESATTO sul catalogo (quando leggibile).
+  //  2) Senza codice: conferma VISIVA tra i candidati del nome (confronto foto).
+  if ((category === 'Scarpe' || category === 'Vestiti') && isStockXConfiguredSvc()) {
+    const sneakersOnly = category === 'Scarpe';
+    const what = sneakersOnly ? 'Scarpa' : 'Capo';
     try {
       let confirmed: { title: string; styleId: string | null; productId: string | null } | null = null;
       const codeRaw = (parsed.styleCode || parsed.sku || '').toString().trim();
       if (codeRaw.length >= 5) {
         confirmed = await findStockXByStyleCode(codeRaw);
-        if (confirmed) logger.info('Scarpa identificata da StockX via style code', { code: codeRaw, model: confirmed.title });
+        if (confirmed) logger.info(`${what} identificato da StockX via style code`, { code: codeRaw, model: confirmed.title });
       }
       if (!confirmed && (result.brand || result.model)) {
-        // Più query → più candidati: così la scarpa giusta entra nella lista anche se
-        // l'IA ha sbagliato il nome (poi il confronto-foto sceglie quella corretta).
+        // Più query → più candidati (brand+modello, colorway/colore, collab, tipo/stagione).
         const queries = Array.from(new Set([
           [result.brand, result.model].filter(Boolean).join(' '),
-          [result.brand, parsed.colorway].filter(Boolean).join(' '),
-          [parsed.collaboration, result.model].filter(Boolean).join(' '),
+          [result.brand, parsed.colorway || parsed.color].filter(Boolean).join(' '),
+          [parsed.collaboration, result.model || parsed.type].filter(Boolean).join(' '),
+          [result.brand, parsed.type, parsed.season].filter(Boolean).join(' '),
           (result.model || '').toString(),
         ].map(s => s.trim()).filter(s => s.length >= 2)));
-        confirmed = await confirmSneakerWithStockX(imageBase64, queries);
+        confirmed = await confirmWithStockXPhotos(imageBase64, queries, { sneakersOnly });
       }
       if (confirmed) {
         result.model = confirmed.title;
-        // Brand dal titolo StockX se l'IA non l'aveva (prima parola: Nike/Adidas/...).
+        // Brand dal titolo StockX se l'IA non l'aveva (prima parola: Nike/Supreme/...).
         if (!result.brand) result.brand = confirmed.title.split(/\s+/)[0] || undefined;
         result.details = { ...(result.details || {}), styleCode: confirmed.styleId || codeRaw || (result.details as any)?.styleCode || null, stockxProductId: confirmed.productId };
         result.confidence = 'HIGH';
       }
-    } catch (e: any) { logger.warn('Identificazione StockX scarpe fallita', { err: e?.message }); }
+    } catch (e: any) { logger.warn(`Identificazione StockX ${category} fallita`, { err: e?.message }); }
   }
 
   return result;
@@ -1445,16 +1445,17 @@ async function fetchImageAsDataUrl(url: string): Promise<string | null> {
 // Conferma il modello di sneaker confrontando la FOTO dell'utente con le FOTO reali dei
 // candidati del catalogo StockX (confronto immagine-contro-immagine, molto più preciso del
 // solo titolo): l'IA sceglie il prodotto la cui foto combacia per silhouette E colorway.
-async function confirmSneakerWithStockX(imageBase64: string, queries: string[]): Promise<{ title: string; styleId: string | null; productId: string | null } | null> {
+async function confirmWithStockXPhotos(imageBase64: string, queries: string[], opts?: { sneakersOnly?: boolean }): Promise<{ title: string; styleId: string | null; productId: string | null } | null> {
   // Pool di candidati da PIÙ ricerche (brand+modello, colorway, collab, modello): unisco
-  // e dedup, così la scarpa giusta entra nella lista anche se una singola query la mancava.
+  // e dedup, così il prodotto giusto entra nella lista anche se una singola query lo mancava.
+  const sneakersOnly = opts?.sneakersOnly ?? false;
   const MAX_POOL = 6;       // candidati totali (meno ricerche/memoria)
   const MAX_COMPARE = 5;    // foto effettivamente caricate e confrontate (tetto RAM)
   const seen = new Set<string>();
   const candidates: StockXCandidate[] = [];
   for (const q of queries) {
     if (candidates.length >= MAX_POOL) break;
-    const found = await searchStockXCandidates(q, { sneakersOnly: true, limit: 6 });
+    const found = await searchStockXCandidates(q, { sneakersOnly, limit: 6 });
     for (const c of found) {
       const key = (c.productId || c.styleId || c.title || '').toLowerCase();
       if (key && !seen.has(key)) { seen.add(key); candidates.push(c); }
@@ -1473,13 +1474,13 @@ async function confirmSneakerWithStockX(imageBase64: string, queries: string[]):
   // CASO MIGLIORE: abbiamo le foto → confronto foto-contro-foto.
   if (withImg.length >= 2) {
     const list = withImg.map((x, i) => `Foto ${i + 1} = ${x.c.title}${x.c.styleId ? ` (${x.c.styleId})` : ''}`).join('\n');
-    const prompt = `La PRIMA immagine è la scarpa da identificare (foto dell'utente).
-Le immagini SUCCESSIVE sono foto reali di modelli dal catalogo StockX, in questo ordine:
+    const prompt = `La PRIMA immagine è il PRODOTTO da identificare (foto dell'utente).
+Le immagini SUCCESSIVE sono foto reali di prodotti dal catalogo StockX, in questo ordine:
 ${list}
 
 Confronta la PRIMA immagine con ognuna delle foto successive. Scegli il NUMERO della foto che
-mostra la STESSA identica scarpa: stessa silhouette/modello E stessa colorway/grafica/materiali.
-Se nessuna corrisponde con certezza, rispondi 0. Meglio 0 che un modello sbagliato.
+mostra lo STESSO identico prodotto: stesso modello E stesso colore/grafica/stampa/materiali.
+Se nessuna corrisponde con certezza, rispondi 0. Meglio 0 che un prodotto sbagliato.
 
 Rispondi SOLO con JSON: {"choice": <numero>}`;
     try {
@@ -1495,16 +1496,16 @@ Rispondi SOLO con JSON: {"choice": <numero>}`;
       // Libera SUBITO i base64 delle foto (decine di MB sommati): non servono più.
       images.length = 0;
       withImg.length = 0;
-      if (picked) logger.info('Scarpa confermata via confronto foto StockX', { model: picked.title });
+      if (picked) logger.info('Prodotto confermato via confronto foto StockX', { model: picked.title });
       return picked;
     } catch { withImg.length = 0; return null; }
   }
 
   // FALLBACK: nessuna foto disponibile → confronto sui titoli (come prima).
   const list = candidates.map((c, i) => `${i + 1}. ${c.title}${c.styleId ? ` (${c.styleId})` : ''}`).join('\n');
-  const prompt = `Guarda la SCARPA nella foto. Qui sotto ci sono modelli reali dal catalogo StockX.
-Scegli il NUMERO del modello che corrisponde ESATTAMENTE alla scarpa in foto (stessa silhouette E stessa colorway/grafica).
-Se NESSUNO corrisponde con certezza, rispondi 0. Non tirare a indovinare: meglio 0 che un modello sbagliato.
+  const prompt = `Guarda il PRODOTTO nella foto. Qui sotto ci sono prodotti reali dal catalogo StockX.
+Scegli il NUMERO che corrisponde ESATTAMENTE al prodotto in foto (stesso modello E stesso colore/grafica/stampa).
+Se NESSUNO corrisponde con certezza, rispondi 0. Non tirare a indovinare: meglio 0 che un prodotto sbagliato.
 
 ${list}
 
