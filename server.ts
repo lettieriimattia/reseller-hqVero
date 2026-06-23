@@ -362,28 +362,19 @@ serverInstance.listen(PORT, () => {
   // (Job email ricorrente "prodotti fermi" disattivato di proposito.)
   void startEmailJobs;
 
-  // Pilastro 2: Cleanup reservation scadute ogni minuto.
-  // Se una reservation non viene completata entro 15 min, il prodotto torna IN STOCK.
-  const RESERVATION_TTL = 15 * 60 * 1000;
-  setInterval(async () => {
-    try {
-      const expired = await prisma.product.updateMany({
-        where: {
-          status: 'RESERVED',
-          reservedAt: { lt: new Date(Date.now() - RESERVATION_TTL) },
-        },
-        data: { status: 'IN STOCK', reservedBy: null, reservedAt: null },
-      });
-      if (expired.count > 0) {
-        logger.info(`Reservation scadute rilasciate: ${expired.count} prodotti → IN STOCK`);
-      }
-    } catch (err) {
-      logger.error('Errore cleanup reservation', { err });
-    }
-  }, 60_000);
+  // ──────────────────────────────────────────────────────────────────────────
+  // JOB IN BACKGROUND CHE INTERROGANO IL DB
+  // IMPORTANTE per i costi Neon: ogni query ricorrente tiene SVEGLIO il database
+  // (Neon conta le "ore di calcolo" solo quando è attivo, e si sospende dopo ~5 min
+  // di inattività). Un loop ogni 60s azzera di continuo quel timer → il DB non dorme
+  // MAI → ore di calcolo bruciate 24/7 anche senza utenti.
+  // Questi job servono SOLO a marketplace/wallet/tracking, che ora sono nascosti:
+  // li teniamo SPENTI di default e si riaccendono con ENABLE_BACKGROUND_JOBS=1 quando
+  // si riattiva il marketplace. Così, a riposo, Neon può dormire e i costi crollano.
+  const backgroundJobsEnabled = process.env.ENABLE_BACKGROUND_JOBS === '1';
 
-  // Self-ping ogni 14 minuti su Render free tier (evita lo spin-down dopo 15min di inattività)
-  // Si attiva solo se APP_URL è configurato (non in dev locale)
+  // Self-ping ogni 14 minuti su Render free tier (evita lo spin-down dopo 15min di inattività).
+  // NB: colpisce /health, che NON tocca il DB → non consuma ore Neon. Lo teniamo sempre.
   if (isProduction && process.env.APP_URL) {
     setInterval(() => {
       fetch(`${process.env.APP_URL}/health`).catch(() => {});
@@ -391,15 +382,40 @@ serverInstance.listen(PORT, () => {
     logger.info('🔁 Self-ping attivo (ogni 14 min) per Render free tier');
   }
 
-  // Polling tracking ogni 2 ore (solo se API key configurata)
-  if (process.env.TRACKING_17TRACK_KEY) {
-    const TWO_HOURS = 2 * 60 * 60 * 1000;
-    setInterval(() => {
-      pollAllActiveTrackings().catch(err =>
-        logger.error('Errore polling tracking automatico', { err })
-      );
-    }, TWO_HOURS);
-    logger.info('📦 Tracking automatico attivo (poll ogni 2 ore)');
+  if (!backgroundJobsEnabled) {
+    logger.info('⏸️  Job in background DB (prenotazioni/escrow/tracking) DISATTIVATI — ENABLE_BACKGROUND_JOBS=1 per riattivarli. Risparmio ore di calcolo Neon.');
+  } else {
+    // Pilastro 2: Cleanup reservation scadute. Frequenza ridotta a 10 min (non 60s):
+    // una prenotazione può scadere "in ritardo" di qualche minuto senza problemi, e
+    // così il DB può sospendersi tra un controllo e l'altro.
+    const RESERVATION_TTL = 15 * 60 * 1000;
+    setInterval(async () => {
+      try {
+        const expired = await prisma.product.updateMany({
+          where: {
+            status: 'RESERVED',
+            reservedAt: { lt: new Date(Date.now() - RESERVATION_TTL) },
+          },
+          data: { status: 'IN STOCK', reservedBy: null, reservedAt: null },
+        });
+        if (expired.count > 0) {
+          logger.info(`Reservation scadute rilasciate: ${expired.count} prodotti → IN STOCK`);
+        }
+      } catch (err) {
+        logger.error('Errore cleanup reservation', { err });
+      }
+    }, 10 * 60 * 1000);
+
+    // Polling tracking ogni 2 ore (solo se API key configurata)
+    if (process.env.TRACKING_17TRACK_KEY) {
+      const TWO_HOURS = 2 * 60 * 60 * 1000;
+      setInterval(() => {
+        pollAllActiveTrackings().catch(err =>
+          logger.error('Errore polling tracking automatico', { err })
+        );
+      }, TWO_HOURS);
+      logger.info('📦 Tracking automatico attivo (poll ogni 2 ore)');
+    }
   }
 
   // Migrazione foto base64 → Cloudinary. Si attiva con RUN_PHOTO_MIGRATION=1 OPPURE in
@@ -410,9 +426,12 @@ serverInstance.listen(PORT, () => {
 
   // Auto-conferma escrow: sblocca i fondi degli acquisti la cui finestra è scaduta
   // (5gg dalla consegna, o fallback dalla spedizione) e senza contestazioni aperte.
-  releaseExpiredHolds().catch(() => {});
-  setInterval(() => {
-    releaseExpiredHolds().catch(err => logger.error('Errore auto-sblocco escrow', { err }));
-  }, 60 * 60 * 1000);
-  logger.info('💸 Auto-sblocco escrow attivo (controllo ogni ora)');
+  // Anche questo è wallet/marketplace → gated per non tenere sveglio il DB ogni ora.
+  if (backgroundJobsEnabled) {
+    releaseExpiredHolds().catch(() => {});
+    setInterval(() => {
+      releaseExpiredHolds().catch(err => logger.error('Errore auto-sblocco escrow', { err }));
+    }, 60 * 60 * 1000);
+    logger.info('💸 Auto-sblocco escrow attivo (controllo ogni ora)');
+  }
 });
