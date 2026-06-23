@@ -836,6 +836,19 @@ const it: Dict = {
   'ts.createProductError': 'Errore creazione prodotto',
   'ts.incomingAdded': 'Acquisto in arrivo aggiunto e tracciato',
   'ts.productCreatedNoTracking': 'Prodotto creato, ma tracking non salvato',
+  // Generatore annunci (copia tutto) + Profit sharing + Barcode
+  'lst.copyAll': 'Copia tutto',
+  'lst.allCopied': '✓ Tutto copiato!',
+  'ps.title': 'Gestisci Profit Sharing',
+  'ps.dept': 'Reparto',
+  'ps.subWarehouse': 'Sotto-magazzino',
+  'ps.selectMembers': 'Seleziona membri e percentuali:',
+  'ps.noMembers': 'Nessun membro disponibile',
+  'ps.sumToast': 'Le percentuali devono sommare a 100% (attuale: {n}%)',
+  'ps.configError': 'Errore durante la configurazione',
+  'bc.aim': 'Inquadra il codice a barre del prodotto (o della scatola).',
+  'bc.notSupported': 'La fotocamera per barcode non è supportata su questo browser. Inserisci il codice a mano:',
+  'bc.manualPlaceholder': 'Codice a mano (es. EAN o style code)',
 };
 
 const en: Dict = {
@@ -1650,6 +1663,19 @@ const en: Dict = {
   'ts.createProductError': 'Error creating product',
   'ts.incomingAdded': 'Incoming purchase added and tracked',
   'ts.productCreatedNoTracking': 'Product created, but tracking not saved',
+  // Listing generator (copy all) + Profit sharing + Barcode
+  'lst.copyAll': 'Copy all',
+  'lst.allCopied': '✓ All copied!',
+  'ps.title': 'Manage Profit Sharing',
+  'ps.dept': 'Department',
+  'ps.subWarehouse': 'Sub-warehouse',
+  'ps.selectMembers': 'Select members and percentages:',
+  'ps.noMembers': 'No members available',
+  'ps.sumToast': 'Percentages must add up to 100% (current: {n}%)',
+  'ps.configError': 'Error during configuration',
+  'bc.aim': 'Point at the product (or box) barcode.',
+  'bc.notSupported': 'Barcode camera is not supported on this browser. Enter the code manually:',
+  'bc.manualPlaceholder': 'Code by hand (e.g. EAN or style code)',
 };
 
 const es: Dict = {

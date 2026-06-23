@@ -2234,9 +2234,10 @@ export default function App() {
     loadDispute();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentView, activeConvo?.id, activeConvo?.disputeStatus]);
-  const openPlanModal = async (tab: 'plans' | 'repricing' | 'offer' | 'channels' = 'plans') => {
+  const openPlanModal = async (_tab: 'plans' | 'repricing' | 'offer' | 'channels' = 'plans') => {
     setPlanModalOpen(true);
-    setProTab(tab);
+    // Per ora la modale mostra solo "Piani" (gli strumenti Pro sono temporaneamente nascosti).
+    setProTab('plans');
     const cat = await apiCall<any>('/api/plans');
     if (cat.ok) setPlanCatalog(cat.data.plans || []);
     refreshMyPlan();
@@ -8683,9 +8684,10 @@ export default function App() {
               <button onClick={() => setPlanModalOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors"><X size={18} /></button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-1.5 p-3 border-b border-[var(--border)] overflow-x-auto shrink-0">
-              {([['plans',t('plan.tabPlans')],['repricing',t('plan.tabRepricing')],['offer',t('plan.tabOffer')],['channels',t('plan.tabChannels')]] as [typeof proTab,string][]).map(([id,label]) => (
+            {/* Tabs — per ora solo "Piani". Gli strumenti Pro (Stock fermo/Trattative/
+                Multi-canale) restano nel codice e si riattivano rimettendo le voci qui. */}
+            <div className="flex gap-1.5 p-3 border-b border-[var(--border)] overflow-x-auto shrink-0" style={{ display: 'none' }}>
+              {([['plans',t('plan.tabPlans')]] as [typeof proTab,string][]).map(([id,label]) => (
                 <button key={id} onClick={() => setProTab(id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${proTab === id ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   {label}
@@ -9965,7 +9967,7 @@ export default function App() {
                         ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                         : 'bg-violet-600/70 hover:bg-violet-600 text-[var(--text)]'
                     }`}>
-                    {copiedField === 'all' ? '✓ Tutto copiato!' : 'Copia tutto'}
+                    {copiedField === 'all' ? t('lst.allCopied') : t('lst.copyAll')}
                   </button>
                 </div>
               )}
@@ -9982,7 +9984,7 @@ export default function App() {
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-[var(--text)]">
-                Gestisci Profit Sharing
+                {t('ps.title')}
               </h3>
               <button onClick={() => setShowProfitSharesModal(false)}
                 className="p-2 hover:bg-[var(--bg)]/50 rounded-xl transition-colors">
@@ -9992,14 +9994,14 @@ export default function App() {
             
             <div className="mb-4">
               <p className="text-sm text-[var(--text)]/70 mb-2">
-                {profitSharesMode === 'warehouse' ? 'Reparto' : 'Sotto-magazzino'}: <span className="font-semibold text-[var(--text)]">{profitSharesName}</span>
+                {profitSharesMode === 'warehouse' ? t('ps.dept') : t('ps.subWarehouse')}: <span className="font-semibold text-[var(--text)]">{profitSharesName}</span>
               </p>
             </div>
 
             <div className="space-y-3 mb-4">
-              <p className="text-sm font-semibold text-[var(--text)]/80">Seleziona membri e percentuali:</p>
+              <p className="text-sm font-semibold text-[var(--text)]/80">{t('ps.selectMembers')}</p>
               {teamData.length === 0 ? (
-                <p className="text-sm text-[var(--text)]/50">Nessun membro disponibile</p>
+                <p className="text-sm text-[var(--text)]/50">{t('ps.noMembers')}</p>
               ) : (
                 teamData.map((member: any) => {
                   const existingShare = profitShares.find(s => s.userId === member.userId);
@@ -10051,7 +10053,7 @@ export default function App() {
               <button
                 onClick={() => setShowProfitSharesModal(false)}
                 className="flex-1 px-4 py-3 bg-[var(--bg)]/50 hover:bg-[var(--bg)] rounded-xl font-semibold text-[var(--text)]/70 transition-colors">
-                Annulla
+                {t('common.cancel')}
               </button>
               <button
                 onClick={async () => {
@@ -10063,7 +10065,7 @@ export default function App() {
                   
                   const total = validShares.reduce((sum, s) => sum + parseFloat(s.percentage), 0);
                   if (Math.abs(total - 100) > 0.01) {
-                    showToast(`Le percentuali devono sommare a 100% (attuale: ${total.toFixed(1)}%)`, 'err');
+                    showToast(t('ps.sumToast').replace('{n}', total.toFixed(1)), 'err');
                     return;
                   }
 
@@ -10087,11 +10089,11 @@ export default function App() {
                     setProfitShares([]);
                     fetchTeam();
                   } else {
-                    showToast(data.error || 'Errore durante la configurazione', 'err');
+                    showToast(data.error || t('ps.configError'), 'err');
                   }
                 }}
                 className="flex-1 px-4 py-3 bg-blue-500 hover:bg-blue-600 rounded-xl font-semibold text-white transition-colors">
-                Salva
+                {t('common.save')}
               </button>
             </div>
           </div>
@@ -10105,7 +10107,7 @@ export default function App() {
           <div className="bg-[var(--card)] rounded-3xl p-5 w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-[var(--text)] flex items-center gap-2">
-                <ScanLine size={18} className="text-[#8b5cf6]" /> Scansiona barcode
+                <ScanLine size={18} className="text-[#8b5cf6]" /> {t('form.scanBarcode')}
               </h3>
               <button onClick={() => setBarcodeModalOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-lg">
                 <X size={20} />
@@ -10118,11 +10120,11 @@ export default function App() {
                   <video ref={barcodeVideoRef} playsInline muted className="w-full h-full object-cover" />
                   <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-0.5 bg-[#8b5cf6] shadow-[0_0_12px_2px_rgba(139,92,246,0.7)]" />
                 </div>
-                <p className="text-[11px] text-[var(--text-soft)] text-center mb-3">Inquadra il codice a barre del prodotto (o della scatola).</p>
+                <p className="text-[11px] text-[var(--text-soft)] text-center mb-3">{t('bc.aim')}</p>
               </>
             ) : (
               <p className="text-xs text-[var(--text-soft)] mb-3">
-                La fotocamera per barcode non è supportata su questo browser. Inserisci il codice a mano:
+                {t('bc.notSupported')}
               </p>
             )}
 
@@ -10130,10 +10132,10 @@ export default function App() {
             <form onSubmit={(e) => { e.preventDefault(); if (barcodeManual.trim()) onBarcodeFound(barcodeManual.trim()); }}
               className="flex gap-2">
               <input value={barcodeManual} onChange={e => setBarcodeManual(e.target.value)}
-                placeholder="Codice a mano (es. EAN o style code)"
+                placeholder={t('bc.manualPlaceholder')}
                 className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
               <button type="submit" disabled={!barcodeManual.trim()}
-                className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">Cerca</button>
+                className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">{t('market.searchBtn')}</button>
             </form>
           </div>
         </div>
