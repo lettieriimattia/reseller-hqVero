@@ -25,6 +25,11 @@ export function isGeminiConfigured(): boolean {
   return GEMINI_KEYS.length > 0;
 }
 
+// Info diagnostica (senza esporre le chiavi): quante chiavi e quale modello.
+export function getGeminiInfo(): { configured: boolean; keys: number; model: string } {
+  return { configured: GEMINI_KEYS.length > 0, keys: GEMINI_KEYS.length, model: GEMINI_VISION_MODEL };
+}
+
 // Conferma all'avvio (visibile nei log Railway): se non compare, la chiave non è stata letta.
 if (GEMINI_KEYS.length > 0) {
   logger.info(`Gemini vision attivo — ${GEMINI_KEYS.length} chiave/i, modello ${GEMINI_VISION_MODEL}`);

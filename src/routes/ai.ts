@@ -5,7 +5,7 @@ import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimit';
 import { validate, aiScanSchema, priceEstimateSchema } from '../middleware/validate';
-import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, ListingPlatform } from '../services/ai.service';
+import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, getVisionStatus, ListingPlatform } from '../services/ai.service';
 import { getMarketValuation } from '../services/price.service';
 import { getCardValue } from '../services/cards.service';
 import { getValuation } from '../services/valuation.service';
@@ -17,6 +17,12 @@ import { audit } from '../services/audit.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
+
+// Diagnostica pubblica (nessun segreto): quale provider/modello vision è attivo.
+// Apri in browser: /api/ai/vision-status
+router.get('/vision-status', (_req, res) => {
+  res.json(getVisionStatus());
+});
 
 router.use(authenticate);
 router.use(aiLimiter);

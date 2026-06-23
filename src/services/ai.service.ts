@@ -3,7 +3,7 @@ import Groq from 'groq-sdk';
 import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
-import { isGeminiConfigured, geminiVision } from './gemini.service';
+import { isGeminiConfigured, geminiVision, getGeminiInfo } from './gemini.service';
 import { searchStockXCandidates, isStockXConfigured as isStockXConfiguredSvc } from './stockx.service';
 
 
@@ -90,6 +90,22 @@ const TEXT_MODEL = 'llama-3.3-70b-versatile';
 // Gemini è SPENTO di default: la vision gira su Groq come prima.
 // Per riprovare Gemini in futuro: USE_GEMINI_VISION=true su Railway.
 const USE_GEMINI_VISION = process.env.USE_GEMINI_VISION === 'true';
+
+// Diagnostica: quale provider/modello sta usando la vision in questo momento (no segreti).
+export function getVisionStatus() {
+  const gem = getGeminiInfo();
+  const usingGemini = USE_GEMINI_VISION && gem.configured;
+  return {
+    visionProvider: usingGemini ? 'gemini' : 'groq',
+    visionModel: usingGemini ? gem.model : VISION_MODEL,
+    textProvider: 'groq',
+    textModel: TEXT_MODEL,
+    geminiFlag: USE_GEMINI_VISION,
+    geminiConfigured: gem.configured,
+    geminiKeys: gem.keys,
+    geminiModel: gem.model,
+  };
+}
 
 async function visionComplete(opts: {
   prompt: string;
