@@ -205,6 +205,8 @@ export default function App() {
   // Lingua app (it/en/es/de). t(key) traduce; cambio lingua → re-render immediato.
   const [lang, setLang] = useState<Lang>(getLang());
   const t = (key: string) => translate(lang, key);
+  // Locale per date/numeri in base alla lingua scelta.
+  const dateLocale = lang === 'it' ? 'it-IT' : lang === 'es' ? 'es-ES' : lang === 'de' ? 'de-DE' : 'en-GB';
   const changeLang = (l: Lang) => { setLang(l); setLangStorage(l); };
   // Modalità manutenzione (durante la migrazione foto): il server espone /api/status.
   const [maintenance, setMaintenance] = useState(false);
@@ -3985,7 +3987,7 @@ export default function App() {
                 <h2 className="text-3xl lg:text-4xl font-bold">
                   {t('dash.hello')}, <span className="text-[var(--text)]">{user.name.split(' ')[0]}</span>
                 </h2>
-                <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1.5 capitalize">{new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1.5 capitalize">{new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
               </div>
               {/* Destra: cluster stat — riempie l'header su desktop */}
               <div className="hidden sm:flex sm:flex-1 items-stretch justify-end gap-5 lg:gap-7">
@@ -4130,10 +4132,10 @@ export default function App() {
                       onClick={() => { setCurrentView('magazzino'); setSortField('date'); setSortDir('asc'); }}>
                       <AlertTriangle size={16} className="text-red-400 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-red-300">{staleCount} {staleCount === 1 ? 'prodotto fermo' : 'prodotti fermi'} da oltre 30 giorni</p>
-                        <p className="text-[10px] text-[var(--text-soft)]">Valuta uno sconto per sbloccare capitale</p>
+                        <p className="text-sm font-bold text-red-300">{staleCount} {staleCount === 1 ? t('home.staleOne') : t('home.staleMany')} {t('home.over30')}</p>
+                        <p className="text-[10px] text-[var(--text-soft)]">{t('home.staleHint')}</p>
                       </div>
-                      <span className="text-[10px] text-[var(--text-soft)] shrink-0">Vedi →</span>
+                      <span className="text-[10px] text-[var(--text-soft)] shrink-0">{t('dash.see')} →</span>
                     </div>
                   )}
                   {weekSales.length > 0 && (
@@ -4141,10 +4143,10 @@ export default function App() {
                       <TrendingUp size={16} className="text-green-400 shrink-0" />
                       <div>
                         <p className="text-sm font-bold text-green-300">
-                          {weekSales.length} {weekSales.length === 1 ? 'vendita' : 'vendite'} questa settimana
+                          {weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')} {t('home.thisWeek')}
                           {weekProfit > 0 && ` · +${weekProfit.toFixed(0)}€`}
                         </p>
-                        <p className="text-[10px] text-[var(--text-soft)]">Ottimo ritmo di smaltimento stock</p>
+                        <p className="text-[10px] text-[var(--text-soft)]">{t('home.goodPace')}</p>
                       </div>
                     </div>
                   )}
@@ -4152,8 +4154,8 @@ export default function App() {
                     <div className="flex items-center gap-3 p-3 bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 rounded-xl">
                       <span className="text-xl shrink-0">{getCategoryIcon(bestCategoryEntry.cat)}</span>
                       <div>
-                        <p className="text-sm font-bold">{bestCategoryEntry.cat} è il tuo reparto migliore</p>
-                        <p className="text-[10px] text-[var(--text-soft)]">+{bestCategoryEntry.profit.toFixed(0)}€ · {bestCategoryEntry.count} vendite</p>
+                        <p className="text-sm font-bold">{bestCategoryEntry.cat} {t('home.bestDeptSuffix')}</p>
+                        <p className="text-[10px] text-[var(--text-soft)]">+{bestCategoryEntry.profit.toFixed(0)}€ · {bestCategoryEntry.count} {t('dash.salesPlural')}</p>
                       </div>
                     </div>
                   )}
@@ -4161,7 +4163,7 @@ export default function App() {
                     <div className="flex items-center gap-3">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1.5">
-                          <p className="text-xs text-[var(--text-muted)] font-semibold">Sell-through rate</p>
+                          <p className="text-xs text-[var(--text-muted)] font-semibold">{t('home.sellThrough')}</p>
                           <p className="text-xs font-bold text-[var(--text)] num">{sellThroughRate}%</p>
                         </div>
                         <div className="h-1.5 bg-black/40 rounded-full overflow-hidden">
@@ -4169,7 +4171,7 @@ export default function App() {
                             sellThroughRate >= 60 ? 'bg-green-500' : sellThroughRate >= 30 ? 'bg-yellow-500' : 'bg-gray-600'
                           }`} style={{ width: `${sellThroughRate}%` }} />
                         </div>
-                        <p className="text-[10px] text-[var(--text-faint)] mt-1">{globalSold.length} venduti su {totalItems} totali</p>
+                        <p className="text-[10px] text-[var(--text-faint)] mt-1">{globalSold.length} {t('home.soldOf')} {totalItems} {t('home.totalWord')}</p>
                       </div>
                     </div>
                   )}
@@ -4184,9 +4186,9 @@ export default function App() {
                 onClick={() => setTeamPanelOpen(true)}>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-1.5">
-                    <Trophy size={10} /> Libro Paga
+                    <Trophy size={10} /> {t('home.payroll')}
                   </p>
-                  <span className="text-[9px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">Dettaglio →</span>
+                  <span className="text-[9px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">{t('home.detail')}</span>
                 </div>
                 <div className="space-y-1.5">
                   {Object.values(sociProfits)
@@ -4204,7 +4206,7 @@ export default function App() {
                             <div className="flex items-center gap-2 mb-1.5">
                               <span className="font-semibold text-sm truncate">{socio.name}</span>
                               {socio.name === user.name && (
-                                <span className="text-[9px] bg-[var(--fill)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full shrink-0">tu</span>
+                                <span className="text-[9px] bg-[var(--fill)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full shrink-0">{t('home.you')}</span>
                               )}
                             </div>
                             <div className="h-0.5 bg-[var(--fill)] rounded-full overflow-hidden">
@@ -4222,7 +4224,7 @@ export default function App() {
 
             {/* Reparti */}
             <section>
-              <p className="text-[9px] font-semibold text-[var(--text-faint)] tracking-[0.12em] uppercase mb-3">Reparti</p>
+              <p className="text-[9px] font-semibold text-[var(--text-faint)] tracking-[0.12em] uppercase mb-3">{t('home.departments')}</p>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {userCategories.map((cat: string) => {
                   const catAll = products.filter(p => p.category === cat);
@@ -4241,7 +4243,7 @@ export default function App() {
                         <span className="text-[9px] lg:text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-muted)]">{catSellRate}%</span>
                       </div>
                       <p className="font-bold text-base lg:text-2xl leading-none">{cat}</p>
-                      <p className="text-[11px] lg:text-sm text-[var(--text-soft)] mt-1 lg:mt-1.5 mb-3 lg:mb-4">{catStock.length} stock · {catSold.length} venduti</p>
+                      <p className="text-[11px] lg:text-sm text-[var(--text-soft)] mt-1 lg:mt-1.5 mb-3 lg:mb-4">{catStock.length} {t('home.stockWord')} · {catSold.length} {t('home.soldWord')}</p>
                       <div className="h-0.5 lg:h-1 bg-[var(--fill)] rounded-full overflow-hidden mb-2.5 lg:mb-3">
                         <div className="h-full bg-[#8b5cf6] rounded-full" style={{ width: `${catSellRate}%` }} />
                       </div>
@@ -4264,19 +4266,19 @@ export default function App() {
             {(() => {
               const active = products.filter((p: any) => p.trackingCode && ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING'));
               const stLabel = (s?: string) => {
-                if (s === 'IN_TRANSIT') return { t: 'In transito', c: 'bg-blue-500/20 text-blue-400' };
-                if (s === 'OUT_FOR_DELIVERY') return { t: 'In consegna', c: 'bg-violet-500/20 text-violet-400' };
-                if (s === 'EXCEPTION') return { t: 'Eccezione', c: 'bg-red-500/20 text-red-400' };
-                return { t: 'In attesa', c: 'bg-[var(--fill)] text-[var(--text-soft)]' };
+                if (s === 'IN_TRANSIT') return { t: t('track.stInTransit'), c: 'bg-blue-500/20 text-blue-400' };
+                if (s === 'OUT_FOR_DELIVERY') return { t: t('track.stOutForDelivery'), c: 'bg-violet-500/20 text-violet-400' };
+                if (s === 'EXCEPTION') return { t: t('track.stException'), c: 'bg-red-500/20 text-red-400' };
+                return { t: t('track.stPending'), c: 'bg-[var(--fill)] text-[var(--text-soft)]' };
               };
               return (
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-[9px] font-semibold text-[var(--text-faint)] tracking-[0.12em] uppercase flex items-center gap-2"><Truck size={12} /> Spedizioni in corso{active.length > 0 ? ` (${active.length})` : ''}</p>
-                    <button onClick={() => navigateTo('tracking')} className="text-[10px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">Vedi tutto →</button>
+                    <p className="text-[9px] font-semibold text-[var(--text-faint)] tracking-[0.12em] uppercase flex items-center gap-2"><Truck size={12} /> {t('home.shipmentsInProgress')}{active.length > 0 ? ` (${active.length})` : ''}</p>
+                    <button onClick={() => navigateTo('tracking')} className="text-[10px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">{t('home.seeAll')}</button>
                   </div>
                   {active.length === 0 ? (
-                    <p className="text-sm text-[var(--text-soft)] text-center py-4">Nessuna spedizione in corso</p>
+                    <p className="text-sm text-[var(--text-soft)] text-center py-4">{t('home.noShipments')}</p>
                   ) : (
                     <div className="space-y-2">
                       {active.slice(0, 5).map((p: any) => {
@@ -4287,7 +4289,7 @@ export default function App() {
                             <span className="text-xl shrink-0">{getCategoryIcon(p.category)}</span>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-bold truncate">{p.brand} {p.name}</p>
-                              <p className="text-[10px] text-[var(--text-faint)] font-mono truncate">{p.trackingCarrier || 'Corriere'} · {p.trackingCode}</p>
+                              <p className="text-[10px] text-[var(--text-faint)] font-mono truncate">{p.trackingCarrier || t('home.carrier')} · {p.trackingCode}</p>
                             </div>
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${st.c}`}>{st.t}</span>
                           </div>
