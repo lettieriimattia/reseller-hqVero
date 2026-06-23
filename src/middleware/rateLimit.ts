@@ -4,8 +4,14 @@
 import rateLimit from 'express-rate-limit';
 
 const LOGIN_LIMIT = parseInt(process.env.RATE_LIMIT_LOGIN || '5');
-const API_LIMIT = parseInt(process.env.RATE_LIMIT_API || '100');
-const AI_LIMIT = parseInt(process.env.RATE_LIMIT_AI || '20');
+// API generale: alzato a 1000/15min. Ogni azione (salvataggio prodotto, fetch lista,
+// notifiche, team…) è una richiesta: con l'uso intenso / caricamento in blocco i 100
+// precedenti si esaurivano in pochi minuti e l'app "smetteva di funzionare".
+const API_LIMIT = parseInt(process.env.RATE_LIMIT_API || '1000');
+// IA: alzato a 500/ora. ATTENZIONE: UNA scansione fa ~3 chiamate IA (full-scan +
+// valutazione + stockx-match), quindi 20/ora bastavano per appena ~6-7 scansioni →
+// dopo ~10 minuti di lavoro l'IA si bloccava. 500/ora = ~160 scansioni/ora per utente.
+const AI_LIMIT = parseInt(process.env.RATE_LIMIT_AI || '500');
 
 // ==========================================
 // LOGIN / REGISTER - molto restrittivo
