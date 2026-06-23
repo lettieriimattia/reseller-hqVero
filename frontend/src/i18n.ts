@@ -701,6 +701,29 @@ const it: Dict = {
   'auth.verifyEmail': 'Verifica la tua email',
   'auth.codeSent': 'Ti abbiamo inviato un codice a 6 cifre. Inseriscilo per continuare.',
   'auth.loginToContact': 'Accedi per contattare il venditore',
+  // Command palette
+  'cmd.goTo': 'Vai a',
+  'cmd.addProductSub': 'Nuovo inserimento in magazzino',
+  'cmd.valueLookupSub': 'Prezzo di mercato e max d\'acquisto per il margine voluto',
+  'cmd.sellSelected': 'Vendi selezionati',
+  'cmd.delSelected': 'Elimina selezionati',
+  'cmd.themeDark': 'Tema scuro',
+  'cmd.themeLight': 'Tema chiaro',
+  'cmd.themeGlass': 'Tema vetro (glass)',
+  'cmd.logout': 'Esci',
+  'cmd.sold': 'venduto',
+  'cmd.inStockWord': 'in stock',
+  'cmd.searchPlaceholder': 'Cerca prodotti o azioni…',
+  'cmd.navigate': 'naviga',
+  'cmd.openWord': 'apri',
+  // Sidebar / Header
+  'hdr.general': 'Generale',
+  'hdr.guide': 'Guida',
+  'hdr.privacy': 'Privacy e consensi',
+  'hdr.markAllRead': 'Segna tutto letto',
+  'hdr.noNotifs': 'Nessuna notifica',
+  'hdr.pushOn': 'Notifiche attivate ✓',
+  'hdr.pushOff': 'Notifiche disattivate',
 };
 
 const en: Dict = {
@@ -1386,6 +1409,29 @@ const en: Dict = {
   'auth.verifyEmail': 'Verify your email',
   'auth.codeSent': 'We sent you a 6-digit code. Enter it to continue.',
   'auth.loginToContact': 'Sign in to contact the seller',
+  // Command palette
+  'cmd.goTo': 'Go to',
+  'cmd.addProductSub': 'New entry in inventory',
+  'cmd.valueLookupSub': 'Market price and max buy price for the desired margin',
+  'cmd.sellSelected': 'Sell selected',
+  'cmd.delSelected': 'Delete selected',
+  'cmd.themeDark': 'Dark theme',
+  'cmd.themeLight': 'Light theme',
+  'cmd.themeGlass': 'Glass theme',
+  'cmd.logout': 'Log out',
+  'cmd.sold': 'sold',
+  'cmd.inStockWord': 'in stock',
+  'cmd.searchPlaceholder': 'Search products or actions…',
+  'cmd.navigate': 'navigate',
+  'cmd.openWord': 'open',
+  // Sidebar / Header
+  'hdr.general': 'General',
+  'hdr.guide': 'Guide',
+  'hdr.privacy': 'Privacy & consents',
+  'hdr.markAllRead': 'Mark all read',
+  'hdr.noNotifs': 'No notifications',
+  'hdr.pushOn': 'Notifications enabled ✓',
+  'hdr.pushOff': 'Notifications disabled',
 };
 
 const es: Dict = {

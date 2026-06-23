@@ -801,7 +801,7 @@ export default function App() {
         applicationServerKey: urlBase64ToUint8Array(data.key) as BufferSource,
       }), 8000, 'subscribe');
       const res = await apiCall('/api/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON() }) });
-      if (res.ok) { setPushEnabled(true); localStorage.setItem('pushEnabled', '1'); showToast('Notifiche attivate ✓'); }
+      if (res.ok) { setPushEnabled(true); localStorage.setItem('pushEnabled', '1'); showToast(t('hdr.pushOn')); }
       else showToast('Errore salvataggio notifiche', 'err');
     } catch (err: any) {
       const msg = String(err?.message || '');
@@ -826,7 +826,7 @@ export default function App() {
         await sub.unsubscribe().catch(() => {});
       }
       setPushEnabled(false); localStorage.removeItem('pushEnabled');
-      showToast('Notifiche disattivate');
+      showToast(t('hdr.pushOff'));
     } catch { showToast('Errore', 'err'); }
     finally { setPushBusy(false); }
   };
@@ -3749,34 +3749,34 @@ export default function App() {
         </nav>
         {/* Sezione "Generale" — tutto cio' che sta "fuori" dal gestionale, in fondo */}
         <div className="mt-auto pt-3 border-t border-[var(--border)] flex flex-col gap-0.5">
-          <p className="px-3.5 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-faint)]">Generale</p>
+          <p className="px-3.5 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-faint)]">{t('hdr.general')}</p>
           <button onClick={() => openPlanModal()}
             className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-semibold text-[#8b5cf6] hover:bg-[#8b5cf6]/10 transition-colors">
-            <Sparkles size={17} /> Piani
+            <Sparkles size={17} /> {t('plan.tabPlans')}
           </button>
           <button onClick={() => navigateTo('wallet')}
             className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
               currentView === 'wallet' ? 'bg-[#8b5cf6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
             }`}>
-            <Wallet size={17} /> Portafoglio
+            <Wallet size={17} /> {t('nav.wallet')}
           </button>
           <button onClick={() => navigateTo('settings')}
             className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
               currentView === 'settings' ? 'bg-[#8b5cf6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
             }`}>
-            <Settings size={17} /> Impostazioni
+            <Settings size={17} /> {t('nav.settings')}
           </button>
           <button onClick={() => setGuideOpen(true)}
             className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
-            <BookOpen size={17} /> Guida
+            <BookOpen size={17} /> {t('hdr.guide')}
           </button>
           <button onClick={() => setPrivacyOpen(true)}
             className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
-            <Lock size={17} /> Privacy e consensi
+            <Lock size={17} /> {t('hdr.privacy')}
           </button>
           <button onClick={handleLogout}
             className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-red-500/10 hover:text-red-400 transition-colors">
-            <LogOut size={17} /> Esci
+            <LogOut size={17} /> {t('cmd.logout')}
           </button>
         </div>
       </aside>
@@ -3800,7 +3800,7 @@ export default function App() {
             {/* Pulsante Aggiungi (solo desktop) */}
             <button onClick={() => openAddForm()}
               className="hidden lg:flex items-center gap-2 bg-[#8b5cf6] hover:bg-[#7c3aed] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
-              <Plus size={15} /> Aggiungi
+              <Plus size={15} /> {t('common.add')}
             </button>
             {/* Portafoglio (solo mobile: icona in alto a destra, accesso rapido agli incassi) */}
             <button onClick={() => navigateTo('wallet')}
@@ -3831,17 +3831,17 @@ export default function App() {
                    Chiusura al tap-fuori gestita dal listener globale (vedi useEffect). */
                 <div className="fixed sm:absolute left-1/2 sm:left-auto right-auto sm:right-0 -translate-x-1/2 sm:translate-x-0 top-16 sm:top-12 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 bg-[var(--surface-blur)] backdrop-blur-2xl border border-[var(--border-2)] rounded-2xl shadow-xl overflow-hidden z-50">
                   <div className="p-4 border-b border-[var(--border)] flex justify-between items-center">
-                    <h3 className="font-semibold text-sm">Notifiche</h3>
+                    <h3 className="font-semibold text-sm">{t('set.notifications')}</h3>
                     {unreadCount > 0 && (
                       <button onClick={markAllNotificationsRead}
                         className="text-xs text-[var(--text-soft)] hover:text-gray-300 transition-colors">
-                        Segna tutto letto
+                        {t('hdr.markAllRead')}
                       </button>
                     )}
                   </div>
                   <div className="max-h-96 overflow-y-auto">
                     {notifications.length === 0 ? (
-                      <p className="p-8 text-center text-[var(--text-soft)] text-sm">Nessuna notifica</p>
+                      <p className="p-8 text-center text-[var(--text-soft)] text-sm">{t('hdr.noNotifs')}</p>
                     ) : (
                       notifications.map((n: any) => (
                         <button key={n.id} onClick={() => markNotificationRead(n.id)}
@@ -3873,7 +3873,7 @@ export default function App() {
               <Settings size={18} className="text-[var(--text-muted)]" />
             </button>
 
-            <button onClick={handleLogout} title="Esci"
+            <button onClick={handleLogout} title={t('cmd.logout')}
               className="p-2 rounded-xl hover:bg-[var(--fill)] transition-colors lg:hidden">
               <LogOut size={18} className="text-[var(--text-muted)]" />
             </button>
@@ -6796,27 +6796,27 @@ export default function App() {
       {cmdOpen && (() => {
         const q = cmdQuery.trim().toLowerCase();
         const baseActions: any[] = [
-          { key: 'nav-dashboard', icon: LayoutDashboard, label: 'Vai a Dashboard', sub: '', run: () => navigateTo('dashboard') },
-          { key: 'nav-magazzino', icon: Package, label: 'Vai a Magazzino', sub: '', run: () => navigateTo('magazzino') },
-          { key: 'nav-analytics', icon: BarChart3, label: 'Vai ad Analytics', sub: '', run: () => navigateTo('analytics') },
-          { key: 'nav-tracking', icon: Truck, label: 'Vai a Tracking', sub: '', run: () => navigateTo('tracking') },
-          { key: 'nav-settings', icon: Settings, label: 'Vai a Impostazioni', sub: '', run: () => navigateTo('settings') },
-          { key: 'act-add', icon: Plus, label: 'Aggiungi prodotto', sub: 'Nuovo inserimento in magazzino', run: () => openAddForm() },
-          ...(VALUATION_ENABLED ? [{ key: 'act-sourcing', icon: DollarSign, label: 'Ricerca valore', sub: 'Prezzo di mercato e max d\'acquisto per il margine voluto', run: () => openSourcing() }] : []),
+          { key: 'nav-dashboard', icon: LayoutDashboard, label: `${t('cmd.goTo')} ${t('nav.dashboard')}`, sub: '', run: () => navigateTo('dashboard') },
+          { key: 'nav-magazzino', icon: Package, label: `${t('cmd.goTo')} ${t('nav.magazzino')}`, sub: '', run: () => navigateTo('magazzino') },
+          { key: 'nav-analytics', icon: BarChart3, label: `${t('cmd.goTo')} ${t('nav.analytics')}`, sub: '', run: () => navigateTo('analytics') },
+          { key: 'nav-tracking', icon: Truck, label: `${t('cmd.goTo')} ${t('nav.tracking')}`, sub: '', run: () => navigateTo('tracking') },
+          { key: 'nav-settings', icon: Settings, label: `${t('cmd.goTo')} ${t('nav.settings')}`, sub: '', run: () => navigateTo('settings') },
+          { key: 'act-add', icon: Plus, label: t('mag.addProduct'), sub: t('cmd.addProductSub'), run: () => openAddForm() },
+          ...(VALUATION_ENABLED ? [{ key: 'act-sourcing', icon: DollarSign, label: t('dash.valueLookup'), sub: t('cmd.valueLookupSub'), run: () => openSourcing() }] : []),
         ];
         // Azioni sui selezionati (quando sei in modalità selezione)
         if (bulkMode && getBulkSelectedIds().length > 0) {
           const n = getBulkSelectedIds().length;
           baseActions.push(
-            { key: 'act-bulk-sell', icon: DollarSign, label: `Vendi selezionati (${n})`, sub: '', run: () => setBulkSellOpen(true) },
-            { key: 'act-bulk-del', icon: Trash2, label: `Elimina selezionati (${n})`, sub: '', run: () => setBulkDeleteConfirmOpen(true) },
+            { key: 'act-bulk-sell', icon: DollarSign, label: `${t('cmd.sellSelected')} (${n})`, sub: '', run: () => setBulkSellOpen(true) },
+            { key: 'act-bulk-del', icon: Trash2, label: `${t('cmd.delSelected')} (${n})`, sub: '', run: () => setBulkDeleteConfirmOpen(true) },
           );
         }
         baseActions.push(
-          { key: 'act-theme-dark', icon: Moon, label: 'Tema scuro', sub: '', run: () => setTheme('dark') },
-          { key: 'act-theme-light', icon: Sun, label: 'Tema chiaro', sub: '', run: () => setTheme('light') },
-          { key: 'act-theme-glass', icon: Sparkles, label: 'Tema vetro (glass)', sub: '', run: () => setTheme('glass') },
-          { key: 'act-logout', icon: LogOut, label: 'Esci', sub: '', run: () => handleLogout() },
+          { key: 'act-theme-dark', icon: Moon, label: t('cmd.themeDark'), sub: '', run: () => setTheme('dark') },
+          { key: 'act-theme-light', icon: Sun, label: t('cmd.themeLight'), sub: '', run: () => setTheme('light') },
+          { key: 'act-theme-glass', icon: Sparkles, label: t('cmd.themeGlass'), sub: '', run: () => setTheme('glass') },
+          { key: 'act-logout', icon: LogOut, label: t('cmd.logout'), sub: '', run: () => handleLogout() },
         );
         const navActions = baseActions.filter(a => !q || a.label.toLowerCase().includes(q));
         const prodItems = (q.length > 0
@@ -6825,7 +6825,7 @@ export default function App() {
         ).map((p: any) => ({
           key: `prod-${p.id}`, icon: Package,
           label: `${p.brand} ${p.name}`,
-          sub: `${p.size ? p.size + ' · ' : ''}${p.category || ''} · ${p.status === 'VENDUTO' ? 'venduto' : 'in stock'}`,
+          sub: `${p.size ? p.size + ' · ' : ''}${p.category || ''} · ${p.status === 'VENDUTO' ? t('cmd.sold') : t('cmd.inStockWord')}`,
           run: () => {
             setCurrentView('magazzino');
             setMagazzinoView(p.status === 'VENDUTO' ? 'sold' : 'instock');
@@ -6851,13 +6851,13 @@ export default function App() {
                     else if (e.key === 'Enter') { e.preventDefault(); choose(sel); }
                     else if (e.key === 'Escape') { e.preventDefault(); close(); }
                   }}
-                  placeholder="Cerca prodotti o azioni…"
+                  placeholder={t('cmd.searchPlaceholder')}
                   className="flex-1 bg-transparent py-4 text-sm outline-none placeholder:text-[var(--text-faint)]" />
                 <kbd className="hidden sm:block text-[10px] text-[var(--text-faint)] border border-[var(--border-2)] rounded px-1.5 py-0.5">ESC</kbd>
               </div>
               <div className="max-h-[50vh] overflow-y-auto py-2">
                 {items.length === 0 ? (
-                  <p className="px-4 py-8 text-center text-sm text-[var(--text-soft)]">Nessun risultato</p>
+                  <p className="px-4 py-8 text-center text-sm text-[var(--text-soft)]">{t('mag.noResults')}</p>
                 ) : items.map((it, i) => {
                   const Icon = it.icon;
                   return (
@@ -6873,8 +6873,8 @@ export default function App() {
                 })}
               </div>
               <div className="hidden sm:flex items-center gap-4 px-4 py-2 border-t border-[var(--border)] text-[10px] text-[var(--text-faint)]">
-                <span className="flex items-center gap-1"><kbd className="border border-[var(--border-2)] rounded px-1">↑</kbd><kbd className="border border-[var(--border-2)] rounded px-1">↓</kbd> naviga</span>
-                <span className="flex items-center gap-1"><kbd className="border border-[var(--border-2)] rounded px-1">↵</kbd> apri</span>
+                <span className="flex items-center gap-1"><kbd className="border border-[var(--border-2)] rounded px-1">↑</kbd><kbd className="border border-[var(--border-2)] rounded px-1">↓</kbd> {t('cmd.navigate')}</span>
+                <span className="flex items-center gap-1"><kbd className="border border-[var(--border-2)] rounded px-1">↵</kbd> {t('cmd.openWord')}</span>
                 <span className="ml-auto">⌘K / Ctrl K</span>
               </div>
             </div>
