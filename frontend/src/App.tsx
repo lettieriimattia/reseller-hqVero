@@ -1190,7 +1190,7 @@ export default function App() {
 
   // Acquisto con pagamento in-app (Stripe Connect): reindirizza al checkout.
   const payProduct = async (productId: string) => {
-    if (!isAuthenticated) { setPublicMarket(false); showToast('Accedi per acquistare', 'warn'); return; }
+    if (!isAuthenticated) { setPublicMarket(false); showToast(t('market.loginToBuy'), 'warn'); return; }
     const { ok, data } = await apiCall<any>(`/market/${productId}/buy`, { method: 'POST', body: JSON.stringify({}) });
     if (ok && data?.url) { window.location.href = data.url; return; }
     if (data?.sellerNotReady) { showToast('Il venditore non ha ancora attivato gli incassi — contattalo in chat', 'warn'); return; }
@@ -1198,7 +1198,7 @@ export default function App() {
   };
 
   const contactSeller = async (productId: string, message?: string) => {
-    if (!isAuthenticated) { setPublicMarket(false); showToast('Accedi per contattare il venditore', 'warn'); return; }
+    if (!isAuthenticated) { setPublicMarket(false); showToast(t('auth.loginToContact'), 'warn'); return; }
     const { ok, data } = await apiCall<any>(`/market/${productId}/contact`, { method: 'POST', body: JSON.stringify(message ? { message } : {}) });
     if (ok && data?.conversationId) {
       setMarketDetail(null);
@@ -3433,7 +3433,7 @@ export default function App() {
       <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] font-sans">
         <header className="sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)] px-4 py-3 flex items-center justify-between">
           <span className="font-black text-lg">HQ <span className="text-[var(--text-soft)]">Market</span></span>
-          <button onClick={() => setPublicMarket(false)} className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold">Accedi</button>
+          <button onClick={() => setPublicMarket(false)} className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold">{t('auth.signIn')}</button>
         </header>
         <div className="max-w-[1100px] mx-auto p-4 space-y-4">
           <div className="flex gap-2">
@@ -3505,7 +3505,7 @@ export default function App() {
               <div className="border-t border-[var(--border)] p-3 shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
                 <button onClick={() => { setMarketDetail(null); setPublicMarket(false); }}
                   className="w-full py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">
-                  Accedi per acquistare
+                  {t('market.loginToBuy')}
                 </button>
               </div>
             </div>
@@ -3531,24 +3531,24 @@ export default function App() {
           </div>
           {needVerifyEmail ? (
             <div className="space-y-4">
-              <p className="text-center text-[var(--text-soft)] text-sm">Verifica la tua email<br/><span className="text-[var(--text)] font-semibold">{needVerifyEmail}</span></p>
-              <p className="text-center text-[11px] text-[var(--text-faint)]">Ti abbiamo inviato un codice a 6 cifre. Inseriscilo per continuare.</p>
+              <p className="text-center text-[var(--text-soft)] text-sm">{t('auth.verifyEmail')}<br/><span className="text-[var(--text)] font-semibold">{needVerifyEmail}</span></p>
+              <p className="text-center text-[11px] text-[var(--text-faint)]">{t('auth.codeSent')}</p>
               <input value={verifyCode} onChange={e => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 inputMode="numeric" placeholder="______" maxLength={6}
                 className="w-full text-center tracking-[0.5em] text-xl font-bold bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl py-3 outline-none focus:border-[#8b5cf6]" />
               {authError && <p className="text-red-400 text-sm text-center">{authError}</p>}
               <button type="button" onClick={submitVerify} disabled={authLoading}
                 className="w-full bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center">
-                {authLoading ? <Loader2 className="animate-spin" size={20} /> : 'Verifica e accedi'}
+                {authLoading ? <Loader2 className="animate-spin" size={20} /> : t('auth.verifyAndEnter')}
               </button>
               <div className="flex items-center justify-between text-sm">
-                <button type="button" onClick={resendVerify} className="text-[var(--text-soft)] hover:text-[var(--text)] font-bold">Rimanda codice</button>
-                <button type="button" onClick={() => { setNeedVerifyEmail(null); setVerifyCode(''); setAuthError(null); }} className="text-[var(--text-soft)] hover:text-[var(--text)] font-bold">Indietro</button>
+                <button type="button" onClick={resendVerify} className="text-[var(--text-soft)] hover:text-[var(--text)] font-bold">{t('auth.resendCode')}</button>
+                <button type="button" onClick={() => { setNeedVerifyEmail(null); setVerifyCode(''); setAuthError(null); }} className="text-[var(--text-soft)] hover:text-[var(--text)] font-bold">{t('del.back')}</button>
               </div>
             </div>
           ) : (<>
           <p className="text-center text-[var(--text-soft)] text-sm mb-8">
-            {authMode === 'login' ? 'Accedi al tuo account' : 'Crea il tuo account'}
+            {authMode === 'login' ? t('auth.loginSub') : t('auth.registerSub')}
           </p>
 
           <form onSubmit={handleAuth} className="space-y-4">
@@ -3556,10 +3556,10 @@ export default function App() {
               <div className="bg-blue-500/10 border border-blue-500/30 p-5 rounded-2xl">
                 <div className="flex items-center gap-2 mb-3">
                   <Shield className="text-blue-500" size={20} />
-                  <h3 className="text-[var(--text)] font-bold">Verifica 2FA</h3>
+                  <h3 className="text-[var(--text)] font-bold">{t('auth.verify2fa')}</h3>
                 </div>
                 <p className="text-xs text-[var(--text-muted)] mb-4">
-                  Inserisci il codice a 6 cifre dalla tua app authenticator (o un codice di backup).
+                  {t('auth.twofaHint')}
                 </p>
                 <input 
                   type="text" autoFocus inputMode="numeric" required
@@ -3576,28 +3576,27 @@ export default function App() {
                       <button type="button" onClick={() => setRegType('new_team')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
                           regType === 'new_team' ? 'bg-[#8b5cf6] text-[var(--text)]' : 'text-[var(--text-soft)]'
-                        }`}>Fonda un'Azienda</button>
+                        }`}>{t('auth.foundCompany')}</button>
                       <button type="button" onClick={() => setRegType('join_team')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
                           regType === 'join_team' ? 'bg-blue-600 text-[var(--text)]' : 'text-[var(--text-soft)]'
-                        }`}>Entra in un Team</button>
+                        }`}>{t('tp.joinTeam')}</button>
                     </div>
-                    
+
                     <div>
-                      <label className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Il tuo Nome</label>
+                      <label className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('auth.yourName')}</label>
                       <input type="text" required value={authName} onChange={e => setAuthName(e.target.value)}
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#8b5cf6] outline-none"
-                        placeholder="Es. Mario Rossi" />
+                        placeholder={t('auth.namePlaceholder')} />
                     </div>
                     
                     {regType === 'new_team' && (
                       <div className="mt-6 mb-4 border-t border-[var(--border-2)] pt-6">
                         <h3 className="text-lg font-bold text-[var(--text)] flex items-center gap-2 mb-1">
-                          <Layers className="text-[var(--text)]" size={18} /> Il tuo magazzino
+                          <Layers className="text-[var(--text)]" size={18} /> {t('auth.yourWarehouse')}
                         </h3>
                         <p className="text-xs text-[var(--text-soft)]">
-                          Parti con <b className="text-[var(--text)]">"Il mio magazzino"</b>. Le categorie (scarpe, vestiti…) le crei al volo
-                          dalla foto con l'IA o scrivendole a mano. Potrai aggiungere altri magazzini con i tuoi soci quando vuoi.
+                          {t('auth.warehouseDesc1')} <b className="text-[var(--text)]">{t('auth.myWarehouse')}</b>{t('auth.warehouseDesc2')}
                         </p>
                       </div>
                     )}
@@ -3605,9 +3604,9 @@ export default function App() {
                     {regType === 'join_team' && (
                       <div className="mt-6 mb-4 border-t border-[var(--border-2)] pt-6">
                         <h3 className="text-lg font-bold text-[var(--text)] flex items-center gap-2 mb-1">
-                          <UserPlus className="text-blue-500" size={18} /> Codice Invito
+                          <UserPlus className="text-blue-500" size={18} /> {t('auth.inviteCode')}
                         </h3>
-                        <p className="text-xs text-[var(--text-soft)] mb-4">Inserisci il codice fornito dal tuo socio.</p>
+                        <p className="text-xs text-[var(--text-soft)] mb-4">{t('auth.inviteDesc')}</p>
                         <input type="text" required value={joinCode}
                           onChange={e => setJoinCode(e.target.value.toUpperCase())}
                           className="w-full bg-[var(--surface-2)] border border-blue-500/50 rounded-xl p-3 text-[var(--text)] outline-none font-mono"
@@ -3639,7 +3638,7 @@ export default function App() {
                   </div>
                   {authMode === 'register' && (
                     <p className="text-[10px] text-[var(--text-soft)] mt-2">
-                      Almeno 10 caratteri, una maiuscola, un numero e un carattere speciale.
+                      {t('auth.pwdRule')}
                     </p>
                   )}
                 </div>
@@ -3662,12 +3661,12 @@ export default function App() {
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" required className="mt-0.5 shrink-0 accent-white w-4 h-4 rounded" />
                   <span className="text-[12px] text-[var(--text-soft)] leading-relaxed">
-                    Ho letto e accetto la{' '}
+                    {t('auth.privacyPre')}{' '}
                     <button type="button" onClick={() => setPrivacyOpen(true)} className="text-[var(--text)] underline underline-offset-2 hover:no-underline">
-                      Privacy Policy
+                      {t('cookie.privacy')}
                     </button>
-                    {' '}e il trattamento dei dati personali ai sensi del Regolamento UE 2016/679 (GDPR), incluso l'invio delle foto caricate a fornitori terzi di IA (Google Gemini, Groq) per il riconoscimento prodotto.{' '}
-                    <span className="text-[var(--text-faint)]">Obbligatorio</span>
+                    {' '}{t('auth.privacyPost')}{' '}
+                    <span className="text-[var(--text-faint)]">{t('auth.required')}</span>
                   </span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
@@ -3678,8 +3677,8 @@ export default function App() {
                     className="mt-0.5 shrink-0 accent-white w-4 h-4 rounded"
                   />
                   <span className="text-[12px] text-[var(--text-soft)] leading-relaxed">
-                    Acconsento a ricevere comunicazioni via email relative ad aggiornamenti del servizio, nuove funzionalità e novità di HQ. Il consenso è revocabile in qualsiasi momento dalle impostazioni del profilo.{' '}
-                    <span className="text-[var(--text-faint)]">Facoltativo</span>
+                    {t('auth.marketingConsent')}{' '}
+                    <span className="text-[var(--text-faint)]">{t('auth.optional')}</span>
                   </span>
                 </label>
               </div>
@@ -3688,7 +3687,7 @@ export default function App() {
             <button type="submit" disabled={authLoading}
               className="w-full bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl text-[var(--text)] font-bold transition-all disabled:opacity-50 mt-4 flex items-center justify-center">
               {authLoading ? <Loader2 className="animate-spin" size={20} /> :
-                require2FA ? 'Verifica 2FA' : (authMode === 'login' ? 'Entra' : 'Registrati')}
+                require2FA ? t('auth.verify2fa') : (authMode === 'login' ? t('auth.enter') : t('auth.register'))}
             </button>
           </form>
           
@@ -3696,7 +3695,7 @@ export default function App() {
             <button type="button" 
               onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(null); }}
               className="text-[var(--text-soft)] hover:text-[var(--text)] text-sm transition-colors font-bold">
-              {authMode === 'login' ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi'}
+              {authMode === 'login' ? t('auth.noAccount') : t('auth.haveAccount')}
             </button>
           </div>
           </>)}
