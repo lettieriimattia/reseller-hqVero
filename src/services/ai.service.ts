@@ -1431,9 +1431,13 @@ async function fetchImageAsDataUrl(url: string): Promise<string | null> {
     if (!r.ok) return null;
     const ct = (r.headers.get('content-type') || 'image/jpeg').split(';')[0];
     if (!ct.startsWith('image/')) return null;
-    const buf = Buffer.from(await r.arrayBuffer());
-    if (buf.length === 0 || buf.length > 4_000_000) return null; // vuota o troppo grande
-    return `data:${ct};base64,${buf.toString('base64')}`;
+    const ab = await r.arrayBuffer();
+    // Tetto basso (1MB): le thumbnail StockX sono piccole. Le foto grandi le scartiamo
+    // per non saturare la RAM (su 512MB, con più scan in parallelo, conta molto).
+    if (ab.byteLength === 0 || ab.byteLength > 1_000_000) return null;
+    const buf = Buffer.from(ab);
+    const dataUrl = `data:${ct};base64,${buf.toString('base64')}`;
+    return dataUrl; // buf/ab escono di scope qui → liberabili subito dal GC
   } catch { return null; }
 }
 
@@ -1443,24 +1447,26 @@ async function fetchImageAsDataUrl(url: string): Promise<string | null> {
 async function confirmSneakerWithStockX(imageBase64: string, queries: string[]): Promise<{ title: string; styleId: string | null; productId: string | null } | null> {
   // Pool di candidati da PIÙ ricerche (brand+modello, colorway, collab, modello): unisco
   // e dedup, così la scarpa giusta entra nella lista anche se una singola query la mancava.
+  const MAX_POOL = 6;       // candidati totali (meno ricerche/memoria)
+  const MAX_COMPARE = 5;    // foto effettivamente caricate e confrontate (tetto RAM)
   const seen = new Set<string>();
   const candidates: StockXCandidate[] = [];
   for (const q of queries) {
-    if (candidates.length >= 8) break;
+    if (candidates.length >= MAX_POOL) break;
     const found = await searchStockXCandidates(q, { sneakersOnly: true, limit: 6 });
     for (const c of found) {
       const key = (c.productId || c.styleId || c.title || '').toLowerCase();
       if (key && !seen.has(key)) { seen.add(key); candidates.push(c); }
-      if (candidates.length >= 8) break;
+      if (candidates.length >= MAX_POOL) break;
     }
   }
   if (!candidates.length) return null;
   // Una sola opzione: prendila senza interpellare l'IA.
   if (candidates.length === 1) return candidates[0];
 
-  // Scarica le foto dei candidati (in parallelo) per il confronto visivo.
+  // Scarica le foto SOLO dei primi candidati (tetto RAM), in parallelo.
   const withImg = (await Promise.all(
-    candidates.map(async c => (c.image ? { c, dataUrl: await fetchImageAsDataUrl(c.image) } : { c, dataUrl: null }))
+    candidates.slice(0, MAX_COMPARE).map(async c => (c.image ? { c, dataUrl: await fetchImageAsDataUrl(c.image) } : { c, dataUrl: null }))
   )).filter((x): x is { c: typeof candidates[number]; dataUrl: string } => !!x.dataUrl);
 
   // CASO MIGLIORE: abbiamo le foto → confronto foto-contro-foto.
@@ -1476,18 +1482,21 @@ Se nessuna corrisponde con certezza, rispondi 0. Meglio 0 che un modello sbaglia
 
 Rispondi SOLO con JSON: {"choice": <numero>}`;
     try {
+      const images = withImg.map(x => x.dataUrl);
       const text = await visionComplete({
-        prompt, imageBase64, extraImages: withImg.map(x => x.dataUrl),
+        prompt, imageBase64, extraImages: images,
         temperature: 0.0, maxTokens: 1200, groqModel: VISION_MODEL,
       });
       const parsed = safeParseJSON(text);
       const choice = Number(parsed?.choice);
-      if (Number.isInteger(choice) && choice >= 1 && choice <= withImg.length) {
-        logger.info('Scarpa confermata via confronto foto StockX', { model: withImg[choice - 1].c.title });
-        return withImg[choice - 1].c;
-      }
-      return null;
-    } catch { return null; }
+      const picked = (Number.isInteger(choice) && choice >= 1 && choice <= withImg.length)
+        ? withImg[choice - 1].c : null;
+      // Libera SUBITO i base64 delle foto (decine di MB sommati): non servono più.
+      images.length = 0;
+      withImg.length = 0;
+      if (picked) logger.info('Scarpa confermata via confronto foto StockX', { model: picked.title });
+      return picked;
+    } catch { withImg.length = 0; return null; }
   }
 
   // FALLBACK: nessuna foto disponibile → confronto sui titoli (come prima).
