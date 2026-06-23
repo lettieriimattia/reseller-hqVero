@@ -599,7 +599,7 @@ export default function App() {
     const next = !autoPublishOn;
     setAutoPublishOn(next);
     const { ok } = await apiCall('/products/auto-publish', { method: 'PUT', body: JSON.stringify({ enabled: next }) });
-    if (!ok) { setAutoPublishOn(!next); showToast('Errore salvataggio', 'err'); }
+    if (!ok) { setAutoPublishOn(!next); showToast(t('ts.saveError'), 'err'); }
     else showToast(next ? 'Magazzino pubblico attivo: i nuovi prodotti andranno in vetrina' : 'Magazzino pubblico disattivato', 'ok');
   };
   const openNotifPrefs = async () => {
@@ -765,7 +765,7 @@ export default function App() {
   // Invia un messaggio di aiuto/feedback: arriva all'admin via email
   const sendFeedback = async () => {
     const msg = feedbackMsg.trim();
-    if (msg.length < 3) { showToast('Scrivi un messaggio un po’ più lungo', 'warn'); return; }
+    if (msg.length < 3) { showToast(t('ts.msgLonger'), 'warn'); return; }
     setFeedbackSending(true);
     const { ok, data } = await apiCall('/api/feedback', {
       method: 'POST',
@@ -774,7 +774,7 @@ export default function App() {
     setFeedbackSending(false);
     if (ok) {
       setFeedbackMsg('');
-      showToast('Grazie! Il messaggio è stato inviato ✓');
+      showToast(t('ts.feedbackSent'));
     } else {
       showToast(data.error || 'Invio non riuscito', 'err');
     }
@@ -784,16 +784,16 @@ export default function App() {
   const pushSupported = typeof navigator !== 'undefined' && 'serviceWorker' in navigator && typeof window !== 'undefined' && 'PushManager' in window;
 
   const enablePush = async () => {
-    if (!pushSupported) { showToast('Le notifiche non sono supportate su questo dispositivo/browser', 'warn'); return; }
+    if (!pushSupported) { showToast(t('ts.pushUnsupported'), 'warn'); return; }
     // Evita attese infinite: ogni passo ha un timeout
     const withTimeout = <T,>(p: Promise<T>, ms: number, label: string): Promise<T> =>
       Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout:' + label)), ms))]);
     setPushBusy(true);
     try {
       const perm = await Notification.requestPermission();
-      if (perm !== 'granted') { showToast('Permesso notifiche negato', 'warn'); return; }
+      if (perm !== 'granted') { showToast(t('ts.pushDenied'), 'warn'); return; }
       const { ok, data } = await apiCall<any>('/api/push/vapid-public');
-      if (!ok || !data?.key) { showToast('Push non ancora pronto lato server: attendi la fine del deploy e riprova', 'err'); return; }
+      if (!ok || !data?.key) { showToast(t('ts.pushNotReady'), 'err'); return; }
       const reg = await withTimeout(navigator.serviceWorker.ready, 8000, 'sw');
       const existing = await reg.pushManager.getSubscription();
       const sub = existing || await withTimeout(reg.pushManager.subscribe({
@@ -802,7 +802,7 @@ export default function App() {
       }), 8000, 'subscribe');
       const res = await apiCall('/api/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON() }) });
       if (res.ok) { setPushEnabled(true); localStorage.setItem('pushEnabled', '1'); showToast(t('hdr.pushOn')); }
-      else showToast('Errore salvataggio notifiche', 'err');
+      else showToast(t('ts.notifSaveError'), 'err');
     } catch (err: any) {
       const msg = String(err?.message || '');
       showToast(msg.startsWith('timeout') ? 'Tempo scaduto: ricarica la pagina (per aggiornare l\'app) e riprova' : 'Errore attivazione notifiche', 'err');
@@ -813,7 +813,7 @@ export default function App() {
     setPushBusy(true);
     const { ok, data } = await apiCall('/api/push/test', { method: 'POST' });
     setPushBusy(false);
-    if (ok) showToast('Notifica di prova inviata'); else showToast(data?.error || 'Errore invio', 'err');
+    if (ok) showToast(t('ts.testNotifSent')); else showToast(data?.error || 'Errore invio', 'err');
   };
 
   const disablePush = async () => {
@@ -827,7 +827,7 @@ export default function App() {
       }
       setPushEnabled(false); localStorage.removeItem('pushEnabled');
       showToast(t('hdr.pushOff'));
-    } catch { showToast('Errore', 'err'); }
+    } catch { showToast(t('ts.error'), 'err'); }
     finally { setPushBusy(false); }
   };
 
@@ -849,7 +849,7 @@ export default function App() {
     if (!confirm(`Eliminare definitivamente l'utente "${userName}" e tutti i suoi dati?`)) return;
     const { ok } = await apiCall(`/admin/users/${userId}`, { method: 'DELETE' });
     if (ok) { setAdminUsers(prev => prev.filter(u => u.id !== userId)); showToast(`Utente ${userName} eliminato`); }
-    else showToast('Errore eliminazione', 'err');
+    else showToast(t('ts.deleteError'), 'err');
   };
 
   // ----- CAMPI DINAMICI CATEGORIA AI -----
@@ -908,7 +908,7 @@ export default function App() {
   };
 
   const fetchRates = async () => {
-    if (!shipTo.zip || shipTo.zip.length < 5) { showToast('Inserisci il CAP destinatario (5 cifre)', 'err'); return; }
+    if (!shipTo.zip || shipTo.zip.length < 5) { showToast(t('ts.enterRecipientZip'), 'err'); return; }
     localStorage.setItem('hq_ship_from', JSON.stringify(shipFrom));
     setIsLoadingRates(true);
     const { ok, data } = await apiCall(
@@ -1134,14 +1134,14 @@ export default function App() {
     if (!requireFeatureOrUpgrade('accounting')) return;
     const amt = parseFloat(expAmount);
     const whId = expWarehouse || baseWarehouse?.id;
-    if (!whId || !expDesc.trim() || isNaN(amt) || amt <= 0) { showToast('Inserisci importo e descrizione', 'err'); return; }
+    if (!whId || !expDesc.trim() || isNaN(amt) || amt <= 0) { showToast(t('ts.enterAmountDesc'), 'err'); return; }
     setIsAddingExp(true);
     const { ok, data } = await apiCall('/analytics/expenses', {
       method: 'POST',
       body: JSON.stringify({ warehouseId: whId, amount: amt, description: expDesc.trim(), category: expCat }),
     });
     setIsAddingExp(false);
-    if (ok) { setExpAmount(''); setExpDesc(''); await fetchExpenses(); showToast('Costo extra aggiunto'); }
+    if (ok) { setExpAmount(''); setExpDesc(''); await fetchExpenses(); showToast(t('ts.extraCostAdded')); }
     else showToast(data.error || 'Errore', 'err');
   };
 
@@ -1156,7 +1156,7 @@ export default function App() {
     try {
       let res = await fetch(`${API_URL}/analytics/export.csv`, { credentials: 'include' });
       if (res.status === 401) { await refreshSession(); res = await fetch(`${API_URL}/analytics/export.csv`, { credentials: 'include' }); }
-      if (!res.ok) { showToast('Errore nel download del CSV', 'err'); return; }
+      if (!res.ok) { showToast(t('ts.csvError'), 'err'); return; }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1164,7 +1164,7 @@ export default function App() {
       a.download = `resellerhq-commercialista-${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
-    } catch { showToast('Errore nel download del CSV', 'err'); }
+    } catch { showToast(t('ts.csvError'), 'err'); }
   };
 
   // ----- MARKETPLACE -----
@@ -1193,7 +1193,7 @@ export default function App() {
     if (!isAuthenticated) { setPublicMarket(false); showToast(t('market.loginToBuy'), 'warn'); return; }
     const { ok, data } = await apiCall<any>(`/market/${productId}/buy`, { method: 'POST', body: JSON.stringify({}) });
     if (ok && data?.url) { window.location.href = data.url; return; }
-    if (data?.sellerNotReady) { showToast('Il venditore non ha ancora attivato gli incassi — contattalo in chat', 'warn'); return; }
+    if (data?.sellerNotReady) { showToast(t('ts.sellerNotReady'), 'warn'); return; }
     showToast(data?.error || 'Errore pagamento', 'err');
   };
 
@@ -1239,7 +1239,7 @@ export default function App() {
   const sendMessage = async () => {
     const text = chatInput.trim();
     if (!text || !activeConvo) return;
-    if (CHAT_LINK_RE.test(text)) { showToast('Per la tua sicurezza non puoi inviare link o contatti esterni.', 'err'); return; }
+    if (CHAT_LINK_RE.test(text)) { showToast(t('ts.noLinks'), 'err'); return; }
     setChatSending(true);
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/messages`, { method: 'POST', body: JSON.stringify({ text }) });
     setChatSending(false);
@@ -1252,9 +1252,9 @@ export default function App() {
     if (!activeConvo) return;
     const alreadyPaid = activeConvo.productStatus === 'PAGATO';
     const price = parseFloat(shipForm.price);
-    if (!alreadyPaid && !(price > 0)) { showToast('Inserisci il prezzo concordato', 'warn'); return; }
-    if (alreadyPaid && shipForm.code.trim().length < 4) { showToast('Inserisci il codice di tracking', 'warn'); return; }
-    if (shipForm.code && CHAT_LINK_RE.test(shipForm.code)) { showToast('Codice tracking non valido', 'err'); return; }
+    if (!alreadyPaid && !(price > 0)) { showToast(t('ts.enterAgreedPrice'), 'warn'); return; }
+    if (alreadyPaid && shipForm.code.trim().length < 4) { showToast(t('ts.enterTracking'), 'warn'); return; }
+    if (shipForm.code && CHAT_LINK_RE.test(shipForm.code)) { showToast(t('ts.invalidTracking'), 'err'); return; }
     setShipping(true);
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/ship`, {
       method: 'POST',
@@ -1303,7 +1303,7 @@ export default function App() {
 
   // Se Marketplace/Chat sono disattivati, non lasciare l'utente su quelle viste.
   useEffect(() => {
-    if (!MARKETPLACE_ENABLED && (currentView === 'market' || currentView === 'chat')) {
+    if (!MARKETPLACE_ENABLED && (currentView === 'market' || currentView === 'chat' || currentView === 'wallet')) {
       setCurrentView('dashboard');
     }
   }, [currentView]);
@@ -1395,24 +1395,24 @@ export default function App() {
           const { ok, data } = await apiCall<any>('/billing/verify', { method: 'POST', body: JSON.stringify({ sessionId }) });
           if (ok && data?.updated) {
             await fetchProducts(); await fetchConversations();
-            showToast('Acquisto completato! 🎉 Trovi la chat col venditore in Messaggi.', 'ok');
+            showToast(t('ts.purchaseDone'), 'ok');
           } else {
-            showToast('Pagamento ricevuto, sto aggiornando…', 'ok');
+            showToast(t('ts.paymentReceived'), 'ok');
           }
         } else if (sessionId) {
           const { ok, data } = await apiCall<any>('/billing/verify', { method: 'POST', body: JSON.stringify({ sessionId }) });
           if (ok && data?.updated && data?.plan) {
             setUser(u => u ? { ...u, plan: data.plan } : u);
             await refreshMyPlan();
-            showToast('Abbonamento attivato! 🎉', 'ok');
+            showToast(t('ts.subActivated'), 'ok');
           } else {
             await refreshMyPlan();
-            showToast('Pagamento ricevuto. Aggiorno il piano…', 'ok');
+            showToast(t('ts.paymentUpdatingPlan'), 'ok');
           }
         }
         if (connect === 'done') {
           await refreshConnectStatus();
-          showToast('Conto collegato! Ora puoi ricevere i pagamenti.', 'ok');
+          showToast(t('ts.accountLinked'), 'ok');
         }
       } catch { /* ignora */ }
       window.history.replaceState({}, '', '/');
@@ -1792,7 +1792,7 @@ export default function App() {
   };
   const resendVerify = async () => {
     await apiCall('/auth/resend-verification', { method: 'POST', body: JSON.stringify({ email: needVerifyEmail }) });
-    showToast('Codice rinviato — controlla la mail');
+    showToast(t('ts.codeResent'));
   };
 
   const handleLogout = async () => {
@@ -1872,7 +1872,7 @@ export default function App() {
     e.preventDefault();
     if (!newCatName) return;
     setIsAddingCat(true);
-    showToast('Creo la categoria e genero i campi con IA…', 'ok');
+    showToast(t('ts.creatingCategory'), 'ok');
     const { ok, data } = await apiCall('/templates/auto', {
       method: 'POST', body: JSON.stringify({ name: newCatName.trim() })
     });
@@ -1956,7 +1956,7 @@ export default function App() {
       if (data.value) setScanMarket({ value: data.value, reliable: true, source: 'StockX' });
       showToast(`Trovato: ${[data.brand, data.name].filter(Boolean).join(' ') || code}`);
     } else {
-      showToast('Barcode salvato. Prodotto non riconosciuto: usa la foto o compila a mano.', 'warn');
+      showToast(t('ts.barcodeSaved'), 'warn');
     }
   };
 
@@ -2098,7 +2098,7 @@ export default function App() {
   const submitChatOffer = async () => {
     if (!activeConvo) return;
     const amount = parseFloat((chatOffer.amount || '').replace(',', '.'));
-    if (!(amount > 0)) { showToast('Importo non valido', 'warn'); return; }
+    if (!(amount > 0)) { showToast(t('ts.invalidAmount'), 'warn'); return; }
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/offer`, { method: 'POST', body: JSON.stringify({ amount }) });
     if (ok && data?.id) { setChatOffer({ open: false, amount: '' }); await reloadConversation(); }
     else showToast(data?.error || 'Errore offerta', 'err');
@@ -2162,14 +2162,14 @@ export default function App() {
     setShipForm(f => ({ ...f, open: false }));
     await reloadConversation();
     openDemoLabel(activeConvo.productName, user?.name || 'Venditore', activeConvo.otherName, code, 'Test Express');
-    showToast('Etichetta e tracking di prova generati!', 'ok');
+    showToast(t('ts.testLabelGenerated'), 'ok');
   };
   // Compratore: conferma di aver ricevuto il pacco → sblocca il pagamento al venditore.
   const confirmDelivery = async () => {
     if (!activeConvo) return;
     if (!(await askConfirm({ title: 'Conferma consegna', message: 'Confermi di aver ricevuto l\'articolo come descritto? Il pagamento verrà sbloccato per il venditore.', confirmLabel: 'Confermo' }))) return;
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/confirm-delivery`, { method: 'POST', body: JSON.stringify({}) });
-    if (ok && data?.success) { await reloadConversation(); showToast('Consegna confermata, grazie!', 'ok'); }
+    if (ok && data?.success) { await reloadConversation(); showToast(t('ts.deliveryConfirmed'), 'ok'); }
     else showToast(data?.error || 'Errore', 'err');
   };
 
@@ -2197,7 +2197,7 @@ export default function App() {
     if (ok && data?.success) {
       setDisputeForm({ open: false, reason: 'NOT_AS_DESCRIBED', note: '', photos: [] });
       await reloadConversation();
-      showToast('Contestazione inviata. Il venditore deve rispondere.', 'ok');
+      showToast(t('ts.disputeSent'), 'ok');
     } else showToast(data?.error || 'Errore', 'err');
   };
 
@@ -2217,14 +2217,14 @@ export default function App() {
       const raw = await askPrompt({ title: 'Rimborso parziale', message: 'Quanto vuoi rimborsare al compratore? (€)', placeholder: 'es. 30' });
       if (raw == null) return;
       const amount = Math.round((parseFloat((raw || '').replace(',', '.')) || 0) * 100) / 100;
-      if (!(amount > 0)) { showToast('Importo non valido', 'warn'); return; }
+      if (!(amount > 0)) { showToast(t('ts.invalidAmount'), 'warn'); return; }
       body.amount = amount;
     }
     if (action === 'contest' && !(await askConfirm({ title: 'Contesta', message: 'Contestare apre una mediazione con l\'assistenza ResellerHQ. Procedere?', confirmLabel: 'Contesta' }))) return;
     setDisputeSaving(true);
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/dispute/respond`, { method: 'POST', body: JSON.stringify(body) });
     setDisputeSaving(false);
-    if (ok && data?.success) { setDisputeInfo(null); await reloadConversation(); showToast('Fatto.', 'ok'); }
+    if (ok && data?.success) { setDisputeInfo(null); await reloadConversation(); showToast(t('ts.done'), 'ok'); }
     else showToast(data?.error || 'Errore', 'err');
   };
 
@@ -2274,7 +2274,7 @@ export default function App() {
     else showToast(data?.error || 'Non disponibile nel tuo piano', 'err');
   };
   const runOffer = async () => {
-    if (!offerProductId || !offerAmount) { showToast('Scegli prodotto e offerta', 'warn'); return; }
+    if (!offerProductId || !offerAmount) { showToast(t('ts.chooseProductOffer'), 'warn'); return; }
     setOfferLoading(true); setOfferResult(null);
     const { ok, data } = await apiCall<any>('/api/pro/offer', {
       method: 'POST',
@@ -2285,14 +2285,14 @@ export default function App() {
     else showToast(data?.error || 'Non disponibile nel tuo piano', 'err');
   };
   const saveChannels = async () => {
-    if (!chProductId) { showToast('Scegli un prodotto', 'warn'); return; }
+    if (!chProductId) { showToast(t('ts.chooseProduct'), 'warn'); return; }
     setChSaving(true);
     const channels = chSelected.map(p => ({ platform: p, status: 'listed' }));
     const { ok, data } = await apiCall<any>(`/api/pro/channels/${chProductId}`, {
       method: 'PUT', body: JSON.stringify({ channels }),
     });
     setChSaving(false);
-    if (ok) showToast('Canali salvati ✓');
+    if (ok) showToast(t('ts.channelsSaved'));
     else showToast(data?.error || 'Non disponibile nel tuo piano', 'err');
   };
   // Schermata "bloccato": mostra il piano minimo che include la feature
@@ -2325,13 +2325,13 @@ export default function App() {
   const savePercentages = async (warehouseId: string, members: any[]) => {
     const total = members.reduce((s, m) => s + (Number(m.percentage) || 0), 0);
     if (Math.round(total) !== 100) {
-      showToast('Le quote UTILI devono sommare a 100%', 'err');
+      showToast(t('ts.profitShares100'), 'err');
       return;
     }
     // I costi sono opzionali: se qualcuno li ha impostati, devono sommare a 100%.
     const costTotal = members.reduce((s, m) => s + (Number(m.costPercentage) || 0), 0);
     if (costTotal > 0 && Math.round(costTotal) !== 100) {
-      showToast('Le quote COSTI devono sommare a 100%', 'err');
+      showToast(t('ts.costShares100'), 'err');
       return;
     }
     setIsSavingTeam(true);
@@ -2348,7 +2348,7 @@ export default function App() {
     });
     setIsSavingTeam(false);
     if (ok) {
-      showToast('Quote salvate con successo');
+      showToast(t('ts.sharesSaved'));
       fetchTeam();
     } else showToast(data.error || 'Errore', 'err');
   };
@@ -2475,7 +2475,7 @@ export default function App() {
       });
       if (ok) await applyAIScanResult(data, cat);
       else showToast(data.error || 'Errore IA', 'err');
-    } catch { showToast('Errore IA', 'err'); }
+    } catch { showToast(t('ts.aiError'), 'err'); }
     finally { setIsScanning(false); }
   };
 
@@ -2484,7 +2484,7 @@ export default function App() {
     if (files.length === 0) return;
     const current = isEdit ? editPhotos : productPhotos;
     const remaining = 5 - current.length;
-    if (remaining <= 0) { showToast('Massimo 5 foto per prodotto', 'warn'); return; }
+    if (remaining <= 0) { showToast(t('ts.max5photos'), 'warn'); return; }
     const toProcess = files.slice(0, remaining);
     const newPhotos: string[] = [];
     for (const file of toProcess) {
@@ -2574,7 +2574,7 @@ export default function App() {
     if (isSharedPurchase && productShares.length > 0) {
       const total = productShares.reduce((s, x) => s + (Number(x.percentage) || 0), 0);
       if (Math.round(total) !== 100) {
-        showToast('La somma delle quote deve essere 100%', 'err');
+        showToast(t('ts.sharesSumMustBe100'), 'err');
         return;
       }
     }
@@ -2592,23 +2592,23 @@ export default function App() {
         if (!created) { setIsSaving(false); return; }
         effCategory = created;
       } else {
-        showToast('Aggiungi una foto o scegli un reparto', 'err'); setIsSaving(false); return;
+        showToast(t('ts.addPhotoOrDept'), 'err'); setIsSaving(false); return;
       }
     }
-    if (isNaN(unitPrice) || unitPrice <= 0) { showToast('Inserisci un prezzo valido', 'err'); setIsSaving(false); return; }
-    if (isConsignment && !consignmentName.trim()) { showToast('Inserisci il nome del conto vendita', 'err'); setIsSaving(false); return; }
+    if (isNaN(unitPrice) || unitPrice <= 0) { showToast(t('ts.enterValidPrice'), 'err'); setIsSaving(false); return; }
+    if (isConsignment && !consignmentName.trim()) { showToast(t('ts.enterConsignmentName'), 'err'); setIsSaving(false); return; }
 
     if (effCategory === 'Pokemon') {
-      if (!pokeName) { showToast('Inserisci il nome della carta', 'err'); setIsSaving(false); return; }
+      if (!pokeName) { showToast(t('ts.enterCardName'), 'err'); setIsSaving(false); return; }
       finalBrand = 'Pokémon'; finalName = `${pokeName}${cardNumber.trim() ? ` ${cardNumber.trim()}` : ''}`; finalSize = cardNumber.trim() || 'Unisize';
       finalCondition = pokeGraded === 'Si' ? `Gradata ${pokeGrade}` : 'Raw (Non Gradata)';
     } else if (effCategory === 'Orologi') {
-      if (!watchBrand || !watchModel) { showToast('Compila brand e modello orologio', 'err'); setIsSaving(false); return; }
+      if (!watchBrand || !watchModel) { showToast(t('ts.fillWatchBrandModel'), 'err'); setIsSaving(false); return; }
       finalBrand = watchBrand; finalName = watchModel;
       finalSize = watchCase ? `${watchCase}mm${watchStrap ? ', ' + watchStrap : ''}` : (watchStrap || '-');
       finalCondition = watchMaterial ? `${condition} (${watchMaterial})` : condition;
     } else {
-      if (!brand || !name) { showToast('Compila brand e nome prodotto', 'err'); setIsSaving(false); return; }
+      if (!brand || !name) { showToast(t('ts.fillBrandName'), 'err'); setIsSaving(false); return; }
       // Per categorie custom, arricchisci il nome con materiale/colore se compilati
       if (effCategory !== 'Scarpe' && effCategory !== 'Vestiti') {
         const extras = [watchMaterial, watchStrap].filter(Boolean);
@@ -2649,11 +2649,11 @@ export default function App() {
         if (!ok) hasError = true;
       }
       
-      if (hasError) showToast('Errore nel salvataggio', 'err');
+      if (hasError) showToast(t('ts.saveError2'), 'err');
       else {
         await fetchProducts();
         setIsFormOpen(false);
-        showToast('Prodotto aggiunto al magazzino');
+        showToast(t('ts.productAdded'));
       }
 
       // Reset
@@ -2667,7 +2667,7 @@ export default function App() {
       setProductPhotos([]);
       setDynamicAttrs({});
     } catch (err) {
-      showToast('Errore di connessione', 'err');
+      showToast(t('ts.connectionError'), 'err');
     } finally { setIsSaving(false); }
   };
   
@@ -2708,12 +2708,12 @@ export default function App() {
         });
       }
     }
-    if (hasError) showToast('Errore nella vendita', 'err');
+    if (hasError) showToast(t('ts.sellError'), 'err');
     else {
       await fetchProducts();
       setSellModalOpen(false);
       setProductToSell(null);
-      showToast('Vendita registrata!', 'ok', { label: 'Annulla', onClick: () => undoSellIds(idsToProcess) });
+      showToast(t('ts.saleRecorded'), 'ok', { label: t('common.cancel'), onClick: () => undoSellIds(idsToProcess) });
     }
   };
   
@@ -2765,7 +2765,7 @@ export default function App() {
     if (makePublic && !requireFeatureOrUpgrade('marketplace')) return;
     const price = group.publicPrice ?? group.salePrice ?? group.marketPriceAvg ?? null;
     if (makePublic && (price == null || price <= 0)) {
-      showToast('Imposta un prezzo pubblico nella Modifica', 'warn');
+      showToast(t('ts.setPublicPrice'), 'warn');
       openEditModal(group);
       return;
     }
@@ -2805,7 +2805,7 @@ export default function App() {
   const savePublish = async (group: any, makePublic: boolean) => {
     if (makePublic && !requireFeatureOrUpgrade('marketplace')) return;
     const price = parseFloat(editPublicPrice);
-    if (makePublic && (isNaN(price) || price <= 0)) { showToast('Inserisci un prezzo pubblico', 'err'); return; }
+    if (makePublic && (isNaN(price) || price <= 0)) { showToast(t('ts.enterPublicPrice'), 'err'); return; }
     const ship = parseFloat(editShippingCost);
     setIsPublishing(true);
     const ids = (group.ids as string[]) || [group.id];
@@ -2815,7 +2815,7 @@ export default function App() {
     setIsPublishing(false);
     const ok = results.every(r => r.status === 'fulfilled' && (r.value as any).ok);
     if (ok) { setEditIsPublic(makePublic); await fetchProducts(); showToast(makePublic ? 'Pubblicato nel marketplace' : 'Ritirato dal marketplace'); }
-    else showToast('Errore pubblicazione', 'err');
+    else showToast(t('ts.publishError'), 'err');
   };
 
   // Valutazione di mercato del prodotto (fonte reale, anti-falsi)
@@ -2853,7 +2853,7 @@ export default function App() {
       const size = (data?.scan?.details?.size || '').toString();
       if (!ok || (!brand && !model)) {
         setSourcingScanning(false);
-        showToast('Non riconosciuto — riprova con una foto più nitida del logo/etichetta', 'warn');
+        showToast(t('ts.notRecognized'), 'warn');
         return;
       }
       setSourcingBrand(brand); setSourcingModel(model); setSourcingSize(size);
@@ -2867,7 +2867,7 @@ export default function App() {
       setSourcingCalcLoading(false);
       setSourcingVal(res.ok ? res.data : { configured: false, error: true });
     } catch {
-      showToast('Errore', 'err');
+      showToast(t('ts.error'), 'err');
       setSourcingScanning(false); setSourcingCalcLoading(false);
     }
   };
@@ -2877,7 +2877,7 @@ export default function App() {
     
     if (isEditShared && editShares.length > 0) {
       const total = editShares.reduce((s, x) => s + (Number(x.percentage) || 0), 0);
-      if (Math.round(total) !== 100) { showToast('Le quote devono sommare a 100%', 'err'); return; }
+      if (Math.round(total) !== 100) { showToast(t('ts.sharesMustBe100'), 'err'); return; }
     }
     
     // Se l'utente non ha toccato le quote, usa le shares originali del prodotto come snapshot
@@ -2953,12 +2953,12 @@ export default function App() {
     }
 
     setIsSaving(false);
-    if (hasError) showToast('Errore nella modifica', 'err');
+    if (hasError) showToast(t('ts.editError'), 'err');
     else {
       await fetchProducts();
       setEditModalOpen(false);
       setProductToEdit(null);
-      showToast('Prodotto modificato');
+      showToast(t('ts.productEdited'));
     }
   };
   
@@ -3093,12 +3093,12 @@ export default function App() {
   const undoDeleteIds = async (ids: string[]) => {
     await Promise.allSettled(ids.map(id => apiCall(`/products/${id}/restore`, { method: 'POST' })));
     await fetchProducts();
-    showToast('Eliminazione annullata');
+    showToast(t('ts.deleteUndone'));
   };
   const undoSellIds = async (ids: string[]) => {
     await Promise.allSettled(ids.map(id => apiCall(`/products/${id}/return`, { method: 'POST' })));
     await fetchProducts();
-    showToast('Vendita annullata — di nuovo in stock');
+    showToast(t('ts.saleUndone'));
   };
 
   const handleBulkDelete = async () => {
@@ -3115,7 +3115,7 @@ export default function App() {
     setSelectedPieceIds(new Set());
     setBulkMode(false);
     await fetchProducts();
-    errors > 0 ? showToast(`Eliminati con ${errors} errori`, 'warn') : showToast(`${ids.length} prodotti eliminati`, 'ok', { label: 'Annulla', onClick: () => undoDeleteIds(ids) });
+    errors > 0 ? showToast(t('ts.deletedWithErrors').replace('{n}', String(errors)), 'warn') : showToast(t('ts.nProductsDeleted').replace('{n}', String(ids.length)), 'ok', { label: t('common.cancel'), onClick: () => undoDeleteIds(ids) });
   };
 
   const handleBulkSell = async (e: React.FormEvent) => {
@@ -3138,7 +3138,7 @@ export default function App() {
     setSelectedPieceIds(new Set());
     setBulkMode(false);
     await fetchProducts();
-    errors > 0 ? showToast(`Vendite con ${errors} errori`, 'warn') : showToast(`${ids.length} prodotti venduti!`, 'ok', { label: 'Annulla', onClick: () => undoSellIds(ids) });
+    errors > 0 ? showToast(t('ts.salesWithErrors').replace('{n}', String(errors)), 'warn') : showToast(t('ts.nProductsSold').replace('{n}', String(ids.length)), 'ok', { label: t('common.cancel'), onClick: () => undoSellIds(ids) });
   };
 
   // Reso: riporta un pezzo venduto in stock (operazione inversa della vendita) — immediato, niente conferma
@@ -3146,8 +3146,8 @@ export default function App() {
     const id = group.ids?.[0];
     if (!id) return;
     const { ok } = await apiCall(`/products/${id}/return`, { method: 'POST' });
-    if (ok) { await fetchProducts(); showToast('Reso registrato — prodotto in stock'); }
-    else showToast('Errore durante il reso', 'err');
+    if (ok) { await fetchProducts(); showToast(t('ts.returnRecorded')); }
+    else showToast(t('ts.returnError'), 'err');
   };
 
   // ==========================================
@@ -3162,7 +3162,7 @@ export default function App() {
       const workbook = XLSX.read(data, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const raw: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-      if (raw.length === 0) { showToast('File vuoto o formato non riconosciuto', 'err'); return; }
+      if (raw.length === 0) { showToast(t('ts.emptyFile'), 'err'); return; }
       const normalize = (k: string) => k.toLowerCase().trim().replace(/[_\s]+/g, ' ');
       const parsed = raw.map((row: any) => {
         const r: any = {};
@@ -3181,7 +3181,7 @@ export default function App() {
       setImportCategory(userCategories[0] || '');
       setImportErrors([]);
       setImportOpen(true);
-    } catch { showToast('Errore lettura file. Usa .xlsx, .xls o .csv', 'err'); }
+    } catch { showToast(t('ts.fileReadError'), 'err'); }
     e.target.value = '';
   };
 
@@ -3244,10 +3244,10 @@ export default function App() {
     const errors = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok)).length;
 
     if (errors > 0) {
-      showToast('Errore eliminazione — ricarico la lista', 'err');
+      showToast(t('ts.deleteErrorReload'), 'err');
       await fetchProducts(); // Re-sync se ci sono stati errori
     } else {
-      showToast('Prodotto eliminato', 'ok', { label: 'Annulla', onClick: () => undoDeleteIds(ids) });
+      showToast(t('ts.productDeleted'), 'ok', { label: t('common.cancel'), onClick: () => undoDeleteIds(ids) });
     }
   };
 
@@ -3285,7 +3285,7 @@ export default function App() {
     });
     setIsSavingTracking(false);
     if (ok) {
-      showToast('Tracking salvato!');
+      showToast(t('ts.trackingSaved'));
       await fetchProducts();
       setTrackingModalOpen(false);
     } else {
@@ -3306,8 +3306,8 @@ export default function App() {
 
   // Crea un prodotto IN STOCK e gli attacca un tracking INBOUND (pacco in arrivo)
   const createIncoming = async () => {
-    if (!incName.trim()) { showToast('Inserisci il nome', 'warn'); return; }
-    if (incTrackCode.trim().length < 4) { showToast('Inserisci un codice tracking valido', 'warn'); return; }
+    if (!incName.trim()) { showToast(t('ts.enterName'), 'warn'); return; }
+    if (incTrackCode.trim().length < 4) { showToast(t('ts.enterValidTracking'), 'warn'); return; }
     setIncSaving(true);
     // Minimal: serve solo il nome. Reparto/brand/prezzo si mettono dopo dalla Modifica.
     const cat = incCategory || userCategories[0] || 'Altro';
@@ -3315,15 +3315,15 @@ export default function App() {
       method: 'POST',
       body: JSON.stringify({ category: cat, brand: incBrand.trim() || '-', name: incName.trim(), price: parseFloat(incPrice) || 0 }),
     });
-    if (!ok || !data?.id) { setIncSaving(false); showToast(data?.error || 'Errore creazione prodotto', 'err'); return; }
-    const t = await apiCall(`/tracking/${data.id}`, {
+    if (!ok || !data?.id) { setIncSaving(false); showToast(data?.error || t('ts.createProductError'), 'err'); return; }
+    const trk = await apiCall(`/tracking/${data.id}`, {
       method: 'POST',
       body: JSON.stringify({ trackingCode: incTrackCode.trim(), carrier: incTrackCarrier, direction: 'INBOUND' }),
     });
     setIncSaving(false);
     await fetchProducts();
     setIncomingOpen(false);
-    showToast(t.ok ? 'Acquisto in arrivo aggiunto e tracciato' : 'Prodotto creato, ma tracking non salvato', t.ok ? 'ok' : 'warn');
+    showToast(trk.ok ? t('ts.incomingAdded') : t('ts.productCreatedNoTracking'), trk.ok ? 'ok' : 'warn');
   };
 
   const handleRefreshTracking = async () => {
@@ -3334,9 +3334,9 @@ export default function App() {
     if (ok) {
       setTrackingDetail(data);
       await fetchProducts();
-      showToast('Tracking aggiornato!');
+      showToast(t('ts.trackingUpdated'));
     } else {
-      showToast('Errore aggiornamento tracking', 'err');
+      showToast(t('ts.trackingUpdateError'), 'err');
     }
   };
 
@@ -3349,7 +3349,7 @@ export default function App() {
     if (ok) {
       await fetchProducts();
       setTrackingProduct((prev: any) => prev ? { ...prev, trackingStatus: status } : prev);
-      showToast('Stato aggiornato');
+      showToast(t('ts.statusUpdated'));
       if (status === 'DELIVERED') setTrackingModalOpen(false);
     } else showToast(data?.error || 'Errore aggiornamento stato', 'err');
   };
@@ -3382,7 +3382,7 @@ export default function App() {
     if (!trackingProduct) return;
     const { ok } = await apiCall(`/tracking/${trackingProduct.ids[0]}`, { method: 'DELETE' });
     if (ok) {
-      showToast('Tracking rimosso');
+      showToast(t('ts.trackingRemoved'));
       await fetchProducts();
       setTrackingModalOpen(false);
     }
@@ -3410,7 +3410,7 @@ export default function App() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (changePwdNew !== changePwdConfirm) {
-      showToast('Le password non corrispondono', 'err');
+      showToast(t('ts.pwdMismatch'), 'err');
       return;
     }
     setChangePwdLoading(true);
@@ -3420,7 +3420,7 @@ export default function App() {
     });
     setChangePwdLoading(false);
     if (ok) {
-      showToast('Password cambiata! Rieffettua il login.');
+      showToast(t('ts.pwdChanged'));
       setChangePwdOpen(false);
       setChangePwdCurrent(''); setChangePwdNew(''); setChangePwdConfirm('');
       setTimeout(handleLogout, 2200);
@@ -3800,12 +3800,14 @@ export default function App() {
             className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-semibold text-[#8b5cf6] hover:bg-[#8b5cf6]/10 transition-colors">
             <Sparkles size={17} /> {t('plan.tabPlans')}
           </button>
+          {MARKETPLACE_ENABLED && (
           <button onClick={() => navigateTo('wallet')}
             className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
               currentView === 'wallet' ? 'bg-[#8b5cf6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
             }`}>
             <Wallet size={17} /> {t('nav.wallet')}
           </button>
+          )}
           <button onClick={() => navigateTo('settings')}
             className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
               currentView === 'settings' ? 'bg-[#8b5cf6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
@@ -3849,10 +3851,12 @@ export default function App() {
               <Plus size={15} /> {t('common.add')}
             </button>
             {/* Portafoglio (solo mobile: icona in alto a destra, accesso rapido agli incassi) */}
+            {MARKETPLACE_ENABLED && (
             <button onClick={() => navigateTo('wallet')}
               className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'wallet' ? 'text-[#8b5cf6]' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
               <Wallet size={18} />
             </button>
+            )}
             {/* Impostazioni (solo mobile: in alto, visto che non è più nella barra in basso) */}
             <button onClick={() => navigateTo('settings')}
               className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'settings' ? 'text-[#8b5cf6]' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
@@ -6207,6 +6211,7 @@ export default function App() {
             </section>
 
             {/* SEZIONE: Incassi marketplace → rimanda alla pagina Portafoglio dedicata */}
+            {MARKETPLACE_ENABLED && (
             <button type="button" onClick={() => navigateTo('wallet')}
               className="w-full text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 hover:border-[var(--border-2)] transition-colors flex items-center gap-3">
               <Wallet className="text-[#8b5cf6]" size={20} />
@@ -6216,6 +6221,7 @@ export default function App() {
               </div>
               <ChevronDown size={18} className="-rotate-90 text-[var(--text-soft)]" />
             </button>
+            )}
 
             {/* SEZIONE: Reparti & Codici Invito — lista a tendina (non spinge giù le impostazioni) */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
@@ -10051,7 +10057,7 @@ export default function App() {
                 onClick={async () => {
                   const validShares = profitShares.filter(s => s.percentage && parseFloat(s.percentage) > 0);
                   if (validShares.length === 0) {
-                    showToast('Seleziona almeno un membro con percentuale valida', 'err');
+                    showToast(t('ts.selectMember'), 'err');
                     return;
                   }
                   
@@ -10076,7 +10082,7 @@ export default function App() {
                   });
 
                   if (ok) {
-                    showToast('Profit sharing configurato con successo!');
+                    showToast(t('ts.profitSharingDone'));
                     setShowProfitSharesModal(false);
                     setProfitShares([]);
                     fetchTeam();
