@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
 import { isGeminiConfigured, geminiVision, getGeminiInfo } from './gemini.service';
-import { searchStockXCandidates, findStockXByStyleCode, isStockXConfigured as isStockXConfiguredSvc } from './stockx.service';
+import { searchStockXCandidates, findStockXByStyleCode, isStockXConfigured as isStockXConfiguredSvc, type StockXCandidate } from './stockx.service';
 
 
 // ==========================================
@@ -1399,8 +1399,16 @@ ${prompt}`;
         confirmed = await findStockXByStyleCode(codeRaw);
         if (confirmed) logger.info('Scarpa identificata da StockX via style code', { code: codeRaw, model: confirmed.title });
       }
-      if (!confirmed && result.brand) {
-        confirmed = await confirmSneakerWithStockX(imageBase64, `${result.brand} ${result.model || ''}`.trim());
+      if (!confirmed && (result.brand || result.model)) {
+        // Più query → più candidati: così la scarpa giusta entra nella lista anche se
+        // l'IA ha sbagliato il nome (poi il confronto-foto sceglie quella corretta).
+        const queries = Array.from(new Set([
+          [result.brand, result.model].filter(Boolean).join(' '),
+          [result.brand, parsed.colorway].filter(Boolean).join(' '),
+          [parsed.collaboration, result.model].filter(Boolean).join(' '),
+          (result.model || '').toString(),
+        ].map(s => s.trim()).filter(s => s.length >= 2)));
+        confirmed = await confirmSneakerWithStockX(imageBase64, queries);
       }
       if (confirmed) {
         result.model = confirmed.title;
@@ -1432,8 +1440,20 @@ async function fetchImageAsDataUrl(url: string): Promise<string | null> {
 // Conferma il modello di sneaker confrontando la FOTO dell'utente con le FOTO reali dei
 // candidati del catalogo StockX (confronto immagine-contro-immagine, molto più preciso del
 // solo titolo): l'IA sceglie il prodotto la cui foto combacia per silhouette E colorway.
-async function confirmSneakerWithStockX(imageBase64: string, query: string): Promise<{ title: string; styleId: string | null; productId: string | null } | null> {
-  const candidates = await searchStockXCandidates(query, { sneakersOnly: true, limit: 6 });
+async function confirmSneakerWithStockX(imageBase64: string, queries: string[]): Promise<{ title: string; styleId: string | null; productId: string | null } | null> {
+  // Pool di candidati da PIÙ ricerche (brand+modello, colorway, collab, modello): unisco
+  // e dedup, così la scarpa giusta entra nella lista anche se una singola query la mancava.
+  const seen = new Set<string>();
+  const candidates: StockXCandidate[] = [];
+  for (const q of queries) {
+    if (candidates.length >= 8) break;
+    const found = await searchStockXCandidates(q, { sneakersOnly: true, limit: 6 });
+    for (const c of found) {
+      const key = (c.productId || c.styleId || c.title || '').toLowerCase();
+      if (key && !seen.has(key)) { seen.add(key); candidates.push(c); }
+      if (candidates.length >= 8) break;
+    }
+  }
   if (!candidates.length) return null;
   // Una sola opzione: prendila senza interpellare l'IA.
   if (candidates.length === 1) return candidates[0];
