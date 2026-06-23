@@ -1449,8 +1449,8 @@ async function confirmWithStockXPhotos(imageBase64: string, queries: string[], o
   // Pool di candidati da PIÙ ricerche (brand+modello, colorway, collab, modello): unisco
   // e dedup, così il prodotto giusto entra nella lista anche se una singola query lo mancava.
   const sneakersOnly = opts?.sneakersOnly ?? false;
-  const MAX_POOL = 6;       // candidati totali (meno ricerche/memoria)
-  const MAX_COMPARE = 5;    // foto effettivamente caricate e confrontate (tetto RAM)
+  const MAX_POOL = 5;       // candidati totali (meno ricerche/memoria)
+  const MAX_COMPARE = 4;    // foto effettivamente caricate e confrontate (tetto RAM + velocità)
   const seen = new Set<string>();
   const candidates: StockXCandidate[] = [];
   for (const q of queries) {

@@ -134,9 +134,12 @@ async function callGeminiModel(model: string, contents: any[], opts: GeminiVisio
   };
 
   let lastErr: any;
-  // Almeno 3 tentativi, o quante chiavi se di più: anche con una sola chiave ritentiamo
-  // su 503/429 (transitori) invece di arrenderci subito.
-  const maxAttempts = Math.max(3, GEMINI_KEYS.length);
+  // VELOCITÀ: con più chiavi proviamo ogni chiave UNA volta e passiamo SUBITO alla
+  // successiva (chiave diversa → niente attesa). Solo con una chiave sola aspettiamo un
+  // attimo (il backoff serve a dare tempo allo stesso endpoint di riprendersi).
+  // Se tutte le chiavi falliscono, si passa al modello successivo della catena.
+  const multiKey = GEMINI_KEYS.length > 1;
+  const maxAttempts = multiKey ? GEMINI_KEYS.length : 3;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const key = GEMINI_KEYS[geminiKeyIndex % GEMINI_KEYS.length];
     try {
@@ -155,7 +158,8 @@ async function callGeminiModel(model: string, contents: any[], opts: GeminiVisio
         });
         geminiKeyIndex = (geminiKeyIndex + 1) % GEMINI_KEYS.length;
         lastErr = new Error(`Gemini ${r.status}`);
-        if (!isLast) await sleep(700 * (attempt + 1)); // backoff: 700ms, 1.4s, ...
+        // Attesa SOLO con chiave unica (niente alternativa da provare subito).
+        if (!isLast && !multiKey) await sleep(400 * (attempt + 1));
         continue;
       }
       if (!r.ok) {
