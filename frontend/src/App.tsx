@@ -1300,11 +1300,21 @@ export default function App() {
     checkStaleProducts();
     refreshMyPlan();
     
-    // Polling notifiche ogni 30 secondi
-    const interval = setInterval(fetchNotifications, 30000);
+    // Polling notifiche: ogni 2 minuti e SOLO quando la scheda è in primo piano.
+    // (Prima era ogni 30s sempre: con più utenti teneva sveglio il DB di continuo →
+    // ore di calcolo Neon sprecate. Ora in background si ferma e riprende al ritorno.)
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const startPolling = () => { if (!interval) interval = setInterval(fetchNotifications, 120000); };
+    const stopPolling = () => { if (interval) { clearInterval(interval); interval = null; } };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') { fetchNotifications(); startPolling(); }
+      else stopPolling();
+    };
+    if (document.visibilityState === 'visible') startPolling();
+    document.addEventListener('visibilitychange', onVisibility);
     // Controllo prodotti fermi ogni ora
     const staleInterval = setInterval(checkStaleProducts, 60 * 60 * 1000);
-    return () => { clearInterval(interval); clearInterval(staleInterval); };
+    return () => { stopPolling(); clearInterval(staleInterval); document.removeEventListener('visibilitychange', onVisibility); };
   }, [isAuthenticated, fetchProducts, fetchTeam, fetchCategories, fetchExpenses, fetchNotifications, checkStaleProducts]);
 
   // Se Marketplace/Chat sono disattivati, non lasciare l'utente su quelle viste.
@@ -2526,13 +2536,11 @@ export default function App() {
     if (isEdit) {
       setEditPhotos(prev => [...prev, ...newPhotos]);
     } else {
-      const wasEmpty = current.length === 0;
       setProductPhotos(prev => [...prev, ...newPhotos]);
-      // Lo scan IA parte SOLO sulla prima foto. Le foto aggiunte dopo si accodano alla
-      // galleria SENZA interrompere il riconoscimento in corso: così puoi continuare a
-      // caricare foto mentre l'IA "ragiona". Per ri-scansionare una foto specifica c'è
-      // il pulsante "Scan" sulla miniatura.
-      if (wasEmpty && newPhotos.length > 0 && category) {
+      // AUTO-SCAN: ogni nuova foto avvia da sola il riconoscimento (sulla foto appena
+      // aggiunta). La UI non è bloccata: puoi aggiungere altre foto mentre elabora — lo
+      // scan riparte sull'ultima caricata (quello precedente viene annullato).
+      if (newPhotos.length > 0 && category) {
         setScanResult(null);
         setPriceEstimate(null);
         runAIScan(newPhotos[0], category);
@@ -2652,10 +2660,16 @@ export default function App() {
       finalBrand = watchBrand; finalName = watchModel;
       finalSize = watchCase ? `${watchCase}mm${watchStrap ? ', ' + watchStrap : ''}` : (watchStrap || '-');
       finalCondition = watchMaterial ? `${condition} (${watchMaterial})` : condition;
+    } else if (effCategory === 'Scarpe') {
+      // Scarpe: serve solo il modello (il brand è inutile, il nome StockX lo contiene già).
+      if (!name) { showToast(t('ts.fillModel'), 'err'); setIsSaving(false); return; }
+      finalName = name;
+      // Brand comunque salvato (prima parola del modello) per compatibilità col backend.
+      finalBrand = brand || name.trim().split(/\s+/)[0] || 'Sneaker';
     } else {
       if (!brand || !name) { showToast(t('ts.fillBrandName'), 'err'); setIsSaving(false); return; }
       // Per categorie custom, arricchisci il nome con materiale/colore se compilati
-      if (effCategory !== 'Scarpe' && effCategory !== 'Vestiti') {
+      if (effCategory !== 'Vestiti') {
         const extras = [watchMaterial, watchStrap].filter(Boolean);
         if (extras.length > 0) finalName = `${name} — ${extras.join(', ')}`;
       }
@@ -2944,7 +2958,8 @@ export default function App() {
         method: 'PUT',
         body: JSON.stringify({
           category: productToEdit.category,
-          brand: editBrand, name: editName, size: editSize, condition: editCondition,
+          brand: productToEdit.category === 'Scarpe' ? (editBrand || editName.trim().split(/\s+/)[0] || 'Sneaker') : editBrand,
+          name: editName, size: editSize, condition: editCondition,
           purchasePrice: parseFloat(editPrice),
           customShares: finalEditShares,
           photos: editPhotos.length > 0 ? editPhotos : undefined,
@@ -7544,14 +7559,17 @@ export default function App() {
                 // Form GENERICO fallback (nessun config AI ancora)
                 return (
                 <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.brand')}</label>
-                      <input type="text" required value={brand}
-                        onChange={(e: any) => setBrand(e.target.value)}
-                        placeholder={category === 'Scarpe' ? 'Nike' : category === 'Vestiti' ? 'Supreme' : 'Louis Vuitton'}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
-                    </div>
+                  {/* Scarpe: il brand è inutile (il modello StockX lo contiene già) → solo Model. */}
+                  <div className={`grid gap-3 ${category === 'Scarpe' ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    {category !== 'Scarpe' && (
+                      <div>
+                        <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.brand')}</label>
+                        <input type="text" required value={brand}
+                          onChange={(e: any) => setBrand(e.target.value)}
+                          placeholder={category === 'Vestiti' ? 'Supreme' : 'Louis Vuitton'}
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                      </div>
+                    )}
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.model')}</label>
                       <input type="text" required value={name}
@@ -7865,13 +7883,16 @@ export default function App() {
             </div>
             
             <form onSubmit={handleSaveEdit} className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.brand')}</label>
-                  <input type="text" required value={editBrand}
-                    onChange={(e: any) => setEditBrand(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
-                </div>
+              {/* Scarpe: niente brand, solo modello (coerente col form di aggiunta). */}
+              <div className={`grid gap-3 ${productToEdit?.category === 'Scarpe' ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                {productToEdit?.category !== 'Scarpe' && (
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.brand')}</label>
+                    <input type="text" required value={editBrand}
+                      onChange={(e: any) => setEditBrand(e.target.value)}
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                  </div>
+                )}
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.name')}</label>
                   <input type="text" required value={editName}
