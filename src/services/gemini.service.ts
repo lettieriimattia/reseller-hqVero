@@ -83,18 +83,29 @@ export async function geminiVision(opts: GeminiVisionOpts): Promise<string> {
   };
 
   let lastErr: any;
-  // Un tentativo per chiave: se tutte falliscono, il chiamante ripiega su Groq.
-  for (let attempt = 0; attempt < GEMINI_KEYS.length; attempt++) {
+  // Numero di tentativi: almeno 3, o quante chiavi se di più. Così anche con UNA
+  // sola chiave ritentiamo su 503/429 (transitori) invece di ripiegare subito su Groq.
+  const maxAttempts = Math.max(3, GEMINI_KEYS.length);
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const key = GEMINI_KEYS[geminiKeyIndex % GEMINI_KEYS.length];
     try {
       const r = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${key}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
       );
+      // 503 = modello sovraccarico (lato Google, transitorio) · 429 = limite/quota.
+      // In entrambi i casi ruotiamo chiave E aspettiamo un po' prima di riprovare:
+      // il 503 spesso si risolve da solo in 1-2 secondi → evitiamo il fallback a Groq.
       if (r.status === 429 || r.status === 503) {
-        logger.warn('Gemini limite/sovraccarico, ruoto chiave', { status: r.status, key: `#${(geminiKeyIndex % GEMINI_KEYS.length) + 1}/${GEMINI_KEYS.length}` });
+        const isLast = attempt === maxAttempts - 1;
+        logger.warn('Gemini limite/sovraccarico, ritento', {
+          status: r.status,
+          key: `#${(geminiKeyIndex % GEMINI_KEYS.length) + 1}/${GEMINI_KEYS.length}`,
+          attempt: `${attempt + 1}/${maxAttempts}`,
+        });
         geminiKeyIndex = (geminiKeyIndex + 1) % GEMINI_KEYS.length;
         lastErr = new Error(`Gemini ${r.status}`);
+        if (!isLast) await sleep(700 * (attempt + 1)); // backoff: 700ms, 1.4s, ...
         continue;
       }
       if (!r.ok) {
@@ -112,4 +123,9 @@ export async function geminiVision(opts: GeminiVisionOpts): Promise<string> {
     }
   }
   throw lastErr || new Error('Gemini non disponibile');
+}
+
+// Pausa breve per il backoff tra i tentativi.
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
