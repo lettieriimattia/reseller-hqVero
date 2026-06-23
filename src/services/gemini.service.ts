@@ -15,14 +15,16 @@ const GEMINI_KEYS: string[] = (process.env.GEMINI_API_KEY || '')
 const GEMINI_VISION_MODEL = process.env.GEMINI_VISION_MODEL || 'gemini-2.5-flash';
 const IS_GEMINI_25 = GEMINI_VISION_MODEL.includes('2.5');
 
-// Modello di RISERVA: se il principale è sovraccarico (503) o a quota piena (429) su
-// TUTTE le chiavi, prima di ripiegare su Groq proviamo questo modello (di solito meno
-// congestionato del flash "di punta"). Disattivabile con GEMINI_FALLBACK_MODEL=off.
-const GEMINI_FALLBACK_MODEL = (() => {
+// CATENA di modelli: proviamo dal più potente al meno potente prima di ripiegare su Groq.
+// Se il principale è sovraccarico (503) o a quota piena (429) su TUTTE le chiavi, passiamo
+// al successivo della catena. Personalizzabile con GEMINI_FALLBACK_MODEL (lista separata da
+// virgola) o disattivabile con GEMINI_FALLBACK_MODEL=off.
+const DEFAULT_FALLBACKS = 'gemini-2.5-flash,gemini-3.1-flash-lite,gemini-2.5-flash-lite';
+const MODEL_CHAIN: string[] = (() => {
   const env = process.env.GEMINI_FALLBACK_MODEL;
-  if (env === 'off') return '';
-  const fb = env || 'gemini-2.5-flash';
-  return fb === GEMINI_VISION_MODEL ? '' : fb; // inutile se uguale al principale
+  const fallbacks = env === 'off' ? [] : (env || DEFAULT_FALLBACKS).split(',').map(s => s.trim()).filter(Boolean);
+  // Principale per primo, poi le riserve, senza duplicati.
+  return Array.from(new Set([GEMINI_VISION_MODEL, ...fallbacks]));
 })();
 
 // --- Controllo "thinking" (ragionamento prima della risposta) ---
@@ -56,15 +58,14 @@ export function isGeminiConfigured(): boolean {
 }
 
 // Info diagnostica (senza esporre le chiavi): quante chiavi e quale modello.
-export function getGeminiInfo(): { configured: boolean; keys: number; model: string; fallbackModel: string } {
-  return { configured: GEMINI_KEYS.length > 0, keys: GEMINI_KEYS.length, model: GEMINI_VISION_MODEL, fallbackModel: GEMINI_FALLBACK_MODEL };
+export function getGeminiInfo(): { configured: boolean; keys: number; model: string; chain: string[] } {
+  return { configured: GEMINI_KEYS.length > 0, keys: GEMINI_KEYS.length, model: GEMINI_VISION_MODEL, chain: MODEL_CHAIN };
 }
 
 // Conferma all'avvio (visibile nei log): se non compare, la chiave non è stata letta.
 if (GEMINI_KEYS.length > 0) {
   const thinkInfo = IS_GEMINI_25 ? `thinkingBudget=${THINKING_BUDGET}` : `thinkingLevel=${THINKING_LEVEL}`;
-  const fbInfo = GEMINI_FALLBACK_MODEL ? `, riserva ${GEMINI_FALLBACK_MODEL}` : '';
-  logger.info(`Gemini vision attivo — ${GEMINI_KEYS.length} chiave/i, modello ${GEMINI_VISION_MODEL} (${thinkInfo})${fbInfo}`);
+  logger.info(`Gemini vision attivo — ${GEMINI_KEYS.length} chiave/i (${thinkInfo}). Catena modelli: ${MODEL_CHAIN.join(' → ')} → Groq`);
 } else {
   logger.info('Gemini non configurato — vision su Groq (Llama)');
 }
@@ -103,17 +104,20 @@ export async function geminiVision(opts: GeminiVisionOpts): Promise<string> {
     ],
   }];
 
-  try {
-    return await callGeminiModel(GEMINI_VISION_MODEL, contents, opts);
-  } catch (err: any) {
-    if (GEMINI_FALLBACK_MODEL) {
-      logger.warn('Gemini principale non disponibile, provo il modello di riserva', {
-        principale: GEMINI_VISION_MODEL, riserva: GEMINI_FALLBACK_MODEL, err: err?.message,
-      });
-      return await callGeminiModel(GEMINI_FALLBACK_MODEL, contents, opts);
+  // Prova i modelli della catena dal più potente al meno potente. Al primo che risponde
+  // ci fermiamo; se falliscono TUTTI (sovraccarico/quota), il chiamante ripiega su Groq.
+  let lastErr: any;
+  for (let i = 0; i < MODEL_CHAIN.length; i++) {
+    const model = MODEL_CHAIN[i];
+    try {
+      return await callGeminiModel(model, contents, opts);
+    } catch (err: any) {
+      lastErr = err;
+      const next = MODEL_CHAIN[i + 1];
+      if (next) logger.warn('Modello Gemini non disponibile, passo al successivo', { modello: model, successivo: next, err: err?.message });
     }
-    throw err;
   }
+  throw lastErr || new Error('Gemini non disponibile (catena esaurita)');
 }
 
 // Esegue la chiamata per UN modello: rotazione chiavi + retry con backoff su 429/503.
