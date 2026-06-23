@@ -104,6 +104,9 @@ export function getVisionStatus() {
     geminiConfigured: gem.configured,
     geminiKeys: gem.keys,
     geminiModel: gem.model,
+    // Grounding scarpe: senza StockX la conferma del modello esatto è SPENTA
+    // → per le sneaker resta solo l'ipotesi generica della vision (meno preciso).
+    stockxConfigured: isStockXConfiguredSvc(),
   };
 }
 
