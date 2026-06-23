@@ -2447,6 +2447,11 @@ export default function App() {
       if (fallbackName) setName(fallbackName);
     }
 
+    // Valutazione GIÀ allegata dallo scan (orologi/borse via Apify): usala direttamente,
+    // così NON facciamo una seconda ricerca Apify (il tetto mensile è prezioso).
+    if (d.marketValue != null) {
+      setScanMarket({ value: d.marketValue, currency: 'EUR', source: d.marketSource || 'Valutazione di mercato', reliable: true, sample: 1 });
+    } else {
     // === Valutazione UNIFICATA (il server instrada per categoria: carte→catalogo,
     // vinili→Discogs, resto→eBay indicativo). Non blocca: gira in background. ===
     const valName = (effCat === 'Pokemon' ? (d.name || scan.model) : (scan.model || fallbackName)) || '';
@@ -2466,6 +2471,7 @@ export default function App() {
           sku: detectedSku || undefined,
         }),
       }).then(r => { if (r.ok && !signal?.aborted) setScanMarket(r.data); }).catch(() => {});
+    }
     }
 
     // === Conferma visiva StockX (qualsiasi categoria): StockX copre anche elettronica,

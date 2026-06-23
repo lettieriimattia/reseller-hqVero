@@ -5,6 +5,7 @@ import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
 import { isGeminiConfigured, geminiVision, getGeminiInfo } from './gemini.service';
 import { searchStockXCandidates, findStockXByStyleCode, isStockXConfigured as isStockXConfiguredSvc, type StockXCandidate } from './stockx.service';
+import { getWatchValue, getBagValue, isChrono24Configured, isVestiaireConfigured } from './apify.service';
 
 
 // ==========================================
@@ -1421,6 +1422,32 @@ ${prompt}`;
     } catch (e: any) { logger.warn(`Identificazione StockX ${category} fallita`, { err: e?.message }); }
   }
 
+  // IDENTIFICAZIONE Apify (OROLOGI e BORSE): StockX non li copre, ma Chrono24/Vestiaire sì.
+  // UNA SOLA ricerca Apify, riusata sia per il confronto-foto (riconoscimento) sia per il
+  // prezzo (mediana) → non intacca due volte il tetto mensile. La valutazione viene già
+  // allegata qui, così il frontend non fa una seconda ricerca Apify.
+  {
+    const catL = category.toLowerCase();
+    const isWatch = category === 'Orologi' || /orolog|watch|chrono/.test(catL);
+    const isBag = /bors|bag|pochette|clutch|tracoll|zaino|handbag|shopper/.test(catL);
+    if ((isWatch && isChrono24Configured()) || (isBag && isVestiaireConfigured())) {
+      try {
+        const q = [result.brand, result.model].filter(Boolean).join(' ').trim();
+        if (q.length >= 2) {
+          const val = isWatch ? await getWatchValue({ query: q }) : await getBagValue({ query: q });
+          if (val?.candidates?.length) {
+            const picked = await pickByPhotoComparison(imageBase64, val.candidates);
+            if (picked?.title) { result.model = picked.title; result.confidence = 'HIGH'; }
+          }
+          if (val?.value != null) {
+            // Prezzo allegato allo scan: il frontend lo usa senza una seconda chiamata Apify.
+            result.details = { ...(result.details || {}), marketValue: val.value, marketSource: val.source };
+          }
+        }
+      } catch (e: any) { logger.warn('Identificazione Apify orologi/borse fallita', { err: e?.message }); }
+    }
+  }
+
   return result;
 }
 
@@ -1445,37 +1472,26 @@ async function fetchImageAsDataUrl(url: string): Promise<string | null> {
 // Conferma il modello di sneaker confrontando la FOTO dell'utente con le FOTO reali dei
 // candidati del catalogo StockX (confronto immagine-contro-immagine, molto più preciso del
 // solo titolo): l'IA sceglie il prodotto la cui foto combacia per silhouette E colorway.
-async function confirmWithStockXPhotos(imageBase64: string, queries: string[], opts?: { sneakersOnly?: boolean }): Promise<{ title: string; styleId: string | null; productId: string | null } | null> {
-  // Pool di candidati da PIÙ ricerche (brand+modello, colorway, collab, modello): unisco
-  // e dedup, così il prodotto giusto entra nella lista anche se una singola query lo mancava.
-  const sneakersOnly = opts?.sneakersOnly ?? false;
-  const MAX_POOL = 5;       // candidati totali (meno ricerche/memoria)
-  const MAX_COMPARE = 4;    // foto effettivamente caricate e confrontate (tetto RAM + velocità)
-  const seen = new Set<string>();
-  const candidates: StockXCandidate[] = [];
-  for (const q of queries) {
-    if (candidates.length >= MAX_POOL) break;
-    const found = await searchStockXCandidates(q, { sneakersOnly, limit: 6 });
-    for (const c of found) {
-      const key = (c.productId || c.styleId || c.title || '').toLowerCase();
-      if (key && !seen.has(key)) { seen.add(key); candidates.push(c); }
-      if (candidates.length >= MAX_POOL) break;
-    }
-  }
+// Selettore GENERICO: tra una lista di candidati (titolo + foto + eventuale codice),
+// sceglie quello che combacia con la foto dell'utente confrontando IMMAGINE-contro-IMMAGINE.
+// Usato sia per StockX (scarpe/vestiti) sia per Apify (orologi/borse).
+async function pickByPhotoComparison<T extends { title: string; image: string | null; styleId?: string | null }>(
+  imageBase64: string, candidates: T[]
+): Promise<T | null> {
   if (!candidates.length) return null;
-  // Una sola opzione: prendila senza interpellare l'IA.
   if (candidates.length === 1) return candidates[0];
+  const MAX_COMPARE = 4; // foto caricate e confrontate (tetto RAM + velocità)
 
-  // Scarica le foto SOLO dei primi candidati (tetto RAM), in parallelo.
+  // Scarica le foto dei primi candidati, in parallelo.
   const withImg = (await Promise.all(
     candidates.slice(0, MAX_COMPARE).map(async c => (c.image ? { c, dataUrl: await fetchImageAsDataUrl(c.image) } : { c, dataUrl: null }))
-  )).filter((x): x is { c: typeof candidates[number]; dataUrl: string } => !!x.dataUrl);
+  )).filter((x): x is { c: T; dataUrl: string } => !!x.dataUrl);
 
   // CASO MIGLIORE: abbiamo le foto → confronto foto-contro-foto.
   if (withImg.length >= 2) {
     const list = withImg.map((x, i) => `Foto ${i + 1} = ${x.c.title}${x.c.styleId ? ` (${x.c.styleId})` : ''}`).join('\n');
     const prompt = `La PRIMA immagine è il PRODOTTO da identificare (foto dell'utente).
-Le immagini SUCCESSIVE sono foto reali di prodotti dal catalogo StockX, in questo ordine:
+Le immagini SUCCESSIVE sono foto reali di prodotti, in questo ordine:
 ${list}
 
 Confronta la PRIMA immagine con ognuna delle foto successive. Scegli il NUMERO della foto che
@@ -1493,17 +1509,15 @@ Rispondi SOLO con JSON: {"choice": <numero>}`;
       const choice = Number(parsed?.choice);
       const picked = (Number.isInteger(choice) && choice >= 1 && choice <= withImg.length)
         ? withImg[choice - 1].c : null;
-      // Libera SUBITO i base64 delle foto (decine di MB sommati): non servono più.
-      images.length = 0;
-      withImg.length = 0;
-      if (picked) logger.info('Prodotto confermato via confronto foto StockX', { model: picked.title });
+      images.length = 0; withImg.length = 0; // libera subito i base64
+      if (picked) logger.info('Prodotto confermato via confronto foto', { model: picked.title });
       return picked;
     } catch { withImg.length = 0; return null; }
   }
 
-  // FALLBACK: nessuna foto disponibile → confronto sui titoli (come prima).
+  // FALLBACK: nessuna foto disponibile → confronto sui titoli.
   const list = candidates.map((c, i) => `${i + 1}. ${c.title}${c.styleId ? ` (${c.styleId})` : ''}`).join('\n');
-  const prompt = `Guarda il PRODOTTO nella foto. Qui sotto ci sono prodotti reali dal catalogo StockX.
+  const prompt = `Guarda il PRODOTTO nella foto. Qui sotto ci sono prodotti reali.
 Scegli il NUMERO che corrisponde ESATTAMENTE al prodotto in foto (stesso modello E stesso colore/grafica/stampa).
 Se NESSUNO corrisponde con certezza, rispondi 0. Non tirare a indovinare: meglio 0 che un prodotto sbagliato.
 
@@ -1511,17 +1525,32 @@ ${list}
 
 Rispondi SOLO con JSON: {"choice": <numero>}`;
   try {
-    const text = await visionComplete({
-      prompt, imageBase64, temperature: 0.0, maxTokens: 1200,
-      groqModel: VISION_MODEL,
-    });
+    const text = await visionComplete({ prompt, imageBase64, temperature: 0.0, maxTokens: 1200, groqModel: VISION_MODEL });
     const parsed = safeParseJSON(text);
     const choice = Number(parsed?.choice);
-    if (Number.isInteger(choice) && choice >= 1 && choice <= candidates.length) {
-      return candidates[choice - 1];
-    }
-    return null; // 0 o risposta non valida → nessun match certo
+    if (Number.isInteger(choice) && choice >= 1 && choice <= candidates.length) return candidates[choice - 1];
+    return null;
   } catch { return null; }
+}
+
+// Conferma StockX (scarpe/vestiti): raccoglie i candidati dal catalogo (più query, dedup)
+// e fa scegliere il selettore-foto.
+async function confirmWithStockXPhotos(imageBase64: string, queries: string[], opts?: { sneakersOnly?: boolean }): Promise<{ title: string; styleId: string | null; productId: string | null } | null> {
+  const sneakersOnly = opts?.sneakersOnly ?? false;
+  const MAX_POOL = 5;
+  const seen = new Set<string>();
+  const candidates: StockXCandidate[] = [];
+  for (const q of queries) {
+    if (candidates.length >= MAX_POOL) break;
+    const found = await searchStockXCandidates(q, { sneakersOnly, limit: 6 });
+    for (const c of found) {
+      const key = (c.productId || c.styleId || c.title || '').toLowerCase();
+      if (key && !seen.has(key)) { seen.add(key); candidates.push(c); }
+      if (candidates.length >= MAX_POOL) break;
+    }
+  }
+  const picked = await pickByPhotoComparison(imageBase64, candidates);
+  return picked ? { title: picked.title, styleId: picked.styleId, productId: picked.productId } : null;
 }
 
 // ==========================================

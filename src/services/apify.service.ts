@@ -22,6 +22,7 @@ const VESTIAIRE_ACTOR = (process.env.APIFY_VESTIAIRE_ACTOR || '').trim();
 const CHRONO24_ACTOR = (process.env.APIFY_CHRONO24_ACTOR || '').trim();
 const MONTHLY_LIMIT = parseInt(process.env.APIFY_MONTHLY_LIMIT || '30', 10);
 
+export interface ApifyCandidate { title: string; image: string | null; price: number | null; }
 export interface ApifyValuation {
   value: number | null;
   currency: string;
@@ -29,6 +30,7 @@ export interface ApifyValuation {
   itemName?: string;
   image?: string;
   sample: number;
+  candidates?: ApifyCandidate[]; // annunci grezzi (titolo+foto+prezzo) per il confronto-foto
 }
 
 export function isVestiaireConfigured(): boolean { return !!(TOKEN && VESTIAIRE_ACTOR); }
@@ -107,13 +109,21 @@ async function runScraper(actor: string, startUrl: string, source: string): Prom
     if (!Array.isArray(items) || items.length === 0) return { value: null, currency: 'EUR', source, sample: 0 };
     const prices = items.map(pickPrice).filter((n): n is number => n != null);
     const first = items[0] || {};
+    const imgOf = (it: any): string | null =>
+      it?.imageUrl || it?.image_url || it?.image || it?.photo || (Array.isArray(it?.images) ? it.images[0] : null) || null;
+    // Candidati per il confronto-foto (titolo + foto + prezzo), dallo STESSO scrape:
+    // nessuna chiamata Apify in più (il tetto mensile non viene intaccato).
+    const candidates: ApifyCandidate[] = items
+      .map(it => ({ title: (it?.title || it?.name || it?.brand || '').toString(), image: imgOf(it), price: pickPrice(it) }))
+      .filter(c => c.title && c.image);
     return {
       value: median(prices),
       currency: 'EUR',
       source,
       itemName: first.title || first.name || first.brand,
-      image: first.imageUrl || first.image_url || first.image || first.photo || (Array.isArray(first.images) ? first.images[0] : undefined),
+      image: imgOf(first) || undefined,
       sample: prices.length,
+      candidates,
     };
   } catch (err: any) {
     logger.error('Errore runScraper Apify', { err: err.message, source });
