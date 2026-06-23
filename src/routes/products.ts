@@ -119,11 +119,17 @@ router.put('/auto-publish', async (req: AuthRequest, res: Response) => {
 // ==========================================
 router.post('/lot', async (req: AuthRequest, res: Response) => {
   try {
-    const { category, lotName, totalPrice, quantity, brand, size, condition, notes, attributes, warehouseId: bodyWarehouseId } = req.body;
+    const { category, lotName, totalPrice, quantity, brand, size, condition, notes, attributes, warehouseId: bodyWarehouseId, customShares } = req.body;
 
     if (!category || !lotName || !totalPrice || !quantity || quantity < 2 || quantity > 200) {
       return res.status(400).json({ error: 'Dati lotto non validi.' });
     }
+
+    // Quote (snapshot delle percentuali del magazzino al momento della creazione),
+    // identico al prodotto singolo: ogni pezzo del lotto le porta con sé.
+    const parsedShares = customShares && Array.isArray(customShares) && customShares.length > 0
+      ? JSON.stringify(customShares.map((s: any) => ({ ...s, percentage: Number(s.percentage) || 0 })))
+      : null;
 
     // Gating piano: il lotto crea `quantity` prodotti → verifica il limite prima.
     const quotaErr = await checkProductQuota(req.user!.userId, quantity);
@@ -161,6 +167,7 @@ router.post('/lot', async (req: AuthRequest, res: Response) => {
             status: 'IN STOCK',
             userId: req.user!.userId,
             warehouseId: targetMembership.warehouseId,
+            customShares: parsedShares,
             notes: notes ? `${lotNote} — ${notes}` : lotNote,
             attributes: (attributes && typeof attributes === 'object') ? JSON.stringify(attributes) : null,
             lotName,

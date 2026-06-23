@@ -880,6 +880,7 @@ export default function App() {
   const [lotQty, setLotQty] = useState('');
   const [lotBrand, setLotBrand] = useState('');
   const [lotNotes, setLotNotes] = useState('');
+  const [lotWarehouseId, setLotWarehouseId] = useState(''); // magazzino scelto per il lotto (default: base)
   const [isCreatingLot, setIsCreatingLot] = useState(false);
 
   // ----- SPEDIZIONE PACKLINK (solo admin) -----
@@ -2580,6 +2581,13 @@ export default function App() {
     const qty = parseInt(lotQty);
     if (!lotName || !lotCategory || isNaN(total) || total <= 0 || isNaN(qty) || qty < 2) return;
     setIsCreatingLot(true);
+    // Magazzino scelto (default: base) + snapshot delle quote di quel magazzino,
+    // così il lotto rispetta le percentuali dei soci come il prodotto singolo.
+    const lotWhId = lotWarehouseId || baseWarehouse?.id;
+    const lotTeam = teamData.find(t => t.warehouseId === lotWhId);
+    const lotShares = lotTeam?.members?.length > 0
+      ? lotTeam.members.map((m: any) => ({ userId: m.userId, name: m.name, percentage: m.percentage }))
+      : undefined;
     const { ok, data } = await apiCall('/products/lot', {
       method: 'POST',
       body: JSON.stringify({
@@ -2589,13 +2597,14 @@ export default function App() {
         quantity: qty,
         brand: lotBrand.trim() || null,
         notes: lotNotes.trim() || null,
-        warehouseId: baseWarehouse?.id || undefined,
+        warehouseId: lotWhId || undefined,
+        customShares: lotShares,
       }),
     });
     if (ok) {
       await fetchProducts();
       setLotOpen(false);
-      setLotName(''); setLotCategory(''); setLotTotal(''); setLotQty(''); setLotBrand(''); setLotNotes('');
+      setLotName(''); setLotCategory(''); setLotTotal(''); setLotQty(''); setLotBrand(''); setLotNotes(''); setLotWarehouseId('');
       showToast(`✓ Lotto creato: ${data.created} prodotti a ${data.pricePerUnit.toFixed(2)}€ cad.`);
     }
     setIsCreatingLot(false);
@@ -8474,6 +8483,25 @@ export default function App() {
               </button>
             </div>
             <form onSubmit={handleCreateLot} className="p-5 space-y-4">
+
+              {/* Magazzino (partnership): scegli dove va il lotto. Mostrato se hai più di un magazzino.
+                  Le percentuali di quel magazzino vengono applicate a ogni pezzo del lotto. */}
+              {warehouses.filter((w: any) => !w.parentId).length > 1 && (
+                <div>
+                  <label className="text-[10px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.1em] block mb-2">{t('form.warehouse')}</label>
+                  <div className="flex flex-wrap gap-2">
+                    {warehouses.filter((w: any) => !w.parentId).map((w: any) => {
+                      const isSel = (lotWarehouseId || baseWarehouse?.id) === w.id;
+                      return (
+                        <button key={w.id} type="button" onClick={() => setLotWarehouseId(w.id)}
+                          className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${isSel ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
+                          {w.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Reparto */}
               <div>
