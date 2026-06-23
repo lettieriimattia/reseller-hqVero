@@ -169,6 +169,22 @@ export async function searchStockXCandidates(query: string, opts?: { sneakersOnl
   } catch { return []; }
 }
 
+// Trova il prodotto StockX il cui style code combacia ESATTAMENTE col codice letto
+// dall'IA (es. "DH4692-003"). È il match più affidabile in assoluto: il codice articolo
+// identifica univocamente il modello, quindi batte qualsiasi riconoscimento "a vista".
+// Ritorna SOLO un match esatto (mai un risultato "vicino", che sarebbe un altro modello).
+export async function findStockXByStyleCode(code: string): Promise<StockXCandidate | null> {
+  const c = (code || '').trim();
+  if (c.length < 5) return null;
+  const norm = (s: string | null) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const target = norm(c);
+  if (!target) return null;
+  // Cerco sia col codice "come letto" sia normalizzato (StockX a volte usa lo spazio/trattino).
+  const cands = await searchStockXCandidates(c, { sneakersOnly: false, limit: 12 });
+  const exact = cands.find(x => norm(x.styleId) === target);
+  return exact || null;
+}
+
 // Valutazione StockX REALE: catalog search → (variant per taglia) → market data in EUR.
 // Difensiva: in caso di errore/forma diversa ritorna value null senza rompere l'app.
 export async function getStockXValuation(opts: { query: string; name?: string; size?: string; sku?: string; category?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; brand?: string; model?: string; image?: string | null; styleId?: string | null; sample?: number }> {

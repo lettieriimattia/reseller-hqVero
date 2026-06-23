@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
 import { isGeminiConfigured, geminiVision, getGeminiInfo } from './gemini.service';
-import { searchStockXCandidates, isStockXConfigured as isStockXConfiguredSvc } from './stockx.service';
+import { searchStockXCandidates, findStockXByStyleCode, isStockXConfigured as isStockXConfiguredSvc } from './stockx.service';
 
 
 // ==========================================
@@ -1381,19 +1381,32 @@ ${prompt}`;
     }
   }
 
-  // CONFERMA StockX↔IA (solo scarpe): invece di fidarci del nome generico dell'IA,
-  // cerchiamo i candidati su StockX e facciamo scegliere all'IA quello che corrisponde
-  // davvero alla FOTO. Così "Nike SB Dunk Low" generico diventa il modello esatto (es.
-  // Freddy Krueger) con il suo style code → prezzo corretto.
-  if (category === 'Scarpe' && result.brand && isStockXConfiguredSvc()) {
+  // IDENTIFICAZIONE StockX (solo scarpe): StockX è la fonte di verità, non il nome
+  // "a vista" dell'IA (che spesso sbaglia il modello pur azzeccando il codice).
+  //  1) STYLE CODE → match ESATTO sul catalogo: il codice articolo (es. DH4692-003)
+  //     identifica univocamente il modello. È il caso migliore (e più veloce: niente
+  //     seconda chiamata vision).
+  //  2) Senza codice: conferma VISIVA tra i candidati del nome (l'IA sceglie guardando
+  //     la foto). Così "Nike SB Dunk Low" generico diventa il modello esatto.
+  if (category === 'Scarpe' && isStockXConfiguredSvc()) {
     try {
-      const confirmed = await confirmSneakerWithStockX(imageBase64, `${result.brand} ${result.model || ''}`.trim());
+      let confirmed: { title: string; styleId: string | null; productId: string | null } | null = null;
+      const codeRaw = (parsed.styleCode || parsed.sku || '').toString().trim();
+      if (codeRaw.length >= 5) {
+        confirmed = await findStockXByStyleCode(codeRaw);
+        if (confirmed) logger.info('Scarpa identificata da StockX via style code', { code: codeRaw, model: confirmed.title });
+      }
+      if (!confirmed && result.brand) {
+        confirmed = await confirmSneakerWithStockX(imageBase64, `${result.brand} ${result.model || ''}`.trim());
+      }
       if (confirmed) {
         result.model = confirmed.title;
-        result.details = { ...(result.details || {}), styleCode: confirmed.styleId || (result.details as any)?.styleCode || null, stockxProductId: confirmed.productId };
+        // Brand dal titolo StockX se l'IA non l'aveva (prima parola: Nike/Adidas/...).
+        if (!result.brand) result.brand = confirmed.title.split(/\s+/)[0] || undefined;
+        result.details = { ...(result.details || {}), styleCode: confirmed.styleId || codeRaw || (result.details as any)?.styleCode || null, stockxProductId: confirmed.productId };
         result.confidence = 'HIGH';
       }
-    } catch (e: any) { logger.warn('confirmSneakerWithStockX fallita', { err: e?.message }); }
+    } catch (e: any) { logger.warn('Identificazione StockX scarpe fallita', { err: e?.message }); }
   }
 
   return result;
