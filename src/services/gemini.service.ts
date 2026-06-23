@@ -13,10 +13,29 @@ const GEMINI_KEYS: string[] = (process.env.GEMINI_API_KEY || '')
   .filter(Boolean);
 
 const GEMINI_VISION_MODEL = process.env.GEMINI_VISION_MODEL || 'gemini-2.5-flash';
+const IS_GEMINI_25 = GEMINI_VISION_MODEL.includes('2.5');
+
+// --- Controllo "thinking" (ragionamento prima della risposta) ---
+// I 2.5 e i 3.x usano parametri DIVERSI e incompatibili tra loro:
+//  - 2.5 → thinkingBudget (numero di token; 0 = spento, più veloce).
+//  - 3.x → thinkingLevel ("LOW" | "MEDIUM" | "HIGH").
+// NB: inviare entrambi insieme dà errore 400.
+//
+// Per lo scan (estrazione/classificazione visiva) "LOW" è il livello consigliato:
+// risposte quasi istantanee ma con abbastanza ragionamento per riconoscere bene.
 // 0 = thinking disattivato (più veloce). Solo per i modelli 2.5.
 const THINKING_BUDGET = Number.isFinite(Number(process.env.GEMINI_THINKING_BUDGET))
   ? Number(process.env.GEMINI_THINKING_BUDGET)
   : 0;
+// Livello per i 3.x: default LOW (veloce). Alzabile a MEDIUM/HIGH via env per più precisione.
+const THINKING_LEVEL = (process.env.GEMINI_THINKING_LEVEL || 'LOW').toUpperCase();
+
+// Restituisce il blocco thinkingConfig corretto per il modello in uso (o {} se non serve).
+function thinkingConfigFor(): Record<string, any> {
+  if (IS_GEMINI_25) return { thinkingConfig: { thinkingBudget: THINKING_BUDGET } };
+  // 3.x e futuri: usa thinkingLevel.
+  return { thinkingConfig: { thinkingLevel: THINKING_LEVEL } };
+}
 
 // Indice corrente — ruota round-robin sulle chiavi (ognuna ha il suo limite gratuito)
 let geminiKeyIndex = 0;
@@ -30,9 +49,10 @@ export function getGeminiInfo(): { configured: boolean; keys: number; model: str
   return { configured: GEMINI_KEYS.length > 0, keys: GEMINI_KEYS.length, model: GEMINI_VISION_MODEL };
 }
 
-// Conferma all'avvio (visibile nei log Railway): se non compare, la chiave non è stata letta.
+// Conferma all'avvio (visibile nei log): se non compare, la chiave non è stata letta.
 if (GEMINI_KEYS.length > 0) {
-  logger.info(`Gemini vision attivo — ${GEMINI_KEYS.length} chiave/i, modello ${GEMINI_VISION_MODEL}`);
+  const thinkInfo = IS_GEMINI_25 ? `thinkingBudget=${THINKING_BUDGET}` : `thinkingLevel=${THINKING_LEVEL}`;
+  logger.info(`Gemini vision attivo — ${GEMINI_KEYS.length} chiave/i, modello ${GEMINI_VISION_MODEL} (${thinkInfo})`);
 } else {
   logger.info('Gemini non configurato — vision su Groq (Llama)');
 }
@@ -67,18 +87,8 @@ export async function geminiVision(opts: GeminiVisionOpts): Promise<string> {
       temperature: opts.temperature ?? 0.05,
       maxOutputTokens: opts.maxTokens ?? 2048,
       ...(opts.json ? { responseMimeType: 'application/json' } : {}),
-      // Thinking (ragionamento prima della risposta):
-      // - Modelli 2.5: di default ragionano e rallentano molto → lo DISATTIVIAMO
-      //   (budget 0) perché lo scan è una classificazione visiva veloce.
-      // - Modelli 3.x (3, 3.1, 3.5...): il ragionamento li rende NETTAMENTE più
-      //   precisi nel riconoscere brand/modello dalla foto → lo lasciamo ATTIVO
-      //   (dynamic thinking di default). NB: non inviamo thinkingBudget ai 3.x
-      //   perché usano un parametro diverso e un valore non supportato farebbe
-      //   fallire la chiamata (con conseguente fallback a Groq, meno preciso).
-      // Override manuale via GEMINI_THINKING_BUDGET solo per i 2.5.
-      ...(GEMINI_VISION_MODEL.includes('2.5')
-        ? { thinkingConfig: { thinkingBudget: THINKING_BUDGET } }
-        : {}),
+      // Thinking adeguato al modello (2.5 → budget · 3.x → level). Vedi thinkingConfigFor().
+      ...thinkingConfigFor(),
     },
   };
 
