@@ -2,6 +2,7 @@
 import { createPortal } from 'react-dom';
 import { DynamicForm } from './components/DynamicForm';
 import CatalogBrowser from './components/CatalogBrowser';
+import AssistantChat from './components/AssistantChat';
 import { getLang, setLangStorage, translate, LANGUAGES, MARKETPLACE_ENABLED, type Lang } from './i18n';
 // xlsx caricato on-demand (import dinamico) dentro gli handler: resta fuori dal bundle iniziale
 // Grafico caricato in lazy: recharts finisce in un chunk separato, fuori dal bundle iniziale
@@ -7219,6 +7220,11 @@ export default function App() {
           );
         })()}
       </nav>
+
+      {/* ========== CHATBOX "HQ" (BETA · solo admin · solo telefono) ========== */}
+      {isAdminUser && (
+        <AssistantChat apiCall={apiCall} showToast={showToast} onAction={fetchProducts} />
+      )}
 
       {/* ========== MODALE: AGGIUNGI PRODOTTO ========== */}
       {isFormOpen && (

@@ -2047,3 +2047,32 @@ Rispondi SOLO con JSON valido: {"message":"...","reasoning":"motivo in 1 riga pe
 
   return { decision, counterPrice, offerMargin, minPrice, message, reasoning };
 }
+
+// ==========================================
+// ASSISTENTE (chatbox) — chat testuale con TOOL-CALLING.
+// Wrapper grezzo su Groq che riusa rotazione chiavi + retry. Ritorna il messaggio
+// dell'assistente (può contenere tool_calls da eseguire). L'orchestrazione del loop
+// e l'esecuzione dei tool stanno in routes/assistant.ts (accesso a DB/servizi).
+// ==========================================
+export async function groqAssistantChat(params: {
+  messages: any[];
+  tools?: any[];
+  toolChoice?: any;
+  temperature?: number;
+  maxTokens?: number;
+}): Promise<any> {
+  const completion = await groqCallWithRetry(client =>
+    client.chat.completions.create({
+      messages: params.messages,
+      model: TEXT_MODEL,
+      temperature: params.temperature ?? 0.3,
+      max_tokens: params.maxTokens ?? 1024,
+      ...(params.tools && params.tools.length ? { tools: params.tools, tool_choice: params.toolChoice || 'auto' } : {}),
+    } as any)
+  );
+  return completion.choices[0]?.message;
+}
+
+export function isGroqConfigured(): boolean {
+  return groqClients.length > 0;
+}
