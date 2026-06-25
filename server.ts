@@ -34,6 +34,7 @@ import plansRoutes from './src/routes/plans';
 import proRoutes from './src/routes/pro';
 import marketRoutes from './src/routes/market';
 import chatRoutes from './src/routes/chat';
+import catalogRoutes from './src/routes/catalog';
 import billingRoutes, { stripeWebhookHandler } from './src/routes/billing';
 import { initPush } from './src/services/push.service';
 import { sendEmail } from './src/services/email.service';
@@ -257,6 +258,7 @@ app.use('/api/push', pushRoutes);
 app.use('/api/stockx', stockxRoutes);
 app.use('/api/plans', plansRoutes);
 app.use('/api/pro', proRoutes);
+app.use('/api/catalog', catalogRoutes);
 
 // ==========================================
 // SPA FALLBACK + 404

@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { DynamicForm } from './components/DynamicForm';
+import CatalogBrowser from './components/CatalogBrowser';
 import { getLang, setLangStorage, translate, LANGUAGES, MARKETPLACE_ENABLED, type Lang } from './i18n';
 // xlsx caricato on-demand (import dinamico) dentro gli handler: resta fuori dal bundle iniziale
 // Grafico caricato in lazy: recharts finisce in un chunk separato, fuori dal bundle iniziale
@@ -270,7 +271,7 @@ export default function App() {
   }, [theme]);
 
   // ----- UI STATE -----
-  const [currentView, setCurrentView] = useState<'dashboard' | 'magazzino' | 'analytics' | 'tracking' | 'settings' | 'admin' | 'market' | 'chat' | 'wallet'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'magazzino' | 'analytics' | 'tracking' | 'settings' | 'admin' | 'market' | 'chat' | 'wallet' | 'catalog'>('dashboard');
   const [magazzinoView, setMagazzinoView] = useState<'instock' | 'sold' | 'toship'>('instock');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
@@ -3874,6 +3875,7 @@ export default function App() {
             ] : []),
             { id: 'analytics', label: t('nav.analytics'), icon: BarChart3 },
             { id: 'tracking', label: t('nav.tracking'), icon: Truck },
+            ...(isAdminUser ? [{ id: 'catalog', label: 'Catalogo', icon: Layers }] : []),
           ].map(tab => {
             const Icon = tab.icon;
             const active = currentView === tab.id;
@@ -6113,6 +6115,18 @@ export default function App() {
           );
         })()}
 
+        {/* ========== CATALOGO (BETA · solo admin) ========== */}
+        {currentView === 'catalog' && isAdminUser && (
+          <CatalogBrowser
+            apiCall={apiCall}
+            showToast={showToast}
+            categories={userCategories}
+            warehouses={warehouses.map(w => ({ id: w.id, name: w.name, parentId: w.parentId }))}
+            baseWarehouseId={baseWarehouse?.id}
+            onAdded={fetchProducts}
+          />
+        )}
+
         {/* ========== SETTINGS ========== */}
         {currentView === 'settings' && (
           <div className="space-y-5">
@@ -7143,8 +7157,8 @@ export default function App() {
         {/* Separatore appena percettibile */}
         <div className="absolute top-0 left-0 right-0 h-px bg-[var(--fill)]" />
 
-        <div className={`relative grid ${MARKETPLACE_ENABLED ? 'grid-cols-6' : 'grid-cols-4'} px-1`}>
-          {[
+        {(() => {
+          const bottomTabs = [
             { id: 'dashboard',  icon: LayoutDashboard },
             { id: 'magazzino',  icon: Package },
             ...(MARKETPLACE_ENABLED ? [
@@ -7153,7 +7167,11 @@ export default function App() {
             ] : []),
             { id: 'analytics',  icon: BarChart3 },
             { id: 'tracking',   icon: Truck },
-          ].map(tab => {
+            ...(isAdminUser ? [{ id: 'catalog', icon: Layers }] : []),
+          ];
+          return (
+        <div className="relative grid px-1" style={{ gridTemplateColumns: `repeat(${bottomTabs.length}, minmax(0, 1fr))` }}>
+          {bottomTabs.map(tab => {
             const Icon = tab.icon;
             const active = currentView === tab.id;
             const badge = tab.id === 'tracking'
@@ -7178,8 +7196,10 @@ export default function App() {
             );
           })}
         </div>
+          );
+        })()}
       </nav>
-      
+
       {/* ========== MODALE: AGGIUNGI PRODOTTO ========== */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setIsFormOpen(false))}>

@@ -267,10 +267,17 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
       }
     } catch { /* best-effort: se fallisce, niente auto-pubblicazione */ }
 
-    // Se Cloudinary è configurato, carica le foto e salva gli URL invece del base64
+    // Se Cloudinary è configurato, carica SOLO le foto scattate (base64) e salva gli URL.
+    // Le foto già esterne (link http/https, es. immagini del catalogo StockX) restano
+    // tali e quali: NON le ricarichiamo su Cloudinary → zero storage occupato.
     let finalPhotos = photos && Array.isArray(photos) && photos.length > 0 ? photos : null;
     if (finalPhotos && isCloudinaryConfigured()) {
-      finalPhotos = await uploadImages(finalPhotos);
+      const toUpload = finalPhotos.filter((p: any) => typeof p === 'string' && p.startsWith('data:'));
+      if (toUpload.length > 0) {
+        const uploaded = await uploadImages(toUpload);
+        let i = 0;
+        finalPhotos = finalPhotos.map((p: any) => (typeof p === 'string' && p.startsWith('data:')) ? uploaded[i++] : p);
+      }
     }
     const parsedPhotos = finalPhotos ? JSON.stringify(finalPhotos) : null;
 

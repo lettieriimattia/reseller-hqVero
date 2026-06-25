@@ -466,3 +466,29 @@ model Expense {
   @@index([warehouseId])
   @@index([date])
 }
+
+// ==========================================
+// CATALOG ITEM — cache LEGGERA del catalogo StockX (stile "Aggiungi prodotti").
+// L'utente cerca un modello e lo aggiunge al magazzino con la FOTO UFFICIALE (sfondo
+// uniforme) invece di scattarla. Salviamo SOLO il LINK dell'immagine StockX (niente
+// Cloudinary, niente storage occupato): la foto resta sul CDN di StockX.
+// Serve a non ribussare a StockX a ogni ricerca (hanno limiti di chiamate).
+// ==========================================
+model CatalogItem {
+  id            String   @id @default(cuid())
+  key           String   @unique   // sku || stockxProductId || titolo normalizzato (dedup)
+  brand         String
+  name          String
+  sku           String?            // style code (es. DV1748-100)
+  productType   String?            // "sneakers" | "apparel" | ... (dal productType StockX)
+  image         String?            // LINK diretto immagine StockX (NON Cloudinary)
+  stockxProductId String?
+  useCount      Int      @default(0) // quante volte è stato aggiunto (ordina i più usati in cima)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([name])
+  @@index([sku])
+  @@index([productType])
+}
