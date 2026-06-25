@@ -520,27 +520,47 @@ export default function App() {
   // Pezzi SINGOLI selezionati (es. alcuni pezzi di un lotto) da raggruppare con altri prodotti
   const [selectedPieceIds, setSelectedPieceIds] = useState<Set<string>>(new Set());
 
-  // Long-press per entrare in selezione (sostituisce il tasto "Seleziona")
+  // Long-press per entrare in selezione (sostituisce il tasto "Seleziona").
+  // Robusto su tablet/telefono: si ANNULLA se il dito si muove (= stai scorrendo), così
+  //  - un tocco normale resta un "tap" → apre la Modifica (prima su tablet falliva);
+  //  - lo scroll del magazzino non attiva più per sbaglio la selezione multipla.
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
-  const startLongPress = (groupKey: string) => {
+  const pressStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const pressMoved = useRef(false);
+  const startLongPress = (groupKey: string, e?: any) => {
     longPressFired.current = false;
+    pressMoved.current = false;
+    const pt = e?.touches?.[0] || e;
+    if (pt && typeof pt.clientX === 'number') pressStart.current = { x: pt.clientX, y: pt.clientY };
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
     longPressTimer.current = setTimeout(() => {
+      if (pressMoved.current) return; // il dito si è spostato → era uno scroll, non un long-press
       longPressFired.current = true;
       setBulkMode(true);
       setSelectedGroupKeys(prev => { const n = new Set(prev); n.add(groupKey); return n; });
       if ('vibrate' in navigator) { try { navigator.vibrate(30); } catch {} }
-    }, 450);
+    }, 500);
+  };
+  const moveLongPress = (e?: any) => {
+    if (!longPressTimer.current) return;
+    const pt = e?.touches?.[0] || e;
+    if (!pt || typeof pt.clientX !== 'number') return;
+    if (Math.abs(pt.clientX - pressStart.current.x) > 10 || Math.abs(pt.clientY - pressStart.current.y) > 10) {
+      pressMoved.current = true;
+      cancelLongPress();
+    }
   };
   const cancelLongPress = () => {
     if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
   };
   // Props riutilizzabili per ogni card: avvia/annulla long-press + click che gestisce toggle/edit
   const cardPressProps = (groupKey: string) => (!bulkMode ? {
-    onMouseDown: () => startLongPress(groupKey),
+    onMouseDown: (e: any) => startLongPress(groupKey, e),
     onMouseUp: cancelLongPress,
     onMouseLeave: cancelLongPress,
-    onTouchStart: () => startLongPress(groupKey),
+    onTouchStart: (e: any) => startLongPress(groupKey, e),
+    onTouchMove: moveLongPress,
     onTouchEnd: cancelLongPress,
   } : {});
   const cardClick = (groupKey: string) => {

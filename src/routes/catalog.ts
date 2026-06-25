@@ -130,6 +130,24 @@ router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// GET /api/catalog/popular — lista di default (cache) mostrata appena apri il catalogo,
+// senza dover cercare. Ordinata per più usati / più recenti.
+router.get('/popular', adminOnly, async (_req: AuthRequest, res: Response) => {
+  try {
+    const items = await prisma.catalogItem.findMany({
+      orderBy: [{ useCount: 'desc' }, { updatedAt: 'desc' }],
+      take: 30,
+    });
+    res.json(items.map(it => ({
+      key: it.key, brand: it.brand, name: it.name, sku: it.sku,
+      image: it.image, productType: it.productType,
+    })));
+  } catch (e: any) {
+    logger.error('GET /catalog/popular', { err: e.message });
+    res.status(500).json({ error: 'Errore catalogo' });
+  }
+});
+
 // POST /api/catalog/:key/used — incrementa il contatore quando un item viene aggiunto
 // (così i modelli più usati salgono in cima). Best-effort.
 router.post('/:key/used', adminOnly, async (req: AuthRequest, res: Response) => {

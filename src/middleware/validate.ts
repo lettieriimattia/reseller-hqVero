@@ -54,7 +54,9 @@ const sharesSchema = z.array(z.object({
 })).optional();
 
 const photosSchema = z.array(
-  z.string().min(10).regex(/^data:image\/(jpeg|jpg|png|webp);base64,/, 'Formato immagine non valido')
+  // Accetta foto scattate (data:base64) OPPURE un link http(s) esterno (es. foto ufficiale
+  // del catalogo StockX, salvata come URL → niente Cloudinary, DB piccolissimo).
+  z.string().min(10).regex(/^(data:image\/(jpeg|jpg|png|webp);base64,|https?:\/\/)/, 'Formato immagine non valido')
 ).max(5).optional();
 
 export const createProductSchema = z.object({
