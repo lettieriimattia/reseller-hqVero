@@ -74,7 +74,7 @@ export class VoiceRecorder {
 
 // Registra a mani libere: si ferma da sola dopo `silenceMs` di silenzio (a parlato avvenuto)
 // o al massimo dopo `maxMs`. Usata dopo la wake-word "Ehy HQ".
-export async function recordCommand(maxMs = 6000, silenceMs = 1300): Promise<{ base64: string; mime: string } | null> {
+export async function recordCommand(maxMs = 9000, silenceMs = 1100, noSpeechMs = 4000): Promise<{ base64: string; mime: string } | null> {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   const mime = pickMime();
   const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
@@ -106,6 +106,8 @@ export async function recordCommand(maxMs = 6000, silenceMs = 1300): Promise<{ b
     };
     rec.onstop = async () => {
       cleanup();
+      // Nessuna voce rilevata: torna null così il chiamante NON sprona Whisper a vuoto.
+      if (!spokeOnce) { resolve(null); return; }
       const blob = chunks.length ? new Blob(chunks, { type: mime || 'audio/webm' }) : null;
       if (!blob || !blob.size) { resolve(null); return; }
       try { resolve({ base64: await blobToBase64(blob), mime: blob.type }); } catch { resolve(null); }
@@ -120,7 +122,9 @@ export async function recordCommand(maxMs = 6000, silenceMs = 1300): Promise<{ b
         for (let i = 0; i < buf.length; i++) { const v = (buf[i] - 128) / 128; sum += v * v; }
         const rms = Math.sqrt(sum / buf.length);
         if (rms > 0.045) { lastLoud = now; spokeOnce = true; }
+        // Ha parlato e poi pausa → invia. Non ha mai parlato per 'noSpeechMs' → chiudi presto (null).
         if (spokeOnce && now - lastLoud > silenceMs) return finish();
+        if (!spokeOnce && now - started > noSpeechMs) return finish();
       }
       if (now - started > maxMs) return finish();
     }, 100);

@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Sparkles, Send, Mic, X, Loader2, Square, Radio } from 'lucide-react';
-import { VoiceRecorder, recordCommand, transcribe, startWakeWord, isRecordingSupported, type WakeWordHandle } from '../lib/voice';
+import { recordCommand, transcribe, startWakeWord, isRecordingSupported, type WakeWordHandle } from '../lib/voice';
 
 type ApiCall = <T = any>(path: string, opts?: RequestInit) => Promise<{ ok: boolean; data: T; status: number }>;
 type Msg = { role: 'user' | 'assistant'; content: string };
@@ -23,20 +23,29 @@ type VoiceState = 'idle' | 'recording' | 'transcribing';
 
 export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Msg[]>([]);
+  // La conversazione resta finché non chiudi l'app (sessionStorage = si svuota alla chiusura).
+  const [messages, setMessages] = useState<Msg[]>(() => {
+    try { const s = sessionStorage.getItem('hq_chat'); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const [wakeOn, setWakeOn] = useState(false);
-  const recRef = useRef<VoiceRecorder | null>(null);
+  const [convo, setConvo] = useState(false); // modalità conversazione continua (mani libere)
   const wakeRef = useRef<WakeWordHandle | null>(null);
   const voiceBusyRef = useRef(false);
+  const convoRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recSupported = isRecordingSupported();
 
   useEffect(() => {
     if (open && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, open, sending]);
+
+  // Persisti la conversazione per la sessione (ultimi 60 messaggi).
+  useEffect(() => {
+    try { sessionStorage.setItem('hq_chat', JSON.stringify(messages.slice(-60))); } catch { /* storage pieno */ }
+  }, [messages]);
 
   const send = useCallback(async (text: string) => {
     const t = text.trim();
@@ -75,43 +84,49 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
   const sendRef = useRef(send);
   useEffect(() => { sendRef.current = send; }, [send]);
 
-  // Mic manuale: tocca per parlare, tocca di nuovo per fermare → Whisper → riempie l'input.
-  // (Sostituisce la vecchia Web Speech API, che su Safari iOS non esiste.)
-  const toggleMic = useCallback(async () => {
-    if (!recSupported) { showToast('Microfono non disponibile su questo browser', 'warn'); return; }
-    if (voiceBusyRef.current && voiceState !== 'recording') return;
+  // MODALITÀ CONVERSAZIONE (mani libere): registra → quando fai una pausa l'IA capisce che
+  // hai finito, trascrive (Whisper) e INVIA il comando, poi resta in ascolto per il prossimo.
+  // Tocca il mic una volta per avviare, di nuovo per fermare. (Web Speech API rimossa: su iOS
+  // non esiste; qui registriamo e trascriviamo lato server.)
+  const stopConvo = useCallback(() => {
+    convoRef.current = false;
+    setConvo(false);
+    setVoiceState('idle');
+  }, []);
 
-    if (voiceState === 'recording' && recRef.current) {
-      voiceBusyRef.current = true;
-      setVoiceState('transcribing');
-      try {
-        const clip = await recRef.current.stop();
-        if (clip) {
-          const text = await transcribe(apiCall, clip.base64, clip.mime);
-          if (text) setInput(prev => (prev ? prev + ' ' : '') + text);
-          else showToast('Non ho capito, riprova', 'warn');
-        }
-      } catch (e: any) {
-        showToast(e?.message || 'Trascrizione non riuscita', 'err');
-      } finally {
-        recRef.current = null;
-        setVoiceState('idle');
-        voiceBusyRef.current = false;
-      }
-      return;
-    }
-
-    try {
-      setOpen(true);
-      const rec = new VoiceRecorder();
-      await rec.start();
-      recRef.current = rec;
+  const runConvoLoop = useCallback(async () => {
+    while (convoRef.current) {
       setVoiceState('recording');
-    } catch {
-      showToast('Permesso microfono negato', 'err');
+      let clip: { base64: string; mime: string } | null = null;
+      try {
+        clip = await recordCommand();           // si ferma da sola alla pausa
+      } catch {
+        showToast('Permesso microfono negato', 'err');
+        stopConvo();
+        return;
+      }
+      if (!convoRef.current) break;
+      if (!clip) continue;                       // solo silenzio: continua ad ascoltare
+      setVoiceState('transcribing');
+      let text = '';
+      try { text = await transcribe(apiCall, clip.base64, clip.mime); } catch { /* riprova al giro dopo */ }
       setVoiceState('idle');
+      const t = text.trim();
+      if (t) await sendRef.current(t);           // esegue il comando, poi il while riprende ad ascoltare
     }
-  }, [recSupported, voiceState, apiCall, showToast]);
+  }, [apiCall, showToast, stopConvo]);
+
+  const toggleMic = useCallback(() => {
+    if (convoRef.current) { stopConvo(); return; }
+    if (!recSupported) { showToast('Microfono non disponibile su questo browser', 'warn'); return; }
+    setOpen(true);
+    convoRef.current = true;
+    setConvo(true);
+    runConvoLoop();
+  }, [recSupported, runConvoLoop, stopConvo, showToast]);
+
+  // Ferma la conversazione se il pannello viene chiuso.
+  useEffect(() => { if (!open && convoRef.current) stopConvo(); }, [open, stopConvo]);
 
   // Wake-word "Ehy HQ": a riconoscimento apre la chat, registra a mani libere,
   // trascrive e invia da solo. Attiva solo se VITE_PICOVOICE_ACCESS_KEY è impostata
@@ -154,19 +169,53 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
     };
   }, [recSupported, apiCall]);
 
+  // Barra di scrittura/voce (riusata: ancorata nel pannello quando aperto, flottante quando chiuso).
+  const bar = (
+    <div className="relative rounded-full p-px bg-gradient-to-r from-violet-500/90 via-fuchsia-500/90 to-violet-500/90 shadow-[0_8px_44px_-8px_rgba(107,84,198,0.7)]">
+      <div className="flex items-center gap-2 rounded-full bg-[var(--surface)]/90 backdrop-blur-xl border border-white/5 pl-4 pr-1.5 py-2">
+        {convo
+          ? <Radio size={16} className="text-red-400 shrink-0 animate-pulse" aria-label="In conversazione" />
+          : wakeOn
+            ? <Radio size={16} className="text-violet-400 shrink-0 animate-pulse" aria-label="In ascolto di Ehy HQ" />
+            : <Sparkles size={16} className="text-violet-400 shrink-0" />}
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onFocus={() => setOpen(true)}
+          onKeyDown={e => { if (e.key === 'Enter') send(input); }}
+          placeholder={
+            convo ? (voiceState === 'transcribing' ? 'Trascrivo…' : 'Parla pure… faccio una pausa e invio')
+            : sending ? 'Eseguo…'
+            : wakeOn ? 'Chiedi a HQ…  o di’ "Ehy HQ"'
+            : 'Chiedi a HQ...'}
+          disabled={convo}
+          className="flex-1 bg-transparent outline-none text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] min-w-0 disabled:opacity-70" />
+        <button onClick={toggleMic}
+          aria-label={convo ? 'Ferma conversazione' : 'Parla con HQ (conversazione)'}
+          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+            convo ? 'bg-red-500/15 text-red-400 ring-1 ring-red-500/30 animate-pulse' : 'text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-white/5'
+          }`}>
+          {convo ? <Square size={16} className="fill-current" /> : <Mic size={18} />}
+        </button>
+        <button onClick={() => send(input)} disabled={sending || !input.trim()} aria-label="Invia"
+          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-lg shadow-violet-500/30 transition-all hover:from-violet-400 hover:to-violet-500 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed">
+          {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <>
-      {/* Pannello chat (slide-up) — solo telefono. Sotto i modali (z-50), sopra la nav (z-30). */}
+      {/* Pannello chat (slide-up) — solo telefono. Conversazione scrollabile + input ancorato. */}
       {open && (
         <div className="lg:hidden fixed inset-0 z-[44] flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div
-            className="relative flex flex-col max-h-[72vh] rounded-t-[28px] border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_-24px_80px_-24px_rgba(107,84,198,0.55)]"
-            style={{ paddingBottom: 64 }}>
+          <div className="relative flex flex-col h-[86vh] rounded-t-[28px] border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_-24px_80px_-24px_rgba(107,84,198,0.55)]">
             {/* Grab handle */}
-            <div className="mx-auto mt-3 mb-1.5 h-1.5 w-10 rounded-full bg-white/15" />
+            <div className="mx-auto mt-3 mb-1.5 h-1.5 w-10 rounded-full bg-white/15 shrink-0" />
 
-            <div className="flex items-center justify-between px-6 pt-1.5 pb-3">
+            <div className="flex items-center justify-between px-6 pt-1.5 pb-3 shrink-0">
               <div className="flex items-center gap-2.5">
                 <span className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
                   <Sparkles size={16} className="text-white" />
@@ -182,10 +231,11 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
               </button>
             </div>
 
-            <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-3 space-y-3.5">
+            {/* Conversazione scrollabile (occupa lo spazio, l'input non la copre più) */}
+            <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-5 py-3 space-y-3.5">
               {messages.length === 0 && (
                 <div className="text-sm text-[var(--text-soft)] py-8 text-center leading-relaxed">
-                  Ciao! Scrivimi cosa vuoi fare 👇<br />
+                  Ciao! Scrivimi o parla 👇<br />
                   <span className="text-[var(--text-faint)]">es. "aggiungi le Jordan 4 Bred taglia 42 a 180€" oppure "quanto vale la Dunk Panda?"</span>
                 </div>
               )}
@@ -206,47 +256,21 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
                 </div>
               )}
             </div>
+
+            {/* Input ancorato in fondo al pannello */}
+            <div className="shrink-0 px-3 pt-2 border-t border-white/5" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
+              {bar}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Barra di scrittura luminosa in basso — solo telefono. Sopra la bottom-nav (z-30) e
-          sopra il pannello chat (z-44), ma sotto i modali (z-50). Quando la chat è aperta
-          la barra scende in fondo (la nav è coperta dal pannello). */}
-      <div className="lg:hidden fixed left-3 right-3 z-[45]" style={{ bottom: open ? 'calc(env(safe-area-inset-bottom, 0px) + 12px)' : 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}>
-        <div className="relative rounded-full p-px bg-gradient-to-r from-violet-500/90 via-fuchsia-500/90 to-violet-500/90 shadow-[0_8px_44px_-8px_rgba(107,84,198,0.7)]">
-          <div className="flex items-center gap-2 rounded-full bg-[var(--surface)]/90 backdrop-blur-xl border border-white/5 pl-4 pr-1.5 py-2">
-            {wakeOn
-              ? <Radio size={16} className="text-violet-400 shrink-0 animate-pulse" aria-label="In ascolto di Ehy HQ" />
-              : <Sparkles size={16} className="text-violet-400 shrink-0" />}
-            <input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onFocus={() => setOpen(true)}
-              onKeyDown={e => { if (e.key === 'Enter') send(input); }}
-              placeholder={
-                voiceState === 'recording' ? 'Sto ascoltando… tocca ⏹ per fermare'
-                : voiceState === 'transcribing' ? 'Trascrivo…'
-                : wakeOn ? 'Chiedi a HQ…  o di’ "Ehy HQ"'
-                : 'Chiedi a HQ...'}
-              disabled={voiceState !== 'idle'}
-              className="flex-1 bg-transparent outline-none text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] min-w-0 disabled:opacity-70" />
-            <button onClick={toggleMic} disabled={voiceState === 'transcribing'}
-              aria-label={voiceState === 'recording' ? 'Ferma e trascrivi' : 'Detta a voce'}
-              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors disabled:opacity-50 ${
-                voiceState === 'recording' ? 'bg-red-500/15 text-red-400 ring-1 ring-red-500/30 animate-pulse' : 'text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-white/5'
-              }`}>
-              {voiceState === 'recording' ? <Square size={16} className="fill-current" />
-                : voiceState === 'transcribing' ? <Loader2 size={16} className="animate-spin" />
-                : <Mic size={18} />}
-            </button>
-            <button onClick={() => send(input)} disabled={sending || !input.trim()} aria-label="Invia"
-              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-lg shadow-violet-500/30 transition-all hover:from-violet-400 hover:to-violet-500 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed">
-              {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-            </button>
-          </div>
+      {/* Barra flottante (chat chiusa) — solo telefono, sopra la bottom-nav. */}
+      {!open && (
+        <div className="lg:hidden fixed left-3 right-3 z-[45]" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}>
+          {bar}
         </div>
-      </div>
+      )}
     </>
   );
 }
