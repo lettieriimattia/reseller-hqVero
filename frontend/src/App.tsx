@@ -3746,12 +3746,10 @@ export default function App() {
     return (
       <div className="min-h-screen bg-[var(--surface-2)] flex items-center justify-center p-4 font-sans">
         <div className="bg-[var(--surface)] border border-[var(--border)] p-8 rounded-3xl w-full max-w-md">
-          {/* Logo HQ centrato */}
-          <div className="flex justify-center mb-6">
-            <div className="relative w-14 h-16">
-              <span className="absolute top-0 left-0 text-[3rem] font-black leading-none text-[var(--text)]">H</span>
-              <span className="absolute bottom-0 right-0 text-[3rem] font-black leading-none text-[var(--text)]/40">Q</span>
-            </div>
+          {/* Logo HQVault */}
+          <div className="flex flex-col items-center gap-3 mb-6">
+            <img src="/logo.png" alt="HQVault" width={64} height={64} className="rounded-2xl" />
+            <span className="text-2xl font-black tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
           </div>
           {needVerifyEmail ? (
             <div className="space-y-4">
@@ -3940,11 +3938,9 @@ export default function App() {
       {/* ========== SIDEBAR (solo desktop) ========== */}
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-60 z-40 bg-[var(--surface)] border-r border-[var(--border)] px-3 pt-6 pb-6">
         {/* Brand */}
-        <div className="px-3 mb-7 flex items-center">
-          <div className="relative w-[1.7rem] h-[1.8rem] shrink-0">
-            <span className="absolute top-0 left-0 text-[1.25rem] font-black leading-none text-[var(--text)]">H</span>
-            <span className="absolute bottom-0 right-[-2px] text-[1.25rem] font-black leading-none text-[var(--text)]/50">Q</span>
-          </div>
+        <div className="px-3 mb-7 flex items-center gap-2.5">
+          <img src="/logo.png" alt="HQVault" width={30} height={30} className="rounded-lg shrink-0" />
+          <span className="text-lg font-black tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
         </div>
         {/* Nav */}
         <nav className="flex flex-col gap-1">
@@ -4018,13 +4014,10 @@ export default function App() {
         <div className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-3.5 flex items-center">
           {/* Spacer sinistro: centra il logo SOLO su desktop. Su mobile il logo resta a sinistra. */}
           <div className="hidden lg:block flex-1" />
-          {/* Logo HQ — su mobile a sinistra, nascosto su desktop (è nella sidebar).
-              La "Q" in champagne è la firma "lusso" del marchio. */}
-          <div className="flex items-center lg:hidden">
-            <div className="relative w-[1.6rem] h-[1.7rem] shrink-0">
-              <span className="absolute top-0 left-0 text-[1.15rem] font-black leading-none text-[var(--text)]">H</span>
-              <span className="absolute bottom-0 right-[-2px] text-[1.15rem] font-black leading-none text-gold">Q</span>
-            </div>
+          {/* Logo HQVault — su mobile a sinistra, nascosto su desktop (è nella sidebar) */}
+          <div className="flex items-center gap-2 lg:hidden">
+            <img src="/logo.png" alt="HQVault" width={26} height={26} className="rounded-lg shrink-0" />
+            <span className="text-base font-black tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
           </div>
 
           {/* Azioni a destra */}
@@ -6983,7 +6976,7 @@ export default function App() {
       {maintenance && createPortal((
         <div className="fixed inset-0 z-[400] bg-[var(--bg)] flex items-center justify-center p-6 text-center">
           <div className="max-w-sm">
-            <div className="text-4xl font-black tracking-tight mb-4">HQ</div>
+            <div className="text-3xl font-black tracking-tight mb-4">HQ<span className="text-gold">Vault</span></div>
             <div className="text-5xl mb-4">🛠️</div>
             <h1 className="text-2xl font-bold mb-2">Aggiornamento in corso</h1>
             <p className="text-[var(--text-soft)] text-sm">Stiamo migliorando l'app. Torna tra qualche minuto — i tuoi dati sono al sicuro.</p>

@@ -239,8 +239,8 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
           placeholder={
             convo ? (voiceState === 'transcribing' ? 'Trascrivo…' : 'Parla pure… faccio una pausa e invio')
             : sending ? 'Eseguo…'
-            : wakeOn ? 'Chiedi a HQ…  o di’ "Ehy HQ"'
-            : 'Chiedi a HQ...'}
+            : wakeOn ? 'Chiedi a HQVault…  o di’ "Ehy HQ"'
+            : 'Chiedi a HQVault...'}
           disabled={convo}
           className="flex-1 bg-transparent outline-none text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] min-w-0 disabled:opacity-70" />
         <button onClick={toggleMic}
@@ -274,7 +274,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
                   <Sparkles size={16} className="text-white" />
                 </span>
                 <div className="flex flex-col leading-none gap-1">
-                  <span className="font-bold tracking-tight text-[var(--text)]">HQ</span>
+                  <span className="font-bold tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
                   <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-400/80">Assistente · beta</span>
                 </div>
               </div>
