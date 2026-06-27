@@ -207,7 +207,7 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) =
         quantity: 1,
         price_data: {
           currency: 'eur',
-          product_data: { name: `ResellerHQ ${plan.name}` },
+          product_data: { name: `HQVault ${plan.name}` },
           unit_amount: Math.round(plan.priceMonthly * 100),
           recurring: { interval: 'month' },
         },

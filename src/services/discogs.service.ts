@@ -6,7 +6,7 @@
 import { logger } from '../utils/logger';
 
 const TOKEN = (process.env.DISCOGS_TOKEN || '').trim();
-const UA = 'ResellerHQ/1.0';
+const UA = 'HQVault/1.0';
 
 export interface VinylValuation {
   value: number | null;   // prezzo più basso sul marketplace (EUR)

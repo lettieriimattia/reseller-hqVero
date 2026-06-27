@@ -128,9 +128,9 @@ router.post('/feedback/:id/reply', async (req: AuthRequest, res: Response) => {
 
     const sent = await sendEmail({
       to: fb.userEmail,
-      subject: 'Risposta dal team di ResellerHQ',
-      text: `Ciao${fb.userName ? ' ' + fb.userName : ''},\n\nhai scritto:\n"${fb.message}"\n\nLa nostra risposta:\n${reply}\n\n— Il team di ResellerHQ`,
-      html: `<p>Ciao${fb.userName ? ' ' + fb.userName : ''},</p><p>hai scritto:</p><blockquote style="color:#666;border-left:3px solid #ddd;padding-left:10px">${fb.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\n/g, '<br/>')}</blockquote><p><b>La nostra risposta:</b></p><p>${reply.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\n/g, '<br/>')}</p><p style="color:#888">— Il team di ResellerHQ</p>`,
+      subject: 'Risposta dal team di HQVault',
+      text: `Ciao${fb.userName ? ' ' + fb.userName : ''},\n\nhai scritto:\n"${fb.message}"\n\nLa nostra risposta:\n${reply}\n\n— Il team di HQVault`,
+      html: `<p>Ciao${fb.userName ? ' ' + fb.userName : ''},</p><p>hai scritto:</p><blockquote style="color:#666;border-left:3px solid #ddd;padding-left:10px">${fb.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\n/g, '<br/>')}</blockquote><p><b>La nostra risposta:</b></p><p>${reply.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\n/g, '<br/>')}</p><p style="color:#888">— Il team di HQVault</p>`,
     });
     if (!sent.ok) {
       logger.warn('Risposta feedback non inviata', { err: sent.error });

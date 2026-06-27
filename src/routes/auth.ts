@@ -514,7 +514,7 @@ router.post('/2fa/setup', authenticate, sensitiveLimiter, async (req: AuthReques
     }
     
     const secret = authenticator.generateSecret();
-    const otpauth = authenticator.keyuri(user.email, 'Reseller HQ', secret);
+    const otpauth = authenticator.keyuri(user.email, 'HQVault', secret);
     const qrDataUrl = await QRCode.toDataURL(otpauth);
     
     // Salva temporaneamente (non ancora attivo) il secret cifrato

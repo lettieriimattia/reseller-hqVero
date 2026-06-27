@@ -2294,7 +2294,7 @@ export default function App() {
       if (!(amount > 0)) { showToast(t('ts.invalidAmount'), 'warn'); return; }
       body.amount = amount;
     }
-    if (action === 'contest' && !(await askConfirm({ title: 'Contesta', message: 'Contestare apre una mediazione con l\'assistenza ResellerHQ. Procedere?', confirmLabel: 'Contesta' }))) return;
+    if (action === 'contest' && !(await askConfirm({ title: 'Contesta', message: 'Contestare apre una mediazione con l\'assistenza HQVault. Procedere?', confirmLabel: 'Contesta' }))) return;
     setDisputeSaving(true);
     const { ok, data } = await apiCall<any>(`/chat/${activeConvo.id}/dispute/respond`, { method: 'POST', body: JSON.stringify(body) });
     setDisputeSaving(false);

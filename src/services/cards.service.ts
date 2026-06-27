@@ -91,7 +91,7 @@ export async function getMagicCardValue(opts: { name?: string; number?: string; 
   if (!opts.name) return { ...empty(), source: 'Scryfall (Magic)' };
   try {
     const r = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(opts.name)}`, {
-      headers: { 'Accept': 'application/json', 'User-Agent': 'ResellerHQ/1.0' },
+      headers: { 'Accept': 'application/json', 'User-Agent': 'HQVault/1.0' },
     });
     if (!r.ok) { logger.error('Scryfall error', { status: r.status, name: opts.name }); return { ...empty(), source: 'Scryfall (Magic)' }; }
     const c = await r.json() as any;

@@ -317,7 +317,7 @@ router.post('/:id/dispute/respond', async (req: AuthRequest, res: Response) => {
       await prisma.message.create({ data: { conversationId: c.id, senderId: uid, text: `✅ Rimborso parziale di ${amount.toFixed(2)}€ effettuato. Tieni l'articolo; il resto è stato sbloccato.` } });
     } else if (action === 'contest') {
       await prisma.product.update({ where: { id: product.id }, data: { disputeStatus: 'ESCALATED' } });
-      await prisma.message.create({ data: { conversationId: c.id, senderId: uid, text: '⚖️ Il venditore ha contestato. L\'assistenza ResellerHQ esaminerà il caso e deciderà.' } });
+      await prisma.message.create({ data: { conversationId: c.id, senderId: uid, text: '⚖️ Il venditore ha contestato. L\'assistenza HQVault esaminerà il caso e deciderà.' } });
     } else {
       return res.status(400).json({ error: 'Azione non valida.' });
     }

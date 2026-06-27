@@ -20,9 +20,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['logo.png'],
       manifest: {
-        name: 'HQ',
-        short_name: 'HQ',
-        description: 'HQ — Il tuo gestionale',
+        name: 'HQVault',
+        short_name: 'HQVault',
+        description: 'HQVault — Il tuo gestionale',
         theme_color: '#111111',
         background_color: '#111111',
         display: 'standalone',
