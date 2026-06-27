@@ -103,8 +103,9 @@ router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // 2) StockX per integrare (e popolare la cache per le prossime ricerche)
-    if (isStockXConfigured()) {
+    // 2) Fonte esterna SOLO se la cache locale non basta (risparmia le richieste mensili:
+    //    una volta che un modello è nel TUO DB, non lo richiediamo più).
+    if (byKey.size < 5 && isStockXConfigured()) {
       const sneakersOnly = type === 'sneakers';
       const cands = await searchStockXCandidates(q, { sneakersOnly, limit: 12 }).catch(() => []);
       for (const c of cands) {
