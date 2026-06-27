@@ -139,46 +139,58 @@ function HQLoader() {
 // VAULT LOADER — animazione vera: la porta della cassaforte SBATTE chiusa, il volantino
 // GIRA per bloccare e la luce diventa TEAL (chiuso). In loop finché l'app carica.
 function VaultLoader() {
-  const deg = (a: number, r: number) => [100 + r * Math.cos(a * Math.PI / 180), 100 + r * Math.sin(a * Math.PI / 180)] as const;
+  const ring = (n: number, r: number) =>
+    Array.from({ length: n }, (_, i) => { const a = (i / n) * 2 * Math.PI; return [160 + r * Math.cos(a), 160 + r * Math.sin(a)] as const; });
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 210, height: 210 }} aria-label="Caricamento">
+    <div className="relative flex items-center justify-center" style={{ width: 300, height: 300 }} aria-label="Caricamento">
       <style>{`
-        @keyframes vlSlam  { 0%{transform:scale(.5) rotate(-16deg);opacity:0} 28%{opacity:1} 55%{transform:scale(1.07) rotate(4deg)} 72%{transform:scale(.97) rotate(-1.5deg)} 100%{transform:scale(1) rotate(0)} }
-        @keyframes vlWheel { 0%,16%{transform:rotate(0)} 70%,100%{transform:rotate(300deg)} }
-        @keyframes vlLight { 0%,58%{fill:#33333a} 70%{fill:#7defdf} 100%{fill:#2c9c8e} }
-        @keyframes vlGlow  { 0%,55%{opacity:.10} 76%{opacity:.5} 100%{opacity:.30} }
-        .vl-door{transform-origin:100px 100px;animation:vlSlam 2.9s cubic-bezier(.2,.85,.2,1) infinite}
-        .vl-wheel{transform-origin:100px 100px;animation:vlWheel 2.9s cubic-bezier(.45,0,.2,1) infinite}
-        .vl-light{animation:vlLight 2.9s ease infinite}
-        .vl-glow{animation:vlGlow 2.9s ease infinite}
+        @keyframes vlSlam  { 0%{transform:scale(.84) rotate(-8deg);opacity:0} 22%{opacity:1} 58%{transform:scale(1.025) rotate(2deg)} 78%{transform:scale(.992) rotate(-.8deg)} 100%{transform:scale(1) rotate(0)} }
+        @keyframes vlWheel { 0%,24%{transform:rotate(0)} 76%,100%{transform:rotate(270deg)} }
+        @keyframes vlLight { 0%,64%{fill:#33333a} 74%{fill:#7defdf} 100%{fill:#2c9c8e} }
+        @keyframes vlGlow  { 0%,58%{opacity:.08} 80%{opacity:.5} 100%{opacity:.3} }
+        @keyframes vlSheen { to { transform: rotate(360deg); } }
+        .vl-door{transform-origin:160px 160px;animation:vlSlam 3.2s cubic-bezier(.32,.72,.2,1) infinite}
+        .vl-wheel{transform-origin:160px 160px;animation:vlWheel 3.2s cubic-bezier(.4,0,.2,1) infinite}
+        .vl-light{animation:vlLight 3.2s ease infinite}
+        .vl-glow{animation:vlGlow 3.2s ease infinite}
+        .vl-sheen{transform-origin:160px 160px;animation:vlSheen 6s linear infinite}
       `}</style>
-      <div className="vl-glow absolute" style={{ width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(44,156,142,0.8), transparent 60%)', filter: 'blur(16px)' }} />
-      <svg viewBox="0 0 200 200" width="200" height="200" className="relative" style={{ filter: 'drop-shadow(0 14px 40px rgba(0,0,0,0.7))' }}>
+      <div className="vl-glow absolute" style={{ width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(44,156,142,0.85), transparent 60%)', filter: 'blur(22px)' }} />
+      <svg viewBox="0 0 320 320" width="300" height="300" className="relative" style={{ filter: 'drop-shadow(0 18px 50px rgba(0,0,0,0.75))' }}>
         <defs>
-          <radialGradient id="vlSteel" cx="36%" cy="28%" r="85%">
-            <stop offset="0%" stopColor="#3d3d47" /><stop offset="55%" stopColor="#1b1b21" /><stop offset="100%" stopColor="#0a0a0d" />
-          </radialGradient>
-          <linearGradient id="vlRim" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#54545f" /><stop offset="50%" stopColor="#23232a" /><stop offset="100%" stopColor="#44444e" />
-          </linearGradient>
+          <radialGradient id="vSteel" cx="38%" cy="28%" r="82%"><stop offset="0%" stopColor="#4a4a55" /><stop offset="48%" stopColor="#24242b" /><stop offset="100%" stopColor="#0b0b0f" /></radialGradient>
+          <radialGradient id="vDoor" cx="40%" cy="30%" r="85%"><stop offset="0%" stopColor="#454550" /><stop offset="52%" stopColor="#1f1f27" /><stop offset="100%" stopColor="#101015" /></radialGradient>
+          <linearGradient id="vRim" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#74747f" /><stop offset="45%" stopColor="#2a2a32" /><stop offset="100%" stopColor="#5a5a64" /></linearGradient>
+          <linearGradient id="vChrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9a9aa6" /><stop offset="42%" stopColor="#3c3c46" /><stop offset="55%" stopColor="#5c5c66" /><stop offset="100%" stopColor="#191920" /></linearGradient>
+          <radialGradient id="vSheenG" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="rgba(255,255,255,0)" /><stop offset="78%" stopColor="rgba(255,255,255,0)" /><stop offset="86%" stopColor="rgba(255,255,255,0.12)" /><stop offset="100%" stopColor="rgba(255,255,255,0)" /></radialGradient>
         </defs>
-        <rect x="6" y="6" width="188" height="188" rx="38" fill="url(#vlSteel)" stroke="#2a2a31" strokeWidth="2" />
-        <circle cx="100" cy="100" r="78" fill="none" stroke="url(#vlRim)" strokeWidth="11" />
-        <g fill="#4a4a54">{[0,45,90,135,180,225,270,315].map(a => { const [x, y] = deg(a, 78); return <circle key={a} cx={x} cy={y} r="3.4" />; })}</g>
+        <rect x="12" y="12" width="296" height="296" rx="48" fill="url(#vSteel)" stroke="#34343d" strokeWidth="2.5" />
+        <rect x="20" y="20" width="280" height="280" rx="42" fill="none" stroke="#0c0c11" strokeWidth="2" />
+        <g fill="url(#vChrome)" stroke="#141419" strokeWidth="2"><rect x="16" y="112" width="28" height="40" rx="8" /><rect x="16" y="168" width="28" height="40" rx="8" /></g>
+        <circle cx="160" cy="160" r="138" fill="none" stroke="#0d0d12" strokeWidth="2" />
+        <circle cx="160" cy="160" r="128" fill="none" stroke="url(#vRim)" strokeWidth="18" />
+        <circle cx="160" cy="160" r="118" fill="none" stroke="#0d0d12" strokeWidth="3" />
+        <g fill="#5c5c66" stroke="#16161b" strokeWidth="1">{ring(20, 128).map(([x, y], i) => <circle key={i} cx={x} cy={y} r="4.2" />)}</g>
+        <circle cx="160" cy="160" r="110" fill="#000" opacity="0.4" />
         <g className="vl-door">
-          <circle cx="100" cy="100" r="66" fill="url(#vlSteel)" stroke="#34343c" strokeWidth="3" />
-          <circle cx="100" cy="100" r="58" fill="none" stroke="#26262d" strokeWidth="1.5" />
+          <circle cx="160" cy="160" r="106" fill="url(#vDoor)" stroke="#3c3c46" strokeWidth="4" />
+          <circle cx="160" cy="160" r="94" fill="none" stroke="#0e0e14" strokeWidth="2" />
+          <circle cx="160" cy="160" r="80" fill="none" stroke="#3a3a44" strokeWidth="1.5" />
+          <g stroke="#6a6a76" strokeWidth="2">{ring(36, 72).map(([x, y], i) => { const a = Math.atan2(y - 160, x - 160); return <line key={i} x1={x} y1={y} x2={160 + 66 * Math.cos(a)} y2={160 + 66 * Math.sin(a)} />; })}</g>
+          <circle className="vl-sheen" cx="160" cy="160" r="106" fill="url(#vSheenG)" />
           <g className="vl-wheel">
-            <g stroke="url(#vlRim)" strokeWidth="7" strokeLinecap="round">
-              <line x1="100" y1="56" x2="100" y2="144" /><line x1="56" y1="100" x2="144" y2="100" />
-              <line x1="69" y1="69" x2="131" y2="131" /><line x1="131" y1="69" x2="69" y2="131" />
+            <g stroke="url(#vChrome)" strokeWidth="13" strokeLinecap="round">
+              <line x1="160" y1="98" x2="160" y2="222" /><line x1="98" y1="160" x2="222" y2="160" />
+              <line x1="116" y1="116" x2="204" y2="204" /><line x1="204" y1="116" x2="116" y2="204" />
             </g>
-            <g fill="#57575f">{[0,45,90,135,180,225,270,315].map(a => { const [x, y] = deg(a, 44); return <circle key={a} cx={x} cy={y} r="5" />; })}</g>
-            <circle cx="100" cy="100" r="15" fill="url(#vlRim)" stroke="#1e1e24" strokeWidth="2" />
-            <circle cx="100" cy="100" r="5" fill="#0d0d11" />
+            <g fill="url(#vChrome)" stroke="#141419" strokeWidth="1.5">{ring(8, 62).map(([x, y], i) => <circle key={i} cx={x} cy={y} r="9" />)}</g>
+            <circle cx="160" cy="160" r="28" fill="url(#vChrome)" stroke="#141419" strokeWidth="3" />
+            <circle cx="160" cy="160" r="22" fill="none" stroke="#6e6e7a" strokeWidth="1" />
+            <circle cx="160" cy="160" r="9" fill="#0c0c11" />
           </g>
         </g>
-        <circle className="vl-light" cx="100" cy="22" r="4.5" fill="#33333a" />
+        <circle cx="160" cy="30" r="8" fill="#0e0e14" stroke="#2c2c34" strokeWidth="2" />
+        <circle className="vl-light" cx="160" cy="30" r="4.6" fill="#33333a" />
       </svg>
     </div>
   );
