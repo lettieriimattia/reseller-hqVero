@@ -52,6 +52,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
   const [gestureReady, setGestureReady] = useState(false);
   const [convo, setConvo] = useState(false); // modalità conversazione continua (mani libere)
   const [micLevel, setMicLevel] = useState(0); // livello audio dal vivo (onda)
+  const [heard, setHeard] = useState(''); // transcript live della wake-word (così vedi cosa sente)
   const wakeRef = useRef<WakeWordHandle | null>(null);
   const voiceBusyRef = useRef(false);
   const convoRef = useRef(false);
@@ -174,7 +175,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       sendRef.current(t, true);
     };
 
-    startVoskWakeWord({ modelUrl, triggers, onCommand, onWake: () => showToast('🎙️ Dimmi pure…', 'ok') })
+    startVoskWakeWord({ modelUrl, triggers, onCommand, onWake: () => showToast('🎙️ Dimmi pure…', 'ok'), onPartial: (t) => setHeard(t) })
       .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); setWakeLoading(false); })
       .catch((e: any) => {
         setWakeLoading(false); setWakeOn(false);
@@ -328,6 +329,17 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
             <div className="shrink-0 px-3 pt-2 border-t border-white/5" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
               {bar}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pillola "cosa sto sentendo" (diagnostica): quando la wake-word è attiva mostra il
+          transcript dal vivo, così vedi se ti sente e cosa capisce. */}
+      {!open && wakeOn && (
+        <div className="lg:hidden fixed left-3 right-3 z-[45] flex justify-center" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 128px)' }}>
+          <div className="flex items-center gap-2 max-w-full px-3.5 py-2 rounded-full bg-black/70 backdrop-blur-xl border border-violet-500/30 text-violet-200 text-xs">
+            <Radio size={13} className="text-violet-400 animate-pulse shrink-0" />
+            <span className="truncate">{heard ? heard : 'in ascolto… di’ "hq aggiungi…"'}</span>
           </div>
         </div>
       )}

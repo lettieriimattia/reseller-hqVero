@@ -142,7 +142,7 @@ function VaultLoader() {
   const ring = (n: number, r: number) =>
     Array.from({ length: n }, (_, i) => { const a = (i / n) * 2 * Math.PI; return [160 + r * Math.cos(a), 160 + r * Math.sin(a)] as const; });
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 'min(300px, 82vw)', height: 'min(300px, 82vw)' }} aria-label="Caricamento">
+    <div className="relative flex items-center justify-center" style={{ width: 'min(360px, 88vw)', height: 'min(360px, 88vw)' }} aria-label="Caricamento">
       <style>{`
         @keyframes vlSlam  { 0%{transform:scale(.84) rotate(-8deg);opacity:0} 22%{opacity:1} 58%{transform:scale(1.025) rotate(2deg)} 78%{transform:scale(.992) rotate(-.8deg)} 100%{transform:scale(1) rotate(0)} }
         @keyframes vlWheel { 0%,24%{transform:rotate(0)} 76%,100%{transform:rotate(270deg)} }

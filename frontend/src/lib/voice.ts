@@ -166,6 +166,8 @@ export async function startVoskWakeWord(opts: {
   const triggers = opts.triggers.map(t => t.toLowerCase().trim()).filter(Boolean);
   const norm = (s: string) => ' ' + (s || '').toLowerCase().replace(/[^a-zàèéìòù\s]/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
   let armed = false, armedAt = 0, lastCmd = 0;
+  let partialTimer: any = null, lastHandled = ''; // alcuni device non emettono il 'result' finale:
+                                                  // processiamo anche un parziale rimasto stabile.
 
   // Comando dopo la wake-word: prende il testo che segue l'ultimo trigger nella frase.
   // Ritorna null se la frase NON contiene nessun trigger; '' se contiene il trigger ma nulla dopo.
@@ -218,8 +220,19 @@ export async function startVoskWakeWord(opts: {
       // Sample-rate = quello reale dell'audio (di solito 48000): il bug era crearlo a 16000.
       recognizer = new model.KaldiRecognizer(ac.sampleRate);
       try { recognizer.setWords(true); } catch { /* opzionale */ }
-      recognizer.on('result', (m: any) => { const t = resultText(m); if (t && opts.onPartial) opts.onPartial(t); handleFinal(t); });
-      recognizer.on('partialresult', (m: any) => { const p = m?.result?.partial || ''; if (p && opts.onPartial) opts.onPartial(p); });
+      recognizer.on('result', (m: any) => {
+        const t = resultText(m);
+        if (opts.onPartial) opts.onPartial(t);
+        if (partialTimer) { clearTimeout(partialTimer); partialTimer = null; }
+        lastHandled = t; handleFinal(t);
+      });
+      recognizer.on('partialresult', (m: any) => {
+        const p = m?.result?.partial || '';
+        if (opts.onPartial) opts.onPartial(p);
+        if (partialTimer) clearTimeout(partialTimer);
+        // se il parziale resta uguale per ~900ms (pausa) lo trattiamo come comando finale
+        partialTimer = setTimeout(() => { if (p && p !== lastHandled) { lastHandled = p; handleFinal(p); } }, 900);
+      });
     }
     node = ac.createScriptProcessor(4096, 1, 1);
     node.onaudioprocess = (e: AudioProcessingEvent) => { try { recognizer.acceptWaveform(e.inputBuffer); } catch { /* frame skip */ } };
