@@ -3946,8 +3946,7 @@ export default function App() {
       {/* ========== SIDEBAR (solo desktop) ========== */}
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-60 z-40 bg-[var(--surface)] border-r border-[var(--border)] px-3 pt-6 pb-6">
         {/* Brand */}
-        <div className="px-3 mb-7 flex items-center gap-2.5">
-          <img src="/logo.png" alt="HQVault" width={30} height={30} className="rounded-lg shrink-0" />
+        <div className="px-3 mb-7 flex items-center">
           <span className="text-lg font-black tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
         </div>
         {/* Nav */}
@@ -4022,9 +4021,8 @@ export default function App() {
         <div className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-3.5 flex items-center">
           {/* Spacer sinistro: centra il logo SOLO su desktop. Su mobile il logo resta a sinistra. */}
           <div className="hidden lg:block flex-1" />
-          {/* Logo HQVault — su mobile a sinistra, nascosto su desktop (è nella sidebar) */}
-          <div className="flex items-center gap-2 lg:hidden">
-            <img src="/logo.png" alt="HQVault" width={26} height={26} className="rounded-lg shrink-0" />
+          {/* Wordmark HQVault — su mobile a sinistra, nascosto su desktop (è nella sidebar) */}
+          <div className="flex items-center lg:hidden">
             <span className="text-base font-black tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
           </div>
 
