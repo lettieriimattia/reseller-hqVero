@@ -4138,8 +4138,8 @@ export default function App() {
               {/* Destra: cluster stat — riempie l'header su desktop */}
               <div className="hidden sm:flex sm:flex-1 items-stretch justify-end gap-5 lg:gap-7">
                 <div className="flex flex-col items-end justify-center">
-                  <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">{t('dash.week')}</p>
-                  <p className={`text-xl lg:text-2xl font-bold num ${weekProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <p className="sys-label text-[9px]">{t('dash.week')}</p>
+                  <p className={`text-xl lg:text-2xl font-extrabold num ${weekProfit >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>
                     {weekProfit >= 0 ? '+' : ''}{weekProfit.toFixed(0)}€
                   </p>
                   <p className="text-[11px] text-[var(--text-faint)]">{weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')}</p>
@@ -4193,35 +4193,28 @@ export default function App() {
               </section>
             )}
 
-            {/* KPI principali */}
+            {/* KPI principali — "quadranti" del cruscotto: feedback meccanico, profitto in ottanio */}
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-              {/* Mio profitto */}
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 hover:border-[var(--border-2)] transition-colors">
-                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
-                  <Wallet size={10} /> {t('dash.personal')}
-                </p>
-                <p className="text-2xl lg:text-3xl font-bold text-[var(--text)] num">{mioProfitto.toFixed(0)}€</p>
+              {/* Mio profitto (dato critico → ottanio) */}
+              <div className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30">
+                <p className="sys-label mb-4 flex items-center gap-1.5"><Wallet size={10} /> {t('dash.personal')}</p>
+                <p className="text-2xl lg:text-3xl font-extrabold num text-[var(--teal)]">{mioProfitto.toFixed(0)}€</p>
                 <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('dash.personalQuotas')}</p>
               </div>
 
-
               {/* Stock */}
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] transition-colors group"
+              <div className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group"
                 onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); }}>
-                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
-                  <Layers size={10} /> {t('dash.stock')}
-                </p>
-                <p className="text-2xl lg:text-3xl font-bold num">{stockValore.toFixed(0)}€</p>
+                <p className="sys-label mb-4 flex items-center gap-1.5"><Layers size={10} /> {t('dash.stock')}</p>
+                <p className="text-2xl lg:text-3xl font-extrabold num">{stockValore.toFixed(0)}€</p>
                 <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{inStockItems.length} {t('dash.pieces')} · <span className="group-hover:text-[var(--text-muted)] transition-colors">{t('dash.see')} →</span></p>
               </div>
 
-              {/* Vendite */}
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] transition-colors group"
+              {/* Vendite (ricavi = ottanio) */}
+              <div className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group"
                 onClick={() => { setCurrentView('magazzino'); setMagazzinoView('sold'); }}>
-                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-4 flex items-center gap-1.5">
-                  <TrendingUp size={10} /> {t('dash.sales')}
-                </p>
-                <p className="text-2xl lg:text-3xl font-bold text-emerald-400 num">{soldItemsTotal.length}</p>
+                <p className="sys-label mb-4 flex items-center gap-1.5"><TrendingUp size={10} /> {t('dash.sales')}</p>
+                <p className="text-2xl lg:text-3xl font-extrabold num text-[var(--teal)]">{soldItemsTotal.length}</p>
                 <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{ricaviTotali.toFixed(0)}€ {t('dash.revenue')} · <span className="group-hover:text-[var(--text-muted)] transition-colors">{t('dash.see')} →</span></p>
               </div>
             </div>
