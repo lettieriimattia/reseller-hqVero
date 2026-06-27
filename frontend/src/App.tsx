@@ -136,42 +136,50 @@ function HQLoader() {
   );
 }
 
-// VAULT LOADER — il logo cassaforte HQVault che si "sigilla": anello combinazione che gira,
-// bagliore teal (la luce della cassaforte) e il logo che scatta in posizione di blocco.
+// VAULT LOADER — animazione vera: la porta della cassaforte SBATTE chiusa, il volantino
+// GIRA per bloccare e la luce diventa TEAL (chiuso). In loop finché l'app carica.
 function VaultLoader() {
+  const deg = (a: number, r: number) => [100 + r * Math.cos(a * Math.PI / 180), 100 + r * Math.sin(a * Math.PI / 180)] as const;
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 240, height: 240 }} aria-label="Caricamento">
+    <div className="relative flex items-center justify-center" style={{ width: 210, height: 210 }} aria-label="Caricamento">
       <style>{`
-        @keyframes vault-seal {
-          0%   { transform: rotate(-130deg) scale(0.68); opacity: 0; filter: blur(3px); }
-          55%  { transform: rotate(7deg) scale(1.05);    opacity: 1; filter: blur(0); }
-          72%  { transform: rotate(-3deg) scale(0.985); }
-          100% { transform: rotate(0deg) scale(1);       opacity: 1; }
-        }
-        @keyframes vault-dial { to { transform: rotate(360deg); } }
-        @keyframes vault-glow {
-          0%,100% { opacity: 0.22; transform: scale(0.95); }
-          50%     { opacity: 0.55; transform: scale(1.07); }
-        }
+        @keyframes vlSlam  { 0%{transform:scale(.5) rotate(-16deg);opacity:0} 28%{opacity:1} 55%{transform:scale(1.07) rotate(4deg)} 72%{transform:scale(.97) rotate(-1.5deg)} 100%{transform:scale(1) rotate(0)} }
+        @keyframes vlWheel { 0%,16%{transform:rotate(0)} 70%,100%{transform:rotate(300deg)} }
+        @keyframes vlLight { 0%,58%{fill:#33333a} 70%{fill:#7defdf} 100%{fill:#2c9c8e} }
+        @keyframes vlGlow  { 0%,55%{opacity:.10} 76%{opacity:.5} 100%{opacity:.30} }
+        .vl-door{transform-origin:100px 100px;animation:vlSlam 2.9s cubic-bezier(.2,.85,.2,1) infinite}
+        .vl-wheel{transform-origin:100px 100px;animation:vlWheel 2.9s cubic-bezier(.45,0,.2,1) infinite}
+        .vl-light{animation:vlLight 2.9s ease infinite}
+        .vl-glow{animation:vlGlow 2.9s ease infinite}
       `}</style>
-      {/* Bagliore teal pulsante */}
-      <div className="absolute rounded-[2rem]" style={{
-        width: 210, height: 210,
-        background: 'radial-gradient(circle, rgba(44,156,142,0.30), transparent 62%)',
-        animation: 'vault-glow 2.1s ease-in-out infinite',
-      }} />
-      {/* Anello combinazione che ruota */}
-      <div className="absolute rounded-full" style={{
-        width: 224, height: 224,
-        background: 'conic-gradient(from 0deg, transparent 0 76%, rgba(44,156,142,0.6) 85%, transparent 91%)',
-        WebkitMask: 'radial-gradient(farthest-side, transparent 71%, #000 73%)',
-        mask: 'radial-gradient(farthest-side, transparent 71%, #000 73%)',
-        animation: 'vault-dial 2.6s cubic-bezier(0.45,0,0.2,1) infinite',
-      }} />
-      {/* Logo cassaforte che si sigilla */}
-      <img src="/logo.png" alt="HQVault" width={172} height={172}
-        className="relative drop-shadow-[0_12px_44px_rgba(0,0,0,0.7)]"
-        style={{ borderRadius: 30, animation: 'vault-seal 1.6s cubic-bezier(0.16,1,0.3,1) both' }} />
+      <div className="vl-glow absolute" style={{ width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(44,156,142,0.8), transparent 60%)', filter: 'blur(16px)' }} />
+      <svg viewBox="0 0 200 200" width="200" height="200" className="relative" style={{ filter: 'drop-shadow(0 14px 40px rgba(0,0,0,0.7))' }}>
+        <defs>
+          <radialGradient id="vlSteel" cx="36%" cy="28%" r="85%">
+            <stop offset="0%" stopColor="#3d3d47" /><stop offset="55%" stopColor="#1b1b21" /><stop offset="100%" stopColor="#0a0a0d" />
+          </radialGradient>
+          <linearGradient id="vlRim" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#54545f" /><stop offset="50%" stopColor="#23232a" /><stop offset="100%" stopColor="#44444e" />
+          </linearGradient>
+        </defs>
+        <rect x="6" y="6" width="188" height="188" rx="38" fill="url(#vlSteel)" stroke="#2a2a31" strokeWidth="2" />
+        <circle cx="100" cy="100" r="78" fill="none" stroke="url(#vlRim)" strokeWidth="11" />
+        <g fill="#4a4a54">{[0,45,90,135,180,225,270,315].map(a => { const [x, y] = deg(a, 78); return <circle key={a} cx={x} cy={y} r="3.4" />; })}</g>
+        <g className="vl-door">
+          <circle cx="100" cy="100" r="66" fill="url(#vlSteel)" stroke="#34343c" strokeWidth="3" />
+          <circle cx="100" cy="100" r="58" fill="none" stroke="#26262d" strokeWidth="1.5" />
+          <g className="vl-wheel">
+            <g stroke="url(#vlRim)" strokeWidth="7" strokeLinecap="round">
+              <line x1="100" y1="56" x2="100" y2="144" /><line x1="56" y1="100" x2="144" y2="100" />
+              <line x1="69" y1="69" x2="131" y2="131" /><line x1="131" y1="69" x2="69" y2="131" />
+            </g>
+            <g fill="#57575f">{[0,45,90,135,180,225,270,315].map(a => { const [x, y] = deg(a, 44); return <circle key={a} cx={x} cy={y} r="5" />; })}</g>
+            <circle cx="100" cy="100" r="15" fill="url(#vlRim)" stroke="#1e1e24" strokeWidth="2" />
+            <circle cx="100" cy="100" r="5" fill="#0d0d11" />
+          </g>
+        </g>
+        <circle className="vl-light" cx="100" cy="22" r="4.5" fill="#33333a" />
+      </svg>
     </div>
   );
 }
