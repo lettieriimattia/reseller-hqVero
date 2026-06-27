@@ -23,6 +23,16 @@ import {
 // Stringa vuota = path relativo → il proxy Vite (o nginx in prod) smista le chiamate al backend
 const API_URL = import.meta.env.VITE_API_URL || '';
 
+// Le immagini dei CDN cataloghi (StockX/pokemontcg) bloccano le richieste cross-site dal
+// browser: le serviamo dal nostro dominio via proxy. Cloudinary/data:/altri passano diretti.
+function proxyImg(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  if (/^https?:\/\/(images\.stockx\.com|images\.pokemontcg\.io|images?\.goat\.com)/i.test(url)) {
+    return `/api/catalog/img?u=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 // Tutte le chiamate API usano credentials: 'include' per inviare i cookies httpOnly
 // Single-flight del refresh: se più chiamate scadono insieme all'avvio, parte UN SOLO
 // /auth/refresh e tutte aspettano lo stesso esito (niente race che sloggava l'utente).
@@ -4655,7 +4665,7 @@ export default function App() {
                         )}
                         <div className="flex items-center gap-3 p-3.5">
                           {photoUrl
-                            ? <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)] bg-white"><img src={photoUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-contain" /></div>
+                            ? <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)] bg-white"><img src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain" /></div>
                             : <span className="text-2xl shrink-0 w-16 text-center">{getCategoryIcon(g.category)}</span>}
                           <div className={`flex-1 min-w-0 ${!bulkMode ? 'cursor-pointer' : ''}`}
                             onClick={!bulkMode ? () => openEditModal(g) : undefined}>
@@ -4710,7 +4720,7 @@ export default function App() {
                           className={`relative aspect-square bg-white flex items-center justify-center overflow-hidden ${!bulkMode ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                           {photoUrl
-                            ? <img src={photoUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-contain" />
+                            ? <img src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain" />
                             : <span className="text-4xl opacity-80">{getCategoryIcon(g.category)}</span>}
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                             {g.quantity > 1 && <span className="text-[10px] bg-[#8b5cf6] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}

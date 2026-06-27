@@ -41,9 +41,10 @@ function Thumb({ src, alt }: { src: string | null; alt: string }) {
       </div>
     );
   }
-  // referrerPolicy no-referrer: le immagini del CDN StockX bloccano l'hotlink quando
-  // arriva un Referer esterno → senza referer si caricano.
-  return <img src={src} alt={alt} onError={() => setErr(true)} loading="lazy" referrerPolicy="no-referrer"
+  // Le immagini del CDN StockX bloccano le richieste cross-site dal browser: le serviamo
+  // dal nostro dominio via proxy (/api/catalog/img). pokemontcg/altri http passano uguale.
+  const url = /^https?:\/\//i.test(src) ? `/api/catalog/img?u=${encodeURIComponent(src)}` : src;
+  return <img src={url} alt={alt} onError={() => setErr(true)} loading="lazy"
     className="w-14 h-14 rounded-lg object-contain bg-white shrink-0" />;
 }
 
@@ -138,11 +139,11 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
             className="flex-1 bg-transparent outline-none text-[var(--text)] placeholder:text-[var(--text-faint)]" />
           {loading && <Loader2 size={18} className="text-[#8b5cf6] animate-spin" />}
         </div>
-        {/* Filtro tipo */}
-        <div className="flex gap-2 mt-2">
+        {/* Filtro tipo — scorrevole in orizzontale (7 categorie non ci stanno in larghezza) */}
+        <div className="flex gap-2 mt-2 overflow-x-auto flex-nowrap -mx-1 px-1">
           {TYPES.map(tp => (
             <button key={tp.id} onClick={() => setType(tp.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                 type === tp.id ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'
               }`}>{tp.label}</button>
           ))}

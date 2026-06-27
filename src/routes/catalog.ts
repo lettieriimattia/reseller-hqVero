@@ -138,6 +138,35 @@ interface CatalogResult {
   image: string | null; productType: string | null;
 }
 
+// Host immagine consentiti per il proxy (evita SSRF: solo CDN cataloghi).
+const IMG_HOSTS = ['images.stockx.com', 'images.pokemontcg.io', 'images.goat.com', 'image.goat.com'];
+
+// GET /api/catalog/img?u=<url> — proxy immagini: il CDN StockX blocca le richieste
+// cross-site dal browser, quindi le serviamo dal NOSTRO dominio (stesso origine).
+// Cache lunga: l'immagine di un modello non cambia. Solo host in allowlist (anti-SSRF).
+// Niente adminOnly: le foto prodotto si vedono anche ai soci non-admin nel magazzino.
+router.get('/img', async (req: AuthRequest, res: Response) => {
+  try {
+    const u = (req.query.u || '').toString();
+    if (!u) return res.status(400).end();
+    let parsed: URL;
+    try { parsed = new URL(u); } catch { return res.status(400).end(); }
+    const host = parsed.hostname.toLowerCase();
+    if (parsed.protocol !== 'https:' || !IMG_HOSTS.some(h => host === h || host.endsWith('.' + h))) {
+      return res.status(400).end();
+    }
+    const r = await fetch(parsed.toString(), { headers: { Accept: 'image/*', 'User-Agent': 'Mozilla/5.0' } });
+    if (!r.ok) return res.status(502).end();
+    const buf = Buffer.from(await r.arrayBuffer());
+    res.setHeader('Content-Type', r.headers.get('content-type') || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=604800, immutable'); // 7 giorni
+    res.send(buf);
+  } catch (e: any) {
+    logger.warn('GET /catalog/img proxy', { err: e.message });
+    res.status(502).end();
+  }
+});
+
 // GET /api/catalog/search?q=...&type=sneakers|apparel
 // 1) cerca nella cache locale  2) integra da StockX  3) salva i nuovi in cache (solo link).
 router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
