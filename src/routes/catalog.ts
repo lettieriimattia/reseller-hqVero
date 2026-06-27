@@ -130,14 +130,49 @@ router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// GET /api/catalog/popular — lista di default (cache) mostrata appena apri il catalogo,
-// senza dover cercare. Ordinata per più usati / più recenti.
+// Modelli "seed" per riempire il catalogo al primo avvio (cache vuota su DB fresco):
+// alcune ricerche popolari su StockX così il catalogo si apre già pieno, come i competitor.
+const POPULAR_SEEDS = [
+  'Jordan 1', 'Jordan 4', 'Nike Dunk Low', 'Air Force 1', 'Yeezy 350',
+  'New Balance 550', 'New Balance 2002R', 'Adidas Samba', 'Travis Scott', 'Nike Dunk Panda',
+];
+
+let seeding = false; // evita seed concorrenti (più richieste insieme)
+
+// Popola la cache CatalogItem da StockX (solo link immagine). Best-effort.
+async function seedPopularFromStockX(): Promise<void> {
+  if (seeding || !isStockXConfigured()) return;
+  seeding = true;
+  try {
+    for (const q of POPULAR_SEEDS) {
+      const cands = await searchStockXCandidates(q, { limit: 8 }).catch(() => []);
+      for (const c of cands) {
+        const key = dedupKey({ sku: c.styleId, stockxProductId: c.productId, title: c.title });
+        if (!key) continue;
+        const { brand, name } = splitBrandName(c.title);
+        const pt = normType(c.productType);
+        await prisma.catalogItem.upsert({
+          where: { key },
+          create: { key, brand, name, sku: c.styleId || null, productType: pt, image: c.image || null, stockxProductId: c.productId || null },
+          update: { image: c.image || null, name, brand },
+        }).catch(() => {});
+      }
+    }
+  } finally {
+    seeding = false;
+  }
+}
+
+// GET /api/catalog/popular — lista di default mostrata appena apri il catalogo, senza cercare.
+// Se la cache è scarna e StockX è connesso, la precarica al volo (così non è mai vuoto).
 router.get('/popular', adminOnly, async (_req: AuthRequest, res: Response) => {
   try {
-    const items = await prisma.catalogItem.findMany({
-      orderBy: [{ useCount: 'desc' }, { updatedAt: 'desc' }],
-      take: 30,
-    });
+    const order = [{ useCount: 'desc' as const }, { updatedAt: 'desc' as const }];
+    let items = await prisma.catalogItem.findMany({ orderBy: order, take: 30 });
+    if (items.length < 12 && isStockXConfigured()) {
+      await seedPopularFromStockX();
+      items = await prisma.catalogItem.findMany({ orderBy: order, take: 30 });
+    }
     res.json(items.map(it => ({
       key: it.key, brand: it.brand, name: it.name, sku: it.sku,
       image: it.image, productType: it.productType,

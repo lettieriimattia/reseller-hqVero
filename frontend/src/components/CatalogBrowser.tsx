@@ -50,6 +50,8 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
   // Stato per riga: 'adding' (spinner) → 'added' (spunta verde, transitoria)
   const [adding, setAdding] = useState<Record<string, boolean>>({});
   const [addedFlash, setAddedFlash] = useState<Record<string, boolean>>({});
+  // StockX collegato? Se no, il catalogo resta vuoto e le foto non si agganciano: lo diciamo.
+  const [stockxOk, setStockxOk] = useState<boolean | null>(null);
 
   const debTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -78,6 +80,13 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
 
   // Carica i popolari all'apertura
   useEffect(() => { loadPopular(); }, [loadPopular]);
+
+  // Verifica se StockX è collegato: serve per spiegare un catalogo vuoto.
+  useEffect(() => {
+    apiCall<any>('/api/stockx/status').then(({ ok, data }) => {
+      if (ok) setStockxOk(!!(data?.connected && data?.tokenOk));
+    }).catch(() => {});
+  }, [apiCall]);
 
   // Debounce sulla digitazione
   useEffect(() => {
@@ -138,6 +147,14 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
           ))}
         </div>
       </div>
+
+      {/* StockX non collegato: spiega perché il catalogo è vuoto e le foto non si agganciano. */}
+      {stockxOk === false && (
+        <div className="mt-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300 leading-relaxed">
+          <b>StockX non collegato.</b> Il catalogo resta vuoto e le foto non si agganciano.
+          Vai in <b>Impostazioni → Integrazioni</b> e premi <b>Collega StockX</b>.
+        </div>
+      )}
 
       {/* Risultati */}
       <div className="mt-2 divide-y divide-[var(--border)]">
