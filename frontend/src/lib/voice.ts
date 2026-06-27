@@ -85,6 +85,7 @@ export async function recordCommand(maxMs = 9000, silenceMs = 1100, noSpeechMs =
   let analyser: AnalyserNode | null = null;
   try {
     ac = new (window.AudioContext || (window as any).webkitAudioContext)();
+    try { await ac.resume(); } catch { /* iOS suspended */ }
     const src = ac.createMediaStreamSource(stream);
     analyser = ac.createAnalyser();
     analyser.fftSize = 512;
@@ -180,6 +181,7 @@ export async function startVoskWakeWord(opts: {
   const startAudio = async () => {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     ac = new (window.AudioContext || (window as any).webkitAudioContext)();
+    try { await ac.resume(); } catch { /* iOS: l'AudioContext parte sospeso, va riattivato */ }
     if (!recognizer) {
       // Sample-rate = quello reale dell'audio (di solito 48000): il bug era crearlo a 16000.
       recognizer = new model.KaldiRecognizer(ac.sampleRate);
