@@ -108,6 +108,22 @@ function normType(pt?: string | null): string | null {
   return s;
 }
 
+// Categoria UI robusta da TITOLO + product_type. Il titolo è il segnale più affidabile
+// per abbigliamento/accessori/borse (es. "... Tee", "... Belt", "... Bag"), il product_type
+// per sneaker/elettronica/carte. Ordine = priorità (belt prima di bag, ecc.).
+function inferCategory(title: string, productType?: string | null): string | null {
+  const t = (title || '').toLowerCase();
+  const pt = (productType || '').toLowerCase();
+  const both = pt + ' ' + t;
+  if (/trading|collectib|pokemon|funko|graded|\bpsa\b|\btcg\b|booster|\bcard\b/.test(both)) return 'carte';
+  if (/electronic|console|gaming/.test(pt) || /playstation|\bps5\b|\bxbox\b|nintendo|\bswitch\b|airpods|\biphone\b|macbook|\bipad\b|\bgpu\b/.test(t)) return 'elettronica';
+  if (/handbag/.test(pt) || /\bbag\b|\btote\b|backpack|duffle|duffel|\bpurse\b|pouch|satchel|crossbody|keepall|speedy|neverfull|\bclutch\b/.test(t)) return 'borse';
+  if (/\bbelt\b|wallet|card ?holder|\bcap\b|\bhat\b|beanie|sunglass|eyewear|\bsocks?\b|scarf|keychain|key ?ring|gloves|necklace|bracelet|earring|\bwatch\b/.test(t)) return 'accessori';
+  if (/apparel|cloth/.test(pt) || /\btee\b|t-?shirt|\bshirt\b|hoodie|sweatshirt|crewneck|\bjacket\b|\bcoat\b|\bsweater\b|cardigan|\bvest\b|\bpants?\b|trousers|\bshorts?\b|jersey|\bpolo\b|long ?sleeve|\bjeans\b|tracksuit|joggers|\bparka\b|flannel/.test(t)) return 'apparel';
+  if (/sneaker|shoe|footwear/.test(pt)) return 'sneakers';
+  return normType(productType);
+}
+
 // Upsert di un candidato nella cache CatalogItem (solo link immagine). Best-effort.
 // La categoria viene dal product_type REALE della fonte (es. "Travis Scott" torna sia
 // scarpe sia t-shirt: ognuna nella sua categoria). forceCategory è solo un fallback
@@ -120,7 +136,7 @@ async function upsertCandidate(c: CatalogCandidate, byKey?: Map<string, CatalogR
   const name = c.brand && c.title.toLowerCase().startsWith(c.brand.toLowerCase())
     ? c.title.slice(c.brand.length).trim() || c.title  // evita "Jordan Jordan 1": toglie il brand in testa
     : split.name;
-  const pt = normType(c.productType) || forceCategory || null;
+  const pt = inferCategory(c.title, c.productType) || forceCategory || null;
   if (byKey && !byKey.has(key)) {
     byKey.set(key, { key, brand, name, sku: c.styleId || null, image: c.image || null, productType: pt });
   }
@@ -182,7 +198,7 @@ router.get('/_diag', adminOnly, async (req: AuthRequest, res: Response) => {
     res.json({
       kicksConfigured: isKicksConfigured(),
       stockxConfigured: isStockXConfigured(),
-      live: { count: cands.length, items: cands.map(c => ({ title: c.title, image: c.image, sku: c.styleId })) },
+      live: { count: cands.length, items: cands.map(c => ({ title: c.title, productType: c.productType, inferred: inferCategory(c.title, c.productType), image: c.image, sku: c.styleId })) },
       cacheSample: cached.map(c => ({ title: c.name, image: c.image, productType: c.productType })),
     });
   } catch (e: any) {
@@ -242,13 +258,15 @@ router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
     const localImaged = Array.from(byKey.values()).filter(r => r.image).length;
     if (localImaged < 5 && (isCatalogConfigured() || isPokemonType(productType))) {
       const cands = await providerSearch(q, { productType, limit: 12 });
-      for (const c of cands) await upsertCandidate(c, byKey); // categoria dal product_type reale
+      for (const c of cands) await upsertCandidate(c, byKey); // categoria dal titolo + product_type
     }
 
-    // Priorità alle righe CON immagine.
+    // STRETTO sulla categoria della scheda (cercando in Sneakers vedo solo sneaker), poi
+    // priorità alle righe CON immagine.
     const all = Array.from(byKey.values());
-    const withImg = all.filter(r => r.image);
-    res.json((withImg.length >= 5 ? withImg : all).slice(0, 20));
+    const inCat = type ? all.filter(r => r.productType === type) : all;
+    const withImg = inCat.filter(r => r.image);
+    res.json((withImg.length >= 3 ? withImg : inCat).slice(0, 20));
   } catch (e: any) {
     logger.error('GET /catalog/search', { err: e.message });
     res.status(500).json({ error: 'Errore ricerca catalogo' });
