@@ -157,7 +157,9 @@ router.get('/img', async (req: AuthRequest, res: Response) => {
     if (parsed.protocol !== 'https:' || !IMG_HOSTS.some(h => host === h || host.endsWith('.' + h))) {
       return res.status(400).end();
     }
-    const r = await fetch(parsed.toString(), { headers: { Accept: 'image/*', 'User-Agent': 'Mozilla/5.0' } });
+    const r = await fetch(parsed.toString(), {
+      headers: { Accept: 'image/*', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', Referer: 'https://stockx.com/' },
+    });
     if (!r.ok) return res.status(502).end();
     const buf = Buffer.from(await r.arrayBuffer());
     res.setHeader('Content-Type', r.headers.get('content-type') || 'image/jpeg');
@@ -166,6 +168,24 @@ router.get('/img', async (req: AuthRequest, res: Response) => {
   } catch (e: any) {
     logger.warn('GET /catalog/img proxy', { err: e.message });
     res.status(502).end();
+  }
+});
+
+// GET /api/catalog/_diag?q=Jordan%201 — diagnostica: cosa torna DAVVERO dalla fonte
+// (per capire se le immagini arrivano null dalla fonte o se è la cache vecchia).
+router.get('/_diag', adminOnly, async (req: AuthRequest, res: Response) => {
+  try {
+    const q = (req.query.q || 'Jordan 1').toString();
+    const cands = await providerSearch(q, { limit: 3 });
+    const cached = await prisma.catalogItem.findMany({ take: 3, orderBy: { updatedAt: 'desc' } });
+    res.json({
+      kicksConfigured: isKicksConfigured(),
+      stockxConfigured: isStockXConfigured(),
+      live: { count: cands.length, items: cands.map(c => ({ title: c.title, image: c.image, sku: c.styleId })) },
+      cacheSample: cached.map(c => ({ title: c.name, image: c.image, productType: c.productType })),
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -217,6 +237,7 @@ router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
 });
 
 const seeding = new Set<string>(); // categorie in seeding ora (evita doppioni concorrenti)
+const seededAt = new Map<string, number>(); // ultimo refresh per categoria (throttle quota)
 
 // Popola la cache CatalogItem per una categoria (o "tutto") con ricerche popolari. Best-effort.
 async function seedPopular(type: string): Promise<void> {
@@ -247,7 +268,12 @@ router.get('/popular', adminOnly, async (req: AuthRequest, res: Response) => {
     const order = [{ useCount: 'desc' as const }, { updatedAt: 'desc' as const }];
     const where = type ? { productType: type } : {};
     let items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 30 });
-    if (items.length < 12 && isCatalogConfigured()) {
+    // Riseminiamo se: pochi item, OPPURE molti senza immagine (cache vecchia) — ma non
+    // più di una volta ogni 15 min per categoria (protegge la quota se la fonte non dà foto).
+    const tooFewImages = items.length > 0 && items.filter(i => i.image).length < items.length * 0.6;
+    const fresh = (seededAt.get(type) || 0) > Date.now() - 15 * 60_000;
+    if ((items.length < 12 || (tooFewImages && !fresh)) && isCatalogConfigured()) {
+      seededAt.set(type, Date.now());
       await seedPopular(type);
       items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 30 });
     }
