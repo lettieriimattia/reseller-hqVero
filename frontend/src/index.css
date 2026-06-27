@@ -13,6 +13,11 @@
   /* Colore brand — cambialo QUI in un punto solo per ritoccare l'accent ovunque */
   --accent: #8b5cf6;
   --accent-hover: #a78bfa;
+  /* Dettaglio "lusso": champagne/oro usato con PARSIMONIA (hairline, valori, hover).
+     Non sostituisce il viola: lo accompagna come finitura premium. */
+  --gold: #c8a96a;
+  --gold-soft: rgba(200,169,106,0.14);
+  --gold-line: rgba(200,169,106,0.34);
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
     'Inter', 'Helvetica Neue', system-ui, sans-serif;
 
@@ -21,8 +26,8 @@
      Palette con una leggera TINTA FREDDA VIOLA (coerente con l'accent): le superfici
      non sono nero neutro ma quasi-neri leggermente saturi, i bordi/fill hanno un velo
      viola → look più curato e "vivo" senza essere pacchiano. */
-  --bg: #08070c;            /* sfondo pagina: quasi-nero con un soffio di viola */
-  --surface: #121019;       /* card / pannelli: dark con tinta */
+  --bg: #060509;            /* sfondo pagina: quasi-nero profondo con un soffio di viola */
+  --surface: #110f18;       /* card / pannelli: antracite con tinta */
   --surface-2: #0c0b12;     /* inset, input, sezioni annidate */
   --border: rgba(167,139,250,0.08);   /* bordo sottile (velo viola) */
   --border-2: rgba(167,139,250,0.12); /* bordo più marcato */
@@ -36,9 +41,9 @@
   --fill-2: rgba(167,139,250,0.13);
   --fill-3: rgba(167,139,250,0.22);
   /* Superfici translucide (header/modali con backdrop-blur) */
-  --bg-blur: rgba(8,7,12,0.95);
-  --bg-overlay: rgba(8,7,12,0.70);
-  --surface-blur: rgba(18,16,25,0.95);
+  --bg-blur: rgba(6,5,9,0.95);
+  --bg-overlay: rgba(6,5,9,0.72);
+  --surface-blur: rgba(17,15,24,0.95);
 }
 
 /* ===== TEMA CHIARO — palette Apple ===== */
@@ -62,6 +67,10 @@
   --bg-blur: rgba(230,230,235,0.85);
   --bg-overlay: rgba(230,230,235,0.72);
   --surface-blur: rgba(255,255,255,0.90);
+  /* Champagne più scuro: leggibile/raffinato su sfondo chiaro */
+  --gold: #9a7b3f;
+  --gold-soft: rgba(154,123,63,0.12);
+  --gold-line: rgba(154,123,63,0.42);
 }
 
 /* ===== TEMA CHIARO: colori semantici accentati =====
@@ -99,6 +108,10 @@
   /* Più opaco: i pannelli flottanti (tendina notifiche, modali) devono restare
      leggibili anche in glass — col 50% il testo spariva sullo sfondo. */
   --surface-blur: rgba(18,18,28,0.88);
+  /* Champagne un filo più chiaro per brillare sul vetro */
+  --gold: #d9bd84;
+  --gold-soft: rgba(217,189,132,0.16);
+  --gold-line: rgba(217,189,132,0.38);
 }
 /* Sfondo sfumato: serve "qualcosa dietro" perché il vetro si veda */
 html.glass, html.glass body {
@@ -145,6 +158,9 @@ body {
   /* OpenType: 'a'/'g' single-story + alternate (rende Inter più simile a SF) */
   font-feature-settings: 'cv11' 1, 'ss01' 1, 'cv02' 1, 'cv03' 1, 'cv04' 1;
   letter-spacing: -0.011em;
+  /* Cifre tabulari ovunque: in un gestionale le colonne di numeri/€ restano allineate
+     (look financial-grade, dettaglio "lusso"). */
+  font-variant-numeric: tabular-nums;
 }
 
 /* Alone viola tenue dietro al tema scuro (non in chiaro né in glass, che ha già il suo).
@@ -188,6 +204,39 @@ h1 { letter-spacing: -0.03em; }
 /* Transizioni bottoni — tutte le card/button hanno feedback istantaneo */
 button { transition: opacity 0.12s, transform 0.12s, background-color 0.15s, border-color 0.15s, color 0.15s; }
 button:active { opacity: 0.75; }
+
+/* ===== Accessibilità (WCAG) =====
+   Focus visibile da TASTIERA su ogni elemento interattivo (anello accent), ma
+   niente anello col mouse/tap. Migliora la navigazione assistita. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* Rispetta chi ha ridotto le animazioni a livello di sistema. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ===== Dettaglio champagne (lusso) — usare con parsimonia ===== */
+.text-gold     { color: var(--gold); }
+.border-gold   { border-color: var(--gold-line) !important; }
+.bg-gold-soft  { background-color: var(--gold-soft); }
+/* Filo champagne sotto un elemento marquee (header, sezioni chiave). */
+.lux-underline { position: relative; }
+.lux-underline::after {
+  content: '';
+  position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent);
+  pointer-events: none;
+}
 
 /* Card interattive */
 .card-interactive {

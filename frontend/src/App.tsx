@@ -3953,16 +3953,17 @@ export default function App() {
       </aside>
 
       {/* ========== HEADER ========== */}
-      <header className="sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)]"
+      <header className="lux-underline sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)]"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-3.5 flex items-center">
           {/* Spacer sinistro: centra il logo SOLO su desktop. Su mobile il logo resta a sinistra. */}
           <div className="hidden lg:block flex-1" />
-          {/* Logo HQ — su mobile a sinistra, nascosto su desktop (è nella sidebar) */}
+          {/* Logo HQ — su mobile a sinistra, nascosto su desktop (è nella sidebar).
+              La "Q" in champagne è la firma "lusso" del marchio. */}
           <div className="flex items-center lg:hidden">
             <div className="relative w-[1.6rem] h-[1.7rem] shrink-0">
               <span className="absolute top-0 left-0 text-[1.15rem] font-black leading-none text-[var(--text)]">H</span>
-              <span className="absolute bottom-0 right-[-2px] text-[1.15rem] font-black leading-none text-[var(--text)]/50">Q</span>
+              <span className="absolute bottom-0 right-[-2px] text-[1.15rem] font-black leading-none text-gold">Q</span>
             </div>
           </div>
 
