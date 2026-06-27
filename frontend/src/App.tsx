@@ -5081,27 +5081,27 @@ export default function App() {
                   ) : (
                     <>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                      <div className="bg-[var(--surface-2)] rounded-xl p-4">
-                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">{t('an.revenue')}</p>
-                        <p className="text-2xl font-bold num">{ricavi.toFixed(0)}€</p>
+                      <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
+                        <p className="sys-label mb-1">{t('an.revenue')}</p>
+                        <p className="text-2xl font-extrabold num text-[var(--teal)]">{ricavi.toFixed(0)}€</p>
                         <p className="text-[11px] text-[var(--text-soft)] mt-1">{monthSold.length} {monthSold.length === 1 ? t('dash.sale') : t('dash.salesPlural')}</p>
                       </div>
-                      <div className="bg-[var(--surface-2)] rounded-xl p-4">
-                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">{t('an.costsFees')}</p>
-                        <p className="text-2xl font-bold num text-[var(--text-soft)]">-{(costo + fees).toFixed(0)}€</p>
+                      <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
+                        <p className="sys-label mb-1">{t('an.costsFees')}</p>
+                        <p className="text-2xl font-extrabold num text-[var(--text-soft)]">-{(costo + fees).toFixed(0)}€</p>
                         <p className="text-[11px] text-[var(--text-soft)] mt-1">{costo.toFixed(0)}€ {t('an.goods')} · {fees.toFixed(0)}€ {t('an.fee')}</p>
                       </div>
-                      <div className="bg-[var(--surface-2)] rounded-xl p-4">
-                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">{t('an.netProfit')}</p>
-                        <p className={`text-2xl font-bold num ${netto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{netto >= 0 ? '+' : ''}{netto.toFixed(0)}€</p>
+                      <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
+                        <p className="sys-label mb-1">{t('an.netProfit')}</p>
+                        <p className={`text-2xl font-extrabold num ${netto >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>{netto >= 0 ? '+' : ''}{netto.toFixed(0)}€</p>
                         <p className="text-[11px] text-[var(--text-soft)] mt-1">
                           ROI {roi >= 0 ? '+' : ''}{roi.toFixed(0)}%
-                          {hasPrev && <span className={`ml-1.5 font-bold ${deltaPct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{deltaPct >= 0 ? '▲' : '▼'}{Math.abs(deltaPct).toFixed(0)}% <span className="font-normal text-[var(--text-faint)]">{t('an.vsPrevMonth')}</span></span>}
+                          {hasPrev && <span className={`ml-1.5 font-bold ${deltaPct >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>{deltaPct >= 0 ? '▲' : '▼'}{Math.abs(deltaPct).toFixed(0)}% <span className="font-normal text-[var(--text-faint)]">{t('an.vsPrevMonth')}</span></span>}
                         </p>
                       </div>
-                      <div className="bg-[var(--surface-2)] rounded-xl p-4">
-                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-1">{t('an.topPlatform')}</p>
-                        <p className="text-2xl font-bold truncate">{topPlat ? topPlat[0] : '—'}</p>
+                      <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
+                        <p className="sys-label mb-1">{t('an.topPlatform')}</p>
+                        <p className="text-2xl font-extrabold truncate">{topPlat ? topPlat[0] : '—'}</p>
                         {topPlat && <p className="text-[11px] text-[var(--text-soft)] mt-1 num">{topPlat[1] >= 0 ? '+' : ''}{topPlat[1].toFixed(0)}€ {t('an.profit')}</p>}
                       </div>
                     </div>

@@ -187,7 +187,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
 
     startVoskWakeWord({ modelUrl, triggers, onWake })
       .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); setWakeLoading(false); })
-      .catch(() => { setWakeLoading(false); setWakeOn(false); showToast('Wake-word non avviata (mic negato o modello mancante)', 'warn'); });
+      .catch((e: any) => { setWakeLoading(false); setWakeOn(false); showToast('Voce non avviata: ' + (e?.message || 'errore modello/mic'), 'err'); });
 
     return () => {
       cancelled = true;

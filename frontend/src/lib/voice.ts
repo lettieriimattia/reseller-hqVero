@@ -158,8 +158,7 @@ export async function startVoskWakeWord(opts: {
 }): Promise<WakeWordHandle> {
   const { createModel } = await import('vosk-browser');
   const model: any = await createModel(opts.modelUrl);
-  const recognizer: any = new model.KaldiRecognizer(16000);
-  try { recognizer.setWords(true); } catch { /* opzionale */ }
+  let recognizer: any = null; // creato col sample-rate REALE dell'AudioContext (Vosk ricampiona a 16k)
 
   const triggers = opts.triggers.map(t => t.toLowerCase().trim()).filter(Boolean);
   let lastFire = 0;
@@ -170,8 +169,8 @@ export async function startVoskWakeWord(opts: {
       if (now - lastFire > 2500) { lastFire = now; opts.onWake(); } // anti-doppio-trigger
     }
   };
-  recognizer.on('result', (m: any) => check(m?.result?.text || ''));
-  recognizer.on('partialresult', (m: any) => check(m?.result?.partial || ''));
+  const resultText = (m: any): string =>
+    m?.result?.text || (Array.isArray(m?.result?.result) ? m.result.result.map((w: any) => w.word).join(' ') : '');
 
   let stream: MediaStream | null = null;
   let ac: AudioContext | null = null;
@@ -181,6 +180,13 @@ export async function startVoskWakeWord(opts: {
   const startAudio = async () => {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     ac = new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (!recognizer) {
+      // Sample-rate = quello reale dell'audio (di solito 48000): il bug era crearlo a 16000.
+      recognizer = new model.KaldiRecognizer(ac.sampleRate);
+      try { recognizer.setWords(true); } catch { /* opzionale */ }
+      recognizer.on('result', (m: any) => check(resultText(m)));
+      recognizer.on('partialresult', (m: any) => check(m?.result?.partial || ''));
+    }
     node = ac.createScriptProcessor(4096, 1, 1);
     node.onaudioprocess = (e: AudioProcessingEvent) => { try { recognizer.acceptWaveform(e.inputBuffer); } catch { /* frame skip */ } };
     source = ac.createMediaStreamSource(stream);
