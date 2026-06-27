@@ -177,18 +177,28 @@ export async function startVoskWakeWord(opts: {
     return lower.slice(pos + tr.length + 2).trim();
   };
 
+  // Vosk (modello IT) spesso NON trascrive "hq"/"acca cu". Quindi accettiamo come comando anche
+  // una frase che inizia con un verbo d'azione (con o senza la wake-word davanti).
+  const CMD_RE = /^(?:ok |ehi |ehy |hq |acca cu |hey hq )?(aggiung|inseri|metti|aggiorn|vend|valut|quant[oa]|cerc|trov|cancell|elimin|imposta|registr|segna)/;
+
   const handleFinal = (raw: string) => {
     const text = (raw || '').trim();
     if (!text) return;
     const after = commandAfter(text);
-    if (after !== null) {                       // la frase contiene "ehy hq"
+    if (after !== null) {                       // la frase contiene la wake-word
       if (Date.now() - lastCmd < 1500) return;  // anti-doppio
       if (after.length > 1) { lastCmd = Date.now(); armed = false; opts.onCommand(after); } // "ehy hq <comando>"
-      else { armed = true; armedAt = Date.now(); opts.onWake && opts.onWake(); }            // solo "ehy hq": aspetto la frase dopo
+      else { armed = true; armedAt = Date.now(); opts.onWake && opts.onWake(); }            // solo wake-word: aspetto la frase dopo
       return;
     }
-    if (armed && Date.now() - armedAt < 7000) { // frase successiva dopo "ehy hq" = comando
+    if (armed && Date.now() - armedAt < 7000) { // frase successiva dopo la wake-word = comando
       armed = false; lastCmd = Date.now(); opts.onCommand(text);
+      return;
+    }
+    // Fallback: la wake-word non è stata trascritta ma la frase è chiaramente un comando.
+    if (CMD_RE.test(norm(text).trim() + ' ')) {
+      if (Date.now() - lastCmd < 1500) return;
+      lastCmd = Date.now(); armed = false; opts.onCommand(text.trim());
     }
   };
 

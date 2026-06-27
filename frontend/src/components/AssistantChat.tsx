@@ -67,7 +67,9 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
     try { sessionStorage.setItem('hq_chat', JSON.stringify(messages.slice(-60))); } catch { /* storage pieno */ }
   }, [messages]);
 
-  const send = useCallback(async (text: string) => {
+  // fromVoice = comando detto con "hq ..." da fuori: esegue in BACKGROUND, mostra l'esito a
+  // toast e NON apre il pannello chat.
+  const send = useCallback(async (text: string, fromVoice = false) => {
     const t = text.trim();
     if (!t || sending) return;
     const next: Msg[] = [...messages, { role: 'user', content: t }];
@@ -94,6 +96,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
     }
     const reply = (data?.reply || '').toString().trim() || 'Fatto.';
     setMessages(m => [...m, { role: 'assistant', content: reply }]);
+    if (fromVoice) showToast(reply, 'ok'); // a chat chiusa: l'esito appare come notifica
     // Se ha aggiunto un prodotto, aggiorna il magazzino.
     if (Array.isArray(data?.actions) && data.actions.some((a: any) => a?.tool === 'aggiungi_prodotto' && a?.result?.ok)) {
       onAction();
@@ -163,16 +166,15 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       ? ['hey hq', 'ehy hq', 'hey h q', 'hq', 'h q', 'headquarters']
       : ['acca cu', 'acca qu', 'acca cchu', 'ehy hq', 'hey hq', 'hq', 'h q', 'headquarters'];
 
-    // Comando riconosciuto da Vosk (testo dopo "ehy hq") → appare in CHAT ed esegue.
+    // Comando riconosciuto da Vosk (testo dopo "ehy hq") → ESEGUE in BACKGROUND, senza aprire
+    // la chat. L'esito appare a toast. (Es. dal magazzino: "hq inseriscimi una Jordan 4".)
     const onCommand = (text: string) => {
       const t = (text || '').trim();
       if (!t || convoRef.current) return;
-      setOpen(true);
-      setInput('');
-      sendRef.current(t);
+      sendRef.current(t, true);
     };
 
-    startVoskWakeWord({ modelUrl, triggers, onCommand, onWake: () => setOpen(true) })
+    startVoskWakeWord({ modelUrl, triggers, onCommand, onWake: () => showToast('🎙️ Dimmi pure…', 'ok') })
       .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); setWakeLoading(false); })
       .catch((e: any) => {
         setWakeLoading(false); setWakeOn(false);
