@@ -1,5 +1,5 @@
 // src/services/ai.service.ts
-import Groq from 'groq-sdk';
+import Groq, { toFile } from 'groq-sdk';
 import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
@@ -2078,4 +2078,27 @@ export async function groqAssistantChat(params: {
 
 export function isGroqConfigured(): boolean {
   return groqClients.length > 0;
+}
+
+// ==========================================
+// TRASCRIZIONE VOCALE — Whisper su Groq
+// Usata dalla chatbox "HQ" (mic + wake-word Picovoice): l'audio registrato dal
+// browser viene trascritto qui (Safari iOS non ha speech-to-text nativo).
+// ==========================================
+export async function groqTranscribe(
+  audio: Buffer,
+  filename: string,
+  opts?: { language?: string; prompt?: string }
+): Promise<string> {
+  const file = await toFile(audio, filename);
+  const tr = await groqCallWithRetry(client =>
+    client.audio.transcriptions.create({
+      file,
+      model: 'whisper-large-v3',
+      language: opts?.language || 'it',
+      ...(opts?.prompt ? { prompt: opts.prompt } : {}),
+      response_format: 'json',
+    } as any)
+  );
+  return ((tr as any)?.text ?? '').toString().trim();
 }

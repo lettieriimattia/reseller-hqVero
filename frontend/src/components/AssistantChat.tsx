@@ -4,7 +4,8 @@
 // Microfono = dettatura vocale (Web Speech API). La wake-word "Ehy HQ" arriva in fase 3 (Picovoice).
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Sparkles, Send, Mic, X, Loader2 } from 'lucide-react';
+import { Sparkles, Send, Mic, X, Loader2, Square, Radio } from 'lucide-react';
+import { VoiceRecorder, recordCommand, transcribe, startWakeWord, isRecordingSupported, type WakeWordHandle } from '../lib/voice';
 
 type ApiCall = <T = any>(path: string, opts?: RequestInit) => Promise<{ ok: boolean; data: T; status: number }>;
 type Msg = { role: 'user' | 'assistant'; content: string };
@@ -15,17 +16,23 @@ interface Props {
   onAction: () => void; // refresh magazzino dopo un'azione (es. prodotto aggiunto)
 }
 
-// Riconoscimento vocale del browser (Chrome/Edge). Tipizzazione leggera.
-const SpeechRec: any = (typeof window !== 'undefined') && ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+// Wake-word "Ehy HQ" (Picovoice): attiva solo se è impostata la access key.
+const PICOVOICE_KEY: string = (import.meta.env.VITE_PICOVOICE_ACCESS_KEY as string) || '';
+
+type VoiceState = 'idle' | 'recording' | 'transcribing';
 
 export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [listening, setListening] = useState(false);
-  const recRef = useRef<any>(null);
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const [wakeOn, setWakeOn] = useState(false);
+  const recRef = useRef<VoiceRecorder | null>(null);
+  const wakeRef = useRef<WakeWordHandle | null>(null);
+  const voiceBusyRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recSupported = isRecordingSupported();
 
   useEffect(() => {
     if (open && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -64,24 +71,88 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
     }
   }, [messages, sending, apiCall, showToast, onAction]);
 
-  const toggleMic = () => {
-    if (!SpeechRec) { showToast('Dettatura non supportata su questo browser', 'warn'); return; }
-    if (listening) { recRef.current?.stop(); return; }
-    const rec = new SpeechRec();
-    rec.lang = 'it-IT';
-    rec.interimResults = true;
-    rec.continuous = false;
-    rec.onresult = (e: any) => {
-      const txt = Array.from(e.results).map((r: any) => r[0].transcript).join('');
-      setInput(txt);
+  // Riferimento all'ultima send: la callback della wake-word vive a lungo, evitiamo closure stantie.
+  const sendRef = useRef(send);
+  useEffect(() => { sendRef.current = send; }, [send]);
+
+  // Mic manuale: tocca per parlare, tocca di nuovo per fermare → Whisper → riempie l'input.
+  // (Sostituisce la vecchia Web Speech API, che su Safari iOS non esiste.)
+  const toggleMic = useCallback(async () => {
+    if (!recSupported) { showToast('Microfono non disponibile su questo browser', 'warn'); return; }
+    if (voiceBusyRef.current && voiceState !== 'recording') return;
+
+    if (voiceState === 'recording' && recRef.current) {
+      voiceBusyRef.current = true;
+      setVoiceState('transcribing');
+      try {
+        const clip = await recRef.current.stop();
+        if (clip) {
+          const text = await transcribe(apiCall, clip.base64, clip.mime);
+          if (text) setInput(prev => (prev ? prev + ' ' : '') + text);
+          else showToast('Non ho capito, riprova', 'warn');
+        }
+      } catch (e: any) {
+        showToast(e?.message || 'Trascrizione non riuscita', 'err');
+      } finally {
+        recRef.current = null;
+        setVoiceState('idle');
+        voiceBusyRef.current = false;
+      }
+      return;
+    }
+
+    try {
+      setOpen(true);
+      const rec = new VoiceRecorder();
+      await rec.start();
+      recRef.current = rec;
+      setVoiceState('recording');
+    } catch {
+      showToast('Permesso microfono negato', 'err');
+      setVoiceState('idle');
+    }
+  }, [recSupported, voiceState, apiCall, showToast]);
+
+  // Wake-word "Ehy HQ": a riconoscimento apre la chat, registra a mani libere,
+  // trascrive e invia da solo. Attiva solo se VITE_PICOVOICE_ACCESS_KEY è impostata
+  // e i modelli (/picovoice/Ehy_HQ.ppn + porcupine_params.pv) sono raggiungibili.
+  useEffect(() => {
+    if (!PICOVOICE_KEY || !recSupported) return;
+    let cancelled = false;
+
+    const onWake = async () => {
+      if (voiceBusyRef.current) return;
+      voiceBusyRef.current = true;
+      setOpen(true);
+      try {
+        await wakeRef.current?.pause();
+        setVoiceState('recording');
+        const clip = await recordCommand();
+        setVoiceState('transcribing');
+        if (clip) {
+          const text = await transcribe(apiCall, clip.base64, clip.mime);
+          if (text) { setInput(''); await sendRef.current(text); }
+        }
+      } catch { /* la wake-word riprende comunque */ }
+      finally {
+        setVoiceState('idle');
+        voiceBusyRef.current = false;
+        try { await wakeRef.current?.resume(); } catch { /* noop */ }
+      }
     };
-    rec.onend = () => setListening(false);
-    rec.onerror = () => setListening(false);
-    recRef.current = rec;
-    setListening(true);
-    setOpen(true);
-    try { rec.start(); } catch { setListening(false); }
-  };
+
+    startWakeWord({ accessKey: PICOVOICE_KEY, onWake })
+      .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); })
+      .catch(() => { /* key/modelli assenti o non validi: wake-word spenta, mic manuale resta ok */ });
+
+    return () => {
+      cancelled = true;
+      setWakeOn(false);
+      const h = wakeRef.current;
+      wakeRef.current = null;
+      h?.stop();
+    };
+  }, [recSupported, apiCall]);
 
   return (
     <>
@@ -145,19 +216,29 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
       <div className="lg:hidden fixed left-3 right-3 z-[45]" style={{ bottom: open ? 'calc(env(safe-area-inset-bottom, 0px) + 12px)' : 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}>
         <div className="relative rounded-full p-px bg-gradient-to-r from-violet-500/90 via-fuchsia-500/90 to-violet-500/90 shadow-[0_8px_44px_-8px_rgba(139,92,246,0.7)]">
           <div className="flex items-center gap-2 rounded-full bg-[var(--surface)]/90 backdrop-blur-xl border border-white/5 pl-4 pr-1.5 py-2">
-            <Sparkles size={16} className="text-violet-400 shrink-0" />
+            {wakeOn
+              ? <Radio size={16} className="text-violet-400 shrink-0 animate-pulse" aria-label="In ascolto di Ehy HQ" />
+              : <Sparkles size={16} className="text-violet-400 shrink-0" />}
             <input
               value={input}
               onChange={e => setInput(e.target.value)}
               onFocus={() => setOpen(true)}
               onKeyDown={e => { if (e.key === 'Enter') send(input); }}
-              placeholder="Chiedi a HQ..."
-              className="flex-1 bg-transparent outline-none text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] min-w-0" />
-            <button onClick={toggleMic} aria-label="Detta"
-              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                listening ? 'bg-red-500/15 text-red-400 ring-1 ring-red-500/30 animate-pulse' : 'text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-white/5'
+              placeholder={
+                voiceState === 'recording' ? 'Sto ascoltando… tocca ⏹ per fermare'
+                : voiceState === 'transcribing' ? 'Trascrivo…'
+                : wakeOn ? 'Chiedi a HQ…  o di’ "Ehy HQ"'
+                : 'Chiedi a HQ...'}
+              disabled={voiceState !== 'idle'}
+              className="flex-1 bg-transparent outline-none text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] min-w-0 disabled:opacity-70" />
+            <button onClick={toggleMic} disabled={voiceState === 'transcribing'}
+              aria-label={voiceState === 'recording' ? 'Ferma e trascrivi' : 'Detta a voce'}
+              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors disabled:opacity-50 ${
+                voiceState === 'recording' ? 'bg-red-500/15 text-red-400 ring-1 ring-red-500/30 animate-pulse' : 'text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-white/5'
               }`}>
-              <Mic size={18} />
+              {voiceState === 'recording' ? <Square size={16} className="fill-current" />
+                : voiceState === 'transcribing' ? <Loader2 size={16} className="animate-spin" />
+                : <Mic size={18} />}
             </button>
             <button onClick={() => send(input)} disabled={sending || !input.trim()} aria-label="Invia"
               className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-lg shadow-violet-500/30 transition-all hover:from-violet-400 hover:to-violet-500 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed">

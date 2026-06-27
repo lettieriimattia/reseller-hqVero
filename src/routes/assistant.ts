@@ -10,7 +10,7 @@ import { prisma } from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimit';
 import { isAdminEmail } from '../config/admins';
-import { groqAssistantChat, isGroqConfigured } from '../services/ai.service';
+import { groqAssistantChat, isGroqConfigured, groqTranscribe } from '../services/ai.service';
 import { searchStockXCandidates, getStockXValuation, isStockXConfigured } from '../services/stockx.service';
 import { checkProductQuota } from '../middleware/plan';
 import { logger } from '../utils/logger';
@@ -247,6 +247,38 @@ router.post('/message', adminOnly, async (req: AuthRequest, res: Response) => {
   } catch (e: any) {
     logger.error('POST /assistant/message', { err: e.message });
     res.status(500).json({ error: 'Errore assistente' });
+  }
+});
+
+// Estensione file dal mime dell'audio del browser (Whisper accetta webm/m4a/mp4/ogg/wav/mp3).
+function extFromMime(mime?: string): string {
+  const m = (mime || '').toLowerCase();
+  if (m.includes('webm')) return 'webm';
+  if (m.includes('ogg')) return 'ogg';
+  if (m.includes('wav')) return 'wav';
+  if (m.includes('mpeg') || m.includes('mp3')) return 'mp3';
+  if (m.includes('mp4') || m.includes('m4a') || m.includes('aac') || m.includes('x-m4a')) return 'm4a';
+  return 'webm';
+}
+
+// POST /api/assistant/transcribe — { audioBase64: string, mime?: string } → { text }
+// Trascrive con Whisper (Groq) l'audio registrato dal browser. Serve perché Safari iOS
+// non ha lo speech-to-text nativo: mic manuale e wake-word "Ehy HQ" passano da qui.
+router.post('/transcribe', adminOnly, async (req: AuthRequest, res: Response) => {
+  if (!isGroqConfigured()) return res.status(503).json({ error: 'Trascrizione non disponibile (Groq non configurato).' });
+  try {
+    const { audioBase64, mime } = req.body || {};
+    if (typeof audioBase64 !== 'string' || !audioBase64) return res.status(400).json({ error: 'Audio mancante.' });
+    // Limite ~8MB base64 (~6MB audio): la chatbox registra clip di pochi secondi.
+    if (audioBase64.length > 8 * 1024 * 1024) return res.status(413).json({ error: 'Audio troppo lungo (max ~30s).' });
+    const b64 = audioBase64.includes(',') ? audioBase64.split(',')[1] : audioBase64;
+    const buf = Buffer.from(b64, 'base64');
+    if (!buf.length) return res.status(400).json({ error: 'Audio non valido.' });
+    const text = await groqTranscribe(buf, `audio.${extFromMime(mime)}`, { language: 'it' });
+    res.json({ text });
+  } catch (e: any) {
+    logger.error('POST /assistant/transcribe', { err: e.message });
+    res.status(500).json({ error: 'Errore trascrizione' });
   }
 });
 
