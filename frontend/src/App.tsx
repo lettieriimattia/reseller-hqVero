@@ -235,6 +235,7 @@ export default function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authPasswordErrors, setAuthPasswordErrors] = useState<string[]>([]);
   const [regCategories, setRegCategories] = useState<string[]>([]);
+  const [showLanding, setShowLanding] = useState(true);
   
   // 2FA login
   const [require2FA, setRequire2FA] = useState(false);
@@ -3597,7 +3598,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] font-sans">
         <header className="sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)] px-4 py-3 flex items-center justify-between">
-          <span className="font-black text-lg">HQ <span className="text-[var(--text-soft)]">Market</span></span>
+          <span className="font-black text-lg">HQVault <span className="text-[var(--text-soft)]">Market</span></span>
           <button onClick={() => setPublicMarket(false)} className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold">{t('auth.signIn')}</button>
         </header>
         <div className="max-w-[1100px] mx-auto p-4 space-y-4">
@@ -7158,10 +7159,12 @@ export default function App() {
       )}
 
       {/* ========== FAB MOBILE ========== */}
+      {/* Per gli admin la chatbox "HQ" occupa la fascia sopra la nav: alzo il FAB così
+          non si sovrappone alla barra di scrittura (vedi AssistantChat, bottom 72px). */}
       <button
         onClick={() => openAddForm()}
         className="lg:hidden fixed z-40 bg-[#8b5cf6] rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-all"
-        style={{ width: 54, height: 54, bottom: 'calc(5.5rem + env(safe-area-inset-bottom))', right: 16 }}
+        style={{ width: 54, height: 54, bottom: `calc(${isAdminUser ? '8.5rem' : '5.5rem'} + env(safe-area-inset-bottom))`, right: 16 }}
       >
         <Plus size={24} />
       </button>

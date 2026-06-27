@@ -124,6 +124,21 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
       const warehouseId = await findTargetWarehouse(ctx.userId);
       if (!warehouseId) return { error: 'Nessun magazzino trovato per l\'utente.' };
       const category = await defaultCategory(ctx.userId, args.categoria);
+
+      // Foto ufficiale dal catalogo StockX (come fa la schermata Catalogo): cerca per
+      // SKU o nome e salva il LINK diretto dell'immagine — niente Cloudinary, DB piccolo.
+      // Se trovo lo style code lo aggancio anch'esso al prodotto.
+      let photo: string | null = null;
+      let resolvedSku: string | null = args.sku ? String(args.sku).trim() : null;
+      if (isStockXConfigured()) {
+        try {
+          const cands = await searchStockXCandidates(resolvedSku || `${brand} ${nome}`, { limit: 5 });
+          const best = cands.find(c => c.image) || cands[0];
+          if (best?.image) photo = best.image;
+          if (!resolvedSku && best?.styleId) resolvedSku = best.styleId;
+        } catch { /* foto facoltativa: se il catalogo non risponde, aggiungo comunque */ }
+      }
+
       const product = await prisma.product.create({
         data: {
           category, brand, name: nome,
@@ -132,10 +147,11 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
           purchasePrice: Number(args.prezzo) > 0 ? Number(args.prezzo) : 0,
           status: 'IN STOCK',
           userId: ctx.userId, warehouseId,
-          sku: args.sku ? String(args.sku).trim() : null,
+          sku: resolvedSku || null,
+          photos: photo ? JSON.stringify([photo]) : null,
         },
       });
-      return { ok: true, id: product.id, aggiunto: `${brand} ${nome}`, taglia: product.size, prezzo: product.purchasePrice };
+      return { ok: true, id: product.id, aggiunto: `${brand} ${nome}`, taglia: product.size, prezzo: product.purchasePrice, foto: !!photo };
     }
 
     if (name === 'valuta_prezzo') {
