@@ -251,7 +251,7 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
           ...(type ? [{ productType: type }] : []),
         ],
       },
-      orderBy: [{ useCount: 'desc' }, { updatedAt: 'desc' }],
+      orderBy: [{ createdAt: 'asc' }],
       take: 16,
     });
     for (const it of local) {
@@ -338,7 +338,9 @@ router.get('/popular', async (req: AuthRequest, res: Response) => {
   try {
     await ensureCatalogVersion();
     const type = (req.query.type || '').toString().trim().toLowerCase();
-    const order = [{ useCount: 'desc' as const }, { updatedAt: 'desc' as const }];
+    // Ordine FISSO: per data di inserimento (createdAt non cambia ai re-seed) → il catalogo
+    // non si rimescola più ad ogni apertura.
+    const order = [{ createdAt: 'asc' as const }];
     const where = type ? { productType: type } : {};
     let items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 90 });
     // Riseminiamo se: pochi item CON foto, OPPURE molti senza immagine (cache vecchia) —
