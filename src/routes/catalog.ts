@@ -33,13 +33,23 @@ const TYPE_TO_PRODUCTTYPE: Record<string, string> = {
 };
 
 // Ricerche "seed" per categoria: riempiono il TUO DB (cache) così il catalogo è già pieno.
+// Più query = catalogo più ricco per ogni reparto (ognuna porta ~12 prodotti in cache).
 const SEEDS_BY_TYPE: Record<string, string[]> = {
-  sneakers: ['Jordan 1', 'Jordan 4', 'Nike Dunk Low', 'Air Force 1', 'Yeezy 350', 'New Balance 550', 'Adidas Samba', 'Travis Scott'],
-  apparel: ['Supreme Box Logo', 'Stussy', 'Nike Tech Fleece', 'Essentials Hoodie', 'Corteiz', 'Palace', 'The North Face', 'Stone Island'],
-  borse: ['Louis Vuitton', 'Gucci bag', 'Prada bag', 'Goyard', 'Dior bag', 'Chanel bag'],
-  accessori: ['Supreme', 'Louis Vuitton wallet', 'Gucci belt', 'New Era cap'],
-  carte: ['Charizard', 'Pikachu', 'Umbreon', 'Mewtwo', 'Rayquaza', 'Gengar', 'Eevee', 'Lugia'],
-  elettronica: ['PlayStation 5', 'AirPods', 'iPhone', 'Nintendo Switch'],
+  sneakers: ['Jordan 1', 'Jordan 3', 'Jordan 4', 'Jordan 11', 'Nike Dunk Low', 'Nike Dunk High', 'Air Force 1',
+    'Air Max 1', 'Air Max 90', 'Yeezy 350', 'Yeezy 700', 'Yeezy Slide', 'New Balance 550', 'New Balance 2002R',
+    'New Balance 990', 'Adidas Samba', 'Adidas Gazelle', 'Asics Gel', 'Salomon', 'Travis Scott', 'Off-White Nike',
+    'Nike SB Dunk', 'Vans', 'Converse', 'Puma', 'Onitsuka Tiger'],
+  apparel: ['Supreme Box Logo', 'Supreme', 'Stussy', 'Nike Tech Fleece', 'Essentials Hoodie', 'Fear of God',
+    'Corteiz', 'Palace', 'The North Face', 'Stone Island', 'Trapstar', 'Bape', 'Sp5der', 'Hellstar', 'Denim Tears',
+    'Carhartt', 'Arc teryx', 'Moncler', 'Represent', 'Chrome Hearts', 'Kith', 'Aime Leon Dore', 'Gallery Dept'],
+  borse: ['Louis Vuitton bag', 'Gucci bag', 'Prada bag', 'Goyard bag', 'Dior bag', 'Chanel bag', 'Celine bag',
+    'Bottega Veneta bag', 'Saint Laurent bag', 'Balenciaga bag', 'Telfar bag', 'Hermes bag', 'Fendi bag', 'Loewe bag'],
+  accessori: ['Gucci belt', 'Louis Vuitton wallet', 'Louis Vuitton belt', 'Hermes belt', 'New Era cap', 'Supreme beanie',
+    'Cartier glasses', 'Chrome Hearts', 'Gucci wallet', 'Dior wallet', 'Goyard wallet', 'Prada sunglasses', 'Casio'],
+  carte: ['Charizard', 'Pikachu', 'Umbreon', 'Mewtwo', 'Rayquaza', 'Gengar', 'Eevee', 'Lugia', 'Mew', 'Snorlax',
+    'Blastoise', 'Venusaur', 'Gardevoir', 'Lucario', 'Gyarados', 'Dragonite', 'Sylveon', 'Greninja'],
+  elettronica: ['PlayStation 5', 'PlayStation 5 Pro', 'Xbox Series X', 'Nintendo Switch', 'AirPods Pro', 'AirPods Max',
+    'iPhone 15', 'iPhone 16', 'Apple Watch', 'iPad', 'MacBook', 'Meta Quest', 'Steam Deck', 'GoPro'],
 };
 
 // Categorie servite da una fonte dedicata (non KicksDB/StockX).
@@ -220,7 +230,7 @@ router.get('/_reset', adminOnly, async (_req: AuthRequest, res: Response) => {
 
 // GET /api/catalog/search?q=...&type=sneakers|apparel
 // 1) cerca nella cache locale  2) integra da StockX  3) salva i nuovi in cache (solo link).
-router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
+router.get('/search', async (req: AuthRequest, res: Response) => {
   try {
     await ensureCatalogVersion();
     const q = (req.query.q || '').toString().trim();
@@ -279,7 +289,7 @@ const seededAt = new Map<string, number>(); // ultimo refresh per categoria (thr
 
 // Versione della logica di categorizzazione/cache. Quando la cambio (bump qui), la cache
 // CatalogItem si svuota DA SOLA al primo accesso dopo il deploy → niente _reset a mano.
-const CATALOG_VERSION = '4-infercat';
+const CATALOG_VERSION = '5-bigseed';
 let versionChecked = false;
 async function ensureCatalogVersion(): Promise<void> {
   if (versionChecked) return;
@@ -312,7 +322,7 @@ async function seedPopular(type: string): Promise<void> {
     for (const cat of cats) {
       const productType = TYPE_TO_PRODUCTTYPE[cat] || undefined;
       for (const q of SEEDS_BY_TYPE[cat]) {
-        const cands = await providerSearch(q, { productType, limit: 8 });
+        const cands = await providerSearch(q, { productType, limit: 12 });
         for (const c of cands) await upsertCandidate(c, undefined, cat); // categoria = scheda del seed
       }
     }
@@ -324,13 +334,13 @@ async function seedPopular(type: string): Promise<void> {
 // GET /api/catalog/popular?type=sneakers|apparel|borse|carte|accessori|elettronica
 // Lista di default mostrata appena apri il catalogo (per categoria). Se la cache è scarna,
 // la precarica al volo dalla fonte (così non è mai vuota), poi serve sempre dal TUO DB.
-router.get('/popular', adminOnly, async (req: AuthRequest, res: Response) => {
+router.get('/popular', async (req: AuthRequest, res: Response) => {
   try {
     await ensureCatalogVersion();
     const type = (req.query.type || '').toString().trim().toLowerCase();
     const order = [{ useCount: 'desc' as const }, { updatedAt: 'desc' as const }];
     const where = type ? { productType: type } : {};
-    let items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 60 });
+    let items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 90 });
     // Riseminiamo se: pochi item CON foto, OPPURE molti senza immagine (cache vecchia) —
     // ma non più di una volta ogni 15 min per categoria (protegge la quota).
     const imagedCount = items.filter(i => i.image).length;
@@ -338,11 +348,11 @@ router.get('/popular', adminOnly, async (req: AuthRequest, res: Response) => {
     if ((imagedCount < 12 && !fresh) && isCatalogConfigured()) {
       seededAt.set(type, Date.now());
       await seedPopular(type);
-      items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 60 });
+      items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 90 });
     }
     // PRIORITÀ alle righe CON immagine (le vecchie senza foto vanno in fondo / si escludono).
     const withImg = items.filter(i => i.image);
-    const out = (withImg.length >= 8 ? withImg : items).slice(0, 30);
+    const out = (withImg.length >= 8 ? withImg : items).slice(0, 60);
     res.json(out.map(it => ({
       key: it.key, brand: it.brand, name: it.name, sku: it.sku,
       image: it.image, productType: it.productType,
@@ -355,7 +365,7 @@ router.get('/popular', adminOnly, async (req: AuthRequest, res: Response) => {
 
 // POST /api/catalog/:key/used — incrementa il contatore quando un item viene aggiunto
 // (così i modelli più usati salgono in cima). Best-effort.
-router.post('/:key/used', adminOnly, async (req: AuthRequest, res: Response) => {
+router.post('/:key/used', async (req: AuthRequest, res: Response) => {
   try {
     await prisma.catalogItem.update({ where: { key: req.params.key }, data: { useCount: { increment: 1 } } });
   } catch { /* item non in cache: ignora */ }

@@ -3922,7 +3922,7 @@ export default function App() {
             ] : []),
             { id: 'analytics', label: t('nav.analytics'), icon: BarChart3 },
             { id: 'tracking', label: t('nav.tracking'), icon: Truck },
-            ...(isAdminUser ? [{ id: 'catalog', label: 'Catalogo', icon: Layers }] : []),
+            { id: 'catalog', label: 'Catalogo', icon: Layers },
           ].map(tab => {
             const Icon = tab.icon;
             const active = currentView === tab.id;
@@ -6155,7 +6155,7 @@ export default function App() {
         })()}
 
         {/* ========== CATALOGO (BETA · solo admin) ========== */}
-        {currentView === 'catalog' && isAdminUser && (
+        {currentView === 'catalog' && (
           <CatalogBrowser
             apiCall={apiCall}
             showToast={showToast}
@@ -6228,7 +6228,7 @@ export default function App() {
             </section>
 
             {/* SEZIONE: Assistente vocale "Ehy HQ" (solo admin, beta) */}
-            {isAdminUser && (
+            {(
               <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
@@ -7234,7 +7234,7 @@ export default function App() {
             ] : []),
             { id: 'analytics',  icon: BarChart3 },
             { id: 'tracking',   icon: Truck },
-            ...(isAdminUser ? [{ id: 'catalog', icon: Layers }] : []),
+            { id: 'catalog', icon: Layers },
           ];
           return (
         <div className="relative grid px-1" style={{ gridTemplateColumns: `repeat(${bottomTabs.length}, minmax(0, 1fr))` }}>
@@ -7267,10 +7267,8 @@ export default function App() {
         })()}
       </nav>
 
-      {/* ========== CHATBOX "HQ" (BETA · solo admin · solo telefono) ========== */}
-      {isAdminUser && (
-        <AssistantChat apiCall={apiCall} showToast={showToast} onAction={fetchProducts} lang={lang} />
-      )}
+      {/* ========== CHATBOX "HQ" (aperta a tutti · solo telefono) ========== */}
+      <AssistantChat apiCall={apiCall} showToast={showToast} onAction={fetchProducts} lang={lang} />
 
       {/* ========== MODALE: AGGIUNGI PRODOTTO ========== */}
       {isFormOpen && (

@@ -9,7 +9,6 @@ import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimit';
-import { isAdminEmail } from '../config/admins';
 import { groqAssistantChat, isGroqConfigured, groqTranscribe } from '../services/ai.service';
 import { searchStockXCandidates, getStockXValuation, isStockXConfigured } from '../services/stockx.service';
 import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
@@ -18,11 +17,7 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 router.use(authenticate, apiLimiter);
-
-function adminOnly(req: AuthRequest, res: Response, next: any) {
-  if (!isAdminEmail(req.user?.email)) return res.status(403).json({ error: 'Assistente in beta (solo admin).' });
-  next();
-}
+// Chat assistente + catalogo ora APERTI a tutti gli utenti autenticati (non più solo admin).
 
 // ---- Definizione dei TOOL esposti al modello ----
 const TOOLS = [
@@ -205,7 +200,7 @@ function summarizeToolResult(name: string, result: any): string {
 
 // POST /api/assistant/message — { messages: [{role:'user'|'assistant', content}] }
 // Esegue il loop di tool-calling (max 3 round) e ritorna la risposta finale + azioni.
-router.post('/message', adminOnly, async (req: AuthRequest, res: Response) => {
+router.post('/message', async (req: AuthRequest, res: Response) => {
   if (!isGroqConfigured()) return res.status(503).json({ error: 'Assistente non disponibile (Groq non configurato).' });
   try {
     const clientMessages = Array.isArray(req.body?.messages) ? req.body.messages : [];
@@ -271,7 +266,7 @@ function extFromMime(mime?: string): string {
 // POST /api/assistant/transcribe — { audioBase64: string, mime?: string } → { text }
 // Trascrive con Whisper (Groq) l'audio registrato dal browser. Serve perché Safari iOS
 // non ha lo speech-to-text nativo: mic manuale e wake-word "Ehy HQ" passano da qui.
-router.post('/transcribe', adminOnly, async (req: AuthRequest, res: Response) => {
+router.post('/transcribe', async (req: AuthRequest, res: Response) => {
   if (!isGroqConfigured()) return res.status(503).json({ error: 'Trascrizione non disponibile (Groq non configurato).' });
   try {
     const { audioBase64, mime } = req.body || {};

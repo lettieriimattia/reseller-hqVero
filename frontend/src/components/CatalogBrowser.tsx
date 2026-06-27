@@ -129,7 +129,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
     <div className="max-w-2xl mx-auto">
       <div className="mb-4">
         <h1 className="text-xl font-black text-[var(--text)]">Catalogo</h1>
-        <p className="text-sm text-[var(--text-soft)]">Tocca <span className="text-[#6b54c6] font-bold">+</span> per aggiungere al magazzino con la foto ufficiale. <span className="text-[#6b54c6] font-semibold">Beta · solo admin</span></p>
+        <p className="text-sm text-[var(--text-soft)]">Tocca <span className="text-[#6b54c6] font-bold">+</span> per aggiungere al magazzino con la foto ufficiale. <span className="text-[#6b54c6] font-semibold">Beta</span></p>
       </div>
 
       {/* Barra ricerca — FISSA in cima: sticky top-0, lo sfondo copre il notch e l'input
