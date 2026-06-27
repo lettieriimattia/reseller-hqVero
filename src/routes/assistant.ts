@@ -53,6 +53,7 @@ const TOOLS = [
           prezzo: { type: ['number', 'string'], description: 'Prezzo d\'acquisto in euro (facoltativo, default 0). Solo cifre, es. 200.' },
           condizione: { type: 'string', description: 'Condizione, es. "Nuovo" (facoltativo)' },
           categoria: { type: 'string', description: 'Reparto/categoria, es. "Scarpe" (facoltativo)' },
+          quantita: { type: ['number', 'string'], description: 'Quante unità IDENTICHE aggiungere (default 1). Es. "aggiungi 4 Jordan 4 uguali" → 4.' },
         },
         required: ['brand', 'nome'],
       },
@@ -81,6 +82,7 @@ Aiuti l'utente a: cercare modelli nel catalogo, aggiungere prodotti al magazzino
 Regole:
 - Rispondi SEMPRE in italiano, in modo breve e amichevole.
 - Quando l'utente vuole inserire un prodotto, usa il tool "aggiungi_prodotto" con i dati che ti dà; se manca la taglia o il prezzo va bene lo stesso (li metterà dopo).
+- Se l'utente dice un numero di unità uguali (es. "aggiungi 4 Jordan 4 uguali"), imposta "quantita".
 - Se non sei sicuro del modello esatto, usa "cerca_catalogo" e proponi i risultati.
 - Dopo un'azione, conferma in una riga cosa hai fatto (es. "✅ Aggiunto: Jordan 4 Bred, taglia 42").
 - Non inventare prezzi: se servono usa "valuta_prezzo".`;
@@ -117,7 +119,8 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
       const brand = String(args.brand || '').trim();
       const nome = String(args.nome || '').trim();
       if (!brand || !nome) return { error: 'Servono almeno marca e nome.' };
-      const quotaErr = await checkProductQuota(ctx.userId, 1);
+      const qty = Math.min(Math.max(Math.floor(Number(args.quantita) || 1), 1), 50); // N unità identiche
+      const quotaErr = await checkProductQuota(ctx.userId, qty);
       if (quotaErr) return { error: 'Hai raggiunto il limite di prodotti del tuo piano.' };
       const warehouseId = await findTargetWarehouse(ctx.userId);
       if (!warehouseId) return { error: 'Nessun magazzino trovato per l\'utente.' };
@@ -143,19 +146,23 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
         if (!resolvedSku && best?.styleId) resolvedSku = best.styleId;
       } catch { /* foto facoltativa: se il catalogo non risponde, aggiungo comunque */ }
 
-      const product = await prisma.product.create({
-        data: {
-          category, brand, name: nome,
-          size: (args.taglia ? String(args.taglia) : '').trim() || '—',
-          condition: (args.condizione ? String(args.condizione) : '').trim() || '—',
-          purchasePrice: Number(args.prezzo) > 0 ? Number(args.prezzo) : 0,
-          status: 'IN STOCK',
-          userId: ctx.userId, warehouseId,
-          sku: resolvedSku || null,
-          photos: photo ? JSON.stringify([photo]) : null,
-        },
-      });
-      return { ok: true, id: product.id, aggiunto: `${brand} ${nome}`, taglia: product.size, prezzo: product.purchasePrice, foto: !!photo };
+      const data = {
+        category, brand, name: nome,
+        size: (args.taglia ? String(args.taglia) : '').trim() || '—',
+        condition: (args.condizione ? String(args.condizione) : '').trim() || '—',
+        purchasePrice: Number(args.prezzo) > 0 ? Number(args.prezzo) : 0,
+        status: 'IN STOCK',
+        userId: ctx.userId, warehouseId,
+        sku: resolvedSku || null,
+        photos: photo ? JSON.stringify([photo]) : null,
+      };
+      // N unità identiche → il magazzino le raggruppa con un contatore (modificabile in modifica).
+      if (qty > 1) {
+        await prisma.product.createMany({ data: Array.from({ length: qty }, () => ({ ...data })) });
+        return { ok: true, aggiunto: `${brand} ${nome}`, taglia: data.size, prezzo: data.purchasePrice, foto: !!photo, quantita: qty };
+      }
+      const product = await prisma.product.create({ data });
+      return { ok: true, id: product.id, aggiunto: `${brand} ${nome}`, taglia: product.size, prezzo: product.purchasePrice, foto: !!photo, quantita: 1 };
     }
 
     if (name === 'valuta_prezzo') {
@@ -192,7 +199,8 @@ function summarizeToolResult(name: string, result: any): string {
   if (result?.error) return `⚠️ ${result.error}`;
   if (name === 'aggiungi_prodotto' && result?.ok) {
     const taglia = result.taglia && result.taglia !== '—' ? `, taglia ${result.taglia}` : '';
-    return `✅ Aggiunto: ${result.aggiunto}${taglia}${result.foto ? ' (con foto)' : ''}.`;
+    const qty = result.quantita > 1 ? ` ×${result.quantita}` : '';
+    return `✅ Aggiunto: ${result.aggiunto}${qty}${taglia}${result.foto ? ' (con foto)' : ''}.`;
   }
   if (name === 'valuta_prezzo' && result?.valore != null) return `💶 ${result.modello || 'Valore'}: circa ${result.valore}€ (${result.fonte}).`;
   return '✅ Fatto.';
