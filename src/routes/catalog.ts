@@ -35,21 +35,33 @@ const TYPE_TO_PRODUCTTYPE: Record<string, string> = {
 // Ricerche "seed" per categoria: riempiono il TUO DB (cache) così il catalogo è già pieno.
 // Più query = catalogo più ricco per ogni reparto (ognuna porta ~12 prodotti in cache).
 const SEEDS_BY_TYPE: Record<string, string[]> = {
-  sneakers: ['Jordan 1', 'Jordan 3', 'Jordan 4', 'Jordan 11', 'Nike Dunk Low', 'Nike Dunk High', 'Air Force 1',
-    'Air Max 1', 'Air Max 90', 'Yeezy 350', 'Yeezy 700', 'Yeezy Slide', 'New Balance 550', 'New Balance 2002R',
-    'New Balance 990', 'Adidas Samba', 'Adidas Gazelle', 'Asics Gel', 'Salomon', 'Travis Scott', 'Off-White Nike',
-    'Nike SB Dunk', 'Vans', 'Converse', 'Puma', 'Onitsuka Tiger'],
-  apparel: ['Supreme Box Logo', 'Supreme', 'Stussy', 'Nike Tech Fleece', 'Essentials Hoodie', 'Fear of God',
-    'Corteiz', 'Palace', 'The North Face', 'Stone Island', 'Trapstar', 'Bape', 'Sp5der', 'Hellstar', 'Denim Tears',
-    'Carhartt', 'Arc teryx', 'Moncler', 'Represent', 'Chrome Hearts', 'Kith', 'Aime Leon Dore', 'Gallery Dept'],
+  sneakers: ['Jordan 1', 'Jordan 1 Low', 'Jordan 3', 'Jordan 4', 'Jordan 5', 'Jordan 6', 'Jordan 11', 'Jordan 12',
+    'Nike Dunk Low', 'Nike Dunk High', 'Air Force 1', 'Air Max 1', 'Air Max 90', 'Air Max 95', 'Air Max 97',
+    'Nike Vapormax', 'Nike Cortez', 'Nike Blazer', 'Yeezy 350', 'Yeezy 500', 'Yeezy 700', 'Yeezy Slide', 'Yeezy Foam',
+    'New Balance 550', 'New Balance 530', 'New Balance 2002R', 'New Balance 990', 'New Balance 9060', 'New Balance 1906',
+    'Adidas Samba', 'Adidas Gazelle', 'Adidas Campus', 'Adidas Superstar', 'Adidas Spezial', 'Asics Gel', 'Asics Kayano',
+    'Salomon XT-6', 'Travis Scott', 'Off-White Nike', 'Nike SB Dunk', 'Vans', 'Converse', 'Puma', 'Onitsuka Tiger',
+    'Crocs', 'Timberland', 'UGG', 'Birkenstock', 'Saucony', 'Hoka'],
+  apparel: ['Supreme Box Logo', 'Supreme', 'Stussy', 'Nike Tech Fleece', 'Essentials Hoodie', 'Fear of God', 'Corteiz',
+    'Palace', 'The North Face', 'Stone Island', 'Trapstar', 'Bape', 'Sp5der', 'Hellstar', 'Denim Tears', 'Carhartt',
+    'Arc teryx', 'Moncler', 'Represent', 'Chrome Hearts', 'Kith', 'Aime Leon Dore', 'Gallery Dept', 'Rhude', 'Amiri',
+    'Off-White', 'Vlone', 'Anti Social Social Club', 'Cactus Jack', 'Eric Emanuel', 'Syna World', 'Broken Planet',
+    'Nike hoodie', 'Adidas hoodie', 'Ralph Lauren', 'Burberry', 'Nike jacket', 'Patagonia', 'Yeezy Gap', 'Drew House'],
   borse: ['Louis Vuitton bag', 'Gucci bag', 'Prada bag', 'Goyard bag', 'Dior bag', 'Chanel bag', 'Celine bag',
-    'Bottega Veneta bag', 'Saint Laurent bag', 'Balenciaga bag', 'Telfar bag', 'Hermes bag', 'Fendi bag', 'Loewe bag'],
-  accessori: ['Gucci belt', 'Louis Vuitton wallet', 'Louis Vuitton belt', 'Hermes belt', 'New Era cap', 'Supreme beanie',
-    'Cartier glasses', 'Chrome Hearts', 'Gucci wallet', 'Dior wallet', 'Goyard wallet', 'Prada sunglasses', 'Casio'],
+    'Bottega Veneta bag', 'Saint Laurent bag', 'Balenciaga bag', 'Telfar bag', 'Hermes bag', 'Fendi bag', 'Loewe bag',
+    'Coach bag', 'Miu Miu bag', 'Jacquemus bag', 'Marc Jacobs bag', 'Off-White bag', 'Polene bag', 'Mulberry bag',
+    'Louis Vuitton backpack', 'Gucci backpack', 'Prada nylon bag'],
+  accessori: ['Gucci belt', 'Louis Vuitton wallet', 'Louis Vuitton belt', 'Hermes belt', 'Ferragamo belt', 'New Era cap',
+    'Supreme beanie', 'Cartier glasses', 'Chrome Hearts', 'Gucci wallet', 'Dior wallet', 'Goyard wallet', 'Prada sunglasses',
+    'Casio', 'Ray-Ban', 'Oakley', 'Apple Watch band', 'Nike socks', 'Gucci scarf', 'Burberry scarf', 'AirPods case',
+    'Louis Vuitton cardholder', 'Gucci cap', 'Stussy cap', 'Carhartt beanie'],
   carte: ['Charizard', 'Pikachu', 'Umbreon', 'Mewtwo', 'Rayquaza', 'Gengar', 'Eevee', 'Lugia', 'Mew', 'Snorlax',
-    'Blastoise', 'Venusaur', 'Gardevoir', 'Lucario', 'Gyarados', 'Dragonite', 'Sylveon', 'Greninja'],
-  elettronica: ['PlayStation 5', 'PlayStation 5 Pro', 'Xbox Series X', 'Nintendo Switch', 'AirPods Pro', 'AirPods Max',
-    'iPhone 15', 'iPhone 16', 'Apple Watch', 'iPad', 'MacBook', 'Meta Quest', 'Steam Deck', 'GoPro'],
+    'Blastoise', 'Venusaur', 'Gardevoir', 'Lucario', 'Gyarados', 'Dragonite', 'Sylveon', 'Greninja', 'Espeon', 'Vaporeon',
+    'Jolteon', 'Flareon', 'Glaceon', 'Leafeon', 'Tyranitar', 'Garchomp', 'Pidgeot', 'Alakazam', 'Machamp', 'Zard',
+    'Giratina', 'Arceus', 'Darkrai', 'Lucario VSTAR', 'Pikachu VMAX', 'Charizard GX', 'Moonbreon'],
+  elettronica: ['PlayStation 5', 'PlayStation 5 Pro', 'Xbox Series X', 'Nintendo Switch', 'Nintendo Switch 2', 'AirPods Pro',
+    'AirPods Max', 'iPhone 15', 'iPhone 16', 'iPhone 16 Pro', 'Apple Watch', 'iPad', 'iPad Pro', 'MacBook', 'MacBook Pro',
+    'Meta Quest', 'Steam Deck', 'GoPro', 'DJI', 'Beats', 'Sony WH-1000XM5', 'PSVR2', 'Asus ROG Ally', 'Garmin'],
 };
 
 // Categorie servite da una fonte dedicata (non KicksDB/StockX).
@@ -125,6 +137,8 @@ function inferCategory(title: string, productType?: string | null): string | nul
   const t = (title || '').toLowerCase();
   const pt = (productType || '').toLowerCase();
   const both = pt + ' ' + t;
+  // PORTACARTE / wallet / case NON sono carte da gioco: sono accessori (prima della check carte).
+  if (/\bholder\b|wallet|portacart|porta ?carte|card ?case|cardholder/.test(t)) return 'accessori';
   if (/trading|collectib|pokemon|funko|graded|\bpsa\b|\btcg\b|booster|\bcard\b/.test(both)) return 'carte';
   if (/electronic|console|gaming/.test(pt) || /playstation|\bps5\b|\bxbox\b|nintendo|\bswitch\b|airpods|\biphone\b|macbook|\bipad\b|\bgpu\b/.test(t)) return 'elettronica';
   if (/handbag/.test(pt) || /\bbag\b|\btote\b|backpack|duffle|duffel|\bpurse\b|pouch|satchel|crossbody|keepall|speedy|neverfull|\bclutch\b/.test(t)) return 'borse';
@@ -289,7 +303,7 @@ const seededAt = new Map<string, number>(); // ultimo refresh per categoria (thr
 
 // Versione della logica di categorizzazione/cache. Quando la cambio (bump qui), la cache
 // CatalogItem si svuota DA SOLA al primo accesso dopo il deploy → niente _reset a mano.
-const CATALOG_VERSION = '5-bigseed';
+const CATALOG_VERSION = '6-bigseed2';
 let versionChecked = false;
 async function ensureCatalogVersion(): Promise<void> {
   if (versionChecked) return;
