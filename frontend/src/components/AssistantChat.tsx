@@ -19,6 +19,19 @@ interface Props {
 
 type VoiceState = 'idle' | 'recording' | 'transcribing';
 
+// Onda audio dal vivo: barre che salgono col volume della voce (capisci che ti sta ascoltando).
+function Waveform({ level }: { level: number }) {
+  const factors = [0.45, 0.75, 1, 0.85, 0.55, 0.9, 0.6];
+  return (
+    <div className="flex items-center gap-[3px] h-5">
+      {factors.map((f, i) => (
+        <span key={i} className="w-[3px] rounded-full bg-violet-400 transition-[height] duration-100 ease-out"
+          style={{ height: `${Math.max(3, Math.min(20, f * level * 26 + 3))}px` }} />
+      ))}
+    </div>
+  );
+}
+
 export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it' }: Props) {
   const [open, setOpen] = useState(false);
   // La conversazione resta finché non chiudi l'app (sessionStorage = si svuota alla chiusura).
@@ -35,6 +48,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
   });
   const [wakeLoading, setWakeLoading] = useState(false);
   const [convo, setConvo] = useState(false); // modalità conversazione continua (mani libere)
+  const [micLevel, setMicLevel] = useState(0); // livello audio dal vivo (onda)
   const wakeRef = useRef<WakeWordHandle | null>(null);
   const voiceBusyRef = useRef(false);
   const convoRef = useRef(false);
@@ -43,7 +57,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
 
   useEffect(() => {
     if (open && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, open, sending]);
+  }, [messages, open, sending, voiceState]);
 
   // Persisti la conversazione per la sessione (ultimi 60 messaggi).
   useEffect(() => {
@@ -102,12 +116,13 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       setVoiceState('recording');
       let clip: { base64: string; mime: string } | null = null;
       try {
-        clip = await recordCommand();           // si ferma da sola alla pausa
+        clip = await recordCommand(9000, 1100, 4000, setMicLevel); // si ferma da sola alla pausa
       } catch {
         showToast('Permesso microfono negato', 'err');
         stopConvo();
         return;
       }
+      setMicLevel(0);
       if (!convoRef.current) break;
       if (!clip) continue;                       // solo silenzio: continua ad ascoltare
       setVoiceState('transcribing');
@@ -152,7 +167,8 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       try {
         await wakeRef.current?.pause();          // libera il mic per la registrazione
         setVoiceState('recording');
-        const clip = await recordCommand();
+        const clip = await recordCommand(9000, 1100, 4000, setMicLevel);
+        setMicLevel(0);
         setVoiceState('transcribing');
         if (clip) {
           const text = await transcribe(apiCall, clip.base64, clip.mime);
@@ -279,6 +295,16 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
                 <div className="flex justify-start">
                   <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-white/[0.05] border border-white/10">
                     <Loader2 size={16} className="animate-spin text-violet-400" />
+                  </div>
+                </div>
+              )}
+              {/* Sto ascoltando / trascrivo — segno di vita con onda audio dal vivo */}
+              {(voiceState === 'recording' || voiceState === 'transcribing') && (
+                <div className="flex justify-end">
+                  <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl rounded-br-md bg-violet-500/15 border border-violet-500/30">
+                    {voiceState === 'recording'
+                      ? <><Waveform level={micLevel} /><span className="text-xs text-violet-200 font-medium">in ascolto…</span></>
+                      : <><Loader2 size={15} className="animate-spin text-violet-300" /><span className="text-xs text-violet-200 font-medium">trascrivo…</span></>}
                   </div>
                 </div>
               )}
