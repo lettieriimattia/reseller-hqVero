@@ -4549,9 +4549,9 @@ export default function App() {
               const pezzi = groupedInStockArray.reduce((a: number, g: any) => a + g.quantity, 0);
               const costo = groupedInStockArray.reduce((a: number, g: any) => a + g.purchasePrice * g.quantity, 0);
               return (
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-sm">
-                  <span className="text-[var(--text-soft)]"><span className="font-bold text-[var(--text)] num">{pezzi}</span> {t('mag.pieces')} · <span className="font-bold text-[var(--text)] num">{groupedInStockArray.length}</span> {t('mag.models')}</span>
-                  <span className="text-[var(--text-soft)] sm:ml-auto">{t('mag.stockValue')} <span className="font-bold text-[var(--text)] num">{costo.toFixed(0)}€</span></span>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-1 px-4 py-3 bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl text-sm">
+                  <span className="text-[var(--text-soft)]"><span className="font-extrabold text-[var(--text)] num">{pezzi}</span> {t('mag.pieces')} · <span className="font-extrabold text-[var(--text)] num">{groupedInStockArray.length}</span> {t('mag.models')}</span>
+                  <span className="sm:ml-auto flex items-baseline gap-1.5"><span className="sys-label">{t('mag.stockValue')}</span> <span className="font-extrabold text-[var(--teal)] num text-base">{costo.toFixed(0)}€</span></span>
                 </div>
               );
             })()}
@@ -4661,7 +4661,7 @@ export default function App() {
                       <div
                         onClick={() => cardClick(groupKey)}
                         {...cardPressProps(groupKey)}
-                        className={`lg:hidden bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all relative ${
+                        className={`lg:hidden bg-[var(--surface)] border ring-1 ring-white/[0.02] rounded-2xl overflow-hidden transition-all duration-200 ease-out active:scale-[0.99] relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
                         } ${isSelected ? 'border-[#6b54c6] shadow-sm' : 'border-[var(--border)]'}`}>
                         {bulkMode && (
