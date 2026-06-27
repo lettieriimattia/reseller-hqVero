@@ -47,6 +47,9 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
     try { return localStorage.getItem('hq_wake') === '1'; } catch { return false; }
   });
   const [wakeLoading, setWakeLoading] = useState(false);
+  // Il browser richiede UN gesto utente per accendere il mic: dopo il primo tocco nell'app
+  // la wake-word parte da sola (se attivata). Così "apri → tap → di' ehy hq".
+  const [gestureReady, setGestureReady] = useState(false);
   const [convo, setConvo] = useState(false); // modalità conversazione continua (mani libere)
   const [micLevel, setMicLevel] = useState(0); // livello audio dal vivo (onda)
   const wakeRef = useRef<WakeWordHandle | null>(null);
@@ -150,7 +153,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
   // continuo e a riconoscimento apre la chat, registra il comando (pausa = fine), trascrive
   // con Whisper e invia. Modello scelto per lingua (it: "acca cu"…, en: "hey hq"…).
   useEffect(() => {
-    if (!wakeEnabled || !recSupported) return;
+    if (!wakeEnabled || !recSupported || !gestureReady) return;
     let cancelled = false;
     setWakeLoading(true);
 
@@ -194,10 +197,25 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       wakeRef.current = null;
       h?.stop();
     };
-  }, [wakeEnabled, recSupported, apiCall, lang, showToast]);
+  }, [wakeEnabled, recSupported, gestureReady, apiCall, lang, showToast]);
 
   // Persisti la preferenza wake-word.
   useEffect(() => { try { localStorage.setItem('hq_wake', wakeEnabled ? '1' : '0'); } catch { /* noop */ } }, [wakeEnabled]);
+
+  // Attivazione/disattivazione da fuori (toggle nelle Impostazioni) via evento.
+  useEffect(() => {
+    const handler = (e: Event) => setWakeEnabled(!!(e as CustomEvent).detail);
+    window.addEventListener('hq-wake', handler as EventListener);
+    return () => window.removeEventListener('hq-wake', handler as EventListener);
+  }, []);
+
+  // Primo gesto utente nell'app → sblocca il mic per la wake-word.
+  useEffect(() => {
+    if (gestureReady) return;
+    const arm = () => setGestureReady(true);
+    window.addEventListener('pointerdown', arm, { once: true });
+    return () => window.removeEventListener('pointerdown', arm);
+  }, [gestureReady]);
 
   // Barra di scrittura/voce (riusata: ancorata nel pannello quando aperto, flottante quando chiuso).
   const bar = (

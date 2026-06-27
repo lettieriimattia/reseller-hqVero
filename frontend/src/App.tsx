@@ -246,6 +246,19 @@ export default function App() {
   const [authPasswordErrors, setAuthPasswordErrors] = useState<string[]>([]);
   const [regCategories, setRegCategories] = useState<string[]>([]);
   const [showLanding, setShowLanding] = useState(true);
+  // Assistente vocale "Ehy HQ" (wake-word Vosk): attivato dalle Impostazioni (qui si dà il
+  // permesso microfono). La preferenza è condivisa con AssistantChat via localStorage+evento.
+  const [voiceWake, setVoiceWake] = useState(() => { try { return localStorage.getItem('hq_wake') === '1'; } catch { return false; } });
+  const toggleVoiceWake = async () => {
+    const next = !voiceWake;
+    if (next) {
+      try { const s = await navigator.mediaDevices.getUserMedia({ audio: true }); s.getTracks().forEach(t => t.stop()); }
+      catch { showToast('Permesso microfono negato', 'err'); return; }
+    }
+    setVoiceWake(next);
+    try { localStorage.setItem('hq_wake', next ? '1' : '0'); } catch { /* noop */ }
+    window.dispatchEvent(new CustomEvent('hq-wake', { detail: next }));
+  };
   
   // 2FA login
   const [require2FA, setRequire2FA] = useState(false);
@@ -6222,6 +6235,32 @@ export default function App() {
                 <p className="text-[10px] text-[var(--text-faint)] mt-3">{t('set.iosHint')}</p>
               )}
             </section>
+
+            {/* SEZIONE: Assistente vocale "Ehy HQ" (solo admin, beta) */}
+            {isAdminUser && (
+              <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <Sparkles className={voiceWake ? 'text-[#6b54c6] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
+                    <div>
+                      <h3 className="text-lg font-bold tracking-tighter">Assistente vocale “Ehy HQ”</h3>
+                      <p className="text-xs text-[var(--text-soft)] mt-1 max-w-md">
+                        {voiceWake
+                          ? 'Attivo. Dopo un tocco qualsiasi nell’app, di’ “Ehy HQ” (o “acca cu”) e detta il comando: a ogni pausa lo eseguo e resto in ascolto.'
+                          : 'Attivalo per dare il permesso microfono. Poi basta dire “Ehy HQ” per parlare con l’assistente (riconoscimento on-device, niente cloud).'}
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={toggleVoiceWake}
+                    className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${voiceWake ? 'bg-[#6b54c6]' : 'bg-[var(--fill-2)]'}`}>
+                    <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${voiceWake ? 'left-6' : 'left-1'}`} />
+                  </button>
+                </div>
+                <p className="text-[10px] text-[var(--text-faint)] mt-3">
+                  Nota: i browser ascoltano solo con l’app aperta in primo piano (non in background come Siri).
+                </p>
+              </section>
+            )}
 
             {/* SEZIONE: Lingua */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
