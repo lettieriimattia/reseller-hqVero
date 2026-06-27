@@ -4,7 +4,7 @@
 // La foto è il LINK diretto StockX (niente Cloudinary): il DB resta piccolissimo.
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Plus, Loader2, ImageOff, Check } from 'lucide-react';
+import { Search, Plus, Loader2, ImageOff, Check, X } from 'lucide-react';
 
 type ApiCall = <T = any>(path: string, opts?: RequestInit) => Promise<{ ok: boolean; data: T; status: number }>;
 
@@ -57,6 +57,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
   // Stato per riga: 'adding' (spinner) → 'added' (spunta verde, transitoria)
   const [adding, setAdding] = useState<Record<string, boolean>>({});
   const [addedFlash, setAddedFlash] = useState<Record<string, boolean>>({});
+  const [preview, setPreview] = useState<CatalogResult | null>(null); // anteprima ingrandita (tap)
 
   const debTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -158,11 +159,15 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
           const isAdded = !!addedFlash[item.key];
           return (
             <div key={item.key} className="flex items-center gap-3 py-3">
-              <Thumb src={item.image} alt={item.name} />
-              <div className="min-w-0 flex-1">
-                <p className="font-bold text-[var(--text)] leading-tight">{item.name}</p>
-                <p className="text-xs text-[var(--text-soft)] mt-0.5">{item.sku || '—'}</p>
-                <p className="text-xs text-[var(--text-faint)]">{item.brand}</p>
+              {/* Tap su foto/nome = anteprima ingrandita */}
+              <div role="button" tabIndex={0} onClick={() => setPreview(item)}
+                className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer active:opacity-70">
+                <Thumb src={item.image} alt={item.name} />
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-[var(--text)] leading-tight">{item.name}</p>
+                  <p className="text-xs text-[var(--text-soft)] mt-0.5">{item.sku || '—'}</p>
+                  <p className="text-xs text-[var(--text-faint)]">{item.brand}</p>
+                </div>
               </div>
               <button onClick={() => quickAdd(item)} disabled={isAdding}
                 aria-label="Aggiungi al magazzino"
@@ -181,6 +186,35 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
       )}
       {!loading && !searched && results.length === 0 && (
         <p className="text-center text-sm text-[var(--text-faint)] py-10">Cerca un modello per aggiungerlo al volo.</p>
+      )}
+
+      {/* ANTEPRIMA INGRANDITA — tap su un prodotto. La X rispetta il notch/safe-area
+          (iPhone) ed è sempre dentro lo schermo anche su Android. */}
+      {preview && (
+        <div className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-md flex flex-col" onClick={() => setPreview(null)}>
+          <button onClick={() => setPreview(null)} aria-label="Chiudi"
+            className="absolute right-4 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur transition-colors"
+            style={{ top: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}>
+            <X size={22} />
+          </button>
+          <div className="flex-1 flex items-center justify-center p-5" onClick={e => e.stopPropagation()}
+            style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 64px)' }}>
+            {preview.image
+              ? <img
+                  src={/^https?:\/\//i.test(preview.image) ? `/api/catalog/img?u=${encodeURIComponent(preview.image)}` : preview.image}
+                  alt={preview.name}
+                  className="max-w-full max-h-[62vh] object-contain rounded-2xl bg-white" />
+              : <div className="w-60 h-60 rounded-2xl bg-white/10 flex items-center justify-center"><ImageOff size={40} className="text-white/40" /></div>}
+          </div>
+          <div className="px-6 pb-[calc(env(safe-area-inset-bottom,0px)+22px)]" onClick={e => e.stopPropagation()}>
+            <p className="text-white font-extrabold text-lg leading-tight">{preview.name}</p>
+            <p className="text-white/50 text-sm mt-0.5">{preview.brand}{preview.sku ? ' · ' + preview.sku : ''}</p>
+            <button onClick={() => { quickAdd(preview); setPreview(null); }}
+              className="mt-4 w-full py-3 rounded-2xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white font-bold flex items-center justify-center gap-2 transition-colors">
+              <Plus size={18} /> Aggiungi al magazzino
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
