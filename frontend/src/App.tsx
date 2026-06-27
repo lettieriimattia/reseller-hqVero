@@ -142,7 +142,7 @@ function VaultLoader() {
   const ring = (n: number, r: number) =>
     Array.from({ length: n }, (_, i) => { const a = (i / n) * 2 * Math.PI; return [160 + r * Math.cos(a), 160 + r * Math.sin(a)] as const; });
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 300, height: 300 }} aria-label="Caricamento">
+    <div className="relative flex items-center justify-center" style={{ width: 'min(300px, 82vw)', height: 'min(300px, 82vw)' }} aria-label="Caricamento">
       <style>{`
         @keyframes vlSlam  { 0%{transform:scale(.84) rotate(-8deg);opacity:0} 22%{opacity:1} 58%{transform:scale(1.025) rotate(2deg)} 78%{transform:scale(.992) rotate(-.8deg)} 100%{transform:scale(1) rotate(0)} }
         @keyframes vlWheel { 0%,24%{transform:rotate(0)} 76%,100%{transform:rotate(270deg)} }
@@ -155,8 +155,8 @@ function VaultLoader() {
         .vl-glow{animation:vlGlow 3.2s ease infinite}
         .vl-sheen{transform-origin:160px 160px;animation:vlSheen 6s linear infinite}
       `}</style>
-      <div className="vl-glow absolute" style={{ width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(44,156,142,0.85), transparent 60%)', filter: 'blur(22px)' }} />
-      <svg viewBox="0 0 320 320" width="300" height="300" className="relative" style={{ filter: 'drop-shadow(0 18px 50px rgba(0,0,0,0.75))' }}>
+      <div className="vl-glow absolute inset-[4%]" style={{ borderRadius: '50%', background: 'radial-gradient(circle, rgba(44,156,142,0.85), transparent 60%)', filter: 'blur(22px)' }} />
+      <svg viewBox="0 0 320 320" width="100%" height="100%" className="relative" style={{ filter: 'drop-shadow(0 18px 50px rgba(0,0,0,0.75))' }}>
         <defs>
           <radialGradient id="vSteel" cx="38%" cy="28%" r="82%"><stop offset="0%" stopColor="#4a4a55" /><stop offset="48%" stopColor="#24242b" /><stop offset="100%" stopColor="#0b0b0f" /></radialGradient>
           <radialGradient id="vDoor" cx="40%" cy="30%" r="85%"><stop offset="0%" stopColor="#454550" /><stop offset="52%" stopColor="#1f1f27" /><stop offset="100%" stopColor="#101015" /></radialGradient>

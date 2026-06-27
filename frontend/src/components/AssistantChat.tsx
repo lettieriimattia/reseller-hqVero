@@ -52,7 +52,6 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
   const [gestureReady, setGestureReady] = useState(false);
   const [convo, setConvo] = useState(false); // modalità conversazione continua (mani libere)
   const [micLevel, setMicLevel] = useState(0); // livello audio dal vivo (onda)
-  const [heard, setHeard] = useState(''); // diagnostica: cosa sente la wake-word in tempo reale
   const wakeRef = useRef<WakeWordHandle | null>(null);
   const voiceBusyRef = useRef(false);
   const convoRef = useRef(false);
@@ -164,29 +163,16 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       ? ['hey hq', 'ehy hq', 'hey h q', 'hq', 'h q', 'headquarters']
       : ['acca cu', 'acca qu', 'acca cchu', 'ehy hq', 'hey hq', 'hq', 'h q', 'headquarters'];
 
-    const onWake = async () => {
-      if (voiceBusyRef.current || convoRef.current) return;
-      voiceBusyRef.current = true;
+    // Comando riconosciuto da Vosk (testo dopo "ehy hq") → appare in CHAT ed esegue.
+    const onCommand = (text: string) => {
+      const t = (text || '').trim();
+      if (!t || convoRef.current) return;
       setOpen(true);
-      try {
-        await wakeRef.current?.pause();          // libera il mic per la registrazione
-        setVoiceState('recording');
-        const clip = await recordCommand(9000, 1100, 4000, setMicLevel);
-        setMicLevel(0);
-        setVoiceState('transcribing');
-        if (clip) {
-          const text = await transcribe(apiCall, clip.base64, clip.mime);
-          if (text.trim()) { setInput(''); await sendRef.current(text.trim()); }
-        }
-      } catch { /* la wake-word riprende comunque */ }
-      finally {
-        setVoiceState('idle');
-        voiceBusyRef.current = false;
-        try { await wakeRef.current?.resume(); } catch { /* noop */ }
-      }
+      setInput('');
+      sendRef.current(t);
     };
 
-    startVoskWakeWord({ modelUrl, triggers, onWake, onPartial: (t) => setHeard(t) })
+    startVoskWakeWord({ modelUrl, triggers, onCommand, onWake: () => setOpen(true) })
       .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); setWakeLoading(false); })
       .catch((e: any) => {
         setWakeLoading(false); setWakeOn(false);
@@ -276,8 +262,8 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
                 </span>
                 <div className="flex flex-col leading-none gap-1">
                   <span className="font-bold tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-400/80 truncate max-w-[180px]">
-                    {wakeOn && heard ? `🎧 ${heard}` : wakeOn ? 'in ascolto di Ehy HQ' : 'Assistente · beta'}
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-400/80">
+                    {wakeOn ? 'in ascolto di Ehy HQ' : 'Assistente · beta'}
                   </span>
                 </div>
               </div>

@@ -155,22 +155,43 @@ export interface WakeWordHandle { stop: () => Promise<void>; pause: () => Promis
 export async function startVoskWakeWord(opts: {
   modelUrl: string;
   triggers: string[];
-  onWake: () => void;
-  onPartial?: (text: string) => void; // diagnostica: cosa sta sentendo il modello, dal vivo
+  onCommand: (text: string) => void; // testo del comando DOPO la wake-word → va in chat ed esegue
+  onWake?: () => void;               // wake-word sentita ma comando non ancora detto (apri/feedback)
+  onPartial?: (text: string) => void;
 }): Promise<WakeWordHandle> {
   const { createModel } = await import('vosk-browser');
   const model: any = await createModel(opts.modelUrl);
   let recognizer: any = null; // creato col sample-rate REALE dell'AudioContext (Vosk ricampiona a 16k)
 
   const triggers = opts.triggers.map(t => t.toLowerCase().trim()).filter(Boolean);
-  let lastFire = 0;
-  const check = (raw: string) => {
-    const text = ' ' + (raw || '').toLowerCase().replace(/[^a-zàèéìòù\s]/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
-    if (triggers.some(tr => text.includes(' ' + tr + ' '))) {
-      const now = Date.now();
-      if (now - lastFire > 2500) { lastFire = now; opts.onWake(); } // anti-doppio-trigger
+  const norm = (s: string) => ' ' + (s || '').toLowerCase().replace(/[^a-zàèéìòù\s]/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
+  let armed = false, armedAt = 0, lastCmd = 0;
+
+  // Comando dopo la wake-word: prende il testo che segue l'ultimo trigger nella frase.
+  // Ritorna null se la frase NON contiene nessun trigger; '' se contiene il trigger ma nulla dopo.
+  const commandAfter = (text: string): string | null => {
+    const lower = norm(text);
+    let pos = -1, tr = '';
+    for (const t of triggers) { const i = lower.lastIndexOf(' ' + t + ' '); if (i > pos) { pos = i; tr = t; } }
+    if (pos < 0) return null;
+    return lower.slice(pos + tr.length + 2).trim();
+  };
+
+  const handleFinal = (raw: string) => {
+    const text = (raw || '').trim();
+    if (!text) return;
+    const after = commandAfter(text);
+    if (after !== null) {                       // la frase contiene "ehy hq"
+      if (Date.now() - lastCmd < 1500) return;  // anti-doppio
+      if (after.length > 1) { lastCmd = Date.now(); armed = false; opts.onCommand(after); } // "ehy hq <comando>"
+      else { armed = true; armedAt = Date.now(); opts.onWake && opts.onWake(); }            // solo "ehy hq": aspetto la frase dopo
+      return;
+    }
+    if (armed && Date.now() - armedAt < 7000) { // frase successiva dopo "ehy hq" = comando
+      armed = false; lastCmd = Date.now(); opts.onCommand(text);
     }
   };
+
   const resultText = (m: any): string =>
     m?.result?.text || (Array.isArray(m?.result?.result) ? m.result.result.map((w: any) => w.word).join(' ') : '');
 
@@ -187,8 +208,8 @@ export async function startVoskWakeWord(opts: {
       // Sample-rate = quello reale dell'audio (di solito 48000): il bug era crearlo a 16000.
       recognizer = new model.KaldiRecognizer(ac.sampleRate);
       try { recognizer.setWords(true); } catch { /* opzionale */ }
-      recognizer.on('result', (m: any) => { const t = resultText(m); if (t && opts.onPartial) opts.onPartial(t); check(t); });
-      recognizer.on('partialresult', (m: any) => { const p = m?.result?.partial || ''; if (p && opts.onPartial) opts.onPartial(p); check(p); });
+      recognizer.on('result', (m: any) => { const t = resultText(m); if (t && opts.onPartial) opts.onPartial(t); handleFinal(t); });
+      recognizer.on('partialresult', (m: any) => { const p = m?.result?.partial || ''; if (p && opts.onPartial) opts.onPartial(p); });
     }
     node = ac.createScriptProcessor(4096, 1, 1);
     node.onaudioprocess = (e: AudioProcessingEvent) => { try { recognizer.acceptWaveform(e.inputBuffer); } catch { /* frame skip */ } };
