@@ -4321,12 +4321,10 @@ export default function App() {
 
             {/* Libro Paga Soci */}
             {Object.keys(sociProfits).length > 1 && (
-              <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] transition-colors"
+              <section className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30"
                 onClick={() => setTeamPanelOpen(true)}>
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-1.5">
-                    <Trophy size={10} /> {t('home.payroll')}
-                  </p>
+                  <p className="sys-label flex items-center gap-1.5"><Trophy size={10} /> {t('home.payroll')}</p>
                   <span className="text-[9px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">{t('home.detail')}</span>
                 </div>
                 <div className="space-y-1.5">
@@ -4353,7 +4351,7 @@ export default function App() {
                                 style={{ width: `${(socio.profit / maxP) * 100}%` }} />
                             </div>
                           </div>
-                          <span className="font-semibold text-emerald-400 shrink-0 text-sm num">{socio.profit.toFixed(0)}€</span>
+                          <span className="font-extrabold text-[var(--teal)] shrink-0 text-sm num">{socio.profit.toFixed(0)}€</span>
                         </div>
                       );
                     })}
@@ -4363,7 +4361,7 @@ export default function App() {
 
             {/* Reparti */}
             <section>
-              <p className="text-[9px] font-semibold text-[var(--text-faint)] tracking-[0.12em] uppercase mb-3">{t('home.departments')}</p>
+              <p className="sys-label mb-3">{t('home.departments')}</p>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {userCategories.map((cat: string) => {
                   const catAll = products.filter(p => p.category === cat);
@@ -4376,18 +4374,18 @@ export default function App() {
                     : 0;
                   return (
                     <div key={cat} onClick={() => { setCurrentView('magazzino'); setFilterCat(cat); }}
-                      className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 lg:p-5 hover:border-[var(--border-2)] transition-colors cursor-pointer group">
+                      className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-4 lg:p-5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 cursor-pointer group">
                       <div className="flex items-center justify-between mb-3 lg:mb-4">
                         <span className="text-xl lg:text-3xl">{getCategoryIcon(cat)}</span>
-                        <span className="text-[9px] lg:text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-muted)]">{catSellRate}%</span>
+                        <span className="sys-label text-[9px] lg:text-[10px] px-2 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-muted)]">{catSellRate}%</span>
                       </div>
-                      <p className="font-bold text-base lg:text-2xl leading-none">{cat}</p>
+                      <p className="font-extrabold text-base lg:text-2xl leading-none">{cat}</p>
                       <p className="text-[11px] lg:text-sm text-[var(--text-soft)] mt-1 lg:mt-1.5 mb-3 lg:mb-4">{catStock.length} {t('home.stockWord')} · {catSold.length} {t('home.soldWord')}</p>
                       <div className="h-0.5 lg:h-1 bg-[var(--fill)] rounded-full overflow-hidden mb-2.5 lg:mb-3">
-                        <div className="h-full bg-[#6b54c6] rounded-full" style={{ width: `${catSellRate}%` }} />
+                        <div className="h-full bg-[var(--teal)] rounded-full" style={{ width: `${catSellRate}%` }} />
                       </div>
                       <div className="flex items-center justify-between">
-                        <p className={`text-sm lg:text-lg font-bold num ${catProfit > 0 ? 'text-emerald-400' : catProfit < 0 ? 'text-red-400' : 'text-[var(--text-faint)]'}`}>
+                        <p className={`text-sm lg:text-lg font-extrabold num ${catProfit > 0 ? 'text-[var(--teal)]' : catProfit < 0 ? 'text-[var(--rust)]' : 'text-[var(--text-faint)]'}`}>
                           {catProfit > 0 ? '+' : ''}{catProfit.toFixed(0)}€
                         </p>
                         {catAvgMargin !== 0 && (
