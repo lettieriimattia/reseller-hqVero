@@ -38,7 +38,7 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
     setMessages(next);
     setInput('');
     setSending(true);
-    const { ok, data, status } = await apiCall<any>('/assistant/message', {
+    const { ok, data, status } = await apiCall<any>('/api/assistant/message', {
       method: 'POST',
       body: JSON.stringify({ messages: next }),
     });

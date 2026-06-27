@@ -62,7 +62,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
 
   const loadPopular = useCallback(async () => {
     setLoading(true);
-    const { ok, data } = await apiCall<CatalogResult[]>('/catalog/popular');
+    const { ok, data } = await apiCall<CatalogResult[]>('/api/catalog/popular');
     setLoading(false);
     setResults(ok && Array.isArray(data) ? data : []);
   }, [apiCall]);
@@ -70,7 +70,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
   const runSearch = useCallback(async (q: string, t: string) => {
     if (q.trim().length < 2) { setSearched(false); loadPopular(); return; }
     setLoading(true);
-    const { ok, data } = await apiCall<CatalogResult[]>(`/catalog/search?q=${encodeURIComponent(q.trim())}&type=${encodeURIComponent(t)}`);
+    const { ok, data } = await apiCall<CatalogResult[]>(`/api/catalog/search?q=${encodeURIComponent(q.trim())}&type=${encodeURIComponent(t)}`);
     setLoading(false);
     setSearched(true);
     setResults(ok && Array.isArray(data) ? data : []);
@@ -105,7 +105,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
     });
     setAdding(a => { const n = { ...a }; delete n[item.key]; return n; });
     if (!ok || !data?.id) { showToast(data?.error || 'Errore aggiunta', 'err'); return; }
-    apiCall(`/catalog/${encodeURIComponent(item.key)}/used`, { method: 'POST' }).catch(() => {});
+    apiCall(`/api/catalog/${encodeURIComponent(item.key)}/used`, { method: 'POST' }).catch(() => {});
     showToast(`Aggiunto: ${item.brand} ${item.name}`, 'ok');
     setAddedFlash(f => ({ ...f, [item.key]: true }));
     setTimeout(() => setAddedFlash(f => { const n = { ...f }; delete n[item.key]; return n; }), 1500);
