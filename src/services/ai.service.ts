@@ -101,6 +101,9 @@ export function getVisionStatus() {
     visionModel: usingGemini ? gem.model : VISION_MODEL,
     textProvider: 'groq',
     textModel: TEXT_MODEL,
+    // Chatbox "HQ" + testo: serve almeno una GROQ_API_KEY (niente segreti, solo il conteggio).
+    groqConfigured: GROQ_KEYS.length > 0,
+    groqKeys: GROQ_KEYS.length,
     geminiFlag: USE_GEMINI_VISION,
     geminiConfigured: gem.configured,
     geminiKeys: gem.keys,
