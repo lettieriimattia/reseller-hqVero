@@ -41,7 +41,9 @@ function Thumb({ src, alt }: { src: string | null; alt: string }) {
       </div>
     );
   }
-  return <img src={src} alt={alt} onError={() => setErr(true)} loading="lazy"
+  // referrerPolicy no-referrer: le immagini del CDN StockX bloccano l'hotlink quando
+  // arriva un Referer esterno → senza referer si caricano.
+  return <img src={src} alt={alt} onError={() => setErr(true)} loading="lazy" referrerPolicy="no-referrer"
     className="w-14 h-14 rounded-lg object-contain bg-white shrink-0" />;
 }
 

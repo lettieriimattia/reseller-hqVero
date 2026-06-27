@@ -4655,7 +4655,7 @@ export default function App() {
                         )}
                         <div className="flex items-center gap-3 p-3.5">
                           {photoUrl
-                            ? <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)]"><img src={photoUrl} alt="" className="w-full h-full object-cover" /></div>
+                            ? <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)] bg-white"><img src={photoUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-contain" /></div>
                             : <span className="text-2xl shrink-0 w-16 text-center">{getCategoryIcon(g.category)}</span>}
                           <div className={`flex-1 min-w-0 ${!bulkMode ? 'cursor-pointer' : ''}`}
                             onClick={!bulkMode ? () => openEditModal(g) : undefined}>
@@ -4707,10 +4707,10 @@ export default function App() {
                           bulkMode ? 'cursor-pointer select-none' : ''
                         } ${isSelected ? 'border-[#8b5cf6] shadow-sm' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
                         <div
-                          className={`relative aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden ${!bulkMode ? 'cursor-pointer' : ''}`}
+                          className={`relative aspect-square bg-white flex items-center justify-center overflow-hidden ${!bulkMode ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                           {photoUrl
-                            ? <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+                            ? <img src={photoUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-contain" />
                             : <span className="text-4xl opacity-80">{getCategoryIcon(g.category)}</span>}
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                             {g.quantity > 1 && <span className="text-[10px] bg-[#8b5cf6] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
