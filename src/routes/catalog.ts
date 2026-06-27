@@ -222,6 +222,7 @@ router.get('/_reset', adminOnly, async (_req: AuthRequest, res: Response) => {
 // 1) cerca nella cache locale  2) integra da StockX  3) salva i nuovi in cache (solo link).
 router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
+    await ensureCatalogVersion();
     const q = (req.query.q || '').toString().trim();
     const type = (req.query.type || '').toString().trim().toLowerCase();
     if (q.length < 2) return res.json([]);
@@ -276,6 +277,30 @@ router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
 const seeding = new Set<string>(); // categorie in seeding ora (evita doppioni concorrenti)
 const seededAt = new Map<string, number>(); // ultimo refresh per categoria (throttle quota)
 
+// Versione della logica di categorizzazione/cache. Quando la cambio (bump qui), la cache
+// CatalogItem si svuota DA SOLA al primo accesso dopo il deploy → niente _reset a mano.
+const CATALOG_VERSION = '4-infercat';
+let versionChecked = false;
+async function ensureCatalogVersion(): Promise<void> {
+  if (versionChecked) return;
+  versionChecked = true;
+  try {
+    const s = await prisma.setting.findUnique({ where: { key: 'catalogVersion' } });
+    if (s?.value !== CATALOG_VERSION) {
+      const r = await prisma.catalogItem.deleteMany({});
+      seededAt.clear();
+      await prisma.setting.upsert({
+        where: { key: 'catalogVersion' },
+        create: { key: 'catalogVersion', value: CATALOG_VERSION },
+        update: { value: CATALOG_VERSION },
+      });
+      logger.info('Catalog cache svuotata (bump versione)', { deleted: r.count, version: CATALOG_VERSION });
+    }
+  } catch (e: any) {
+    logger.warn('ensureCatalogVersion', { err: e.message });
+  }
+}
+
 // Popola la cache CatalogItem per una categoria (o "tutto") con ricerche popolari. Best-effort.
 async function seedPopular(type: string): Promise<void> {
   if (seeding.has(type)) return;
@@ -301,6 +326,7 @@ async function seedPopular(type: string): Promise<void> {
 // la precarica al volo dalla fonte (così non è mai vuota), poi serve sempre dal TUO DB.
 router.get('/popular', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
+    await ensureCatalogVersion();
     const type = (req.query.type || '').toString().trim().toLowerCase();
     const order = [{ useCount: 'desc' as const }, { updatedAt: 'desc' as const }];
     const where = type ? { productType: type } : {};

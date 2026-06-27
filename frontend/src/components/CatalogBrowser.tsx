@@ -130,8 +130,9 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
         <p className="text-sm text-[var(--text-soft)]">Tocca <span className="text-[#6b54c6] font-bold">+</span> per aggiungere al magazzino con la foto ufficiale. <span className="text-[#6b54c6] font-semibold">Beta · solo admin</span></p>
       </div>
 
-      {/* Barra ricerca — sticky sotto il notch + l'header dell'app (non ci finisce sopra). */}
-      <div className="sticky z-20 bg-[var(--bg)] pb-2 pt-2" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 3.25rem)' }}>
+      {/* Barra ricerca — FISSA in cima: sticky top-0, lo sfondo copre il notch e l'input
+          resta sotto la status bar (niente più "stacco" con buco sopra). */}
+      <div className="sticky top-0 z-30 bg-[var(--bg)] pb-2" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}>
         <div className="flex items-center gap-2 px-4 py-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
           <Search size={18} className="text-[var(--text-faint)]" />
           <input value={query} onChange={e => setQuery(e.target.value)} autoFocus
