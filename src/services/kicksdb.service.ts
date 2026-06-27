@@ -53,12 +53,9 @@ export async function kicksSearch(
     if (!r.ok) { logger.warn('KicksDB search non ok', { status: r.status }); return []; }
     const d = await r.json() as any;
     const items: any[] = Array.isArray(d?.data) ? d.data : (Array.isArray(d?.products) ? d.products : []);
-    let cand = items.map(mapProduct).filter(c => c.title);
-    if (opts?.productType) {
-      const pt = opts.productType.toLowerCase();
-      cand = cand.filter(c => (c.productType || '').toLowerCase().includes(pt));
-    }
-    return cand.slice(0, limit);
+    // NB: niente filtro per product_type — i valori KicksDB sono incoerenti e svuotavano
+    // le categorie. La categoria la decide la SCHEDA in cui cerchiamo (vedi upsert forceCategory).
+    return items.map(mapProduct).filter(c => c.title).slice(0, limit);
   } catch (e: any) {
     logger.warn('KicksDB search errore', { err: e.message });
     return [];

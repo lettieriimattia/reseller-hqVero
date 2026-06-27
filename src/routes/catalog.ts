@@ -109,7 +109,9 @@ function normType(pt?: string | null): string | null {
 }
 
 // Upsert di un candidato nella cache CatalogItem (solo link immagine). Best-effort.
-async function upsertCandidate(c: CatalogCandidate, byKey?: Map<string, CatalogResult>): Promise<void> {
+// forceCategory: categoria della SCHEDA in cui stiamo cercando (più affidabile dei
+// product_type della fonte). Se assente, deduce dal product_type.
+async function upsertCandidate(c: CatalogCandidate, byKey?: Map<string, CatalogResult>, forceCategory?: string): Promise<void> {
   const key = dedupKey({ sku: c.styleId, stockxProductId: c.productId, title: c.title });
   if (!key) return;
   const split = splitBrandName(c.title);
@@ -117,7 +119,7 @@ async function upsertCandidate(c: CatalogCandidate, byKey?: Map<string, CatalogR
   const name = c.brand && c.title.toLowerCase().startsWith(c.brand.toLowerCase())
     ? c.title.slice(c.brand.length).trim() || c.title  // evita "Jordan Jordan 1": toglie il brand in testa
     : split.name;
-  const pt = normType(c.productType);
+  const pt = forceCategory || normType(c.productType);
   if (byKey && !byKey.has(key)) {
     byKey.set(key, { key, brand, name, sku: c.styleId || null, image: c.image || null, productType: pt });
   }
@@ -204,7 +206,7 @@ router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
     const productType = TYPE_TO_PRODUCTTYPE[type] || undefined;
     if (byKey.size < 5 && (isCatalogConfigured() || isPokemonType(productType))) {
       const cands = await providerSearch(q, { productType, limit: 12 });
-      for (const c of cands) await upsertCandidate(c, byKey); // riempie byKey + cache
+      for (const c of cands) await upsertCandidate(c, byKey, type || undefined); // categoria = scheda
     }
 
     res.json(Array.from(byKey.values()).slice(0, 20));
@@ -222,13 +224,14 @@ async function seedPopular(type: string): Promise<void> {
   if (!isCatalogConfigured() && !isPokemonType(TYPE_TO_PRODUCTTYPE[type])) return;
   seeding.add(type);
   try {
-    const queries = type && SEEDS_BY_TYPE[type]
-      ? SEEDS_BY_TYPE[type]
-      : Object.values(SEEDS_BY_TYPE).flat();
-    const productType = TYPE_TO_PRODUCTTYPE[type] || undefined;
-    for (const q of queries) {
-      const cands = await providerSearch(q, { productType, limit: 8 });
-      for (const c of cands) await upsertCandidate(c);
+    // Categoria specifica, oppure TUTTE (per "Tutti"): ogni gruppo con la sua categoria forzata.
+    const cats = type && SEEDS_BY_TYPE[type] ? [type] : Object.keys(SEEDS_BY_TYPE);
+    for (const cat of cats) {
+      const productType = TYPE_TO_PRODUCTTYPE[cat] || undefined;
+      for (const q of SEEDS_BY_TYPE[cat]) {
+        const cands = await providerSearch(q, { productType, limit: 8 });
+        for (const c of cands) await upsertCandidate(c, undefined, cat); // categoria = scheda del seed
+      }
     }
   } finally {
     seeding.delete(type);
