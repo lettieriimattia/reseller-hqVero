@@ -1057,14 +1057,14 @@ export default function App() {
   const [incSaving, setIncSaving] = useState(false);
   
   // ----- DERIVED -----
-  // Nuovo modello: le categorie sono trasversali (CategoryTemplate), indipendenti dai
-  // magazzini. La lista mostrata = catalogo template ∪ categorie già usate nei prodotti.
+  // Reparti = SOLO quelli che hanno davvero dei prodotti (niente template "fantasma":
+  // i beta tester si lamentavano di reparti mai creati). Nuovi reparti si creano
+  // scrivendoli a mano nel form prodotto.
   const userCategories = useMemo(() => {
     const set = new Set<string>();
-    for (const c of categories) if (c?.name) set.add(c.name);
     for (const p of products) if ((p as any)?.category) set.add((p as any).category);
     return Array.from(set);
-  }, [categories, products]);
+  }, [products]);
   // Magazzini (partnership) dell'utente. Il magazzino base è "Il mio magazzino" o il più vecchio top-level.
   const warehouses = user?.warehouses || [];
   const baseWarehouse = warehouses.find(w => !w.parentId && w.name === 'Il mio magazzino')
