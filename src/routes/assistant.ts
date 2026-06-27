@@ -52,7 +52,9 @@ const TOOLS = [
           nome: { type: 'string', description: 'Nome del modello, es. "Jordan 4 Retro Bred"' },
           sku: { type: 'string', description: 'Style code/SKU (facoltativo)' },
           taglia: { type: 'string', description: 'Taglia, es. "42" o "M" (facoltativo)' },
-          prezzo: { type: 'number', description: 'Prezzo d\'acquisto in euro (facoltativo, default 0)' },
+          // Union number|string: i modelli Groq a volte emettono "200" (stringa) e la
+          // validazione tool fallirebbe con 400. executeTool fa comunque Number(...).
+          prezzo: { type: ['number', 'string'], description: 'Prezzo d\'acquisto in euro (facoltativo, default 0). Solo cifre, es. 200.' },
           condizione: { type: 'string', description: 'Condizione, es. "Nuovo" (facoltativo)' },
           categoria: { type: 'string', description: 'Reparto/categoria, es. "Scarpe" (facoltativo)' },
         },
@@ -169,6 +171,31 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
   }
 }
 
+// Recupero da "tool_use_failed" di Groq: quando il modello genera una tool-call che
+// non passa la validazione schema, Groq risponde 400 con il testo grezzo dentro
+// `failed_generation` (formato <function=nome>{...}</function>). La estraiamo ed eseguiamo
+// a mano, così una singola generazione sbagliata non fa fallire tutta la chat.
+function parseFailedToolCall(err: any): { name: string; args: any } | null {
+  try {
+    const fg = err?.error?.error?.failed_generation ?? err?.error?.failed_generation;
+    if (typeof fg !== 'string') return null;
+    const mt = fg.match(/<function=([^>\s]+)\s*>([\s\S]*?)<\/function>/);
+    if (!mt) return null;
+    return { name: mt[1].trim(), args: JSON.parse(mt[2]) };
+  } catch { return null; }
+}
+
+// Risposta sintetica per una tool-call eseguita in recupero (senza un altro giro di modello).
+function summarizeToolResult(name: string, result: any): string {
+  if (result?.error) return `⚠️ ${result.error}`;
+  if (name === 'aggiungi_prodotto' && result?.ok) {
+    const taglia = result.taglia && result.taglia !== '—' ? `, taglia ${result.taglia}` : '';
+    return `✅ Aggiunto: ${result.aggiunto}${taglia}${result.foto ? ' (con foto)' : ''}.`;
+  }
+  if (name === 'valuta_prezzo' && result?.valore != null) return `💶 ${result.modello || 'Valore'}: circa ${result.valore}€ (${result.fonte}).`;
+  return '✅ Fatto.';
+}
+
 // POST /api/assistant/message — { messages: [{role:'user'|'assistant', content}] }
 // Esegue il loop di tool-calling (max 3 round) e ritorna la risposta finale + azioni.
 router.post('/message', adminOnly, async (req: AuthRequest, res: Response) => {
@@ -187,7 +214,17 @@ router.post('/message', adminOnly, async (req: AuthRequest, res: Response) => {
     const ctx = { userId: req.user!.userId };
 
     for (let round = 0; round < 3; round++) {
-      const m = await groqAssistantChat({ messages: msgs, tools: TOOLS });
+      let m: any;
+      try {
+        m = await groqAssistantChat({ messages: msgs, tools: TOOLS });
+      } catch (err: any) {
+        // Groq ha rifiutato la tool-call (validazione schema): eseguila a mano e rispondi.
+        const failed = err?.status === 400 ? parseFailedToolCall(err) : null;
+        if (!failed) throw err;
+        const result = await executeTool(failed.name, failed.args, ctx);
+        actions.push({ tool: failed.name, args: failed.args, result });
+        return res.json({ reply: summarizeToolResult(failed.name, result), actions });
+      }
       if (!m) break;
 
       if (m.tool_calls && m.tool_calls.length) {
