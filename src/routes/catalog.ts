@@ -14,6 +14,7 @@ import { apiLimiter } from '../middleware/rateLimit';
 import { isAdminEmail } from '../config/admins';
 import { searchStockXCandidates, isStockXConfigured } from '../services/stockx.service';
 import { kicksSearch, isKicksConfigured, type CatalogCandidate } from '../services/kicksdb.service';
+import { pokemonSearch } from '../services/pokemon.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -37,12 +38,21 @@ const SEEDS_BY_TYPE: Record<string, string[]> = {
   apparel: ['Supreme Box Logo', 'Stussy', 'Nike Tech Fleece', 'Essentials Hoodie', 'Corteiz', 'Palace', 'The North Face', 'Stone Island'],
   borse: ['Louis Vuitton', 'Gucci bag', 'Prada bag', 'Goyard', 'Dior bag', 'Chanel bag'],
   accessori: ['Supreme', 'Louis Vuitton wallet', 'Gucci belt', 'New Era cap'],
-  carte: ['Pokemon', 'Charizard', 'Pokemon 151', 'Prismatic Evolutions', 'Pokemon booster box'],
+  carte: ['Charizard', 'Pikachu', 'Umbreon', 'Mewtwo', 'Rayquaza', 'Gengar', 'Eevee', 'Lugia'],
   elettronica: ['PlayStation 5', 'AirPods', 'iPhone', 'Nintendo Switch'],
 };
 
-// Fonte catalogo unificata: KicksDB (preferita) → StockX (fallback se connesso).
+// Categorie servite da una fonte dedicata (non KicksDB/StockX).
+function isPokemonType(productType?: string): boolean {
+  return !!productType && /carte|trading|pokemon|card/.test(productType.toLowerCase());
+}
+
+// Fonte catalogo unificata: carte→pokemontcg.io, resto KicksDB (preferita) → StockX (fallback).
 async function providerSearch(query: string, opts: { productType?: string; limit?: number }): Promise<CatalogCandidate[]> {
+  if (isPokemonType(opts.productType)) {
+    const p = await pokemonSearch(query, opts.limit || 12).catch(() => []);
+    return p; // le carte vivono solo su pokemontcg.io
+  }
   if (isKicksConfigured()) {
     const k = await kicksSearch(query, { limit: opts.limit, productType: opts.productType }).catch(() => []);
     if (k.length) return k;
@@ -162,8 +172,8 @@ router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
 
     // 2) Fonte esterna SOLO se la cache locale non basta (risparmia le richieste mensili:
     //    una volta che un modello è nel TUO DB, non lo richiediamo più).
-    if (byKey.size < 5 && isCatalogConfigured()) {
-      const productType = TYPE_TO_PRODUCTTYPE[type] || undefined;
+    const productType = TYPE_TO_PRODUCTTYPE[type] || undefined;
+    if (byKey.size < 5 && (isCatalogConfigured() || isPokemonType(productType))) {
       const cands = await providerSearch(q, { productType, limit: 12 });
       for (const c of cands) await upsertCandidate(c, byKey); // riempie byKey + cache
     }
@@ -179,7 +189,8 @@ const seeding = new Set<string>(); // categorie in seeding ora (evita doppioni c
 
 // Popola la cache CatalogItem per una categoria (o "tutto") con ricerche popolari. Best-effort.
 async function seedPopular(type: string): Promise<void> {
-  if (!isCatalogConfigured() || seeding.has(type)) return;
+  if (seeding.has(type)) return;
+  if (!isCatalogConfigured() && !isPokemonType(TYPE_TO_PRODUCTTYPE[type])) return;
   seeding.add(type);
   try {
     const queries = type && SEEDS_BY_TYPE[type]
