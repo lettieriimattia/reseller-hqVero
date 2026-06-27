@@ -28,40 +28,44 @@
       }
       #hq-splash.hq-light { background: #e7e7ec; }
       #hq-splash.hq-hide  { opacity: 0; pointer-events: none; }
-      #hq-splash .hq-mark { position: relative; width: 132px; height: 132px; }
-      #hq-splash .hq-mark span {
-        position: absolute; font-weight: 900; font-size: 98px; line-height: 1; letter-spacing: -6px;
-        /* Tratti più spessi: lettere belle cicciotte */
-        -webkit-text-stroke: 3px currentColor;
-        opacity: 0;
+      /* Cassaforte HQVault che si "sigilla": il logo scatta in posizione di blocco,
+         anello combinazione che ruota, bagliore teal (la luce della cassaforte). */
+      #hq-splash .vault { position: relative; width: 168px; height: 168px; display: flex; align-items: center; justify-content: center; }
+      #hq-splash .vault .glow {
+        position: absolute; width: 168px; height: 168px; border-radius: 30px;
+        background: radial-gradient(circle, rgba(44,156,142,.30), transparent 62%);
+        animation: vGlow 2.1s ease-in-out infinite;
       }
-      /* Le due lettere arrivano da lati opposti e convergono fino a sovrapporsi */
-      #hq-splash .hq-mark .h {
-        top: 2px; left: 8px; color: #fff;
-        transform: translate(-46px, -26px) scale(.9);
-        animation: hqConv .9s cubic-bezier(.2,.75,.2,1) .2s forwards;
+      #hq-splash .vault .ring {
+        position: absolute; width: 168px; height: 168px; border-radius: 50%;
+        background: conic-gradient(from 0deg, transparent 0 76%, rgba(44,156,142,.62) 85%, transparent 91%);
+        -webkit-mask: radial-gradient(farthest-side, transparent 71%, #000 73%);
+        mask: radial-gradient(farthest-side, transparent 71%, #000 73%);
+        animation: vDial 2.5s cubic-bezier(.45,0,.2,1) infinite;
       }
-      #hq-splash .hq-mark .q {
-        top: 38px; left: 52px; color: rgba(255,255,255,.42);
-        transform: translate(46px, 26px) scale(.9);
-        animation: hqConv .9s cubic-bezier(.2,.75,.2,1) .2s forwards;
+      #hq-splash .vault img {
+        position: relative; width: 138px; height: 138px; border-radius: 28px; opacity: 0;
+        filter: drop-shadow(0 12px 44px rgba(0,0,0,.7));
+        animation: vSeal 1.6s cubic-bezier(.16,1,.3,1) .1s forwards;
       }
-      #hq-splash.hq-light .hq-mark .h { color: #18181b; }
-      #hq-splash.hq-light .hq-mark .q { color: rgba(24,24,27,.40); }
-      @keyframes hqConv {
-        0%   { opacity: 0; }
-        60%  { opacity: 1; }
-        100% { opacity: 1; transform: translate(0, 0) scale(1); }
+      @keyframes vSeal {
+        0%   { opacity: 0; transform: rotate(-128deg) scale(.68); filter: blur(3px) drop-shadow(0 12px 44px rgba(0,0,0,.7)); }
+        58%  { opacity: 1; transform: rotate(7deg) scale(1.05);   filter: blur(0)   drop-shadow(0 12px 44px rgba(0,0,0,.7)); }
+        74%  { transform: rotate(-3deg) scale(.985); }
+        100% { opacity: 1; transform: rotate(0deg) scale(1); }
       }
+      @keyframes vDial { to { transform: rotate(360deg); } }
+      @keyframes vGlow { 0%,100% { opacity:.22; transform:scale(.95);} 50% { opacity:.55; transform:scale(1.07);} }
       @media (prefers-reduced-motion: reduce) {
-        #hq-splash .hq-mark span { animation-duration: .01ms; opacity: 1; transform: translate(0,0) scale(1); }
+        #hq-splash .vault img { animation-duration: .01ms; opacity: 1; transform: none; filter: none; }
+        #hq-splash .vault .ring { animation: none; }
       }
     </style>
   </head>
   <body>
     <!-- Splash istantanea: tema coerente + auto-rimozione dopo ~2s -->
     <div id="hq-splash">
-      <div class="hq-mark"><span class="h">H</span><span class="q">Q</span></div>
+      <div class="vault"><div class="glow"></div><div class="ring"></div><img src="/logo.png" alt="HQVault" /></div>
     </div>
     <script>
       (function () {

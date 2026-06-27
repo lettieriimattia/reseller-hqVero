@@ -136,6 +136,46 @@ function HQLoader() {
   );
 }
 
+// VAULT LOADER — il logo cassaforte HQVault che si "sigilla": anello combinazione che gira,
+// bagliore teal (la luce della cassaforte) e il logo che scatta in posizione di blocco.
+function VaultLoader() {
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: 240, height: 240 }} aria-label="Caricamento">
+      <style>{`
+        @keyframes vault-seal {
+          0%   { transform: rotate(-130deg) scale(0.68); opacity: 0; filter: blur(3px); }
+          55%  { transform: rotate(7deg) scale(1.05);    opacity: 1; filter: blur(0); }
+          72%  { transform: rotate(-3deg) scale(0.985); }
+          100% { transform: rotate(0deg) scale(1);       opacity: 1; }
+        }
+        @keyframes vault-dial { to { transform: rotate(360deg); } }
+        @keyframes vault-glow {
+          0%,100% { opacity: 0.22; transform: scale(0.95); }
+          50%     { opacity: 0.55; transform: scale(1.07); }
+        }
+      `}</style>
+      {/* Bagliore teal pulsante */}
+      <div className="absolute rounded-[2rem]" style={{
+        width: 210, height: 210,
+        background: 'radial-gradient(circle, rgba(44,156,142,0.30), transparent 62%)',
+        animation: 'vault-glow 2.1s ease-in-out infinite',
+      }} />
+      {/* Anello combinazione che ruota */}
+      <div className="absolute rounded-full" style={{
+        width: 224, height: 224,
+        background: 'conic-gradient(from 0deg, transparent 0 76%, rgba(44,156,142,0.6) 85%, transparent 91%)',
+        WebkitMask: 'radial-gradient(farthest-side, transparent 71%, #000 73%)',
+        mask: 'radial-gradient(farthest-side, transparent 71%, #000 73%)',
+        animation: 'vault-dial 2.6s cubic-bezier(0.45,0,0.2,1) infinite',
+      }} />
+      {/* Logo cassaforte che si sigilla */}
+      <img src="/logo.png" alt="HQVault" width={172} height={172}
+        className="relative drop-shadow-[0_12px_44px_rgba(0,0,0,0.7)]"
+        style={{ borderRadius: 30, animation: 'vault-seal 1.6s cubic-bezier(0.16,1,0.3,1) both' }} />
+    </div>
+  );
+}
+
 // ==========================================
 // COMPONENTI RIUTILIZZABILI
 // ==========================================
@@ -3601,14 +3641,9 @@ export default function App() {
   // ==========================================
   if (bootLoading) {
     return (
-      <div className="min-h-screen bg-[var(--surface-2)] flex flex-col items-center justify-center gap-6">
-        <HQLoader />
-        {/* Skeleton cards */}
-        <div className="w-full max-w-sm px-6 space-y-3 mt-4">
-          {[1,2,3].map(i => (
-            <div key={i} className="skeleton h-14 w-full" style={{ opacity: 1 - i * 0.2 }} />
-          ))}
-        </div>
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-7">
+        <VaultLoader />
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.4em] text-[var(--text-faint)] pl-[0.4em]">HQVault</p>
       </div>
     );
   }
