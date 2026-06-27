@@ -18,6 +18,15 @@
   --gold: #c8a96a;
   --gold-soft: rgba(200,169,106,0.14);
   --gold-line: rgba(200,169,106,0.34);
+  /* ===== Materiali "Pagani" (cockpit desktop) =====
+     Dati critici di profitto, grafici e CTA = ottanio (teal) o ruggine desaturato.
+     Testo secondario = beige tenue (calore). Sfondi = antracite/nero (già --bg/--surface). */
+  --teal: #2c9c8e;         /* ottanio */
+  --teal-soft: rgba(44,156,142,0.14);
+  --teal-line: rgba(44,156,142,0.40);
+  --rust: #b5613a;         /* arancio ruggine */
+  --rust-soft: rgba(181,97,58,0.14);
+  --beige: #c9c0ad;        /* testo secondario caldo */
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
     'Inter', 'Helvetica Neue', system-ui, sans-serif;
 
@@ -224,6 +233,19 @@ button:active { opacity: 0.75; }
     scroll-behavior: auto !important;
   }
 }
+
+/* ===== Cockpit Pagani — accenti, etichette di sistema, feedback meccanico ===== */
+.text-teal  { color: var(--teal); }
+.text-rust  { color: var(--rust); }
+.text-beige { color: var(--beige); }
+.bg-teal-soft { background-color: var(--teal-soft); }
+.ring-teal  { box-shadow: inset 0 0 0 1px var(--teal-line); }
+/* Etichetta di sistema (IN STOCK, ROI...): minuscola, uppercase, kerning largo */
+.sys-label { font-size: 10px; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.14em; font-weight: 700; color: var(--text-faint); }
+/* Feedback meccanico: i componenti si sollevano come interruttori scolpiti dal pieno */
+.mech { transition: transform .2s ease-out, box-shadow .2s ease-out, border-color .2s ease-out, background-color .2s ease-out; }
+.mech:hover { transform: translateY(-2px); }
+.mech:active { transform: translateY(0); }
 
 /* ===== Dettaglio champagne (lusso) — usare con parsimonia ===== */
 .text-gold     { color: var(--gold); }

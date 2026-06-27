@@ -3884,8 +3884,10 @@ export default function App() {
   // ========================================
   // RENDER PRINCIPALE - APP AUTENTICATA
   // ========================================
+  // Desktop = COCKPIT: altezza fissa, lo scroll avviene SOLO dentro <main> (cruscotto
+  // inamovibile). Mobile resta a scroll di pagina normale.
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] lg:pl-60" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col bg-[var(--bg)] text-[var(--text)] lg:pl-60 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif" }}>
 
       {/* ========== SIDEBAR (solo desktop) ========== */}
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-60 z-40 bg-[var(--surface)] border-r border-[var(--border)] px-3 pt-6 pb-6">
@@ -3963,7 +3965,7 @@ export default function App() {
       </aside>
 
       {/* ========== HEADER ========== */}
-      <header className="lux-underline sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)]"
+      <header className="lux-underline sticky top-0 z-40 lg:static lg:z-30 lg:flex-none bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)]"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-3.5 flex items-center">
           {/* Spacer sinistro: centra il logo SOLO su desktop. Su mobile il logo resta a sinistra. */}
@@ -4103,7 +4105,7 @@ export default function App() {
         </nav>
       </header>
       
-      <main key={currentView} className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-5 lg:py-12 pb-28 lg:pb-16 animate-fade-in">
+      <main key={currentView} className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-5 lg:py-10 pb-28 lg:pb-16 animate-fade-in lg:flex-1 lg:overflow-y-auto lg:min-h-0">
 
         {/* ========== DASHBOARD ========== */}
         {currentView === 'dashboard' && (
