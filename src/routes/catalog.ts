@@ -109,8 +109,9 @@ function normType(pt?: string | null): string | null {
 }
 
 // Upsert di un candidato nella cache CatalogItem (solo link immagine). Best-effort.
-// forceCategory: categoria della SCHEDA in cui stiamo cercando (più affidabile dei
-// product_type della fonte). Se assente, deduce dal product_type.
+// La categoria viene dal product_type REALE della fonte (es. "Travis Scott" torna sia
+// scarpe sia t-shirt: ognuna nella sua categoria). forceCategory è solo un fallback
+// quando il product_type manca (es. la query è sotto una scheda specifica).
 async function upsertCandidate(c: CatalogCandidate, byKey?: Map<string, CatalogResult>, forceCategory?: string): Promise<void> {
   const key = dedupKey({ sku: c.styleId, stockxProductId: c.productId, title: c.title });
   if (!key) return;
@@ -119,7 +120,7 @@ async function upsertCandidate(c: CatalogCandidate, byKey?: Map<string, CatalogR
   const name = c.brand && c.title.toLowerCase().startsWith(c.brand.toLowerCase())
     ? c.title.slice(c.brand.length).trim() || c.title  // evita "Jordan Jordan 1": toglie il brand in testa
     : split.name;
-  const pt = forceCategory || normType(c.productType);
+  const pt = normType(c.productType) || forceCategory || null;
   if (byKey && !byKey.has(key)) {
     byKey.set(key, { key, brand, name, sku: c.styleId || null, image: c.image || null, productType: pt });
   }
@@ -189,6 +190,18 @@ router.get('/_diag', adminOnly, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// GET /api/catalog/_reset — svuota la cache catalogo (CatalogItem). È SOLO una cache:
+// si ricostruisce dalla fonte con categorie/immagini corrette. Una tantum dopo i fix.
+router.get('/_reset', adminOnly, async (_req: AuthRequest, res: Response) => {
+  try {
+    const r = await prisma.catalogItem.deleteMany({});
+    seededAt.clear();
+    res.json({ ok: true, deleted: r.count });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/catalog/search?q=...&type=sneakers|apparel
 // 1) cerca nella cache locale  2) integra da StockX  3) salva i nuovi in cache (solo link).
 router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
@@ -223,13 +236,19 @@ router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
 
     // 2) Fonte esterna SOLO se la cache locale non basta (risparmia le richieste mensili:
     //    una volta che un modello è nel TUO DB, non lo richiediamo più).
+    // Interroga la fonte se in cache ci sono pochi risultati CON immagine (le righe vecchie
+    // senza foto non bastano: meglio chiedere alla fonte che le restituisce con foto).
     const productType = TYPE_TO_PRODUCTTYPE[type] || undefined;
-    if (byKey.size < 5 && (isCatalogConfigured() || isPokemonType(productType))) {
+    const localImaged = Array.from(byKey.values()).filter(r => r.image).length;
+    if (localImaged < 5 && (isCatalogConfigured() || isPokemonType(productType))) {
       const cands = await providerSearch(q, { productType, limit: 12 });
-      for (const c of cands) await upsertCandidate(c, byKey, type || undefined); // categoria = scheda
+      for (const c of cands) await upsertCandidate(c, byKey); // categoria dal product_type reale
     }
 
-    res.json(Array.from(byKey.values()).slice(0, 20));
+    // Priorità alle righe CON immagine.
+    const all = Array.from(byKey.values());
+    const withImg = all.filter(r => r.image);
+    res.json((withImg.length >= 5 ? withImg : all).slice(0, 20));
   } catch (e: any) {
     logger.error('GET /catalog/search', { err: e.message });
     res.status(500).json({ error: 'Errore ricerca catalogo' });
@@ -267,17 +286,20 @@ router.get('/popular', adminOnly, async (req: AuthRequest, res: Response) => {
     const type = (req.query.type || '').toString().trim().toLowerCase();
     const order = [{ useCount: 'desc' as const }, { updatedAt: 'desc' as const }];
     const where = type ? { productType: type } : {};
-    let items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 30 });
-    // Riseminiamo se: pochi item, OPPURE molti senza immagine (cache vecchia) — ma non
-    // più di una volta ogni 15 min per categoria (protegge la quota se la fonte non dà foto).
-    const tooFewImages = items.length > 0 && items.filter(i => i.image).length < items.length * 0.6;
+    let items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 60 });
+    // Riseminiamo se: pochi item CON foto, OPPURE molti senza immagine (cache vecchia) —
+    // ma non più di una volta ogni 15 min per categoria (protegge la quota).
+    const imagedCount = items.filter(i => i.image).length;
     const fresh = (seededAt.get(type) || 0) > Date.now() - 15 * 60_000;
-    if ((items.length < 12 || (tooFewImages && !fresh)) && isCatalogConfigured()) {
+    if ((imagedCount < 12 && !fresh) && isCatalogConfigured()) {
       seededAt.set(type, Date.now());
       await seedPopular(type);
-      items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 30 });
+      items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 60 });
     }
-    res.json(items.map(it => ({
+    // PRIORITÀ alle righe CON immagine (le vecchie senza foto vanno in fondo / si escludono).
+    const withImg = items.filter(i => i.image);
+    const out = (withImg.length >= 8 ? withImg : items).slice(0, 30);
+    res.json(out.map(it => ({
       key: it.key, brand: it.brand, name: it.name, sku: it.sku,
       image: it.image, productType: it.productType,
     })));
