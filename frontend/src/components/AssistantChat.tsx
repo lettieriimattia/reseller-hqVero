@@ -52,6 +52,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
   const [gestureReady, setGestureReady] = useState(false);
   const [convo, setConvo] = useState(false); // modalità conversazione continua (mani libere)
   const [micLevel, setMicLevel] = useState(0); // livello audio dal vivo (onda)
+  const [heard, setHeard] = useState(''); // diagnostica: cosa sente la wake-word in tempo reale
   const wakeRef = useRef<WakeWordHandle | null>(null);
   const voiceBusyRef = useRef(false);
   const convoRef = useRef(false);
@@ -185,7 +186,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       }
     };
 
-    startVoskWakeWord({ modelUrl, triggers, onWake })
+    startVoskWakeWord({ modelUrl, triggers, onWake, onPartial: (t) => setHeard(t) })
       .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); setWakeLoading(false); })
       .catch((e: any) => {
         setWakeLoading(false); setWakeOn(false);
@@ -275,7 +276,9 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
                 </span>
                 <div className="flex flex-col leading-none gap-1">
                   <span className="font-bold tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-400/80">Assistente · beta</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-400/80 truncate max-w-[180px]">
+                    {wakeOn && heard ? `🎧 ${heard}` : wakeOn ? 'in ascolto di Ehy HQ' : 'Assistente · beta'}
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-1">
