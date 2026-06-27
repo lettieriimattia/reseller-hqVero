@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Sparkles, Send, Mic, X, Loader2, Square, Radio } from 'lucide-react';
-import { recordCommand, transcribe, startWakeWord, isRecordingSupported, type WakeWordHandle } from '../lib/voice';
+import { recordCommand, transcribe, startVoskWakeWord, isRecordingSupported, type WakeWordHandle } from '../lib/voice';
 
 type ApiCall = <T = any>(path: string, opts?: RequestInit) => Promise<{ ok: boolean; data: T; status: number }>;
 type Msg = { role: 'user' | 'assistant'; content: string };
@@ -14,14 +14,12 @@ interface Props {
   apiCall: ApiCall;
   showToast: (msg: string, type?: 'ok' | 'err' | 'warn') => void;
   onAction: () => void; // refresh magazzino dopo un'azione (es. prodotto aggiunto)
+  lang?: string;        // lingua app → sceglie il modello Vosk (it/en) per la wake-word
 }
-
-// Wake-word "Ehy HQ" (Picovoice): attiva solo se è impostata la access key.
-const PICOVOICE_KEY: string = (import.meta.env.VITE_PICOVOICE_ACCESS_KEY as string) || '';
 
 type VoiceState = 'idle' | 'recording' | 'transcribing';
 
-export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
+export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it' }: Props) {
   const [open, setOpen] = useState(false);
   // La conversazione resta finché non chiudi l'app (sessionStorage = si svuota alla chiusura).
   const [messages, setMessages] = useState<Msg[]>(() => {
@@ -30,7 +28,12 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
-  const [wakeOn, setWakeOn] = useState(false);
+  const [wakeOn, setWakeOn] = useState(false);      // wake-word Vosk effettivamente in ascolto
+  // Toggle "Ehy HQ": l'utente lo accende (così il mic non parte a sorpresa al caricamento).
+  const [wakeEnabled, setWakeEnabled] = useState(() => {
+    try { return localStorage.getItem('hq_wake') === '1'; } catch { return false; }
+  });
+  const [wakeLoading, setWakeLoading] = useState(false);
   const [convo, setConvo] = useState(false); // modalità conversazione continua (mani libere)
   const wakeRef = useRef<WakeWordHandle | null>(null);
   const voiceBusyRef = useRef(false);
@@ -128,25 +131,32 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
   // Ferma la conversazione se il pannello viene chiuso.
   useEffect(() => { if (!open && convoRef.current) stopConvo(); }, [open, stopConvo]);
 
-  // Wake-word "Ehy HQ": a riconoscimento apre la chat, registra a mani libere,
-  // trascrive e invia da solo. Attiva solo se VITE_PICOVOICE_ACCESS_KEY è impostata
-  // e i modelli (/picovoice/Ehy_HQ.ppn + porcupine_params.pv) sono raggiungibili.
+  // Wake-word "Ehy HQ" via VOSK (on-device): quando l'utente l'ha ATTIVATA, ascolta in
+  // continuo e a riconoscimento apre la chat, registra il comando (pausa = fine), trascrive
+  // con Whisper e invia. Modello scelto per lingua (it: "acca cu"…, en: "hey hq"…).
   useEffect(() => {
-    if (!PICOVOICE_KEY || !recSupported) return;
+    if (!wakeEnabled || !recSupported) return;
     let cancelled = false;
+    setWakeLoading(true);
+
+    const isEn = (lang || 'it').toLowerCase().startsWith('en');
+    const modelUrl = isEn ? '/vosk/model-en.tar.gz' : '/vosk/model-it.tar.gz';
+    const triggers = isEn
+      ? ['hey hq', 'ehy hq', 'hey h q', 'hq', 'h q', 'headquarters']
+      : ['acca cu', 'acca qu', 'acca cchu', 'ehy hq', 'hey hq', 'hq', 'h q', 'headquarters'];
 
     const onWake = async () => {
-      if (voiceBusyRef.current) return;
+      if (voiceBusyRef.current || convoRef.current) return;
       voiceBusyRef.current = true;
       setOpen(true);
       try {
-        await wakeRef.current?.pause();
+        await wakeRef.current?.pause();          // libera il mic per la registrazione
         setVoiceState('recording');
         const clip = await recordCommand();
         setVoiceState('transcribing');
         if (clip) {
           const text = await transcribe(apiCall, clip.base64, clip.mime);
-          if (text) { setInput(''); await sendRef.current(text); }
+          if (text.trim()) { setInput(''); await sendRef.current(text.trim()); }
         }
       } catch { /* la wake-word riprende comunque */ }
       finally {
@@ -156,18 +166,22 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
       }
     };
 
-    startWakeWord({ accessKey: PICOVOICE_KEY, onWake })
-      .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); })
-      .catch(() => { /* key/modelli assenti o non validi: wake-word spenta, mic manuale resta ok */ });
+    startVoskWakeWord({ modelUrl, triggers, onWake })
+      .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); setWakeLoading(false); })
+      .catch(() => { setWakeLoading(false); setWakeOn(false); showToast('Wake-word non avviata (mic negato o modello mancante)', 'warn'); });
 
     return () => {
       cancelled = true;
       setWakeOn(false);
+      setWakeLoading(false);
       const h = wakeRef.current;
       wakeRef.current = null;
       h?.stop();
     };
-  }, [recSupported, apiCall]);
+  }, [wakeEnabled, recSupported, apiCall, lang, showToast]);
+
+  // Persisti la preferenza wake-word.
+  useEffect(() => { try { localStorage.setItem('hq_wake', wakeEnabled ? '1' : '0'); } catch { /* noop */ } }, [wakeEnabled]);
 
   // Barra di scrittura/voce (riusata: ancorata nel pannello quando aperto, flottante quando chiuso).
   const bar = (
@@ -225,10 +239,23 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
                   <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-400/80">Assistente · beta</span>
                 </div>
               </div>
-              <button onClick={() => setOpen(false)} aria-label="Chiudi"
-                className="text-[var(--text-faint)] hover:text-[var(--text)] p-1.5 rounded-full hover:bg-white/5 transition-colors">
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-1">
+                {/* Toggle wake-word "Ehy HQ" (Vosk on-device). L'utente la accende: niente mic a sorpresa. */}
+                <button onClick={() => setWakeEnabled(v => !v)} aria-label={wakeEnabled ? 'Disattiva Ehy HQ' : 'Attiva Ehy HQ'}
+                  title='Ascolto "Ehy HQ"'
+                  className={`flex items-center gap-1.5 px-2.5 h-8 rounded-full text-[11px] font-bold transition-colors ${
+                    wakeOn ? 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/30'
+                    : wakeEnabled ? 'bg-white/5 text-[var(--text-soft)]'
+                    : 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5'
+                  }`}>
+                  {wakeLoading ? <Loader2 size={14} className="animate-spin" /> : <Radio size={14} className={wakeOn ? 'animate-pulse' : ''} />}
+                  Ehy HQ
+                </button>
+                <button onClick={() => setOpen(false)} aria-label="Chiudi"
+                  className="text-[var(--text-faint)] hover:text-[var(--text)] p-1.5 rounded-full hover:bg-white/5 transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             {/* Conversazione scrollabile (occupa lo spazio, l'input non la copre più) */}

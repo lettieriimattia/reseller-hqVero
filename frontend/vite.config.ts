@@ -72,6 +72,9 @@ export default defineConfig({
         // Gestori custom: share target (foto condivisa) + notifiche push
         importScripts: ['sw-share.js', 'sw-push.js'],
         globPatterns: ['**/*.{js,css,html,ico,svg,png,woff,woff2}'],
+        // Vosk (engine WASM ~6MB + modelli ~40MB) NON va precache-ato: si carica on-demand
+        // solo quando l'utente attiva la wake-word "Ehy HQ".
+        globIgnores: ['**/vosk-*.js', '**/vosk/**'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/, /^\/auth/, /^\/products/, /^\/team/, /^\/notifications/, /^\/tracking/, /^\/health/, /^\/admin/],
         runtimeCaching: [

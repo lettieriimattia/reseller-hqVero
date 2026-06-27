@@ -146,6 +146,63 @@ export async function transcribe(apiCall: ApiCall, audioBase64: string, mime: st
 // Ritorna una funzione di stop. Va in errore (gestito dal chiamante) se manca access key/modelli.
 export interface WakeWordHandle { stop: () => Promise<void>; pause: () => Promise<void>; resume: () => Promise<void>; }
 
+// ---- Wake-word via VOSK (on-device, gratis, funziona anche su iOS) ----
+// Riconoscimento continuo on-device: quando sente uno dei trigger ("ehy hq", "acca cu"...)
+// chiama onWake. pause()/resume() liberano e riacquisiscono il mic (per la registrazione
+// del comando con Whisper, evitando due stream insieme su iOS). stop() termina tutto.
+export async function startVoskWakeWord(opts: {
+  modelUrl: string;
+  triggers: string[];
+  onWake: () => void;
+}): Promise<WakeWordHandle> {
+  const { createModel } = await import('vosk-browser');
+  const model: any = await createModel(opts.modelUrl);
+  const recognizer: any = new model.KaldiRecognizer(16000);
+  try { recognizer.setWords(true); } catch { /* opzionale */ }
+
+  const triggers = opts.triggers.map(t => t.toLowerCase().trim()).filter(Boolean);
+  let lastFire = 0;
+  const check = (raw: string) => {
+    const text = ' ' + (raw || '').toLowerCase().replace(/[^a-zàèéìòù\s]/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
+    if (triggers.some(tr => text.includes(' ' + tr + ' '))) {
+      const now = Date.now();
+      if (now - lastFire > 2500) { lastFire = now; opts.onWake(); } // anti-doppio-trigger
+    }
+  };
+  recognizer.on('result', (m: any) => check(m?.result?.text || ''));
+  recognizer.on('partialresult', (m: any) => check(m?.result?.partial || ''));
+
+  let stream: MediaStream | null = null;
+  let ac: AudioContext | null = null;
+  let node: ScriptProcessorNode | null = null;
+  let source: MediaStreamAudioSourceNode | null = null;
+
+  const startAudio = async () => {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    ac = new (window.AudioContext || (window as any).webkitAudioContext)();
+    node = ac.createScriptProcessor(4096, 1, 1);
+    node.onaudioprocess = (e: AudioProcessingEvent) => { try { recognizer.acceptWaveform(e.inputBuffer); } catch { /* frame skip */ } };
+    source = ac.createMediaStreamSource(stream);
+    source.connect(node);
+    node.connect(ac.destination);
+  };
+  const stopAudio = () => {
+    try { source?.disconnect(); } catch { /* noop */ }
+    try { node?.disconnect(); } catch { /* noop */ }
+    try { stream?.getTracks().forEach(t => t.stop()); } catch { /* noop */ }
+    try { ac?.close(); } catch { /* noop */ }
+    stream = null; ac = null; node = null; source = null;
+  };
+
+  await startAudio();
+
+  return {
+    pause: async () => stopAudio(),                 // libera il mic per il comando
+    resume: async () => { try { await startAudio(); } catch { /* riproverà */ } },
+    stop: async () => { stopAudio(); try { recognizer.remove(); } catch { /* noop */ } try { model.terminate(); } catch { /* noop */ } },
+  };
+}
+
 export async function startWakeWord(opts: {
   accessKey: string;
   onWake: () => void;

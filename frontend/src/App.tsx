@@ -7239,7 +7239,7 @@ export default function App() {
 
       {/* ========== CHATBOX "HQ" (BETA · solo admin · solo telefono) ========== */}
       {isAdminUser && (
-        <AssistantChat apiCall={apiCall} showToast={showToast} onAction={fetchProducts} />
+        <AssistantChat apiCall={apiCall} showToast={showToast} onAction={fetchProducts} lang={lang} />
       )}
 
       {/* ========== MODALE: AGGIUNGI PRODOTTO ========== */}
