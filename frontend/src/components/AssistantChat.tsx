@@ -161,7 +161,7 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
         <div className="lg:hidden fixed inset-0 z-[44] flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div
-            className="relative flex flex-col max-h-[72vh] rounded-t-[28px] border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_-24px_80px_-24px_rgba(139,92,246,0.55)]"
+            className="relative flex flex-col max-h-[72vh] rounded-t-[28px] border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_-24px_80px_-24px_rgba(107,84,198,0.55)]"
             style={{ paddingBottom: 64 }}>
             {/* Grab handle */}
             <div className="mx-auto mt-3 mb-1.5 h-1.5 w-10 rounded-full bg-white/15" />
@@ -214,7 +214,7 @@ export default function AssistantChat({ apiCall, showToast, onAction }: Props) {
           sopra il pannello chat (z-44), ma sotto i modali (z-50). Quando la chat è aperta
           la barra scende in fondo (la nav è coperta dal pannello). */}
       <div className="lg:hidden fixed left-3 right-3 z-[45]" style={{ bottom: open ? 'calc(env(safe-area-inset-bottom, 0px) + 12px)' : 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}>
-        <div className="relative rounded-full p-px bg-gradient-to-r from-violet-500/90 via-fuchsia-500/90 to-violet-500/90 shadow-[0_8px_44px_-8px_rgba(139,92,246,0.7)]">
+        <div className="relative rounded-full p-px bg-gradient-to-r from-violet-500/90 via-fuchsia-500/90 to-violet-500/90 shadow-[0_8px_44px_-8px_rgba(107,84,198,0.7)]">
           <div className="flex items-center gap-2 rounded-full bg-[var(--surface)]/90 backdrop-blur-xl border border-white/5 pl-4 pr-1.5 py-2">
             {wakeOn
               ? <Radio size={16} className="text-violet-400 shrink-0 animate-pulse" aria-label="In ascolto di Ehy HQ" />

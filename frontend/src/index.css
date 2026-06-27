@@ -11,8 +11,8 @@
 
 :root {
   /* Colore brand — cambialo QUI in un punto solo per ritoccare l'accent ovunque */
-  --accent: #8b5cf6;
-  --accent-hover: #a78bfa;
+  --accent: #6b54c6;
+  --accent-hover: #8a78d9;
   /* Dettaglio "lusso": champagne/oro usato con PARSIMONIA (hairline, valori, hover).
      Non sostituisce il viola: lo accompagna come finitura premium. */
   --gold: #c8a96a;
@@ -29,17 +29,17 @@
   --bg: #060509;            /* sfondo pagina: quasi-nero profondo con un soffio di viola */
   --surface: #110f18;       /* card / pannelli: antracite con tinta */
   --surface-2: #0c0b12;     /* inset, input, sezioni annidate */
-  --border: rgba(167,139,250,0.08);   /* bordo sottile (velo viola) */
-  --border-2: rgba(167,139,250,0.12); /* bordo più marcato */
+  --border: rgba(132,120,176,0.08);   /* bordo sottile (velo viola) */
+  --border-2: rgba(132,120,176,0.12); /* bordo più marcato */
   --text: #ffffff;          /* testo primario */
   --text-soft: #7d7b90;     /* testo secondario (grigio leggermente viola) */
   --text-muted: #a6a3ba;    /* testo attenuato */
   --text-faint: #56546a;    /* testo molto tenue */
-  --border-3: rgba(167,139,250,0.20); /* bordo accentato */
+  --border-3: rgba(132,120,176,0.20); /* bordo accentato */
   /* Fill (chip, hover, inset) — 3 intensità, con velo viola */
-  --fill: rgba(167,139,250,0.07);
-  --fill-2: rgba(167,139,250,0.13);
-  --fill-3: rgba(167,139,250,0.22);
+  --fill: rgba(132,120,176,0.07);
+  --fill-2: rgba(132,120,176,0.13);
+  --fill-3: rgba(132,120,176,0.22);
   /* Superfici translucide (header/modali con backdrop-blur) */
   --bg-blur: rgba(6,5,9,0.95);
   --bg-overlay: rgba(6,5,9,0.72);
@@ -84,7 +84,7 @@
 .light .text-yellow-400  { color: #b45309; }
 .light .text-yellow-300  { color: #92400e; }
 .light .text-blue-400    { color: #2563eb; }
-.light .text-violet-400  { color: #7c3aed; }
+.light .text-violet-400  { color: #5d44b0; }
 .light .text-violet-300  { color: #6d28d9; }
 
 /* ===== TEMA GLASS (vetro smerigliato stile Apple) =====
@@ -116,7 +116,7 @@
 /* Sfondo sfumato: serve "qualcosa dietro" perché il vetro si veda */
 html.glass, html.glass body {
   background:
-    radial-gradient(1200px 820px at 12% -12%, rgba(139,92,246,0.20), transparent 60%),
+    radial-gradient(1200px 820px at 12% -12%, rgba(107,84,198,0.20), transparent 60%),
     radial-gradient(1000px 760px at 112% 8%, rgba(86,86,255,0.16), transparent 55%),
     radial-gradient(940px 760px at 50% 120%, rgba(0,200,160,0.12), transparent 60%),
     #0a0a12;
@@ -163,12 +163,12 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Alone viola tenue dietro al tema scuro (non in chiaro né in glass, che ha già il suo).
-   Dà profondità e un filo di saturazione senza disturbare il contenuto. */
+/* Deep-dark: un solo alone viola MOLTO tenue in alto + una vignettatura scura ai bordi.
+   Niente neon: dà profondità "premium" senza accendere lo sfondo. */
 html:not(.light):not(.glass) body {
   background-image:
-    radial-gradient(900px 600px at 50% -12%, rgba(139,92,246,0.10), transparent 60%),
-    radial-gradient(800px 600px at 110% 8%, rgba(99,102,241,0.06), transparent 55%);
+    radial-gradient(820px 520px at 50% -16%, rgba(107,84,198,0.06), transparent 62%),
+    radial-gradient(1200px 1200px at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%);
   background-attachment: fixed;
   background-repeat: no-repeat;
 }

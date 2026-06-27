@@ -689,7 +689,7 @@ export default function App() {
   // Lucchetto cliccabile → apre i Piani. Mostralo accanto alle feature premium bloccate.
   const PlanLock = ({ plan = 'Pro' }: { plan?: string }) => (
     <button type="button" onClick={(e) => { e.stopPropagation(); openPlanModal(); }}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] shrink-0">
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#6b54c6]/15 text-[#6b54c6] shrink-0">
       <Lock size={10} /> {plan}
     </button>
   );
@@ -2365,7 +2365,7 @@ export default function App() {
         <Lock size={28} className="mx-auto text-[var(--text-faint)] mb-3" />
         <p className="text-sm font-bold">Funzione del piano {req?.name || 'superiore'}</p>
         <p className="text-xs text-[var(--text-soft)] mt-1">Disponibile da {req ? `${req.name} (${req.priceMonthly}€/mese)` : 'un piano superiore'}.</p>
-        <button onClick={() => setProTab('plans')} className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-[#8b5cf6] hover:bg-[#a78bfa] text-white">Vedi i piani</button>
+        <button onClick={() => setProTab('plans')} className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-[#6b54c6] hover:bg-[#8a78d9] text-white">Vedi i piani</button>
       </div>
     );
   };
@@ -3609,7 +3609,7 @@ export default function App() {
       <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] font-sans">
         <header className="sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)] px-4 py-3 flex items-center justify-between">
           <span className="font-black text-lg">HQVault <span className="text-[var(--text-soft)]">Market</span></span>
-          <button onClick={() => setPublicMarket(false)} className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold">{t('auth.signIn')}</button>
+          <button onClick={() => setPublicMarket(false)} className="px-4 py-2 rounded-xl bg-[#6b54c6] text-white text-sm font-bold">{t('auth.signIn')}</button>
         </header>
         <div className="max-w-[1100px] mx-auto p-4 space-y-4">
           <div className="flex gap-2">
@@ -3618,20 +3618,20 @@ export default function App() {
               <input value={marketQuery} onChange={e => setMarketQuery(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') fetchMarket(); }}
                 placeholder="Cerca modello, colore, SKU…"
-                className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-[#8b5cf6]" />
+                className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-[#6b54c6]" />
             </div>
-            <button onClick={fetchMarket} className="px-4 py-2.5 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold">Cerca</button>
+            <button onClick={fetchMarket} className="px-4 py-2.5 rounded-xl bg-[#6b54c6] text-white text-sm font-bold">Cerca</button>
           </div>
           {marketCats.length > 0 && (
             <div className="flex gap-2 flex-wrap">
-              <button onClick={() => setMarketCat('')} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${!marketCat ? 'bg-[#8b5cf6]/10 border-[#8b5cf6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>Tutte</button>
+              <button onClick={() => setMarketCat('')} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${!marketCat ? 'bg-[#6b54c6]/10 border-[#6b54c6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>Tutte</button>
               {marketCats.map((c: string) => (
-                <button key={c} onClick={() => setMarketCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${marketCat === c ? 'bg-[#8b5cf6]/10 border-[#8b5cf6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{c}</button>
+                <button key={c} onClick={() => setMarketCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${marketCat === c ? 'bg-[#6b54c6]/10 border-[#6b54c6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{c}</button>
               ))}
             </div>
           )}
           {marketLoading ? (
-            <div className="flex justify-center py-16"><Loader2 className="animate-spin text-[#8b5cf6]" size={28} /></div>
+            <div className="flex justify-center py-16"><Loader2 className="animate-spin text-[#6b54c6]" size={28} /></div>
           ) : marketItems.length === 0 ? (
             <div className="text-center py-16 text-[var(--text-soft)]">Nessun articolo in vetrina.</div>
           ) : (
@@ -3670,7 +3670,7 @@ export default function App() {
                   <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
                   <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
                   {marketDetail.breakdown && (
-                    <p className="text-sm font-bold text-[#8b5cf6] mt-0.5">
+                    <p className="text-sm font-bold text-[#6b54c6] mt-0.5">
                       {t('market.total')} {marketDetail.breakdown.total.toFixed(2)}€
                       <span className="font-normal text-[var(--text-soft)]"> · {t('market.totalIncl')}</span>
                     </p>
@@ -3680,7 +3680,7 @@ export default function App() {
               </div>
               <div className="border-t border-[var(--border)] p-3 shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
                 <button onClick={() => { setMarketDetail(null); setPublicMarket(false); }}
-                  className="w-full py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">
+                  className="w-full py-3 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white font-bold transition-colors">
                   {t('market.loginToBuy')}
                 </button>
               </div>
@@ -3711,10 +3711,10 @@ export default function App() {
               <p className="text-center text-[11px] text-[var(--text-faint)]">{t('auth.codeSent')}</p>
               <input value={verifyCode} onChange={e => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 inputMode="numeric" placeholder="______" maxLength={6}
-                className="w-full text-center tracking-[0.5em] text-xl font-bold bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl py-3 outline-none focus:border-[#8b5cf6]" />
+                className="w-full text-center tracking-[0.5em] text-xl font-bold bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl py-3 outline-none focus:border-[#6b54c6]" />
               {authError && <p className="text-red-400 text-sm text-center">{authError}</p>}
               <button type="button" onClick={submitVerify} disabled={authLoading}
-                className="w-full bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center">
+                className="w-full bg-[#6b54c6] hover:bg-[#8a78d9] py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center">
                 {authLoading ? <Loader2 className="animate-spin" size={20} /> : t('auth.verifyAndEnter')}
               </button>
               <div className="flex items-center justify-between text-sm">
@@ -3751,7 +3751,7 @@ export default function App() {
                     <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] mb-6">
                       <button type="button" onClick={() => setRegType('new_team')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
-                          regType === 'new_team' ? 'bg-[#8b5cf6] text-[var(--text)]' : 'text-[var(--text-soft)]'
+                          regType === 'new_team' ? 'bg-[#6b54c6] text-[var(--text)]' : 'text-[var(--text-soft)]'
                         }`}>{t('auth.foundCompany')}</button>
                       <button type="button" onClick={() => setRegType('join_team')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
@@ -3762,7 +3762,7 @@ export default function App() {
                     <div>
                       <label className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('auth.yourName')}</label>
                       <input type="text" required value={authName} onChange={e => setAuthName(e.target.value)}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#8b5cf6] outline-none"
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#6b54c6] outline-none"
                         placeholder={t('auth.namePlaceholder')} />
                     </div>
                     
@@ -3796,7 +3796,7 @@ export default function App() {
                   <label className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Email</label>
                   <input type="email" required value={authEmail}
                     onChange={e => setAuthEmail(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#8b5cf6] outline-none"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#6b54c6] outline-none"
                     placeholder="mario@email.com" />
                 </div>
                 
@@ -3805,7 +3805,7 @@ export default function App() {
                   <div className="relative">
                     <input type={showPassword ? 'text' : 'password'} required value={authPassword}
                       onChange={e => setAuthPassword(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 pr-12 text-[var(--text)] focus:border-[#8b5cf6] outline-none"
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 pr-12 text-[var(--text)] focus:border-[#6b54c6] outline-none"
                       placeholder="••••••••" />
                     <button type="button" onClick={() => setShowPassword(s => !s)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)] hover:text-[var(--text)]">
@@ -3861,7 +3861,7 @@ export default function App() {
             )}
 
             <button type="submit" disabled={authLoading}
-              className="w-full bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl text-[var(--text)] font-bold transition-all disabled:opacity-50 mt-4 flex items-center justify-center">
+              className="w-full bg-[#6b54c6] hover:bg-[#8a78d9] py-3 rounded-xl text-[var(--text)] font-bold transition-all disabled:opacity-50 mt-4 flex items-center justify-center">
               {authLoading ? <Loader2 className="animate-spin" size={20} /> :
                 require2FA ? t('auth.verify2fa') : (authMode === 'login' ? t('auth.enter') : t('auth.register'))}
             </button>
@@ -3917,9 +3917,9 @@ export default function App() {
             return (
               <button key={tab.id} onClick={() => navigateTo(tab.id as any)}
                 className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-                  active ? 'bg-[#8b5cf6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
+                  active ? 'bg-[#6b54c6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
                 }`}>
-                {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#8b5cf6] rounded-r-full" />}
+                {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#6b54c6] rounded-r-full" />}
                 <Icon size={18} /> {tab.label}
                 {badge > 0 && <span className="ml-auto min-w-[20px] h-5 px-1 bg-blue-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">{badge}</span>}
               </button>
@@ -3930,20 +3930,20 @@ export default function App() {
         <div className="mt-auto pt-3 border-t border-[var(--border)] flex flex-col gap-0.5">
           <p className="px-3.5 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-faint)]">{t('hdr.general')}</p>
           <button onClick={() => openPlanModal()}
-            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-semibold text-[#8b5cf6] hover:bg-[#8b5cf6]/10 transition-colors">
+            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-semibold text-[#6b54c6] hover:bg-[#6b54c6]/10 transition-colors">
             <Sparkles size={17} /> {t('plan.tabPlans')}
           </button>
           {MARKETPLACE_ENABLED && (
           <button onClick={() => navigateTo('wallet')}
             className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-              currentView === 'wallet' ? 'bg-[#8b5cf6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
+              currentView === 'wallet' ? 'bg-[#6b54c6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
             }`}>
             <Wallet size={17} /> {t('nav.wallet')}
           </button>
           )}
           <button onClick={() => navigateTo('settings')}
             className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-              currentView === 'settings' ? 'bg-[#8b5cf6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
+              currentView === 'settings' ? 'bg-[#6b54c6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
             }`}>
             <Settings size={17} /> {t('nav.settings')}
           </button>
@@ -3981,19 +3981,19 @@ export default function App() {
           <div className="flex-1 flex items-center justify-end gap-1.5">
             {/* Pulsante Aggiungi (solo desktop) */}
             <button onClick={() => openAddForm()}
-              className="hidden lg:flex items-center gap-2 bg-[#8b5cf6] hover:bg-[#7c3aed] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
+              className="hidden lg:flex items-center gap-2 bg-[#6b54c6] hover:bg-[#5d44b0] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
               <Plus size={15} /> {t('common.add')}
             </button>
             {/* Portafoglio (solo mobile: icona in alto a destra, accesso rapido agli incassi) */}
             {MARKETPLACE_ENABLED && (
             <button onClick={() => navigateTo('wallet')}
-              className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'wallet' ? 'text-[#8b5cf6]' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
+              className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'wallet' ? 'text-[#6b54c6]' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
               <Wallet size={18} />
             </button>
             )}
             {/* Impostazioni (solo mobile: in alto, visto che non è più nella barra in basso) */}
             <button onClick={() => navigateTo('settings')}
-              className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'settings' ? 'text-[#8b5cf6]' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
+              className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'settings' ? 'text-[#6b54c6]' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
               <Settings size={18} />
             </button>
 
@@ -4003,7 +4003,7 @@ export default function App() {
                 className="relative p-2 rounded-xl hover:bg-[var(--fill)] transition-colors">
                 <Bell size={18} className="text-[var(--text-muted)]" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-[#8b5cf6] text-[var(--text)] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 bg-[#6b54c6] text-[var(--text)] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -4033,7 +4033,7 @@ export default function App() {
                             !n.read ? 'bg-[var(--fill)]' : ''
                           }`}>
                           <div className="flex items-start gap-3">
-                            {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6] mt-1.5 shrink-0" />}
+                            {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-[#6b54c6] mt-1.5 shrink-0" />}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-[var(--text)] truncate">{n.title}</p>
                               <p className="text-xs text-[var(--text-soft)] mt-0.5">{n.message}</p>
@@ -4087,7 +4087,7 @@ export default function App() {
                       active ? 'text-[var(--text)]' : 'text-[var(--text-soft)] hover:text-gray-300'
                     }`}>
                     {active && (
-                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-[#8b5cf6] rounded-full" />
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-[#6b54c6] rounded-full" />
                     )}
                     <Icon size={18} /> {tab.label}
                     {trackingBadge > 0 && (
@@ -4150,23 +4150,23 @@ export default function App() {
                 non colleghiamo fonti affidabili per categoria (eBay generico dava prezzi falsi). */}
             {VALUATION_ENABLED && (
             <button onClick={openSourcing}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-[#8b5cf6]/30 bg-[#8b5cf6]/[0.06] hover:bg-[#8b5cf6]/[0.12] text-sm font-bold text-[var(--text)] transition-colors">
-              <DollarSign size={16} className="text-[#8b5cf6]" />
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-[#6b54c6]/30 bg-[#6b54c6]/[0.06] hover:bg-[#6b54c6]/[0.12] text-sm font-bold text-[var(--text)] transition-colors">
+              <DollarSign size={16} className="text-[#6b54c6]" />
               {t('dash.valueLookup')} <span className="text-[var(--text-soft)] font-medium hidden sm:inline">· {t('dash.valueLookupSub')}</span>
             </button>
             )}
 
             {/* Welcome / primo avvio — solo DOPO il caricamento, se davvero vuoto (niente flash ad ogni apertura) */}
             {productsLoaded && products.length === 0 && (
-              <section className="bg-[var(--surface)] border border-[#8b5cf6]/30 rounded-2xl p-6 lg:p-7 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[#8b5cf6]/[0.04] pointer-events-none" />
+              <section className="bg-[var(--surface)] border border-[#6b54c6]/30 rounded-2xl p-6 lg:p-7 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[#6b54c6]/[0.04] pointer-events-none" />
                 <div className="relative">
-                  <p className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5"><Sparkles size={12} /> {t('dash.welcome')}</p>
+                  <p className="text-[10px] font-bold text-[#6b54c6] uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5"><Sparkles size={12} /> {t('dash.welcome')}</p>
                   <h3 className="text-xl lg:text-2xl font-bold mb-1.5">{t('dash.welcomeTitle')}</h3>
                   <p className="text-sm text-[var(--text-soft)] mb-5 max-w-md">{t('dash.welcomeDesc')}</p>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => openAddForm()}
-                      className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
+                      className="bg-[#6b54c6] hover:bg-[#5d44b0] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
                       <Plus size={16} /> {t('dash.addFirst')}
                     </button>
                     <button onClick={() => navigateTo('settings')}
@@ -4222,7 +4222,7 @@ export default function App() {
                     {(['1D', '1W', '1M', '1Y', 'MAX'] as const).map(tf => (
                       <button key={tf} onClick={() => setChartTimeframe(tf)}
                         className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                          chartTimeframe === tf ? 'bg-[#8b5cf6] text-white' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
+                          chartTimeframe === tf ? 'bg-[#6b54c6] text-white' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
                         }`}>{tf}</button>
                     ))}
                   </div>
@@ -4239,15 +4239,15 @@ export default function App() {
                 )}
                 <div className="flex items-center gap-5 mt-3 justify-end">
                   <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-green-500 rounded-full inline-block" />Ricavi</div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#8b5cf6] rounded-full inline-block" />Profitto</div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#6b54c6] rounded-full inline-block" />Profitto</div>
                 </div>
               </section>
               ) : (
-              <section className="hidden lg:flex lg:flex-col lg:col-span-2 items-center justify-center text-center bg-[var(--surface)] border border-[#8b5cf6]/30 rounded-2xl p-5">
-                <div className="w-12 h-12 rounded-2xl bg-[#8b5cf6]/15 flex items-center justify-center mb-3"><BarChart3 size={22} className="text-[#8b5cf6]" /></div>
+              <section className="hidden lg:flex lg:flex-col lg:col-span-2 items-center justify-center text-center bg-[var(--surface)] border border-[#6b54c6]/30 rounded-2xl p-5">
+                <div className="w-12 h-12 rounded-2xl bg-[#6b54c6]/15 flex items-center justify-center mb-3"><BarChart3 size={22} className="text-[#6b54c6]" /></div>
                 <h3 className="font-bold mb-1">Andamento e analisi avanzate</h3>
                 <p className="text-sm text-[var(--text-soft)] mb-4 max-w-xs">ROI, trend storico e performance per categoria/piattaforma sono inclusi nel piano Pro.</p>
-                <button onClick={() => openPlanModal()} className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-colors">Sblocca con Pro</button>
+                <button onClick={() => openPlanModal()} className="bg-[#6b54c6] hover:bg-[#5d44b0] text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-colors">Sblocca con Pro</button>
               </section>
               )}
 
@@ -4282,7 +4282,7 @@ export default function App() {
                     </div>
                   )}
                   {bestCategoryEntry?.profit > 0 && (
-                    <div className="flex items-center gap-3 p-3 bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 rounded-xl">
+                    <div className="flex items-center gap-3 p-3 bg-[#6b54c6]/10 border border-[#6b54c6]/20 rounded-xl">
                       <span className="text-xl shrink-0">{getCategoryIcon(bestCategoryEntry.cat)}</span>
                       <div>
                         <p className="text-sm font-bold">{bestCategoryEntry.cat} {t('home.bestDeptSuffix')}</p>
@@ -4376,7 +4376,7 @@ export default function App() {
                       <p className="font-bold text-base lg:text-2xl leading-none">{cat}</p>
                       <p className="text-[11px] lg:text-sm text-[var(--text-soft)] mt-1 lg:mt-1.5 mb-3 lg:mb-4">{catStock.length} {t('home.stockWord')} · {catSold.length} {t('home.soldWord')}</p>
                       <div className="h-0.5 lg:h-1 bg-[var(--fill)] rounded-full overflow-hidden mb-2.5 lg:mb-3">
-                        <div className="h-full bg-[#8b5cf6] rounded-full" style={{ width: `${catSellRate}%` }} />
+                        <div className="h-full bg-[#6b54c6] rounded-full" style={{ width: `${catSellRate}%` }} />
                       </div>
                       <div className="flex items-center justify-between">
                         <p className={`text-sm lg:text-lg font-bold num ${catProfit > 0 ? 'text-emerald-400' : catProfit < 0 ? 'text-red-400' : 'text-[var(--text-faint)]'}`}>
@@ -4456,11 +4456,11 @@ export default function App() {
                 <div className="flex bg-[var(--surface)] p-1 rounded-xl border border-[var(--border-2)] w-full lg:w-auto">
                   <button onClick={() => { setMagazzinoView('instock'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
-                      magazzinoView === 'instock' ? 'bg-[#8b5cf6] text-[var(--text)]' : 'text-[var(--text-soft)]'
+                      magazzinoView === 'instock' ? 'bg-[#6b54c6] text-[var(--text)]' : 'text-[var(--text-soft)]'
                     }`}>{t('mag.inStock')}</button>
                   <button onClick={() => { setMagazzinoView('toship'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1 whitespace-nowrap ${
-                      magazzinoView === 'toship' ? 'bg-[#8b5cf6] text-[var(--text)]' : 'text-[var(--text-soft)]'
+                      magazzinoView === 'toship' ? 'bg-[#6b54c6] text-[var(--text)]' : 'text-[var(--text-soft)]'
                     }`}>{t('mag.toShip')}{toShipItems.length > 0 && <span className="min-w-[15px] h-4 px-1 bg-amber-500 text-black rounded-full text-[9px] font-bold flex items-center justify-center">{toShipItems.length}</span>}</button>
                   <button onClick={() => { setMagazzinoView('sold'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
@@ -4469,7 +4469,7 @@ export default function App() {
                 </div>
                 {bulkMode && (
                   <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-                    className="px-3 py-1.5 text-xs font-bold rounded-xl border bg-[#8b5cf6] border-[#8b5cf6] text-[var(--text)] transition-colors">
+                    className="px-3 py-1.5 text-xs font-bold rounded-xl border bg-[#6b54c6] border-[#6b54c6] text-[var(--text)] transition-colors">
                     ✕ {t('common.cancel')}
                   </button>
                 )}
@@ -4481,10 +4481,10 @@ export default function App() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)]" size={16} />
                   <input type="text" placeholder={t('mag.searchPlaceholder')}
                     value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
-                    className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#8b5cf6] outline-none" />
+                    className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#6b54c6] outline-none" />
                 </div>
                 <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
-                  className="w-full lg:w-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#8b5cf6] outline-none shrink-0">
+                  className="w-full lg:w-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#6b54c6] outline-none shrink-0">
                   <option value="all">{t('mag.allDepartments')}</option>
                   {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -4504,7 +4504,7 @@ export default function App() {
                       else { setSortField(f); setSortDir('desc'); }
                     }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                        sortField === f ? 'bg-[#8b5cf6] text-[var(--text)]' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                        sortField === f ? 'bg-[#6b54c6] text-[var(--text)]' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
                       }`}>
                       {f === 'date' ? t('mag.sortDate') : f === 'price' ? t('mag.sortPrice') : f === 'name' ? t('mag.sortName') : t('mag.sortMargin')}
                       {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
@@ -4520,7 +4520,7 @@ export default function App() {
                 </div>
                 {/* Condizione */}
                 <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
-                  className="w-full lg:w-auto lg:ml-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#8b5cf6] outline-none text-[var(--text-muted)]">
+                  className="w-full lg:w-auto lg:ml-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#6b54c6] outline-none text-[var(--text-muted)]">
                   <option value="all">{t('mag.condition')}</option>
                   <option value="DS">DS</option>
                   <option value="VNDS">VNDS</option>
@@ -4530,10 +4530,10 @@ export default function App() {
                 <div className="flex gap-2">
                   <input type="number" placeholder="Min €" value={filterPriceMin}
                     onChange={(e: any) => setFilterPriceMin(e.target.value)}
-                    className="w-16 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#8b5cf6] outline-none text-[var(--text-muted)]" />
+                    className="w-16 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#6b54c6] outline-none text-[var(--text-muted)]" />
                   <input type="number" placeholder="Max €" value={filterPriceMax}
                     onChange={(e: any) => setFilterPriceMax(e.target.value)}
-                    className="w-16 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#8b5cf6] outline-none text-[var(--text-muted)]" />
+                    className="w-16 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#6b54c6] outline-none text-[var(--text-muted)]" />
                 </div>
               </div>
             )}
@@ -4574,7 +4574,7 @@ export default function App() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-bold text-sm truncate">{p.brand} {p.name}</span>
-                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${paid ? 'text-[#8b5cf6] bg-[#8b5cf6]/15' : 'text-amber-400 bg-amber-500/15'}`}>{paid ? t('mag.paidInApp') : t('mag.soldOutside')}</span>
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${paid ? 'text-[#6b54c6] bg-[#6b54c6]/15' : 'text-amber-400 bg-amber-500/15'}`}>{paid ? t('mag.paidInApp') : t('mag.soldOutside')}</span>
                                 {p.trackingCode && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase text-green-400 bg-green-500/15">{t('mag.shipped')}</span>}
                               </div>
                               <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition}</p>
@@ -4586,8 +4586,8 @@ export default function App() {
                           <div className="flex gap-2 mt-3">
                             {hasFeature('labels') ? (
                               (p.trackingCode || p.shippingLabel)
-                                ? <button onClick={() => viewSavedLabel(p)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] flex items-center justify-center gap-1.5"><Package size={13} /> {t('mag.viewLabel')}</button>
-                                : <button onClick={() => openShipping(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] flex items-center justify-center gap-1.5"><Package size={13} /> {t('mag.createLabel')}</button>
+                                ? <button onClick={() => viewSavedLabel(p)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#6b54c6]/15 text-[#6b54c6] flex items-center justify-center gap-1.5"><Package size={13} /> {t('mag.viewLabel')}</button>
+                                : <button onClick={() => openShipping(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#6b54c6]/15 text-[#6b54c6] flex items-center justify-center gap-1.5"><Package size={13} /> {t('mag.createLabel')}</button>
                             ) : (
                               <button onClick={() => openTrackingModal(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)] flex items-center justify-center gap-1.5"><Truck size={13} /> {t('mag.tracking')}</button>
                             )}
@@ -4610,7 +4610,7 @@ export default function App() {
                       <p className="text-sm text-[var(--text-soft)] mt-1 mb-5 max-w-sm mx-auto">{t('mag.emptyDesc')}</p>
                       <div className="flex flex-wrap gap-2 justify-center">
                         <button onClick={() => openAddForm()}
-                          className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
+                          className="bg-[#6b54c6] hover:bg-[#5d44b0] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
                           <Plus size={16} /> {t('mag.addProduct')}
                         </button>
                         <button onClick={() => navigateTo('settings')}
@@ -4657,9 +4657,9 @@ export default function App() {
                         {...cardPressProps(groupKey)}
                         className={`lg:hidden bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
-                        } ${isSelected ? 'border-[#8b5cf6] shadow-sm' : 'border-[var(--border)]'}`}>
+                        } ${isSelected ? 'border-[#6b54c6] shadow-sm' : 'border-[var(--border)]'}`}>
                         {bulkMode && (
-                          <div className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#8b5cf6] border-[#8b5cf6]' : 'border-gray-600 bg-[var(--surface-2)]'}`}>
+                          <div className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-gray-600 bg-[var(--surface-2)]'}`}>
                             {isSelected && <CheckCircle size={14} className="text-[var(--text)]" />}
                           </div>
                         )}
@@ -4671,7 +4671,7 @@ export default function App() {
                             onClick={!bulkMode ? () => openEditModal(g) : undefined}>
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-bold text-sm truncate">{g.brand} {g.name}</span>
-                              {g.quantity > 1 && <span className="text-[10px] bg-[#8b5cf6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
+                              {g.quantity > 1 && <span className="text-[10px] bg-[#6b54c6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
                               {daysBadge}{trackBadge}
                             </div>
                             <p className="text-xs text-[var(--text-soft)] mt-1">{g.size} · {g.condition} · <span className="text-gray-300 font-semibold">{g.purchasePrice.toFixed(0)}€</span></p>
@@ -4689,7 +4689,7 @@ export default function App() {
                               <button onClick={() => toggleToShip(g, !g.toShip)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>{g.toShip ? t('mag.inList') : t('dash.toShip')}</button>
                               <button onClick={() => quickTogglePublic(g)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.isPublic ? 'bg-[#8b5cf6]/20 text-[#8b5cf6]' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.isPublic ? 'bg-[#6b54c6]/20 text-[#6b54c6]' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>
                                 {g.isPublic ? t('mag.published') : t('mag.publish')}
                               </button>
                             </div>
@@ -4715,7 +4715,7 @@ export default function App() {
                         {...cardPressProps(groupKey)}
                         className={`hidden lg:flex flex-col bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all duration-200 relative hover:-translate-y-1 hover:shadow-xl hover:shadow-black/25 ${
                           bulkMode ? 'cursor-pointer select-none' : ''
-                        } ${isSelected ? 'border-[#8b5cf6] shadow-sm' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
+                        } ${isSelected ? 'border-[#6b54c6] shadow-sm' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
                         <div
                           className={`relative aspect-square bg-white flex items-center justify-center overflow-hidden ${!bulkMode ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
@@ -4723,12 +4723,12 @@ export default function App() {
                             ? <img src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain" />
                             : <span className="text-4xl opacity-80">{getCategoryIcon(g.category)}</span>}
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
-                            {g.quantity > 1 && <span className="text-[10px] bg-[#8b5cf6] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
+                            {g.quantity > 1 && <span className="text-[10px] bg-[#6b54c6] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
                             {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-[var(--text)]' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-gray-300'}`}>{days}g</span>}
                             {g.trackingStatus && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500 text-[var(--text)]' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500 text-[var(--text)]' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500 text-[var(--text)]' : 'bg-black/50 backdrop-blur text-gray-300'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? t('mag.trTransit') : g.trackingStatus === 'DELIVERED' ? t('mag.trDelivered') : g.trackingStatus === 'OUT_FOR_DELIVERY' ? t('mag.trOutForDelivery') : t('mag.track')}</span>}
                           </div>
                           {bulkMode && (
-                            <div className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#8b5cf6] border-[#8b5cf6]' : 'border-[var(--border-3)] bg-black/40 backdrop-blur'}`}>
+                            <div className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-[var(--border-3)] bg-black/40 backdrop-blur'}`}>
                               {isSelected && <CheckCircle size={14} className="text-[var(--text)]" />}
                             </div>
                           )}
@@ -4761,7 +4761,7 @@ export default function App() {
                               <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> {t('mag.sell')}</button>
                             )}
                             <button onClick={() => quickTogglePublic(g)}
-                              className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.isPublic ? 'bg-[#8b5cf6]/20 text-[#8b5cf6]' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)]'}`}>
+                              className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.isPublic ? 'bg-[#6b54c6]/20 text-[#6b54c6]' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)]'}`}>
                               <Store size={12} /> {g.isPublic ? t('mag.inShowcase') : t('mag.publish')}
                             </button>
                           </div>
@@ -4805,7 +4805,7 @@ export default function App() {
                       // PAGATO in attesa: pagato dal compratore, soldi in attesa di consegna.
                       if (g.isHeld) {
                         return (
-                          <div key={g.ids.join(',')} className="bg-[var(--surface)] border border-[#8b5cf6]/25 rounded-2xl overflow-hidden">
+                          <div key={g.ids.join(',')} className="bg-[var(--surface)] border border-[#6b54c6]/25 rounded-2xl overflow-hidden">
                             <div className="flex items-center gap-3 p-4">
                               {photos.length > 0
                                 ? <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[var(--border)]"><img src={photos[0]} alt="" className="w-full h-full object-cover" /></div>
@@ -4813,7 +4813,7 @@ export default function App() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <p className="font-bold text-sm truncate">{g.brand} {g.name}</p>
-                                  <span className="text-[9px] font-bold text-[#8b5cf6] bg-[#8b5cf6]/15 px-1.5 py-0.5 rounded-full uppercase">{t('mag.paidPending')}</span>
+                                  <span className="text-[9px] font-bold text-[#6b54c6] bg-[#6b54c6]/15 px-1.5 py-0.5 rounded-full uppercase">{t('mag.paidPending')}</span>
                                 </div>
                                 <p className="text-[10px] text-[var(--text-soft)]">{g.size} · {g.condition} · {(g.heldAmount ?? g.publicPrice ?? 0).toFixed(0)}€</p>
                               </div>
@@ -4822,7 +4822,7 @@ export default function App() {
                               <p className="text-[10px] text-[var(--text-soft)]">{t('mag.fundsReleaseHint')}</p>
                               {hasFeature('labels') ? (
                                 <button onClick={() => openShipping(g)}
-                                  className="w-full py-2 rounded-xl text-xs font-bold bg-[#8b5cf6]/15 text-[#8b5cf6] hover:bg-[#8b5cf6]/25 transition-colors flex items-center justify-center gap-1.5">
+                                  className="w-full py-2 rounded-xl text-xs font-bold bg-[#6b54c6]/15 text-[#6b54c6] hover:bg-[#6b54c6]/25 transition-colors flex items-center justify-center gap-1.5">
                                   <Package size={13} /> {t('mag.createLabelShip')}
                                 </button>
                               ) : (
@@ -4915,18 +4915,18 @@ export default function App() {
         {currentView === 'analytics' && !hasAdvancedAnalytics && (
           <div className="space-y-5">
             <h2 className="text-3xl font-semibold">{t('nav.analytics')}</h2>
-            <section className="bg-[var(--surface)] border border-[#8b5cf6]/30 rounded-2xl p-8 text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-[#8b5cf6]/[0.05] pointer-events-none" />
+            <section className="bg-[var(--surface)] border border-[#6b54c6]/30 rounded-2xl p-8 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-[#6b54c6]/[0.05] pointer-events-none" />
               <div className="relative max-w-md mx-auto">
-                <div className="w-14 h-14 rounded-2xl bg-[#8b5cf6]/15 flex items-center justify-center mx-auto mb-4"><BarChart3 size={26} className="text-[#8b5cf6]" /></div>
+                <div className="w-14 h-14 rounded-2xl bg-[#6b54c6]/15 flex items-center justify-center mx-auto mb-4"><BarChart3 size={26} className="text-[#6b54c6]" /></div>
                 <h3 className="text-xl font-bold mb-2">{t('an.lockedTitle')}</h3>
                 <p className="text-sm text-[var(--text-soft)] mb-5">{t('an.lockedDesc')}</p>
                 <ul className="text-sm text-[var(--text-muted)] text-left space-y-2 mb-6 inline-block">
                   {[t('an.feat1'), t('an.feat2'), t('an.feat3'), t('an.feat4'), t('an.feat5')].map(x => (
-                    <li key={x} className="flex items-center gap-2"><CheckCircle size={15} className="text-[#8b5cf6] shrink-0" /> {x}</li>
+                    <li key={x} className="flex items-center gap-2"><CheckCircle size={15} className="text-[#6b54c6] shrink-0" /> {x}</li>
                   ))}
                 </ul>
-                <button onClick={() => openPlanModal()} className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-6 py-3 rounded-xl font-bold text-sm transition-colors">{t('an.unlockStarter')}</button>
+                <button onClick={() => openPlanModal()} className="bg-[#6b54c6] hover:bg-[#5d44b0] text-white px-6 py-3 rounded-xl font-bold text-sm transition-colors">{t('an.unlockStarter')}</button>
                 <p className="text-[11px] text-[var(--text-faint)] mt-4">{t('an.lockedNote')}</p>
               </div>
             </section>
@@ -4957,16 +4957,16 @@ export default function App() {
               {expensesOpen && (<>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 mt-4">
                 <input type="number" step="0.01" min="0" value={expAmount} onChange={e => setExpAmount(e.target.value)}
-                  placeholder={t('an.amount')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                  placeholder={t('an.amount')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6]" />
                 <input type="text" value={expDesc} onChange={e => setExpDesc(e.target.value)}
-                  placeholder={t('an.description')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                  placeholder={t('an.description')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6]" />
                 <select value={expCat} onChange={e => setExpCat(e.target.value)}
-                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]">
+                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6]">
                   {[['Sacchetti', t('an.catBags')], ['Spedizioni', t('an.catShipping')], ['Materiali', t('an.catMaterials')], ['Commissioni', t('an.catFees')], ['Altro', t('an.catOther')]].map(([v, lbl]) => <option key={v} value={v}>{lbl}</option>)}
                 </select>
                 {warehouses.filter((w: any) => !w.parentId).length > 1 ? (
                   <select value={expWarehouse || baseWarehouse?.id || ''} onChange={e => setExpWarehouse(e.target.value)}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]">
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6]">
                     {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                   </select>
                 ) : <div className="hidden sm:block" />}
@@ -5185,7 +5185,7 @@ export default function App() {
                   {(['1D', '1W', '1M', '1Y', 'MAX'] as const).map(tf => (
                     <button key={tf} onClick={() => setChartTimeframe(tf)}
                       className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                        chartTimeframe === tf ? 'bg-[#8b5cf6] text-[var(--text)]' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
+                        chartTimeframe === tf ? 'bg-[#6b54c6] text-[var(--text)]' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
                       }`}>{tf}</button>
                   ))}
                 </div>
@@ -5202,7 +5202,7 @@ export default function App() {
               )}
               <div className="flex items-center gap-5 mt-3 justify-end">
                 <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-green-500 rounded-full inline-block" />{t('an.revenue')}</div>
-                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#8b5cf6] rounded-full inline-block" />{t('dash.profit')}</div>
+                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#6b54c6] rounded-full inline-block" />{t('dash.profit')}</div>
               </div>
             </section>
 
@@ -5228,7 +5228,7 @@ export default function App() {
                             </div>
                           </div>
                           <div className="h-2 bg-black/40 rounded-full overflow-hidden mb-1">
-                            <div className="h-full bg-gradient-to-r from-[#8b5cf6] to-violet-400 rounded-full"
+                            <div className="h-full bg-gradient-to-r from-[#6b54c6] to-violet-400 rounded-full"
                               style={{ width: `${(stats.revenue / maxRev) * 100}%` }} />
                           </div>
                           <div className="flex justify-between">
@@ -5264,7 +5264,7 @@ export default function App() {
                                 </div>
                                 <span className="text-sm font-bold">{socio.name}</span>
                                 {socio.name === user.name && (
-                                  <span className="text-[9px] bg-[#8b5cf6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full">{t('an.you')}</span>
+                                  <span className="text-[9px] bg-[#6b54c6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full">{t('an.you')}</span>
                                 )}
                               </div>
                               <span className="font-semibold text-green-400">{socio.profit.toFixed(0)}€</span>
@@ -5357,7 +5357,7 @@ export default function App() {
                             <td className="py-2.5 pr-4">
                               <div className="flex items-center gap-2">
                                 <div className="w-16 h-1.5 bg-[var(--fill)] rounded-full overflow-hidden">
-                                  <div className="h-full bg-[#8b5cf6] rounded-full" style={{ width: `${r.st}%` }} />
+                                  <div className="h-full bg-[#6b54c6] rounded-full" style={{ width: `${r.st}%` }} />
                                 </div>
                                 <span className={`num font-semibold ${r.st >= 60 ? 'text-emerald-400' : r.st >= 30 ? 'text-yellow-400' : 'text-red-400'}`}>{r.st}%</span>
                               </div>
@@ -5427,20 +5427,20 @@ export default function App() {
                 <input value={marketQuery} onChange={e => setMarketQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') fetchMarket(); }}
                   placeholder={t('market.searchPlaceholder')}
-                  className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-[#8b5cf6]" />
+                  className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-[#6b54c6]" />
               </div>
-              <button onClick={fetchMarket} className="px-4 py-2.5 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold">{t('market.searchBtn')}</button>
+              <button onClick={fetchMarket} className="px-4 py-2.5 rounded-xl bg-[#6b54c6] text-white text-sm font-bold">{t('market.searchBtn')}</button>
             </div>
             {marketCats.length > 0 && (
               <div className="flex gap-2 flex-wrap">
-                <button onClick={() => { setMarketCat(''); }} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${!marketCat ? 'bg-[#8b5cf6]/10 border-[#8b5cf6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{t('market.all')}</button>
+                <button onClick={() => { setMarketCat(''); }} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${!marketCat ? 'bg-[#6b54c6]/10 border-[#6b54c6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{t('market.all')}</button>
                 {marketCats.map((c: string) => (
-                  <button key={c} onClick={() => setMarketCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${marketCat === c ? 'bg-[#8b5cf6]/10 border-[#8b5cf6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{c}</button>
+                  <button key={c} onClick={() => setMarketCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${marketCat === c ? 'bg-[#6b54c6]/10 border-[#6b54c6]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{c}</button>
                 ))}
               </div>
             )}
             {marketLoading ? (
-              <div className="flex justify-center py-16"><Loader2 className="animate-spin text-[#8b5cf6]" size={28} /></div>
+              <div className="flex justify-center py-16"><Loader2 className="animate-spin text-[#6b54c6]" size={28} /></div>
             ) : marketItems.length === 0 ? (
               <div className="text-center py-16 text-[var(--text-soft)]">{t('market.empty')}</div>
             ) : (
@@ -5467,7 +5467,7 @@ export default function App() {
         {currentView === 'wallet' && (
           <div className="space-y-4 max-w-2xl">
             <div className="flex items-center gap-2">
-              <Wallet className="text-[#8b5cf6]" size={26} />
+              <Wallet className="text-[#6b54c6]" size={26} />
               <h2 className="text-3xl font-semibold">{t('nav.wallet')}</h2>
               {connectStatus?.chargesEnabled
                 ? <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">{t('wallet.accountActive')}</span>
@@ -5493,7 +5493,7 @@ export default function App() {
                 </div>
 
                 <button type="button" onClick={withdrawFunds} disabled={withdrawing || (wallet?.available ?? 0) <= 0}
-                  className="w-full py-3 bg-[#8b5cf6] hover:bg-[#7c3aed] rounded-2xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
+                  className="w-full py-3 bg-[#6b54c6] hover:bg-[#5d44b0] rounded-2xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
                   {withdrawing ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}
                   {(wallet?.available ?? 0) > 0 ? `${t('wallet.collect')} ${(wallet?.available ?? 0).toFixed(2)}€` : t('wallet.nothingToCollect')}
                 </button>
@@ -5584,7 +5584,7 @@ export default function App() {
                   {activeConvo.role === 'buyer' && activeConvo.productStatus === 'PAGATO' && !activeConvo.disputeStatus && (
                     <>
                       <button onClick={confirmDelivery}
-                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8b5cf6] text-white flex items-center gap-1.5"><CheckCircle size={13} /> {t('chat.delivered')}</button>
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#6b54c6] text-white flex items-center gap-1.5"><CheckCircle size={13} /> {t('chat.delivered')}</button>
                       <button onClick={() => setDisputeForm(f => ({ ...f, open: true }))}
                         className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-500/15 text-red-400 flex items-center gap-1.5"><AlertTriangle size={13} /> {t('chat.problem')}</button>
                     </>
@@ -5606,7 +5606,7 @@ export default function App() {
                     <button onClick={() => trackShipment(activeConvo.trackingCode)}
                       className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-500/15 text-blue-400">{t('chat.track')}</button>
                     <button onClick={() => openDemoLabel(activeConvo.productName, activeConvo.role === 'seller' ? (user?.name || t('market.seller')) : t('market.seller'), activeConvo.role === 'buyer' ? (user?.name || t('chat.buyer')) : (activeConvo.otherName || t('chat.buyer')), activeConvo.trackingCode, activeConvo.trackingCarrier || 'Corriere')}
-                      className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#8b5cf6]/15 text-[#8b5cf6]">{t('chat.label')}</button>
+                      className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#6b54c6]/15 text-[#6b54c6]">{t('chat.label')}</button>
                   </div>
                 )}
                 {/* Banner contestazione */}
@@ -5648,7 +5648,7 @@ export default function App() {
                   {chatMessages.map((m: any) => (
                     m.offerAmount != null ? (
                       <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
-                        <div className="max-w-[80%] px-3 py-2 rounded-2xl text-sm bg-[var(--surface-2)] border border-[#8b5cf6]/30">
+                        <div className="max-w-[80%] px-3 py-2 rounded-2xl text-sm bg-[var(--surface-2)] border border-[#6b54c6]/30">
                           <p className="font-bold">💶 {t('chat.offerLabel')}: {m.offerAmount.toFixed(2)}€</p>
                           {m.offerStatus === 'accepted' && <p className="text-[11px] text-green-400 font-semibold mt-0.5">{t('chat.accepted')}</p>}
                           {m.offerStatus === 'declined' && <p className="text-[11px] text-red-400 font-semibold mt-0.5">{t('chat.declined')}</p>}
@@ -5663,7 +5663,7 @@ export default function App() {
                       </div>
                     ) : (
                     <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm ${m.mine ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--surface-2)] text-[var(--text)]'}`}>{m.text}</div>
+                      <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm ${m.mine ? 'bg-[#6b54c6] text-white' : 'bg-[var(--surface-2)] text-[var(--text)]'}`}>{m.text}</div>
                     </div>
                     )
                   ))}
@@ -5673,9 +5673,9 @@ export default function App() {
                   <input value={chatInput} onChange={e => setChatInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
                     placeholder={t('chat.messagePlaceholder')}
-                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6]" />
                   <button onClick={sendMessage} disabled={chatSending || !chatInput.trim()}
-                    className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">{t('chat.send')}</button>
+                    className="px-4 py-2 rounded-xl bg-[#6b54c6] text-white text-sm font-bold disabled:opacity-50">{t('chat.send')}</button>
                 </div>
               </div>
             )}
@@ -5693,7 +5693,7 @@ export default function App() {
                   <div className="space-y-4">
                     {activeConvo.productStatus === 'PAGATO' && (
                       <button onClick={shipTestLabel} disabled={shipping}
-                        className="w-full py-3 rounded-xl bg-[#8b5cf6]/15 text-[#8b5cf6] font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                        className="w-full py-3 rounded-xl bg-[#6b54c6]/15 text-[#6b54c6] font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
                         {shipping ? <Loader2 className="animate-spin" size={16} /> : <Package size={16} />} {t('ship.genTestLabel')}
                       </button>
                     )}
@@ -5701,13 +5701,13 @@ export default function App() {
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('ship.agreedPrice')}</label>
                       <input type="number" step="0.01" value={shipForm.price} onChange={e => setShipForm(f => ({ ...f, price: e.target.value }))}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6]" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#6b54c6]" />
                     </div>
                     )}
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.trackingCode')} {activeConvo.productStatus === 'PAGATO' ? '' : `(${t('form.optional')})`}</label>
                       <input value={shipForm.code} onChange={e => setShipForm(f => ({ ...f, code: e.target.value }))} placeholder={t('ship.codePlaceholder')}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6]" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#6b54c6]" />
                       <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('ship.noLinks')}</p>
                     </div>
                     <div className="flex gap-2">
@@ -5728,19 +5728,19 @@ export default function App() {
               <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setChatOffer(o => ({ ...o, open: false }))} {...swipeBack(() => setChatOffer(o => ({ ...o, open: false })))}>
                 <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
                   <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-                  <h2 className="text-xl font-semibold mb-1 flex items-center gap-2"><DollarSign size={18} className="text-[#8b5cf6]" /> {t('offer.title')}</h2>
+                  <h2 className="text-xl font-semibold mb-1 flex items-center gap-2"><DollarSign size={18} className="text-[#6b54c6]" /> {t('offer.title')}</h2>
                   <p className="text-xs text-[var(--text-soft)] mb-5">{activeConvo.productName}{activeConvo.price != null ? ` · ${t('offer.price')} ${activeConvo.price}€` : ''}</p>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('offer.yourOffer')}</label>
                   <input type="number" inputMode="decimal" step="0.01" autoFocus value={chatOffer.amount}
                     onChange={e => setChatOffer(o => ({ ...o, amount: e.target.value }))}
                     onKeyDown={e => { if (e.key === 'Enter') submitChatOffer(); }}
                     placeholder="es. 120"
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-lg font-bold num outline-none focus:border-[#8b5cf6]" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-lg font-bold num outline-none focus:border-[#6b54c6]" />
                   <div className="flex gap-2 mt-5">
                     <button onClick={() => setChatOffer(o => ({ ...o, open: false }))}
                       className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">{t('common.cancel')}</button>
                     <button onClick={submitChatOffer}
-                      className="flex-1 py-3 rounded-xl bg-[#8b5cf6] text-white font-bold flex items-center justify-center gap-1.5"><DollarSign size={16} /> {t('offer.send')}</button>
+                      className="flex-1 py-3 rounded-xl bg-[#6b54c6] text-white font-bold flex items-center justify-center gap-1.5"><DollarSign size={16} /> {t('offer.send')}</button>
                   </div>
                 </div>
               </div>
@@ -5757,14 +5757,14 @@ export default function App() {
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('dispute.reason')}</label>
                       <select value={disputeForm.reason} onChange={e => setDisputeForm(f => ({ ...f, reason: e.target.value }))}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6]">
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#6b54c6]">
                         {DISPUTE_REASONS_FE.map(r => <option key={r.v} value={r.v}>{r.l}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('dispute.describe')}</label>
                       <textarea value={disputeForm.note} onChange={e => setDisputeForm(f => ({ ...f, note: e.target.value.slice(0, 1000) }))} rows={3} placeholder={t('dispute.describePh')}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8b5cf6] resize-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#6b54c6] resize-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('dispute.proofPhotos')}</label>
@@ -5830,7 +5830,7 @@ export default function App() {
                         <div className="flex gap-2 p-3 overflow-x-auto">
                           {photos.map((ph, i) => (
                             <button key={i} onClick={() => setMarketPhotoIdx(i)}
-                              className={`w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-colors ${i === idx ? 'border-[#8b5cf6]' : 'border-[var(--border-2)]'}`}>
+                              className={`w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-colors ${i === idx ? 'border-[#6b54c6]' : 'border-[var(--border-2)]'}`}>
                               <img src={ph} alt="" className="w-full h-full object-cover" />
                             </button>
                           ))}
@@ -5845,7 +5845,7 @@ export default function App() {
                   {marketDetail.sku && <p className="text-[11px] text-[var(--text-faint)] mt-1">SKU: {marketDetail.sku}</p>}
                   <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
                   {marketDetail.breakdown && (
-                    <p className="text-sm font-bold text-[#8b5cf6] mt-0.5">
+                    <p className="text-sm font-bold text-[#6b54c6] mt-0.5">
                       {t('market.total')} {marketDetail.breakdown.total.toFixed(2)}€
                       <span className="font-normal text-[var(--text-soft)]"> · {t('market.totalIncl')}</span>
                     </p>
@@ -5870,10 +5870,10 @@ export default function App() {
                   <div className="flex gap-2">
                     {marketDetail.payEnabled ? (
                       <button onClick={() => payProduct(marketDetail.id)}
-                        className="flex-1 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">{t('market.buyNow')}</button>
+                        className="flex-1 py-3 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white font-bold transition-colors">{t('market.buyNow')}</button>
                     ) : (
                       <button onClick={() => contactSeller(marketDetail.id, `${t('market.buyMsgPre')}${marketDetail.brand} ${marketDetail.name}${t('market.buyMsgPost')}`)}
-                        className="flex-1 py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">{t('market.buy')}</button>
+                        className="flex-1 py-3 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white font-bold transition-colors">{t('market.buy')}</button>
                     )}
                     <button onClick={() => contactSeller(marketDetail.id)}
                       className="flex-1 py-3 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] font-bold transition-colors">{t('market.contactSeller')}</button>
@@ -5882,7 +5882,7 @@ export default function App() {
                   </>
                 ) : (
                   <button onClick={() => { setMarketDetail(null); setPublicMarket(false); }}
-                    className="w-full py-3 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition-colors">{t('market.loginToBuy')}</button>
+                    className="w-full py-3 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white font-bold transition-colors">{t('market.loginToBuy')}</button>
                 )}
               </div>
             </div>
@@ -5895,7 +5895,7 @@ export default function App() {
             <div className="bg-white text-black rounded-2xl w-full max-w-sm p-6 relative" onClick={e => e.stopPropagation()}>
               <button onClick={() => setLabelData(null)} aria-label="Chiudi"
                 className="absolute top-3 right-3 p-2 rounded-lg hover:bg-black/5 active:scale-95"><X size={20} /></button>
-              <span className="inline-block bg-[#8b5cf6] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">ETICHETTA DI PROVA</span>
+              <span className="inline-block bg-[#6b54c6] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">ETICHETTA DI PROVA</span>
               <h3 className="text-lg font-bold mt-3">{labelData.productName}</h3>
               <div className="text-sm text-gray-700 mt-2 space-y-1">
                 <p><b>Mittente:</b> {labelData.sender}</p>
@@ -5906,7 +5906,7 @@ export default function App() {
               <div className="h-12 mt-2 rounded" style={{ background: 'repeating-linear-gradient(90deg,#111 0 3px,#fff 3px 6px)' }} />
               <p className="text-[11px] text-gray-500 mt-3">Etichetta dimostrativa — non valida per la spedizione reale.</p>
               <button onClick={() => setLabelData(null)}
-                className="mt-4 w-full py-3 rounded-xl bg-[#8b5cf6] text-white font-bold">Chiudi</button>
+                className="mt-4 w-full py-3 rounded-xl bg-[#6b54c6] text-white font-bold">Chiudi</button>
             </div>
           </div>
         ), document.body)}
@@ -5918,7 +5918,7 @@ export default function App() {
               <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0"
                 style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
                 <div className="min-w-0">
-                  <p className="font-bold truncate flex items-center gap-1.5"><Layers size={16} className="text-[#8b5cf6]" /> {lotDetail.lotName}</p>
+                  <p className="font-bold truncate flex items-center gap-1.5"><Layers size={16} className="text-[#6b54c6]" /> {lotDetail.lotName}</p>
                   <p className="text-[11px] text-[var(--text-soft)]">{lotDetail.category}</p>
                 </div>
                 <button onClick={() => setLotDetail(null)} aria-label="Chiudi"
@@ -5943,9 +5943,9 @@ export default function App() {
                           onMouseDown={() => startPieceLongPress(p.id)} onMouseUp={cancelLongPress} onMouseLeave={cancelLongPress}
                           onTouchStart={() => startPieceLongPress(p.id)} onTouchEnd={cancelLongPress}
                           onClick={() => { if (longPressFired.current) { longPressFired.current = false; return; } if (selecting) togglePieceSelection(p.id); }}
-                          className={`flex items-center justify-between gap-2 rounded-xl p-3 select-none transition-all ${picked ? 'bg-[#8b5cf6]/15 ring-1 ring-[#8b5cf6]/60' : 'bg-[var(--surface-2)]'} ${selecting ? 'cursor-pointer' : ''}`}>
+                          className={`flex items-center justify-between gap-2 rounded-xl p-3 select-none transition-all ${picked ? 'bg-[#6b54c6]/15 ring-1 ring-[#6b54c6]/60' : 'bg-[var(--surface-2)]'} ${selecting ? 'cursor-pointer' : ''}`}>
                           {selecting && (
-                            <div className={`shrink-0 w-5 h-5 rounded-md border flex items-center justify-center ${picked ? 'bg-[#8b5cf6] border-[#8b5cf6]' : 'border-[var(--border-2)]'}`}>
+                            <div className={`shrink-0 w-5 h-5 rounded-md border flex items-center justify-center ${picked ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-[var(--border-2)]'}`}>
                               {picked && <Check size={14} className="text-white" />}
                             </div>
                           )}
@@ -6166,10 +6166,10 @@ export default function App() {
             <h2 className="text-3xl font-semibold">{t('set.title')}</h2>
 
             {/* SEZIONE: Piani & Pro */}
-            <section className="bg-gradient-to-br from-[#8b5cf6]/10 to-[var(--surface)] border border-[#8b5cf6]/30 rounded-2xl p-6">
+            <section className="bg-gradient-to-br from-[#6b54c6]/10 to-[var(--surface)] border border-[#6b54c6]/30 rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <Sparkles className="text-[#8b5cf6] mt-0.5" size={22} />
+                  <Sparkles className="text-[#6b54c6] mt-0.5" size={22} />
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.plansTitle')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">
@@ -6178,7 +6178,7 @@ export default function App() {
                   </div>
                 </div>
                 <button onClick={() => openPlanModal()}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#8b5cf6] hover:bg-[#a78bfa] text-white transition-colors whitespace-nowrap">
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#6b54c6] hover:bg-[#8a78d9] text-white transition-colors whitespace-nowrap">
                   {t('set.seePlans')}
                 </button>
               </div>
@@ -6188,7 +6188,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <Bell className={pushEnabled ? 'text-[#8b5cf6] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
+                  <Bell className={pushEnabled ? 'text-[#6b54c6] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.notifications')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">
@@ -6200,7 +6200,7 @@ export default function App() {
                 </div>
                 <button onClick={() => pushEnabled ? disablePush() : enablePush()} disabled={pushBusy || !pushSupported}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap disabled:opacity-40 ${
-                    pushEnabled ? 'bg-red-600/20 hover:bg-red-600/30 text-red-400' : 'bg-[#8b5cf6] hover:bg-[#a78bfa] text-white'
+                    pushEnabled ? 'bg-red-600/20 hover:bg-red-600/30 text-red-400' : 'bg-[#6b54c6] hover:bg-[#8a78d9] text-white'
                   }`}>
                   {pushBusy ? <Loader2 size={14} className="animate-spin" /> : pushEnabled ? t('set.disable') : t('set.enable')}
                 </button>
@@ -6224,14 +6224,14 @@ export default function App() {
             {/* SEZIONE: Lingua */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-1">
-                <Glasses className="text-[#8b5cf6]" size={18} />
+                <Glasses className="text-[#6b54c6]" size={18} />
                 <h3 className="text-lg font-bold tracking-tighter">{t('settings.language')}</h3>
               </div>
               <p className="text-xs text-[var(--text-soft)] mb-4">{t('settings.languageDesc')}</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {LANGUAGES.filter(l => l.ready).map(l => (
                   <button key={l.code} onClick={() => changeLang(l.code)}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold border transition-colors ${lang === l.code ? 'bg-[#8b5cf6] text-white border-[#8b5cf6]' : 'bg-[var(--surface-2)] text-[var(--text-soft)] border-[var(--border-2)] hover:text-[var(--text)]'}`}>
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold border transition-colors ${lang === l.code ? 'bg-[#6b54c6] text-white border-[#6b54c6]' : 'bg-[var(--surface-2)] text-[var(--text-soft)] border-[var(--border-2)] hover:text-[var(--text)]'}`}>
                     <span className="text-lg">{l.flag}</span> {l.label}
                   </button>
                 ))}
@@ -6243,7 +6243,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <Store className={autoPublishOn ? 'text-[#8b5cf6] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
+                  <Store className={autoPublishOn ? 'text-[#6b54c6] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.publicWh')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1 max-w-md">
@@ -6254,7 +6254,7 @@ export default function App() {
                   </div>
                 </div>
                 <button onClick={toggleAutoPublish}
-                  className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${autoPublishOn ? 'bg-[#8b5cf6]' : 'bg-[var(--fill-2)]'}`}>
+                  className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${autoPublishOn ? 'bg-[#6b54c6]' : 'bg-[var(--fill-2)]'}`}>
                   <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${autoPublishOn ? 'left-6' : 'left-1'}`} />
                 </button>
               </div>
@@ -6281,7 +6281,7 @@ export default function App() {
                     setStaleThreshold(v);
                     localStorage.setItem('staleThreshold', v.toString());
                   }}
-                  className="w-24 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm text-right focus:border-[#8b5cf6] outline-none"
+                  className="w-24 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm text-right focus:border-[#6b54c6] outline-none"
                 />
                 <span className="text-sm text-[var(--text-muted)]">{t('set.days')}</span>
               </div>
@@ -6332,7 +6332,7 @@ export default function App() {
                   </button>
                 ) : (
                   <button onClick={handle2FASetupStart} disabled={twoFaLoading}
-                    className="px-4 py-2 bg-[#8b5cf6] hover:bg-[#a78bfa] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
+                    className="px-4 py-2 bg-[#6b54c6] hover:bg-[#8a78d9] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
                     {t('set.enable2fa')}
                   </button>
                 )}
@@ -6350,7 +6350,7 @@ export default function App() {
                   </div>
                 </div>
                 <button onClick={() => setChangePwdOpen(true)}
-                  className="px-4 py-2 bg-[#8b5cf6] hover:bg-[#a78bfa] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
+                  className="px-4 py-2 bg-[#6b54c6] hover:bg-[#8a78d9] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
                   {t('set.change')}
                 </button>
               </div>
@@ -6360,7 +6360,7 @@ export default function App() {
             {MARKETPLACE_ENABLED && (
             <button type="button" onClick={() => navigateTo('wallet')}
               className="w-full text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 hover:border-[var(--border-2)] transition-colors flex items-center gap-3">
-              <Wallet className="text-[#8b5cf6]" size={20} />
+              <Wallet className="text-[#6b54c6]" size={20} />
               <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-bold tracking-tighter">{t('set.walletTitle')}</h3>
                 <p className="text-xs text-[var(--text-soft)]">{t('set.walletBalance')} {(wallet?.available ?? 0).toFixed(2)}€ · {t('set.walletPending')} {(wallet?.pending ?? 0).toFixed(2)}€</p>
@@ -6388,7 +6388,7 @@ export default function App() {
                   <div key={w.id} className="bg-[var(--surface-2)] p-4 rounded-xl border border-[var(--border-2)]">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl"><Layers size={22} className="text-[#8b5cf6]" /></span>
+                        <span className="text-2xl"><Layers size={22} className="text-[#6b54c6]" /></span>
                         <div>
                           <p className="font-bold">{w.name}</p>
                           <p className="text-[10px] text-[var(--text-soft)] uppercase">
@@ -6411,11 +6411,11 @@ export default function App() {
                       return (
                         <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2 min-w-0">
-                            <Store size={14} className="text-[#8b5cf6] shrink-0" />
+                            <Store size={14} className="text-[#6b54c6] shrink-0" />
                             <span className="text-xs text-[var(--text-soft)]">{t('set.showcase')}: <b className="text-[var(--text)]">{pub}/{whProds.length}</b> {t('set.public')}</span>
                           </div>
                           <div className="flex gap-2 shrink-0">
-                            <button onClick={() => toggleWarehousePublic(w.id, true)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8b5cf6] text-white">{t('set.publishAll')}</button>
+                            <button onClick={() => toggleWarehousePublic(w.id, true)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#6b54c6] text-white">{t('set.publishAll')}</button>
                             <button onClick={() => toggleWarehousePublic(w.id, false)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] border border-[var(--border-2)] text-[var(--text-soft)]">{t('set.makePrivate')}</button>
                           </div>
                         </div>
@@ -6433,9 +6433,9 @@ export default function App() {
                     <input type="text" value={newWarehouseName}
                       onChange={(e: any) => setNewWarehouseName(e.target.value)}
                       placeholder={t('set.newWhPlaceholder')}
-                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#8b5cf6] outline-none" />
+                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#6b54c6] outline-none" />
                     <button type="submit" disabled={isAddingWarehouse}
-                      className="bg-[#8b5cf6] hover:bg-[#a78bfa] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap text-white">
+                      className="bg-[#6b54c6] hover:bg-[#8a78d9] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap text-white">
                       {isAddingWarehouse ? <Loader2 className="animate-spin" size={16} /> : t('set.addWarehouse')}
                     </button>
                   </form>
@@ -6444,7 +6444,7 @@ export default function App() {
                     <input type="text" value={newCatName}
                       onChange={(e: any) => setNewCatName(e.target.value)}
                       placeholder={t('set.newCatPlaceholder')}
-                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#8b5cf6] outline-none" />
+                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#6b54c6] outline-none" />
                     <button type="submit" disabled={isAddingCat}
                       className="bg-[var(--fill)] hover:bg-[var(--fill-2)] border border-[var(--border-2)] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap">
                       {isAddingCat ? <Loader2 className="animate-spin" size={16} /> : t('set.addCategory')}
@@ -6522,7 +6522,7 @@ export default function App() {
                       </div>
                       <input type="number" min="0" max="100" value={m.percentage} title="Quota utili"
                         onChange={(e: any) => updateMemberPercentage(team.warehouseId, m.membershipId, e.target.value, 'percentage')}
-                        className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right focus:border-[#8b5cf6] outline-none" />
+                        className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right focus:border-[#6b54c6] outline-none" />
                       <input type="number" min="0" max="100" value={m.costPercentage ?? 0} title="Quota costi"
                         onChange={(e: any) => updateMemberPercentage(team.warehouseId, m.membershipId, e.target.value, 'costPercentage')}
                         className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right focus:border-amber-500 outline-none" />
@@ -6612,7 +6612,7 @@ export default function App() {
             {/* SEZIONE: Aiuto & Assistenza — il messaggio arriva all'admin via email */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-1">
-                <Mail size={18} className="text-[#8b5cf6]" />
+                <Mail size={18} className="text-[#6b54c6]" />
                 <h3 className="text-lg font-bold tracking-tighter">{t('set.helpTitle')}</h3>
               </div>
               <p className="text-xs text-[var(--text-soft)] mb-4">
@@ -6628,7 +6628,7 @@ export default function App() {
                   <button key={o.v} type="button" onClick={() => setFeedbackType(o.v)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
                       feedbackType === o.v
-                        ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]'
+                        ? 'bg-[#6b54c6]/10 border-[#6b54c6] text-[var(--text)]'
                         : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
                     }`}>
                     <o.Icon size={14} /> {o.label}
@@ -6638,11 +6638,11 @@ export default function App() {
               <textarea value={feedbackMsg} onChange={(e: any) => setFeedbackMsg(e.target.value)}
                 maxLength={4000} rows={4}
                 placeholder={t('set.fbPlaceholder')}
-                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none resize-none" />
+                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none resize-none" />
               <div className="flex items-center justify-between gap-3 mt-3">
                 <span className="text-[10px] text-[var(--text-faint)]">{feedbackMsg.length}/4000</span>
                 <button onClick={sendFeedback} disabled={feedbackSending || feedbackMsg.trim().length < 3}
-                  className="px-5 py-2 bg-[#8b5cf6] hover:bg-[#a78bfa] rounded-xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center gap-2">
+                  className="px-5 py-2 bg-[#6b54c6] hover:bg-[#8a78d9] rounded-xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center gap-2">
                   {feedbackSending ? <Loader2 className="animate-spin" size={16} /> : <Mail size={15} />}
                   {t('set.send')}
                 </button>
@@ -6653,7 +6653,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  {theme === 'light' ? <Sun className="text-[#8b5cf6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#8b5cf6] mt-0.5" size={22} /> : <Moon className="text-[#8b5cf6] mt-0.5" size={22} />}
+                  {theme === 'light' ? <Sun className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#6b54c6] mt-0.5" size={22} /> : <Moon className="text-[#6b54c6] mt-0.5" size={22} />}
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.appearance')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">{t('set.appearanceDesc')}</p>
@@ -6662,19 +6662,19 @@ export default function App() {
                 <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] shrink-0 self-center sm:self-auto">
                   <button onClick={() => setTheme('dark')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'dark' ? 'bg-[#8b5cf6] text-white' : 'text-[var(--text-soft)]'
+                      theme === 'dark' ? 'bg-[#6b54c6] text-white' : 'text-[var(--text-soft)]'
                     }`}>
                     <Moon size={13} /> {t('set.themeDark')}
                   </button>
                   <button onClick={() => setTheme('light')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'light' ? 'bg-[#8b5cf6] text-white' : 'text-[var(--text-soft)]'
+                      theme === 'light' ? 'bg-[#6b54c6] text-white' : 'text-[var(--text-soft)]'
                     }`}>
                     <Sun size={13} /> {t('set.themeLight')}
                   </button>
                   <button onClick={() => setTheme('glass')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'glass' ? 'bg-[#8b5cf6] text-white' : 'text-[var(--text-soft)]'
+                      theme === 'glass' ? 'bg-[#6b54c6] text-white' : 'text-[var(--text-soft)]'
                     }`}>
                     <Sparkles size={13} /> {t('set.themeGlass')}
                   </button>
@@ -6704,7 +6704,7 @@ export default function App() {
         {currentView === 'admin' && isAdminEmail(user.email) && (
           <div className="space-y-5">
             <div className="flex items-center gap-2">
-              <Shield size={24} className="text-[#8b5cf6]" />
+              <Shield size={24} className="text-[#6b54c6]" />
               <h2 className="text-3xl font-semibold">Admin</h2>
             </div>
 
@@ -6728,18 +6728,18 @@ export default function App() {
               {/* Toggle vista: Utenti / Richieste */}
               <div className="px-5 py-3 flex gap-2 border-b border-[var(--border)]">
                 <button onClick={() => setAdminView('users')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${adminView === 'users' ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${adminView === 'users' ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   Utenti
                 </button>
                 <button onClick={() => { setAdminView('feedback'); fetchAdminFeedback(); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'feedback' ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'feedback' ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   Richieste
                   {adminFbNuove > 0 && (
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'feedback' ? 'bg-white/25' : 'bg-[#8b5cf6] text-white'}`}>{adminFbNuove}</span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'feedback' ? 'bg-white/25' : 'bg-[#6b54c6] text-white'}`}>{adminFbNuove}</span>
                   )}
                 </button>
                 <button onClick={() => { setAdminView('disputes'); fetchAdminDisputes(); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'disputes' ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'disputes' ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   Contestazioni
                   {adminDisputes.filter(d => d.status === 'ESCALATED').length > 0 && (
                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'disputes' ? 'bg-white/25' : 'bg-red-500 text-white'}`}>{adminDisputes.filter(d => d.status === 'ESCALATED').length}</span>
@@ -6781,7 +6781,7 @@ export default function App() {
                           <div className="flex items-center gap-1.5 mt-1.5">
                             <span className="text-[9px] text-[var(--text-faint)] uppercase">Piano</span>
                             <select value={u.plan || 'free'} onChange={e => setUserPlan(u.id, e.target.value)}
-                              className="text-[10px] bg-[var(--fill)] border border-[var(--border-2)] rounded-lg px-2 py-1 outline-none focus:border-[#8b5cf6]">
+                              className="text-[10px] bg-[var(--fill)] border border-[var(--border-2)] rounded-lg px-2 py-1 outline-none focus:border-[#6b54c6]">
                               <option value="free">Free</option>
                               <option value="starter">Starter 9.99</option>
                               <option value="pro">Pro 19.99</option>
@@ -6813,7 +6813,7 @@ export default function App() {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)]">{f.type}</span>
                             {f.status === 'nuova'
-                              ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#8b5cf6] text-white font-bold">nuova</span>
+                              ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#6b54c6] text-white font-bold">nuova</span>
                               : <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 font-bold">risposta</span>}
                             <span className="text-[11px] font-semibold truncate">{f.userName || f.userEmail}</span>
                           </div>
@@ -6838,12 +6838,12 @@ export default function App() {
                           <textarea value={replyText} onChange={(e: any) => setReplyText(e.target.value)}
                             rows={3} maxLength={6000} autoFocus
                             placeholder={`Rispondi a ${f.userEmail}…`}
-                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm focus:border-[#8b5cf6] outline-none resize-none" />
+                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm focus:border-[#6b54c6] outline-none resize-none" />
                           <div className="flex items-center justify-end gap-2 mt-2">
                             <button onClick={() => { setReplyingId(null); setReplyText(''); }}
                               className="px-3 py-1.5 text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors">Annulla</button>
                             <button onClick={() => sendAdminReply(f.id)} disabled={replySending || replyText.trim().length < 2}
-                              className="px-4 py-1.5 bg-[#8b5cf6] hover:bg-[#a78bfa] rounded-lg text-xs font-bold transition-colors disabled:opacity-40 flex items-center gap-1.5">
+                              className="px-4 py-1.5 bg-[#6b54c6] hover:bg-[#8a78d9] rounded-lg text-xs font-bold transition-colors disabled:opacity-40 flex items-center gap-1.5">
                               {replySending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
                               Invia via email
                             </button>
@@ -6851,7 +6851,7 @@ export default function App() {
                         </div>
                       ) : (
                         <button onClick={() => { setReplyingId(f.id); setReplyText(f.reply || ''); }}
-                          className="mt-2 text-xs font-bold text-[#8b5cf6] hover:text-[#a78bfa] transition-colors">
+                          className="mt-2 text-xs font-bold text-[#6b54c6] hover:text-[#8a78d9] transition-colors">
                           {f.reply ? 'Modifica risposta' : '↩ Rispondi'}
                         </button>
                       )}
@@ -6920,7 +6920,7 @@ export default function App() {
             <div className="text-5xl mb-4">🛠️</div>
             <h1 className="text-2xl font-bold mb-2">Aggiornamento in corso</h1>
             <p className="text-[var(--text-soft)] text-sm">Stiamo migliorando l'app. Torna tra qualche minuto — i tuoi dati sono al sicuro.</p>
-            <div className="mt-6 flex justify-center"><Loader2 className="animate-spin text-[#8b5cf6]" size={24} /></div>
+            <div className="mt-6 flex justify-center"><Loader2 className="animate-spin text-[#6b54c6]" size={24} /></div>
           </div>
         </div>
       ), document.body)}
@@ -6944,7 +6944,7 @@ export default function App() {
                     <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{c.desc}</p>
                   </div>
                   <button onClick={() => toggleNotifPref(c.key)}
-                    className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${on ? 'bg-[#8b5cf6]' : 'bg-[var(--fill-2)]'}`}>
+                    className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${on ? 'bg-[#6b54c6]' : 'bg-[var(--fill-2)]'}`}>
                     <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${on ? 'left-6' : 'left-1'}`} />
                   </button>
                 </div>
@@ -6966,7 +6966,7 @@ export default function App() {
             <p className="text-sm text-[var(--text-soft)] mb-6">{confirmState.message}</p>
             <div className="flex gap-2">
               <button onClick={() => closeConfirm(false)} className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">{t('common.cancel')}</button>
-              <button onClick={() => closeConfirm(true)} className={`flex-1 py-3 rounded-xl text-white font-bold ${confirmState.danger ? 'bg-red-600' : 'bg-[#8b5cf6]'}`}>{confirmState.confirmLabel}</button>
+              <button onClick={() => closeConfirm(true)} className={`flex-1 py-3 rounded-xl text-white font-bold ${confirmState.danger ? 'bg-red-600' : 'bg-[#6b54c6]'}`}>{confirmState.confirmLabel}</button>
             </div>
           </div>
         </div>
@@ -6982,10 +6982,10 @@ export default function App() {
             <input autoFocus value={promptState.value} placeholder={promptState.placeholder}
               onChange={e => setPromptState(s => s ? { ...s, value: e.target.value } : s)}
               onKeyDown={e => { if (e.key === 'Enter') closePrompt(promptState.value); }}
-              className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-base outline-none focus:border-[#8b5cf6]" />
+              className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-base outline-none focus:border-[#6b54c6]" />
             <div className="flex gap-2 mt-5">
               <button onClick={() => closePrompt(null)} className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">{t('common.cancel')}</button>
-              <button onClick={() => closePrompt(promptState.value)} className="flex-1 py-3 rounded-xl bg-[#8b5cf6] text-white font-bold">{t('common.confirm')}</button>
+              <button onClick={() => closePrompt(promptState.value)} className="flex-1 py-3 rounded-xl bg-[#6b54c6] text-white font-bold">{t('common.confirm')}</button>
             </div>
           </div>
         </div>
@@ -7095,7 +7095,7 @@ export default function App() {
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <div className="flex items-center gap-2">
-                <DollarSign size={20} className="text-[#8b5cf6]" />
+                <DollarSign size={20} className="text-[#6b54c6]" />
                 <h2 className="text-xl font-semibold">Ricerca valore</h2>
               </div>
               <button onClick={() => setSourcingOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors"><X size={20} /></button>
@@ -7142,7 +7142,7 @@ export default function App() {
                     <div className="flex gap-2">
                       {[30, 50, 100, 200].map(m => (
                         <button key={m} onClick={() => setSourcingMargin(m)}
-                          className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${sourcingMargin === m ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
+                          className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${sourcingMargin === m ? 'bg-[#6b54c6]/10 border-[#6b54c6] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
                           +{m}%
                         </button>
                       ))}
@@ -7174,7 +7174,7 @@ export default function App() {
           non si sovrappone alla barra di scrittura (vedi AssistantChat, bottom 72px). */}
       <button
         onClick={() => openAddForm()}
-        className="lg:hidden fixed z-40 bg-[#8b5cf6] rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-all"
+        className="lg:hidden fixed z-40 bg-[#6b54c6] rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-all"
         style={{ width: 54, height: 54, bottom: `calc(${isAdminUser ? '8.5rem' : '5.5rem'} + env(safe-area-inset-bottom))`, right: 16 }}
       >
         <Plus size={24} />
@@ -7220,7 +7220,7 @@ export default function App() {
                 <div className="relative">
                   <Icon size={22} strokeWidth={active ? 2 : 1.5} />
                   {badge > 0 && (
-                    <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 bg-[#8b5cf6] text-[var(--text)] rounded-full text-[8px] font-bold flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 bg-[#6b54c6] text-[var(--text)] rounded-full text-[8px] font-bold flex items-center justify-center">
                       {badge}
                     </span>
                   )}
@@ -7277,7 +7277,7 @@ export default function App() {
                         const isSel = (selectedWarehouseId || baseWarehouse?.id) === w.id;
                         return (
                           <button key={w.id} type="button" onClick={() => setSelectedWarehouseId(w.id)}
-                            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${isSel ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
+                            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${isSel ? 'bg-[#6b54c6]/10 border-[#6b54c6] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
                             {w.name}
                           </button>
                         );
@@ -7311,12 +7311,12 @@ export default function App() {
                     <input list="form-cat-suggestions" value={formCatInput} onChange={e => setFormCatInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); useManualCategory(); } }}
                       placeholder={t('form.catPlaceholder')} autoFocus
-                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6]" />
                     <datalist id="form-cat-suggestions">
                       {userCategories.map((c: string) => <option key={c} value={c} />)}
                     </datalist>
                     <button type="button" onClick={useManualCategory} disabled={isAddingCat || !formCatInput.trim()}
-                      className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">
+                      className="px-4 py-2 rounded-xl bg-[#6b54c6] text-white text-sm font-bold disabled:opacity-50">
                       {isAddingCat ? <Loader2 size={14} className="animate-spin" /> : t('form.use')}
                     </button>
                   </div>
@@ -7324,7 +7324,7 @@ export default function App() {
               </div>
 
               {/* FOTO + IA SCAN — multi-foto (max 5) */}
-              <div className="bg-gradient-to-br from-violet-500/10 to-[#8b5cf6]/10 border border-violet-500/30 rounded-2xl p-4">
+              <div className="bg-gradient-to-br from-violet-500/10 to-[#6b54c6]/10 border border-violet-500/30 rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <label className="flex items-center gap-2">
                     <Sparkles className="text-violet-400" size={16} />
@@ -7340,8 +7340,8 @@ export default function App() {
 
                 {/* Scansiona barcode: legge il codice e prova a riconoscere il prodotto */}
                 <button type="button" onClick={openBarcodeScanner} disabled={barcodeBusy}
-                  className="w-full mb-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[#8b5cf6] text-sm font-bold text-[var(--text)] transition-colors disabled:opacity-50">
-                  {barcodeBusy ? <Loader2 size={15} className="animate-spin" /> : <ScanLine size={15} className="text-[#8b5cf6]" />}
+                  className="w-full mb-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[#6b54c6] text-sm font-bold text-[var(--text)] transition-colors disabled:opacity-50">
+                  {barcodeBusy ? <Loader2 size={15} className="animate-spin" /> : <ScanLine size={15} className="text-[#6b54c6]" />}
                   {t('form.scanBarcode')}
                 </button>
 
@@ -7513,7 +7513,7 @@ export default function App() {
                     <input type="text" required value={pokeName}
                       onChange={(e: any) => setPokeName(e.target.value)}
                       placeholder="Es. Charizard"
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                   </div>
                   {/* Numero carta — rilevato dall'IA, correggibile: serve per il prezzo esatto */}
                   <div>
@@ -7523,9 +7523,9 @@ export default function App() {
                     <div className="flex gap-2">
                       <input type="text" value={cardNumber} onChange={(e: any) => setCardNumber(e.target.value)}
                         placeholder="es. 4/102, SWSH076"
-                        className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm font-mono focus:border-[#8b5cf6] outline-none" />
+                        className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm font-mono focus:border-[#6b54c6] outline-none" />
                       <button type="button" onClick={revalueCard} disabled={revaluingCard}
-                        className="px-4 rounded-xl bg-[#8b5cf6]/15 text-[#8b5cf6] text-xs font-bold hover:bg-[#8b5cf6]/25 disabled:opacity-50 transition-colors flex items-center gap-1.5 whitespace-nowrap">
+                        className="px-4 rounded-xl bg-[#6b54c6]/15 text-[#6b54c6] text-xs font-bold hover:bg-[#6b54c6]/25 disabled:opacity-50 transition-colors flex items-center gap-1.5 whitespace-nowrap">
                         {revaluingCard ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />} {t('nf.priceBtn')}
                       </button>
                     </div>
@@ -7535,7 +7535,7 @@ export default function App() {
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.graded')}</label>
                       <select value={pokeGraded} onChange={(e: any) => setPokeGraded(e.target.value)}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none">
                         <option value="No">{t('nf.gradedNo')}</option>
                         <option value="Si">{t('nf.gradedYes')}</option>
                       </select>
@@ -7546,7 +7546,7 @@ export default function App() {
                         <input type="text" value={pokeGrade}
                           onChange={(e: any) => setPokeGrade(e.target.value)}
                           placeholder="10, 9.5..."
-                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                       </div>
                     )}
                   </div>
@@ -7559,14 +7559,14 @@ export default function App() {
                       <input type="text" required value={watchBrand}
                         onChange={(e: any) => setWatchBrand(e.target.value)}
                         placeholder="Rolex"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.model')}</label>
                       <input type="text" required value={watchModel}
                         onChange={(e: any) => setWatchModel(e.target.value)}
                         placeholder="Submariner"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
@@ -7575,27 +7575,27 @@ export default function App() {
                       <input type="text" value={watchCase}
                         onChange={(e: any) => setWatchCase(e.target.value)}
                         placeholder="41mm"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.strap')}</label>
                       <input type="text" value={watchStrap}
                         onChange={(e: any) => setWatchStrap(e.target.value)}
                         placeholder="Oyster"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.material')}</label>
                       <input type="text" value={watchMaterial}
                         onChange={(e: any) => setWatchMaterial(e.target.value)}
                         placeholder="Acciaio"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                     </div>
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('mag.condition')}</label>
                     <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none">
                       <option value="">{t('form.conditionNone')}</option>
                       <option value="Full Set">{t('nf.cdFullSet')}</option>
                       <option value="Solo Box">{t('nf.cdBoxOnly')}</option>
@@ -7626,7 +7626,7 @@ export default function App() {
                               {f.type === 'select' ? (
                                 <select value={val} onChange={(e: any) => setVal(e.target.value)}
                                   required={f.required}
-                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
+                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none">
                                   <option value="">{t('nf.select')}</option>
                                   {(f.options || []).map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
@@ -7635,7 +7635,7 @@ export default function App() {
                                   value={val} onChange={(e: any) => setVal(e.target.value)}
                                   required={f.required}
                                   placeholder={f.placeholder || ''}
-                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                               )}
                             </div>
                           );
@@ -7644,7 +7644,7 @@ export default function App() {
                         <div>
                           <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('mag.condition')}</label>
                           <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
-                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
+                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none">
                             <option value="">{t('form.conditionNone')}</option>
                             {(catConfig.conditionOptions || ['Nuovo','Ottimo','Buono','Usato']).map((opt: string) => (
                               <option key={opt} value={opt}>{opt}</option>
@@ -7666,7 +7666,7 @@ export default function App() {
                         <input type="text" required value={brand}
                           onChange={(e: any) => setBrand(e.target.value)}
                           placeholder={category === 'Vestiti' ? 'Supreme' : 'Louis Vuitton'}
-                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                       </div>
                     )}
                     <div>
@@ -7674,7 +7674,7 @@ export default function App() {
                       <input type="text" required value={name}
                         onChange={(e: any) => setName(e.target.value)}
                         placeholder={category === 'Scarpe' ? 'Air Jordan 1 Chicago' : category === 'Vestiti' ? 'Box Logo Hoodie' : 'Neverfull MM'}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -7688,7 +7688,7 @@ export default function App() {
                         value={size}
                         onChange={(e: any) => setSize(e.target.value)}
                         placeholder={category === 'Scarpe' ? 'es. 42, 42.5, US 9' : category === 'Vestiti' ? 'es. M, L, XL' : 'es. MM, 30cm, Small'}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none"
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none"
                       />
                       <datalist id={`size-suggestions-${category}`}>
                         {category === 'Scarpe'
@@ -7705,7 +7705,7 @@ export default function App() {
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('mag.condition')}</label>
                       <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none">
                         <option value="">{t('form.conditionNone')}</option>
                         <option value="DS">{t('form.condDS')}</option>
                         <option value="VNDS">{t('form.condVNDS')}</option>
@@ -7742,13 +7742,13 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.purchasePrice')}</label>
                   <input type="number" step="0.01" required value={price}
                     onChange={(e: any) => setPrice(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.quantity')}</label>
                   <input type="number" min="1" required value={quantity}
                     onChange={(e: any) => setQuantity(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                 </div>
               </div>
 
@@ -7756,11 +7756,11 @@ export default function App() {
               <div className="border-t border-[var(--border-2)] pt-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Store size={14} className="text-[#8b5cf6]" />
+                    <Store size={14} className="text-[#6b54c6]" />
                     <span className="text-sm font-bold">{t('form.consignment')}</span>
                   </div>
                   <button type="button" onClick={() => setIsConsignment(v => !v)}
-                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${isConsignment ? 'bg-[#8b5cf6]' : 'bg-[var(--fill-3)]'}`}>
+                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${isConsignment ? 'bg-[#6b54c6]' : 'bg-[var(--fill-3)]'}`}>
                     <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${isConsignment ? 'translate-x-5' : ''}`} />
                   </button>
                 </div>
@@ -7770,12 +7770,12 @@ export default function App() {
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.name')} <span className="text-red-400">*</span></label>
                       <input type="text" value={consignmentName} onChange={(e: any) => setConsignmentName(e.target.value)} placeholder="es. Marco R."
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.percent')} <span className="text-[var(--text-faint)] normal-case font-medium">({t('form.optionalShort')})</span></label>
                       <input type="number" min="0" max="100" step="1" value={consignmentPercent} onChange={(e: any) => setConsignmentPercent(e.target.value)} placeholder="es. 20"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                     </div>
                   </div>
                 )}
@@ -7796,7 +7796,7 @@ export default function App() {
                       {!isSharedPurchase ? (
                         <button type="button"
                           onClick={() => setIsSharedPurchase(true)}
-                          className="text-xs text-[var(--text)] hover:text-[#a78bfa] font-bold transition-colors">
+                          className="text-xs text-[var(--text)] hover:text-[#8a78d9] font-bold transition-colors">
                           {t('form.changePercent')}
                         </button>
                       ) : (
@@ -7846,7 +7846,7 @@ export default function App() {
               })()}
               
               <button type="submit" disabled={isSaving}
-                className="w-full bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
+                className="w-full bg-[#6b54c6] hover:bg-[#8a78d9] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
                 {isSaving ? <Loader2 className="animate-spin" size={20} /> : t('form.saveProduct')}
               </button>
               </>)}
@@ -7877,21 +7877,21 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.quantity')}</label>
                   <input type="number" min="1" max={productToSell.maxQty}
                     value={sellQuantity} onChange={(e: any) => setSellQuantity(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                   <p className="text-[10px] text-[var(--text-soft)] mt-1">{t('sell.maxAvailable')}: {productToSell.maxQty}</p>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.totalPrice')}</label>
                   <input type="number" step="0.01" required value={sellPrice}
                     onChange={(e: any) => setSellPrice(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                 </div>
               </div>
               
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.platform')}</label>
                 <select value={sellPlatform} onChange={(e: any) => setSellPlatform(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none">
                   <option value="Vinted">Vinted</option>
                   <option value="Subito">Subito</option>
                   <option value="StockX">StockX (12% fee)</option>
@@ -7903,7 +7903,7 @@ export default function App() {
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.paymentMethod')}</label>
                 <select value={sellPaymentMethod} onChange={(e: any) => setSellPaymentMethod(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none">
                   <option value="Nessuna Fee (Contanti/Bonifico)">{t('sell.noFee')}</option>
                   <option value="PayPal Beni e Servizi">{t('sell.paypal')}</option>
                 </select>
@@ -7948,9 +7948,9 @@ export default function App() {
                 <div className="grid grid-cols-2 gap-3">
                   <input type="text" value={sellTrackingCode} onChange={(e: any) => setSellTrackingCode(e.target.value)}
                     placeholder={t('sell.trackingCode')}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                   <select value={sellTrackingCarrier} onChange={(e: any) => setSellTrackingCarrier(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none">
                     {['Auto','BRT','GLS','Poste Italiane','SDA','DHL','UPS','FedEx','TNT','Amazon Logistics','Nexive'].map(c => (
                       <option key={c} value={c}>{c === 'Auto' ? t('sell.autoDetect') : c}</option>
                     ))}
@@ -7989,14 +7989,14 @@ export default function App() {
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.brand')}</label>
                     <input type="text" required value={editBrand}
                       onChange={(e: any) => setEditBrand(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                   </div>
                 )}
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.name')}</label>
                   <input type="text" required value={editName}
                     onChange={(e: any) => setEditName(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                 </div>
               </div>
               {/* Sposta in un altro magazzino: cambiandolo, il prodotto eredita le percentuali soci del nuovo magazzino. */}
@@ -8004,7 +8004,7 @@ export default function App() {
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.warehouse')}</label>
                   <select value={editWarehouseId || baseWarehouse?.id || ''} onChange={(e: any) => setEditWarehouseId(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none">
                     {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                   </select>
                 </div>
@@ -8014,13 +8014,13 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.size')}</label>
                   <input type="text" value={editSize}
                     onChange={(e: any) => setEditSize(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('mag.condition')}</label>
                   <input type="text" value={editCondition}
                     onChange={(e: any) => setEditCondition(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                 </div>
               </div>
 
@@ -8028,12 +8028,12 @@ export default function App() {
               <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <TrendingUp size={15} className="text-[#8b5cf6] shrink-0" />
+                    <TrendingUp size={15} className="text-[#6b54c6] shrink-0" />
                     <span className="text-sm font-bold">{t('val.title')}</span>
                     {!hasFeature('stockx_pricing') && <PlanLock plan="Pro" />}
                   </div>
                   <button type="button" onClick={() => fetchValuation(productToEdit)} disabled={valLoading}
-                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#8b5cf6] text-white hover:bg-[#7c3aed] disabled:opacity-50 transition-colors flex items-center gap-1.5">
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#6b54c6] text-white hover:bg-[#5d44b0] disabled:opacity-50 transition-colors flex items-center gap-1.5">
                     {valLoading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />} {t('val.evaluate')}
                   </button>
                 </div>
@@ -8063,7 +8063,7 @@ export default function App() {
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.purchasePrice')}</label>
                 <input type="number" step="0.01" required value={editPrice}
                   onChange={(e: any) => setEditPrice(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
               </div>
 
               {/* Quantità pezzi: per lotti e gruppi multi-pezzo. Riduci = elimina i pezzi
@@ -8071,12 +8071,12 @@ export default function App() {
               {(productToEdit.lotName || (productToEdit.quantity || 1) > 1) && (
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5">
-                    <Layers size={11} className="text-[#8b5cf6]" />
+                    <Layers size={11} className="text-[#6b54c6]" />
                     {productToEdit.lotName ? `${t('edit.lotPieces')} "${productToEdit.lotName}"` : t('edit.qtyPieces')}
                   </label>
                   <input type="number" min="1" step="1" value={editQuantity}
                     onChange={(e: any) => setEditQuantity(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                   <p className="text-[11px] text-[var(--text-faint)] mt-1.5">
                     {t('edit.current')}: {productToEdit.lotName ? editLotIds.length : (productToEdit.ids?.length || 1)} {t('edit.qtyHint')}
                   </p>
@@ -8117,7 +8117,7 @@ export default function App() {
               <div className="border-t border-[var(--border-2)] pt-4">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
-                    <Store size={15} className="text-[#8b5cf6]" />
+                    <Store size={15} className="text-[#6b54c6]" />
                     <span className="text-sm font-bold">{t('edit.marketplacePublic')}</span>
                     {!hasFeature('marketplace') && <PlanLock plan="Starter" />}
                   </div>
@@ -8128,11 +8128,11 @@ export default function App() {
                   <input type="number" step="0.01" min="0" value={editPublicPrice}
                     onChange={(e: any) => setEditPublicPrice(e.target.value)}
                     placeholder={t('edit.publicPrice')}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6]" />
                   <input type="number" step="0.01" min="0" value={editShippingCost}
                     onChange={(e: any) => setEditShippingCost(e.target.value)}
                     placeholder={t('edit.shippingCost')}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6]" />
                 </div>
                 <div className="flex gap-2">
                   {editIsPublic ? (
@@ -8140,7 +8140,7 @@ export default function App() {
                       className="px-4 py-2 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] text-sm font-bold disabled:opacity-50">{t('edit.withdraw')}</button>
                   ) : (
                     <button type="button" onClick={() => savePublish(productToEdit, true)} disabled={isPublishing}
-                      className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">
+                      className="px-4 py-2 rounded-xl bg-[#6b54c6] text-white text-sm font-bold disabled:opacity-50">
                       {isPublishing ? <Loader2 size={15} className="animate-spin" /> : t('mag.publish')}
                     </button>
                   )}
@@ -8166,7 +8166,7 @@ export default function App() {
                               userId: m.userId, name: m.name, percentage: m.percentage,
                             })));
                           }}
-                          className="text-xs text-[var(--text)] hover:text-[#a78bfa] font-bold transition-colors">
+                          className="text-xs text-[var(--text)] hover:text-[#8a78d9] font-bold transition-colors">
                           {t('form.changePercent')}
                         </button>
                       ) : (
@@ -8216,7 +8216,7 @@ export default function App() {
 
               <div className="flex gap-3">
                 <button type="submit" disabled={isSaving}
-                  className="flex-1 bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
+                  className="flex-1 bg-[#6b54c6] hover:bg-[#8a78d9] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
                   {isSaving ? <Loader2 className="animate-spin" size={20} /> : t('edit.save')}
                 </button>
                 <button type="button"
@@ -8264,11 +8264,11 @@ export default function App() {
                     <input type="text" inputMode="numeric" value={twoFaCode}
                       onChange={(e: any) => setTwoFaCode(e.target.value)}
                       placeholder="000000" maxLength={6}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-center font-mono text-2xl tracking-widest focus:border-[#8b5cf6] outline-none" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-center font-mono text-2xl tracking-widest focus:border-[#6b54c6] outline-none" />
                   </div>
                   
                   <button onClick={handle2FAVerify} disabled={twoFaLoading || twoFaCode.length !== 6}
-                    className="w-full bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
+                    className="w-full bg-[#6b54c6] hover:bg-[#8a78d9] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
                     {twoFaLoading ? <Loader2 className="animate-spin" size={20} /> : t('twofa.enable')}
                   </button>
                 </>
@@ -8302,7 +8302,7 @@ export default function App() {
                   </p>
 
                   <button onClick={() => { setTwoFaSetupOpen(false); setTwoFaBackupCodes(null); setTwoFaCode(''); }}
-                    className="w-full bg-[#8b5cf6] hover:bg-[#a78bfa] py-3 rounded-xl font-bold transition-colors">
+                    className="w-full bg-[#6b54c6] hover:bg-[#8a78d9] py-3 rounded-xl font-bold transition-colors">
                     {t('twofa.savedCodes')}
                   </button>
                 </>
@@ -8356,7 +8356,7 @@ export default function App() {
           style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom) + 8px)' }}>
           {(() => { const selCount = getBulkSelectedIds().length; return (
           <div className={`bg-[#1a1a1a] border rounded-2xl p-3 flex items-center gap-2 shadow-2xl transition-all ${
-            selCount > 0 ? 'border-[#8b5cf6]/50' : 'border-gray-700'
+            selCount > 0 ? 'border-[#6b54c6]/50' : 'border-gray-700'
           }`}>
             <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); setSelectedPieceIds(new Set()); }}
               className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-300 hover:text-white transition-colors">
@@ -8405,19 +8405,19 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo unitario €</label>
                   <input type="number" step="0.01" required value={bulkSellPrice}
                     onChange={e => setBulkSellPrice(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Fees unitarie €</label>
                   <input type="number" step="0.01" value={bulkSellFees}
                     onChange={e => setBulkSellFees(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                 </div>
               </div>
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Piattaforma</label>
                 <select value={bulkSellPlatform} onChange={e => setBulkSellPlatform(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8b5cf6] outline-none">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none">
                   <option>Vinted</option><option>Subito</option><option>StockX</option>
                   <option>eBay</option><option>Privato</option>
                 </select>
@@ -8492,7 +8492,7 @@ export default function App() {
                   Reparto di default <span className="text-[var(--text-faint)]">(per righe senza colonna Categoria)</span>
                 </label>
                 <select value={importCategory} onChange={e => setImportCategory(e.target.value)}
-                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm focus:border-[#8b5cf6] outline-none">
+                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm focus:border-[#6b54c6] outline-none">
                   {userCategories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -8502,7 +8502,7 @@ export default function App() {
                 <div className="flex items-center gap-3">
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex-1">{t('form.warehouse')}</label>
                   <select value={importWarehouseId || baseWarehouse?.id || ''} onChange={e => setImportWarehouseId(e.target.value)}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm focus:border-[#8b5cf6] outline-none">
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm focus:border-[#6b54c6] outline-none">
                     {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                   </select>
                 </div>
@@ -8562,7 +8562,7 @@ export default function App() {
                   Annulla
                 </button>
                 <button onClick={confirmImport} disabled={isImporting || importRows.length === 0}
-                  className="flex-1 bg-[#8b5cf6] hover:bg-[#a78bfa] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2">
+                  className="flex-1 bg-[#6b54c6] hover:bg-[#8a78d9] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2">
                   {isImporting
                     ? <><Loader2 className="animate-spin" size={16} /> Importazione...</>
                     : `Importa ${importRows.filter(r => r.brand && r.name && r.price > 0).length} prodotti`}
@@ -8605,7 +8605,7 @@ export default function App() {
                       const isSel = (lotWarehouseId || baseWarehouse?.id) === w.id;
                       return (
                         <button key={w.id} type="button" onClick={() => setLotWarehouseId(w.id)}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${isSel ? 'bg-[#8b5cf6]/10 border-[#8b5cf6] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
+                          className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${isSel ? 'bg-[#6b54c6]/10 border-[#6b54c6] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
                           {w.name}
                         </button>
                       );
@@ -8643,7 +8643,7 @@ export default function App() {
                       {existingLots.map(l => <option key={l} value={l} />)}
                     </datalist>
                     {isAppending ? (
-                      <p className="text-[11px] text-[#8b5cf6] font-semibold mt-1.5 flex items-center gap-1"><Layers size={11} /> Lotto esistente: i pezzi verranno aggiunti (numerazione continua)</p>
+                      <p className="text-[11px] text-[#6b54c6] font-semibold mt-1.5 flex items-center gap-1"><Layers size={11} /> Lotto esistente: i pezzi verranno aggiunti (numerazione continua)</p>
                     ) : existingLots.length > 0 ? (
                       <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Suggerimento: scegli un lotto esistente per aggiungerci altri pezzi</p>
                     ) : null}
@@ -8878,7 +8878,7 @@ export default function App() {
           <div className="bg-[var(--surface)] border border-[var(--border)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-2xl max-h-[92vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-5 border-b border-[var(--border)] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <Sparkles className="text-[#8b5cf6]" size={20} />
+                <Sparkles className="text-[#6b54c6]" size={20} />
                 <h2 className="font-semibold text-base">{t('set.plansTitle')}</h2>
                 <span className="text-[10px] uppercase font-bold bg-[var(--fill)] px-2 py-0.5 rounded-full">{myPlan}</span>
               </div>
@@ -8890,7 +8890,7 @@ export default function App() {
             <div className="flex gap-1.5 p-3 border-b border-[var(--border)] overflow-x-auto shrink-0" style={{ display: 'none' }}>
               {([['plans',t('plan.tabPlans')]] as [typeof proTab,string][]).map(([id,label]) => (
                 <button key={id} onClick={() => setProTab(id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${proTab === id ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${proTab === id ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   {label}
                 </button>
               ))}
@@ -8901,7 +8901,7 @@ export default function App() {
               {proTab === 'plans' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {planCatalog.map(p => (
-                    <div key={p.id} className={`rounded-2xl border p-4 ${p.id === myPlan ? 'border-[#8b5cf6] bg-[#8b5cf6]/5' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
+                    <div key={p.id} className={`rounded-2xl border p-4 ${p.id === myPlan ? 'border-[#6b54c6] bg-[#6b54c6]/5' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
                       <div className="flex items-baseline justify-between">
                         <h3 className="font-bold text-lg">{p.name}</h3>
                         <span className="font-bold num">{p.priceMonthly === 0 ? t('plan.free') : `${p.priceMonthly}€`}<span className="text-[10px] text-[var(--text-faint)] font-normal">{p.priceMonthly === 0 ? '' : t('plan.perMonth')}</span></span>
@@ -8910,19 +8910,19 @@ export default function App() {
                       <ul className="mt-3 space-y-1.5">
                         {p.highlights.map((h: string, i: number) => (
                           <li key={i} className="flex items-start gap-2 text-[11px] text-[var(--text-soft)]">
-                            <CheckCircle size={13} className="text-[#8b5cf6] mt-0.5 shrink-0" /> <span>{h}</span>
+                            <CheckCircle size={13} className="text-[#6b54c6] mt-0.5 shrink-0" /> <span>{h}</span>
                           </li>
                         ))}
                       </ul>
                       {p.id === myPlan ? (
                         <>
-                          <p className="mt-3 text-center text-[10px] font-bold text-[#8b5cf6] uppercase">{t('set.currentPlan')}</p>
+                          <p className="mt-3 text-center text-[10px] font-bold text-[#6b54c6] uppercase">{t('set.currentPlan')}</p>
                           {p.priceMonthly > 0 && (
                             <button onClick={manageBilling} className="mt-2 w-full py-2 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] text-xs font-bold text-[var(--text-soft)]">{t('plan.manageSub')}</button>
                           )}
                         </>
                       ) : p.priceMonthly > 0 && (
-                        <button onClick={() => subscribeToPlan(p.id)} className="mt-3 w-full py-2.5 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-sm font-bold transition-colors">{t('plan.subscribe')}</button>
+                        <button onClick={() => subscribeToPlan(p.id)} className="mt-3 w-full py-2.5 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white text-sm font-bold transition-colors">{t('plan.subscribe')}</button>
                       )}
                     </div>
                   ))}
@@ -8941,7 +8941,7 @@ export default function App() {
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-[var(--text-soft)]">{t('plan.repricingDesc')}</p>
                       <button onClick={loadRepricing} disabled={repricingLoading}
-                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#8b5cf6] hover:bg-[#a78bfa] text-white disabled:opacity-40">
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#6b54c6] hover:bg-[#8a78d9] text-white disabled:opacity-40">
                         {repricingLoading ? <Loader2 size={14} className="animate-spin" /> : t('plan.analyze')}
                       </button>
                     </div>
@@ -8953,7 +8953,7 @@ export default function App() {
                           <p className="text-[10px] text-[var(--text-faint)]">{r.daysInStock} {t('plan.daysWord')} · {t('plan.sizeWord')} {r.size}</p>
                         </div>
                         <div className="text-right shrink-0 ml-3">
-                          <p className="text-sm font-bold text-[#8b5cf6] num">{r.suggestedPrice}€</p>
+                          <p className="text-sm font-bold text-[#6b54c6] num">{r.suggestedPrice}€</p>
                           <p className="text-[10px] text-yellow-500">-{r.suggestedDiscount}%</p>
                         </div>
                       </div>
@@ -8969,7 +8969,7 @@ export default function App() {
                 ) : (
                   <div className="space-y-3">
                     <select value={offerProductId} onChange={e => setOfferProductId(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#8b5cf6]">
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#6b54c6]">
                       <option value="">{t('plan.chooseProduct')}</option>
                       {products.filter((p: any) => p.status === 'IN STOCK').map((p: any) => (
                         <option key={p.id} value={p.id}>{p.brand} {p.name} ({p.size})</option>
@@ -8977,12 +8977,12 @@ export default function App() {
                     </select>
                     <div className="flex gap-2">
                       <input type="number" inputMode="decimal" value={offerAmount} onChange={e => setOfferAmount(e.target.value)} placeholder={t('plan.offerReceived')}
-                        className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#8b5cf6]" />
+                        className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#6b54c6]" />
                       <input type="number" inputMode="decimal" value={offerMargin} onChange={e => setOfferMargin(e.target.value)} placeholder={t('plan.minMargin')}
-                        className="w-28 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#8b5cf6]" />
+                        className="w-28 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#6b54c6]" />
                     </div>
                     <button onClick={runOffer} disabled={offerLoading}
-                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#8b5cf6] hover:bg-[#a78bfa] text-white disabled:opacity-40 flex items-center justify-center gap-2">
+                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#6b54c6] hover:bg-[#8a78d9] text-white disabled:opacity-40 flex items-center justify-center gap-2">
                       {offerLoading ? <Loader2 size={16} className="animate-spin" /> : t('plan.whatReply')}
                     </button>
                     {offerResult && (
@@ -8997,7 +8997,7 @@ export default function App() {
                         <div className="flex items-center justify-between">
                           <p className="text-[10px] text-[var(--text-faint)] italic">{offerResult.reasoning}</p>
                           <button onClick={() => { navigator.clipboard?.writeText(offerResult.message); showToast(t('plan.msgCopied')); }}
-                            className="flex items-center gap-1 text-[10px] font-bold text-[#8b5cf6]"><Copy size={12} /> {t('plan.copy')}</button>
+                            className="flex items-center gap-1 text-[10px] font-bold text-[#6b54c6]"><Copy size={12} /> {t('plan.copy')}</button>
                         </div>
                       </div>
                     )}
@@ -9013,7 +9013,7 @@ export default function App() {
                   <div className="space-y-3">
                     <p className="text-xs text-[var(--text-soft)]">{t('plan.channelsDesc')}</p>
                     <select value={chProductId} onChange={e => setChProductId(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#8b5cf6]">
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#6b54c6]">
                       <option value="">{t('plan.chooseProduct')}</option>
                       {products.filter((p: any) => p.status === 'IN STOCK').map((p: any) => (
                         <option key={p.id} value={p.id}>{p.brand} {p.name} ({p.size})</option>
@@ -9024,14 +9024,14 @@ export default function App() {
                         const on = chSelected.includes(pl);
                         return (
                           <button key={pl} onClick={() => setChSelected(prev => on ? prev.filter(x => x !== pl) : [...prev, pl])}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${on ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${on ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                             {pl}
                           </button>
                         );
                       })}
                     </div>
                     <button onClick={saveChannels} disabled={chSaving}
-                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#8b5cf6] hover:bg-[#a78bfa] text-white disabled:opacity-40 flex items-center justify-center gap-2">
+                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#6b54c6] hover:bg-[#8a78d9] text-white disabled:opacity-40 flex items-center justify-center gap-2">
                       {chSaving ? <Loader2 size={16} className="animate-spin" /> : <><Store size={15} /> {t('plan.saveChannels')}</>}
                     </button>
                   </div>
@@ -9049,7 +9049,7 @@ export default function App() {
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)] shrink-0">
               <div>
-                <h2 className="font-semibold text-base flex items-center gap-2"><BookOpen size={18} className="text-[#8b5cf6]" /> Guida rapida</h2>
+                <h2 className="font-semibold text-base flex items-center gap-2"><BookOpen size={18} className="text-[#6b54c6]" /> Guida rapida</h2>
                 <p className="text-[11px] text-[var(--text-soft)] mt-0.5">Come sfruttare HQ in pochi passi</p>
               </div>
               <button onClick={() => setGuideOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
@@ -9067,7 +9067,7 @@ export default function App() {
                 const I = s.icon;
                 return (
                   <div key={s.t} className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[#8b5cf6]/15 flex items-center justify-center shrink-0"><I size={16} className="text-[#8b5cf6]" /></div>
+                    <div className="w-9 h-9 rounded-xl bg-[#6b54c6]/15 flex items-center justify-center shrink-0"><I size={16} className="text-[#6b54c6]" /></div>
                     <div>
                       <p className="font-semibold text-sm text-[var(--text)]">{s.t}</p>
                       <p className="text-[13px] text-[var(--text-muted)] leading-relaxed mt-0.5">{s.d}</p>
@@ -9076,7 +9076,7 @@ export default function App() {
                 );
               })}
               <div className="pt-1 text-center">
-                <button onClick={() => { setGuideOpen(false); navigateTo('settings'); }} className="text-xs text-[#8b5cf6] font-semibold hover:underline">
+                <button onClick={() => { setGuideOpen(false); navigateTo('settings'); }} className="text-xs text-[#6b54c6] font-semibold hover:underline">
                   Serve aiuto? Impostazioni → Aiuto &amp; Assistenza
                 </button>
               </div>
@@ -9297,14 +9297,14 @@ export default function App() {
                 <input type="password" required value={changePwdCurrent}
                   onChange={e => setChangePwdCurrent(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#8b5cf6]" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#6b54c6]" />
               </div>
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('pwd.new')}</label>
                 <input type="password" required value={changePwdNew}
                   onChange={e => setChangePwdNew(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#8b5cf6]" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#6b54c6]" />
                 <p className="text-[10px] text-[var(--text-soft)] mt-1">{t('pwd.rule')}</p>
               </div>
               <div>
@@ -9312,7 +9312,7 @@ export default function App() {
                 <input type="password" required value={changePwdConfirm}
                   onChange={e => setChangePwdConfirm(e.target.value)}
                   placeholder="••••••••"
-                  className={`w-full bg-[var(--surface-2)] border rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#8b5cf6] ${
+                  className={`w-full bg-[var(--surface-2)] border rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#6b54c6] ${
                     changePwdConfirm && changePwdNew !== changePwdConfirm ? 'border-red-500' : 'border-[var(--border-2)]'
                   }`} />
               </div>
@@ -9322,7 +9322,7 @@ export default function App() {
                   {t('common.cancel')}
                 </button>
                 <button type="submit" disabled={changePwdLoading || (!!changePwdConfirm && changePwdNew !== changePwdConfirm)}
-                  className="flex-1 bg-[#8b5cf6] hover:bg-[#a78bfa] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center">
+                  className="flex-1 bg-[#6b54c6] hover:bg-[#8a78d9] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center">
                   {changePwdLoading ? <Loader2 className="animate-spin" size={16} /> : t('common.save')}
                 </button>
               </div>
@@ -9438,7 +9438,7 @@ export default function App() {
                       const done = !isException && i <= curIdx;
                       return (
                         <button key={s.key} onClick={() => setManualStatus(s.key)}
-                          className={`py-2.5 rounded-xl text-center transition-colors ${done ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
+                          className={`py-2.5 rounded-xl text-center transition-colors ${done ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
                           <div className="text-base leading-none">{s.icon}</div>
                           <div className="text-[9px] font-bold mt-1 leading-tight">{s.label}</div>
                         </button>
@@ -9654,7 +9654,7 @@ export default function App() {
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-[#111] border border-[var(--border)] flex items-center justify-center text-xl shrink-0">
-                              <Layers size={18} className="text-[#8b5cf6]" />
+                              <Layers size={18} className="text-[#6b54c6]" />
                             </div>
                             <div>
                               <p className="font-bold">{team.warehouseName}</p>
@@ -9671,7 +9671,7 @@ export default function App() {
 
                         {/* Mini progress sell-through */}
                         <div className="h-1 bg-[var(--fill)] rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-[#8b5cf6] to-violet-400 rounded-full transition-all" style={{ width: `${sellThrough}%` }} />
+                          <div className="h-full bg-gradient-to-r from-[#6b54c6] to-violet-400 rounded-full transition-all" style={{ width: `${sellThrough}%` }} />
                         </div>
                       </div>
 
@@ -9683,7 +9683,7 @@ export default function App() {
                           const canKick = isOwnerHere && !isMe && m.role !== 'OWNER';
                           return (
                             <div key={m.membershipId}>
-                              <div className={`flex items-center gap-3 p-3.5 transition-colors ${isMe ? 'bg-[#8b5cf6]/[0.04]' : 'hover:bg-[var(--fill)]'}`}>
+                              <div className={`flex items-center gap-3 p-3.5 transition-colors ${isMe ? 'bg-[#6b54c6]/[0.04]' : 'hover:bg-[var(--fill)]'}`}>
                                 {/* Rank medal o avatar */}
                                 <div className="relative shrink-0">
                                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center font-black text-xs shadow-sm">
@@ -9698,8 +9698,8 @@ export default function App() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-bold text-sm">{m.name}</span>
-                                    {isMe && <span className="text-[8px] bg-[#8b5cf6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-semibold">{t('an.you')}</span>}
-                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${m.role === 'OWNER' ? 'bg-[#8b5cf6]/15 text-[var(--text)]/80' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                                    {isMe && <span className="text-[8px] bg-[#6b54c6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-semibold">{t('an.you')}</span>}
+                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${m.role === 'OWNER' ? 'bg-[#6b54c6]/15 text-[var(--text)]/80' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                                       {m.role === 'OWNER' ? t('tp.owner') : t('set.partner')}
                                     </span>
                                   </div>
@@ -9716,7 +9716,7 @@ export default function App() {
                                       type="number" min="0" max="100" step="1"
                                       value={editQuoteValues[m.membershipId] ?? m.percentage}
                                       onChange={e => setEditQuoteValues(prev => ({ ...prev, [m.membershipId]: e.target.value }))}
-                                      className="w-14 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-1 text-xs text-center text-[var(--text)] outline-none focus:border-[#8b5cf6]"
+                                      className="w-14 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-1 text-xs text-center text-[var(--text)] outline-none focus:border-[#6b54c6]"
                                     />
                                   ) : (
                                     <span className="text-[10px] text-[var(--text-soft)] font-semibold bg-[var(--fill)] px-2 py-1 rounded-lg">{m.percentage}%</span>
@@ -9801,7 +9801,7 @@ export default function App() {
                                   {t('common.cancel')}
                                 </button>
                                 <button onClick={() => saveEditedQuotes(team)} disabled={isSavingTeam}
-                                  className="flex-1 py-2 text-xs font-bold text-[var(--text)] bg-[#8b5cf6]/80 hover:bg-[#8b5cf6] rounded-xl transition-colors disabled:opacity-40">
+                                  className="flex-1 py-2 text-xs font-bold text-[var(--text)] bg-[#6b54c6]/80 hover:bg-[#6b54c6] rounded-xl transition-colors disabled:opacity-40">
                                   {isSavingTeam ? t('tp.saving') : t('set.saveShares')}
                                 </button>
                               </div>
@@ -10318,7 +10318,7 @@ export default function App() {
           <div className="bg-[var(--card)] rounded-3xl p-5 w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-[var(--text)] flex items-center gap-2">
-                <ScanLine size={18} className="text-[#8b5cf6]" /> {t('form.scanBarcode')}
+                <ScanLine size={18} className="text-[#6b54c6]" /> {t('form.scanBarcode')}
               </h3>
               <button onClick={() => setBarcodeModalOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-lg">
                 <X size={20} />
@@ -10329,7 +10329,7 @@ export default function App() {
               <>
                 <div className="relative rounded-2xl overflow-hidden bg-black aspect-[4/3] mb-3">
                   <video ref={barcodeVideoRef} playsInline muted className="w-full h-full object-cover" />
-                  <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-0.5 bg-[#8b5cf6] shadow-[0_0_12px_2px_rgba(139,92,246,0.7)]" />
+                  <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-0.5 bg-[#6b54c6] shadow-[0_0_12px_2px_rgba(107,84,198,0.7)]" />
                 </div>
                 <p className="text-[11px] text-[var(--text-soft)] text-center mb-3">{t('bc.aim')}</p>
               </>
@@ -10344,9 +10344,9 @@ export default function App() {
               className="flex gap-2">
               <input value={barcodeManual} onChange={e => setBarcodeManual(e.target.value)}
                 placeholder={t('bc.manualPlaceholder')}
-                className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5cf6]" />
+                className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6]" />
               <button type="submit" disabled={!barcodeManual.trim()}
-                className="px-4 py-2 rounded-xl bg-[#8b5cf6] text-white text-sm font-bold disabled:opacity-50">{t('market.searchBtn')}</button>
+                className="px-4 py-2 rounded-xl bg-[#6b54c6] text-white text-sm font-bold disabled:opacity-50">{t('market.searchBtn')}</button>
             </form>
           </div>
         </div>

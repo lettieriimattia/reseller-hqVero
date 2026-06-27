@@ -127,7 +127,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
     <div className="max-w-2xl mx-auto">
       <div className="mb-4">
         <h1 className="text-xl font-black text-[var(--text)]">Catalogo</h1>
-        <p className="text-sm text-[var(--text-soft)]">Tocca <span className="text-[#8b5cf6] font-bold">+</span> per aggiungere al magazzino con la foto ufficiale. <span className="text-[#8b5cf6] font-semibold">Beta · solo admin</span></p>
+        <p className="text-sm text-[var(--text-soft)]">Tocca <span className="text-[#6b54c6] font-bold">+</span> per aggiungere al magazzino con la foto ufficiale. <span className="text-[#6b54c6] font-semibold">Beta · solo admin</span></p>
       </div>
 
       {/* Barra ricerca */}
@@ -137,14 +137,14 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
           <input value={query} onChange={e => setQuery(e.target.value)} autoFocus
             placeholder="Cerca... (es. Jordan 4, Palace tee, DV1748-100)"
             className="flex-1 bg-transparent outline-none text-[var(--text)] placeholder:text-[var(--text-faint)]" />
-          {loading && <Loader2 size={18} className="text-[#8b5cf6] animate-spin" />}
+          {loading && <Loader2 size={18} className="text-[#6b54c6] animate-spin" />}
         </div>
         {/* Filtro tipo — scorrevole in orizzontale (7 categorie non ci stanno in larghezza) */}
         <div className="flex gap-2 mt-2 overflow-x-auto flex-nowrap -mx-1 px-1">
           {TYPES.map(tp => (
             <button key={tp.id} onClick={() => setType(tp.id)}
               className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                type === tp.id ? 'bg-[#8b5cf6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                type === tp.id ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'
               }`}>{tp.label}</button>
           ))}
         </div>
@@ -166,7 +166,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
               <button onClick={() => quickAdd(item)} disabled={isAdding}
                 aria-label="Aggiungi al magazzino"
                 className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                  isAdded ? 'bg-green-500/15 text-green-500' : 'text-[#8b5cf6] hover:bg-[#8b5cf6]/10'
+                  isAdded ? 'bg-green-500/15 text-green-500' : 'text-[#6b54c6] hover:bg-[#6b54c6]/10'
                 }`}>
                 {isAdding ? <Loader2 size={20} className="animate-spin" /> : isAdded ? <Check size={22} /> : <Plus size={24} />}
               </button>
