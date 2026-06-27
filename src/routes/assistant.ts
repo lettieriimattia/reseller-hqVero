@@ -12,6 +12,7 @@ import { apiLimiter } from '../middleware/rateLimit';
 import { isAdminEmail } from '../config/admins';
 import { groqAssistantChat, isGroqConfigured, groqTranscribe } from '../services/ai.service';
 import { searchStockXCandidates, getStockXValuation, isStockXConfigured } from '../services/stockx.service';
+import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
 import { checkProductQuota } from '../middleware/plan';
 import { logger } from '../utils/logger';
 
@@ -127,19 +128,25 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
       if (!warehouseId) return { error: 'Nessun magazzino trovato per l\'utente.' };
       const category = await defaultCategory(ctx.userId, args.categoria);
 
-      // Foto ufficiale dal catalogo StockX (come fa la schermata Catalogo): cerca per
-      // SKU o nome e salva il LINK diretto dell'immagine — niente Cloudinary, DB piccolo.
-      // Se trovo lo style code lo aggancio anch'esso al prodotto.
+      // Foto ufficiale dal catalogo (come fa la schermata Catalogo): cerca per SKU o nome e
+      // salva il LINK diretto dell'immagine — niente Cloudinary, DB piccolo. KicksDB primario,
+      // StockX fallback. Se trovo lo style code lo aggancio anch'esso al prodotto.
       let photo: string | null = null;
       let resolvedSku: string | null = args.sku ? String(args.sku).trim() : null;
-      if (isStockXConfigured()) {
-        try {
-          const cands = await searchStockXCandidates(resolvedSku || `${brand} ${nome}`, { limit: 5 });
-          const best = cands.find(c => c.image) || cands[0];
-          if (best?.image) photo = best.image;
-          if (!resolvedSku && best?.styleId) resolvedSku = best.styleId;
-        } catch { /* foto facoltativa: se il catalogo non risponde, aggiungo comunque */ }
-      }
+      const q = resolvedSku || `${brand} ${nome}`;
+      try {
+        let best: { image: string | null; styleId: string | null } | undefined;
+        if (isKicksConfigured()) {
+          const k = await kicksSearch(q, { limit: 5 });
+          best = k.find(c => c.image) || k[0];
+        }
+        if ((!best || !best.image) && isStockXConfigured()) {
+          const s = await searchStockXCandidates(q, { limit: 5 });
+          best = s.find(c => c.image) || s[0] || best;
+        }
+        if (best?.image) photo = best.image;
+        if (!resolvedSku && best?.styleId) resolvedSku = best.styleId;
+      } catch { /* foto facoltativa: se il catalogo non risponde, aggiungo comunque */ }
 
       const product = await prisma.product.create({
         data: {

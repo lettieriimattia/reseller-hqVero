@@ -26,6 +26,10 @@ const TYPES = [
   { id: '', label: 'Tutti' },
   { id: 'sneakers', label: 'Sneakers' },
   { id: 'apparel', label: 'Abbigliamento' },
+  { id: 'borse', label: 'Borse' },
+  { id: 'carte', label: 'Carte' },
+  { id: 'accessori', label: 'Accessori' },
+  { id: 'elettronica', label: 'Elettronica' },
 ];
 
 function Thumb({ src, alt }: { src: string | null; alt: string }) {
@@ -50,8 +54,6 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
   // Stato per riga: 'adding' (spinner) → 'added' (spunta verde, transitoria)
   const [adding, setAdding] = useState<Record<string, boolean>>({});
   const [addedFlash, setAddedFlash] = useState<Record<string, boolean>>({});
-  // StockX collegato? Se no, il catalogo resta vuoto e le foto non si agganciano: lo diciamo.
-  const [stockxOk, setStockxOk] = useState<boolean | null>(null);
 
   const debTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -59,15 +61,19 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
   const pickCategory = (productType: string | null): string => {
     if (productType === 'sneakers') return categories.find(c => /scarp|sneaker|shoe/i.test(c)) || categories[0] || 'Scarpe';
     if (productType === 'apparel') return categories.find(c => /vest|abbig|cloth|appar|maglia|felpa/i.test(c)) || categories[0] || 'Vestiti';
+    if (productType === 'borse') return categories.find(c => /bors|bag|hand/i.test(c)) || categories[0] || 'Borse';
+    if (productType === 'carte') return categories.find(c => /cart|pokemon|card|tcg/i.test(c)) || categories[0] || 'Carte';
+    if (productType === 'accessori') return categories.find(c => /access/i.test(c)) || categories[0] || 'Accessori';
+    if (productType === 'elettronica') return categories.find(c => /elettr|electron|tech/i.test(c)) || categories[0] || 'Elettronica';
     return categories[0] || 'Generico';
   };
 
   const loadPopular = useCallback(async () => {
     setLoading(true);
-    const { ok, data } = await apiCall<CatalogResult[]>('/api/catalog/popular');
+    const { ok, data } = await apiCall<CatalogResult[]>(`/api/catalog/popular?type=${encodeURIComponent(type)}`);
     setLoading(false);
     setResults(ok && Array.isArray(data) ? data : []);
-  }, [apiCall]);
+  }, [apiCall, type]);
 
   const runSearch = useCallback(async (q: string, t: string) => {
     if (q.trim().length < 2) { setSearched(false); loadPopular(); return; }
@@ -80,13 +86,6 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
 
   // Carica i popolari all'apertura
   useEffect(() => { loadPopular(); }, [loadPopular]);
-
-  // Verifica se StockX è collegato: serve per spiegare un catalogo vuoto.
-  useEffect(() => {
-    apiCall<any>('/api/stockx/status').then(({ ok, data }) => {
-      if (ok) setStockxOk(!!(data?.connected && data?.tokenOk));
-    }).catch(() => {});
-  }, [apiCall]);
 
   // Debounce sulla digitazione
   useEffect(() => {
@@ -147,14 +146,6 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
           ))}
         </div>
       </div>
-
-      {/* StockX non collegato: spiega perché il catalogo è vuoto e le foto non si agganciano. */}
-      {stockxOk === false && (
-        <div className="mt-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300 leading-relaxed">
-          <b>StockX non collegato.</b> Il catalogo resta vuoto e le foto non si agganciano.
-          Vai in <b>Impostazioni → Integrazioni</b> e premi <b>Collega StockX</b>.
-        </div>
-      )}
 
       {/* Risultati */}
       <div className="mt-2 divide-y divide-[var(--border)]">

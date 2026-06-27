@@ -13,6 +13,7 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimit';
 import { isAdminEmail } from '../config/admins';
 import { searchStockXCandidates, isStockXConfigured } from '../services/stockx.service';
+import { kicksSearch, isKicksConfigured, type CatalogCandidate } from '../services/kicksdb.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -22,6 +23,39 @@ router.use(authenticate, apiLimiter);
 function adminOnly(req: AuthRequest, res: Response, next: any) {
   if (!isAdminEmail(req.user?.email)) return res.status(403).json({ error: 'Funzione in beta (solo admin).' });
   next();
+}
+
+// Categorie del catalogo (filtro UI) → product_type StockX/KicksDB per la ricerca.
+const TYPE_TO_PRODUCTTYPE: Record<string, string> = {
+  sneakers: 'sneakers', apparel: 'apparel', borse: 'handbag',
+  accessori: 'accessor', carte: 'trading', elettronica: 'electronic',
+};
+
+// Ricerche "seed" per categoria: riempiono il TUO DB (cache) così il catalogo è già pieno.
+const SEEDS_BY_TYPE: Record<string, string[]> = {
+  sneakers: ['Jordan 1', 'Jordan 4', 'Nike Dunk Low', 'Air Force 1', 'Yeezy 350', 'New Balance 550', 'Adidas Samba', 'Travis Scott'],
+  apparel: ['Supreme Box Logo', 'Stussy', 'Nike Tech Fleece', 'Essentials Hoodie', 'Corteiz', 'Palace', 'The North Face', 'Stone Island'],
+  borse: ['Louis Vuitton', 'Gucci bag', 'Prada bag', 'Goyard', 'Dior bag', 'Chanel bag'],
+  accessori: ['Supreme', 'Louis Vuitton wallet', 'Gucci belt', 'New Era cap'],
+  carte: ['Pokemon', 'Charizard', 'Pokemon 151', 'Prismatic Evolutions', 'Pokemon booster box'],
+  elettronica: ['PlayStation 5', 'AirPods', 'iPhone', 'Nintendo Switch'],
+};
+
+// Fonte catalogo unificata: KicksDB (preferita) → StockX (fallback se connesso).
+async function providerSearch(query: string, opts: { productType?: string; limit?: number }): Promise<CatalogCandidate[]> {
+  if (isKicksConfigured()) {
+    const k = await kicksSearch(query, { limit: opts.limit, productType: opts.productType }).catch(() => []);
+    if (k.length) return k;
+  }
+  if (isStockXConfigured()) {
+    const s = await searchStockXCandidates(query, { sneakersOnly: opts.productType === 'sneakers', limit: opts.limit || 12 }).catch(() => []);
+    return s.map(c => ({ title: c.title, brand: null, styleId: c.styleId, productId: c.productId, image: c.image, productType: c.productType }));
+  }
+  return [];
+}
+
+export function isCatalogConfigured(): boolean {
+  return isKicksConfigured() || isStockXConfigured();
 }
 
 // Brand noti per separare brand/nome dal titolo StockX (che è un'unica stringa).
@@ -51,14 +85,37 @@ function splitBrandName(title: string): { brand: string; name: string } {
   return { brand: t, name: t };
 }
 
-// Normalizza il productType StockX in una categoria semplice per il filtro.
+// Normalizza il product_type StockX/KicksDB nella categoria UI del catalogo.
 function normType(pt?: string | null): string | null {
   const s = (pt || '').toLowerCase();
   if (!s) return null;
   if (/sneaker|shoe|footwear/.test(s)) return 'sneakers';
-  if (/apparel|cloth|shirt|hoodie|jacket|tee|pant|short/.test(s)) return 'apparel';
-  if (/accessor|hat|cap|bag|sock/.test(s)) return 'accessories';
+  if (/handbag|\bbag\b|purse|tote/.test(s)) return 'borse';
+  if (/trading|card|collectib|pokemon|funko/.test(s)) return 'carte';
+  if (/electronic|console|gaming|tech/.test(s)) return 'elettronica';
+  if (/apparel|cloth|shirt|hoodie|jacket|tee|pant|short|sweat/.test(s)) return 'apparel';
+  if (/accessor|hat|cap|belt|wallet|sock|glasses|watch/.test(s)) return 'accessori';
   return s;
+}
+
+// Upsert di un candidato nella cache CatalogItem (solo link immagine). Best-effort.
+async function upsertCandidate(c: CatalogCandidate, byKey?: Map<string, CatalogResult>): Promise<void> {
+  const key = dedupKey({ sku: c.styleId, stockxProductId: c.productId, title: c.title });
+  if (!key) return;
+  const split = splitBrandName(c.title);
+  const brand = c.brand || split.brand;
+  const name = c.brand && c.title.toLowerCase().startsWith(c.brand.toLowerCase())
+    ? c.title.slice(c.brand.length).trim() || c.title  // evita "Jordan Jordan 1": toglie il brand in testa
+    : split.name;
+  const pt = normType(c.productType);
+  if (byKey && !byKey.has(key)) {
+    byKey.set(key, { key, brand, name, sku: c.styleId || null, image: c.image || null, productType: pt });
+  }
+  await prisma.catalogItem.upsert({
+    where: { key },
+    create: { key, brand, name, sku: c.styleId || null, productType: pt, image: c.image || null, stockxProductId: c.productId || null },
+    update: { image: c.image || null, name, brand, productType: pt },
+  }).catch(() => {});
 }
 
 function dedupKey(c: { sku?: string | null; stockxProductId?: string | null; title: string }): string {
@@ -105,23 +162,10 @@ router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
 
     // 2) Fonte esterna SOLO se la cache locale non basta (risparmia le richieste mensili:
     //    una volta che un modello è nel TUO DB, non lo richiediamo più).
-    if (byKey.size < 5 && isStockXConfigured()) {
-      const sneakersOnly = type === 'sneakers';
-      const cands = await searchStockXCandidates(q, { sneakersOnly, limit: 12 }).catch(() => []);
-      for (const c of cands) {
-        const key = dedupKey({ sku: c.styleId, stockxProductId: c.productId, title: c.title });
-        if (!key || byKey.has(key)) continue;
-        const { brand, name } = splitBrandName(c.title);
-        const pt = normType(c.productType);
-        const result: CatalogResult = { key, brand, name, sku: c.styleId || null, image: c.image || null, productType: pt };
-        byKey.set(key, result);
-        // Upsert in cache (solo link, niente Cloudinary). Best-effort: non bloccare la ricerca.
-        prisma.catalogItem.upsert({
-          where: { key },
-          create: { key, brand, name, sku: c.styleId || null, productType: pt, image: c.image || null, stockxProductId: c.productId || null },
-          update: { image: c.image || null, name, brand },
-        }).catch(() => {});
-      }
+    if (byKey.size < 5 && isCatalogConfigured()) {
+      const productType = TYPE_TO_PRODUCTTYPE[type] || undefined;
+      const cands = await providerSearch(q, { productType, limit: 12 });
+      for (const c of cands) await upsertCandidate(c, byKey); // riempie byKey + cache
     }
 
     res.json(Array.from(byKey.values()).slice(0, 20));
@@ -131,48 +175,38 @@ router.get('/search', adminOnly, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Modelli "seed" per riempire il catalogo al primo avvio (cache vuota su DB fresco):
-// alcune ricerche popolari su StockX così il catalogo si apre già pieno, come i competitor.
-const POPULAR_SEEDS = [
-  'Jordan 1', 'Jordan 4', 'Nike Dunk Low', 'Air Force 1', 'Yeezy 350',
-  'New Balance 550', 'New Balance 2002R', 'Adidas Samba', 'Travis Scott', 'Nike Dunk Panda',
-];
+const seeding = new Set<string>(); // categorie in seeding ora (evita doppioni concorrenti)
 
-let seeding = false; // evita seed concorrenti (più richieste insieme)
-
-// Popola la cache CatalogItem da StockX (solo link immagine). Best-effort.
-async function seedPopularFromStockX(): Promise<void> {
-  if (seeding || !isStockXConfigured()) return;
-  seeding = true;
+// Popola la cache CatalogItem per una categoria (o "tutto") con ricerche popolari. Best-effort.
+async function seedPopular(type: string): Promise<void> {
+  if (!isCatalogConfigured() || seeding.has(type)) return;
+  seeding.add(type);
   try {
-    for (const q of POPULAR_SEEDS) {
-      const cands = await searchStockXCandidates(q, { limit: 8 }).catch(() => []);
-      for (const c of cands) {
-        const key = dedupKey({ sku: c.styleId, stockxProductId: c.productId, title: c.title });
-        if (!key) continue;
-        const { brand, name } = splitBrandName(c.title);
-        const pt = normType(c.productType);
-        await prisma.catalogItem.upsert({
-          where: { key },
-          create: { key, brand, name, sku: c.styleId || null, productType: pt, image: c.image || null, stockxProductId: c.productId || null },
-          update: { image: c.image || null, name, brand },
-        }).catch(() => {});
-      }
+    const queries = type && SEEDS_BY_TYPE[type]
+      ? SEEDS_BY_TYPE[type]
+      : Object.values(SEEDS_BY_TYPE).flat();
+    const productType = TYPE_TO_PRODUCTTYPE[type] || undefined;
+    for (const q of queries) {
+      const cands = await providerSearch(q, { productType, limit: 8 });
+      for (const c of cands) await upsertCandidate(c);
     }
   } finally {
-    seeding = false;
+    seeding.delete(type);
   }
 }
 
-// GET /api/catalog/popular — lista di default mostrata appena apri il catalogo, senza cercare.
-// Se la cache è scarna e StockX è connesso, la precarica al volo (così non è mai vuoto).
-router.get('/popular', adminOnly, async (_req: AuthRequest, res: Response) => {
+// GET /api/catalog/popular?type=sneakers|apparel|borse|carte|accessori|elettronica
+// Lista di default mostrata appena apri il catalogo (per categoria). Se la cache è scarna,
+// la precarica al volo dalla fonte (così non è mai vuota), poi serve sempre dal TUO DB.
+router.get('/popular', adminOnly, async (req: AuthRequest, res: Response) => {
   try {
+    const type = (req.query.type || '').toString().trim().toLowerCase();
     const order = [{ useCount: 'desc' as const }, { updatedAt: 'desc' as const }];
-    let items = await prisma.catalogItem.findMany({ orderBy: order, take: 30 });
-    if (items.length < 12 && isStockXConfigured()) {
-      await seedPopularFromStockX();
-      items = await prisma.catalogItem.findMany({ orderBy: order, take: 30 });
+    const where = type ? { productType: type } : {};
+    let items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 30 });
+    if (items.length < 12 && isCatalogConfigured()) {
+      await seedPopular(type);
+      items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 30 });
     }
     res.json(items.map(it => ({
       key: it.key, brand: it.brand, name: it.name, sku: it.sku,
