@@ -155,24 +155,27 @@ async function visionComplete(opts: {
   return completion.choices[0]?.message?.content?.trim() || '';
 }
 
-// Riconosce PIÙ carte Pokémon in UNA sola foto (es. pagina di raccoglitore) → lista nome+numero.
-export async function scanMultipleCards(imageBase64: string): Promise<{ name: string; number: string | null }[]> {
-  const prompt = `Nell'immagine ci sono PIÙ carte Pokémon (es. una pagina di raccoglitore con tante carte).
-Elenca OGNI carta visibile, una per una. Per ciascuna indica:
-- "name": il nome della carta (Pokémon) in inglese se possibile (es. "Charizard V", "Arceus V", "Manaphy")
-- "number": il numero di collezione se leggibile (es. "020/192"), altrimenti null
+// Riconosce PIÙ prodotti (anche MISTI: scarpe + carte + vestiti...) in UNA sola foto → una
+// voce per ciascuno con nome, tipo e codice. Per i "lotti": ogni prodotto = una riga.
+export async function scanLotItems(imageBase64: string): Promise<{ name: string; type: string; code: string | null }[]> {
+  const prompt = `Nell'immagine ci sono PIÙ prodotti, anche di tipo DIVERSO (sneaker/scarpe, carte Pokémon, vestiti, borse, accessori, elettronica).
+Elenca OGNI singolo prodotto visibile, uno per uno (es. se vedi 2 scarpe e 4 carte → 6 voci).
+Per ciascuno indica:
+- "name": nome/modello (es. "Jordan 4 Bred", "Charizard V", "Supreme Box Logo Hoodie")
+- "type": UNA tra "sneaker", "card", "apparel", "bag", "accessory", "electronic", "other"
+- "code": codice se leggibile (SKU scarpa, oppure numero carta tipo "020/192"), altrimenti null
 Rispondi SOLO con un array JSON, niente altro testo:
-[{"name":"Charizard V","number":"154/172"},{"name":"Arceus V","number":null}]`;
+[{"name":"Jordan 4 Bred","type":"sneaker","code":null},{"name":"Charizard V","type":"card","code":"154/172"}]`;
   let raw = '';
   try {
     raw = await visionComplete({ prompt, imageBase64, temperature: 0.1, maxTokens: 1800, groqModel: 'meta-llama/llama-4-scout-17b-16e-instruct' });
-  } catch (e: any) { logger.error('scanMultipleCards vision', { err: e?.message }); return []; }
+  } catch (e: any) { logger.error('scanLotItems vision', { err: e?.message }); return []; }
   try {
     const m = raw.match(/\[[\s\S]*\]/);
     const arr = JSON.parse(m ? m[0] : raw);
     if (Array.isArray(arr)) {
       return arr
-        .map((c: any) => ({ name: String(c?.name || '').trim(), number: c?.number ? String(c.number).trim() : null }))
+        .map((c: any) => ({ name: String(c?.name || '').trim(), type: String(c?.type || 'other').trim().toLowerCase(), code: c?.code ? String(c.code).trim() : null }))
         .filter((c: any) => c.name.length > 0)
         .slice(0, 40);
     }

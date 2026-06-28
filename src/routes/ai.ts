@@ -5,8 +5,10 @@ import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimit';
 import { validate, aiScanSchema, priceEstimateSchema } from '../middleware/validate';
-import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, getVisionStatus, ListingPlatform, scanMultipleCards } from '../services/ai.service';
+import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, getVisionStatus, ListingPlatform, scanLotItems } from '../services/ai.service';
 import { pokemonSearch } from '../services/pokemon.service';
+import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
+import { searchStockXCandidates } from '../services/stockx.service';
 import { getMarketValuation } from '../services/price.service';
 import { getCardValue } from '../services/cards.service';
 import { getValuation } from '../services/valuation.service';
@@ -52,32 +54,39 @@ router.post('/scan', validate(aiScanSchema), async (req: AuthRequest, res: Respo
 });
 
 // ==========================================
-// POST /api/ai/scan-cards — riconosce PIÙ carte Pokémon in UNA foto (pagina raccoglitore) e
-// per ognuna recupera la foto ufficiale dal catalogo Pokémon. Per i "lotti carte".
+// POST /api/ai/scan-items — riconosce PIÙ prodotti (anche MISTI: scarpe + carte + vestiti) in
+// UNA foto e per ognuno recupera la FOTO ufficiale dal catalogo giusto (Pokémon o StockX/KicksDB).
+// Per i "lotti": ogni prodotto diventa una riga. (Compat: risponde anche su /scan-cards.)
 // ==========================================
-router.post('/scan-cards', async (req: AuthRequest, res: Response) => {
+const scanItemsHandler = async (req: AuthRequest, res: Response) => {
   try {
     const { imageBase64 } = req.body || {};
     if (!imageBase64 || typeof imageBase64 !== 'string') return res.status(400).json({ error: 'Immagine mancante.' });
-    const cards = await scanMultipleCards(imageBase64);
-    // Arricchisci ogni carta con la FOTO ufficiale dal catalogo Pokémon (pokemontcg.io).
+    const items = await scanLotItems(imageBase64);
     const out: any[] = [];
-    for (const c of cards) {
+    for (const it of items) {
       let image: string | null = null;
+      const q = it.code ? `${it.name} ${it.code}` : it.name;
       try {
-        const q = c.number ? `${c.name} ${c.number}` : c.name;
-        const found = await pokemonSearch(q, 1).catch(() => []);
-        if (found[0]?.image) image = found[0].image;
+        if (it.type === 'card') {
+          const f = await pokemonSearch(q, 1).catch(() => []);
+          if (f[0]?.image) image = f[0].image;
+        } else {
+          if (isKicksConfigured()) { const k = await kicksSearch(q, { limit: 1 }).catch(() => []); if (k[0]?.image) image = k[0].image; }
+          if (!image && isStockXConfigured()) { const s = await searchStockXCandidates(q, { limit: 1 }).catch(() => []); if (s[0]?.image) image = s[0].image; }
+        }
       } catch { /* foto facoltativa */ }
-      out.push({ name: c.name, number: c.number, image });
+      out.push({ name: it.name, number: it.code, type: it.type, image });
     }
-    await audit({ action: 'AI_SCAN', userId: req.user!.userId, req, metadata: { type: 'multi_card', count: out.length } });
-    res.json({ cards: out });
+    await audit({ action: 'AI_SCAN', userId: req.user!.userId, req, metadata: { type: 'multi_item', count: out.length } });
+    res.json({ items: out });
   } catch (err: any) {
-    logger.error('Errore /ai/scan-cards', { err: err.message });
-    res.status(500).json({ error: err.message || 'Errore riconoscimento carte' });
+    logger.error('Errore /ai/scan-items', { err: err.message });
+    res.status(500).json({ error: err.message || 'Errore riconoscimento prodotti' });
   }
-});
+};
+router.post('/scan-items', scanItemsHandler);
+router.post('/scan-cards', scanItemsHandler); // compat
 
 // ==========================================
 // POST /api/ai/price - stima prezzo di mercato

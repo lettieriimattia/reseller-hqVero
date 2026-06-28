@@ -78,22 +78,24 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
   const addRow = () => setRows(prev => { const next = [...prev, newRow()]; setQty(String(next.length)); return next; });
   const removeRow = (id: string) => setRows(prev => { const next = prev.filter(r => r.id !== id); setQty(String(next.length)); return next; });
 
-  // Foto con più carte → l'IA le riconosce e RIEMPIE le righe (riusa le vuote, aggiunge se servono).
+  // Foto con più prodotti (anche MISTI: scarpe + carte…) → l'IA li riconosce tutti e RIEMPIE le
+  // righe (riusa le vuote, aggiunge se servono).
   const onCardsPhoto = async (files: FileList | null) => {
     if (!files || !files[0]) return;
     let photo: string | null = null;
     try { photo = await compress(files[0]); } catch { return; }
     setScanning(true);
-    showToast('🃏 Riconosco le carte…', 'ok');
+    showToast('🔍 Riconosco i prodotti…', 'ok');
     try {
-      const { ok, data } = await apiCall<any>('/api/ai/scan-cards', { method: 'POST', body: JSON.stringify({ imageBase64: photo }) });
-      const cards = (ok && Array.isArray(data?.cards)) ? data.cards : [];
-      if (!cards.length) { showToast('Nessuna carta riconosciuta nella foto', 'warn'); setScanning(false); return; }
+      const { ok, data } = await apiCall<any>('/api/ai/scan-items', { method: 'POST', body: JSON.stringify({ imageBase64: photo }) });
+      const items = (ok && Array.isArray(data?.items)) ? data.items : [];
+      if (!items.length) { showToast('Nessun prodotto riconosciuto nella foto', 'warn'); setScanning(false); return; }
       setRows(prev => {
         const next = [...prev];
         let idx = 0;
-        for (const c of cards) {
-          const nm = [c.name, c.number].filter(Boolean).join(' ');
+        for (const c of items) {
+          const nm = String(c.name || '').trim();
+          if (!nm) continue;
           while (idx < next.length && next[idx].name.trim()) idx++; // prossima riga vuota
           if (idx < next.length) { next[idx] = { ...next[idx], name: nm, size: c.number || next[idx].size, photo: c.image || next[idx].photo }; idx++; }
           else { next.push({ id: Math.random().toString(36).slice(2), name: nm, size: c.number || '', photo: c.image || null }); }
@@ -101,8 +103,8 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
         setQty(String(next.length));
         return next;
       });
-      showToast(`✅ ${cards.length} carte inserite nelle righe`, 'ok');
-    } catch { showToast('Errore riconoscimento carte', 'err'); }
+      showToast(`✅ ${items.length} prodotti inseriti nelle righe`, 'ok');
+    } catch { showToast('Errore riconoscimento prodotti', 'err'); }
     setScanning(false);
     if (cardsRef.current) cardsRef.current.value = '';
   };
@@ -178,7 +180,7 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
           <input ref={cardsRef} type="file" accept="image/*" className="hidden" onChange={e => onCardsPhoto(e.target.files)} />
           <button onClick={() => cardsRef.current?.click()} disabled={scanning}
             className="w-full py-2.5 rounded-2xl border border-dashed border-teal-500/40 text-teal-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-teal-500/10 disabled:opacity-50">
-            {scanning ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />} Foto con più carte → riempi le righe (IA)
+            {scanning ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />} Foto con più prodotti → riempi le righe (IA)
           </button>
 
           {/* Righe */}
