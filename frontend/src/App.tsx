@@ -3417,8 +3417,12 @@ export default function App() {
     e.preventDefault();
     setIsBulkProcessing(true);
     const ids = getBulkSelectedIds();
-    const salePrice = parseFloat(bulkSellPrice);
-    const fees = parseFloat(bulkSellFees) || 0;
+    const n = ids.length || 1;
+    // Prezzo TOTALE inserito → diviso per N = prezzo unitario fittizio del singolo pezzo.
+    const total = parseFloat(bulkSellPrice) || 0;
+    const totalFees = parseFloat(bulkSellFees) || 0;
+    const salePrice = Math.round((total / n) * 100) / 100;
+    const fees = Math.round((totalFees / n) * 100) / 100;
     let errors = 0;
     for (const id of ids) {
       const { ok } = await apiCall(`/products/${id}`, {
@@ -8790,23 +8794,32 @@ export default function App() {
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <h2 className="text-xl font-semibold mb-1">Vendi in Blocco</h2>
             <p className="text-xs text-[var(--text-soft)] mb-5">
-              {getBulkSelectedIds().length} prodotti — stessa piattaforma e stesso prezzo unitario per tutti
+              {getBulkSelectedIds().length} prodotti — inserisci il <b className="text-[var(--text)]">prezzo TOTALE</b> di vendita: l'app lo divide tra i pezzi.
             </p>
             <form onSubmit={handleBulkSell} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo unitario €</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo TOTALE €</label>
                   <input type="number" step="0.01" required value={bulkSellPrice}
                     onChange={e => setBulkSellPrice(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Fees unitarie €</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Fees TOTALI €</label>
                   <input type="number" step="0.01" value={bulkSellFees}
                     onChange={e => setBulkSellFees(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                 </div>
               </div>
+              {(() => {
+                const n = getBulkSelectedIds().length || 1;
+                const tot = parseFloat(bulkSellPrice) || 0;
+                return tot > 0 ? (
+                  <p className="text-xs text-[var(--text-soft)] -mt-1">
+                    = <b className="text-[var(--teal)] num">{(tot / n).toFixed(2)}€</b> a pezzo ({n} pezzi)
+                  </p>
+                ) : null;
+              })()}
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Piattaforma</label>
                 <select value={bulkSellPlatform} onChange={e => setBulkSellPlatform(e.target.value)}
