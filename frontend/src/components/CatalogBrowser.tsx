@@ -64,8 +64,11 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
   const [customTypes, setCustomTypes] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('hq_catalog_cats') || '[]'); } catch { return []; }
   });
-  const addCustomType = () => {
-    const name = (window.prompt('Nuova categoria (es. Profumi, Vinili, Orologi):') || '').trim();
+  // Modale in-app per aggiungere una categoria (niente window.prompt nativo).
+  const [catModalOpen, setCatModalOpen] = useState(false);
+  const [newCat, setNewCat] = useState('');
+  const confirmAddCategory = () => {
+    const name = newCat.trim();
     if (!name) return;
     const exists = [...TYPES.map(t => t.label.toLowerCase()), ...customTypes.map(c => c.toLowerCase())].includes(name.toLowerCase());
     if (!exists) {
@@ -74,6 +77,8 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
       try { localStorage.setItem('hq_catalog_cats', JSON.stringify(next)); } catch { /* storage pieno: pazienza */ }
     }
     setType(name.toLowerCase());
+    setNewCat('');
+    setCatModalOpen(false);
   };
   const removeCustomType = (name: string) => {
     const next = customTypes.filter(c => c !== name);
@@ -183,7 +188,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
                 type === c.toLowerCase() ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'
               }`}>{c}</button>
           ))}
-          <button onClick={addCustomType}
+          <button onClick={() => { setNewCat(''); setCatModalOpen(true); }}
             className="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--fill)] text-[#6b54c6] hover:bg-[#6b54c6]/10 flex items-center gap-1">
             <Plus size={13} /> Categoria
           </button>
@@ -251,6 +256,36 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
               className="mt-4 w-full py-3.5 rounded-2xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white font-bold flex items-center justify-center gap-2 transition-colors">
               <Plus size={18} /> Aggiungi al magazzino
             </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Modale "Nuova categoria" in-app (sostituisce window.prompt nativo). */}
+      {catModalOpen && createPortal(
+        <div className="fixed inset-0 z-[85] bg-black/70 backdrop-blur-md flex items-center justify-center p-5"
+          onClick={() => setCatModalOpen(false)}>
+          <div className="w-full max-w-sm rounded-3xl bg-[var(--surface)] border border-[var(--border-2)] p-5 shadow-2xl"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2.5 mb-1">
+              <span className="w-9 h-9 rounded-xl bg-[#6b54c6]/15 text-[#6b54c6] flex items-center justify-center shrink-0"><Plus size={18} /></span>
+              <h3 className="font-extrabold text-[var(--text)] text-lg leading-tight">Nuova categoria</h3>
+            </div>
+            <p className="text-xs text-[var(--text-soft)] mb-4 pl-0.5">Scrivila e cerco i prodotti giusti dal vivo. Es. <span className="text-[var(--text)] font-semibold">Profumi, Vinili, Orologi</span>.</p>
+            <input value={newCat} onChange={e => setNewCat(e.target.value)} autoFocus
+              onKeyDown={e => { if (e.key === 'Enter') confirmAddCategory(); if (e.key === 'Escape') setCatModalOpen(false); }}
+              placeholder="Nome categoria…"
+              className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3.5 py-3 text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[#6b54c6]" />
+            <div className="flex gap-2.5 mt-4">
+              <button onClick={() => setCatModalOpen(false)}
+                className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)] font-bold text-sm transition-colors">
+                Annulla
+              </button>
+              <button onClick={confirmAddCategory} disabled={!newCat.trim()}
+                className="flex-1 py-3 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white font-bold text-sm transition-colors disabled:opacity-40">
+                Aggiungi
+              </button>
+            </div>
           </div>
         </div>,
         document.body
