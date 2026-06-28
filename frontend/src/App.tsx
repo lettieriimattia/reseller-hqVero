@@ -5036,10 +5036,12 @@ export default function App() {
                               <button onClick={() => openTrackingModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">{t('mag.track')}</button>
                               <button onClick={() => toggleToShip(g, !g.toShip)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>{g.toShip ? t('mag.inList') : t('dash.toShip')}</button>
+                              {MARKETPLACE_ENABLED && (
                               <button onClick={() => quickTogglePublic(g)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.isPublic ? 'bg-[#6b54c6]/20 text-[#6b54c6]' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>
                                 {g.isPublic ? t('mag.published') : t('mag.publish')}
                               </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -5108,10 +5110,12 @@ export default function App() {
                             ) : (
                               <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> {t('mag.sell')}</button>
                             )}
+                            {MARKETPLACE_ENABLED && (
                             <button onClick={() => quickTogglePublic(g)}
                               className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.isPublic ? 'bg-[#6b54c6]/20 text-[#6b54c6]' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)]'}`}>
                               <Store size={12} /> {g.isPublic ? t('mag.inShowcase') : t('mag.publish')}
                             </button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -6613,7 +6617,8 @@ export default function App() {
               <p className="text-[11px] text-[var(--text-faint)] mt-3">{t('set.langNote')}</p>
             </section>
 
-            {/* SEZIONE: Magazzino pubblico (auto-pubblicazione) */}
+            {/* SEZIONE: Magazzino pubblico (auto-pubblicazione) — NASCOSTA finché il marketplace non è pubblico */}
+            {MARKETPLACE_ENABLED && (
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
@@ -6636,6 +6641,7 @@ export default function App() {
                 <p className="text-[11px] text-amber-400 mt-3">{t('set.publicWhWarn')}</p>
               )}
             </section>
+            )}
 
             {/* SEZIONE: Prodotti Fermi */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
@@ -8548,7 +8554,8 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Pubblica nel marketplace */}
+              {/* Pubblica nel marketplace — NASCOSTO finché il marketplace non è pubblico */}
+              {MARKETPLACE_ENABLED && (
               <div className="border-t border-[var(--border-2)] pt-4">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
@@ -8581,6 +8588,7 @@ export default function App() {
                   )}
                 </div>
               </div>
+              )}
 
               {/* Quote del team nel modale di modifica */}
               {(() => {

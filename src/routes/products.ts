@@ -23,28 +23,44 @@ import { isFeatureLive } from '../config/plans';
 import { isAdminEmail } from '../config/admins';
 import { logger } from '../utils/logger';
 
+// Quanto un titolo del catalogo combacia con la query (0..1) = frazione delle parole della
+// query presenti nel titolo. Serve a NON agganciare foto sbagliate (es. prima Jordan 1 a caso).
+function imgMatchScore(query: string, title: string): number {
+  const qw = Array.from(new Set(query.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length >= 2)));
+  if (!qw.length) return 0;
+  const t = (title || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+  let hit = 0;
+  for (const w of qw) if (t.includes(w)) hit++;
+  return hit / qw.length;
+}
+
 // Cerca la FOTO ufficiale di un prodotto dal catalogo: prima la cache locale (gratis, niente
-// quota), poi KicksDB→StockX. Ritorna {image, sku} o null. Usata per agganciare le foto in
-// AUTOMATICO ai prodotti senza immagine (import, aggiunta manuale).
+// quota), poi KicksDB→StockX. Sceglie il candidato che COMBACIA MEGLIO col nome (soglia minima):
+// così non aggancia foto sbagliate e per i nomi inventati non mette nulla. Ritorna {image,sku}|null.
 async function findCatalogImage(brand?: string | null, name?: string | null): Promise<{ image: string; sku: string | null } | null> {
   const nm = (name || '').trim();
   const q = `${brand || ''} ${nm}`.trim();
   if (q.length < 2) return null;
-  // 1) cache locale CatalogItem (per nome) — niente consumo quota
+  // 1) cache locale CatalogItem — niente consumo quota. Prende candidati e sceglie il migliore.
   if (nm.length >= 3) {
     try {
-      const cached = await prisma.catalogItem.findFirst({
-        where: { image: { not: null }, name: { contains: nm, mode: 'insensitive' } },
+      const first = nm.split(/\s+/)[0];
+      const cands = await prisma.catalogItem.findMany({
+        where: { image: { not: null }, name: { contains: first, mode: 'insensitive' } }, take: 12,
       });
-      if (cached?.image) return { image: cached.image, sku: cached.sku || null };
+      let best: any = null, bestS = 0;
+      for (const c of cands) { const s = imgMatchScore(q, `${c.brand || ''} ${c.name || ''}`); if (s > bestS) { bestS = s; best = c; } }
+      if (best && bestS >= 0.6) return { image: best.image!, sku: best.sku || null };
     } catch { /* ignora */ }
   }
-  // 2) fonte esterna (KicksDB → StockX)
+  // 2) fonte esterna (KicksDB → StockX), poi sceglie il candidato col punteggio migliore.
   try {
-    let best: any;
-    if (isKicksConfigured()) { const k = await kicksSearch(q, { limit: 5 }); best = k.find((c: any) => c.image) || k[0]; }
-    if ((!best || !best.image) && isStockXConfigured()) { const s = await searchStockXCandidates(q, { limit: 5 }); best = s.find((c: any) => c.image) || s[0] || best; }
-    if (best?.image) return { image: best.image, sku: best.styleId || null };
+    const cands: any[] = [];
+    if (isKicksConfigured()) cands.push(...await kicksSearch(q, { limit: 8 }).catch(() => []));
+    if (cands.length < 3 && isStockXConfigured()) cands.push(...(await searchStockXCandidates(q, { limit: 8 }).catch(() => [])));
+    let best: any = null, bestS = 0;
+    for (const c of cands) { if (!c.image) continue; const s = imgMatchScore(q, c.title || ''); if (s > bestS) { bestS = s; best = c; } }
+    if (best && bestS >= 0.5) return { image: best.image, sku: best.styleId || null };
   } catch { /* fonte non disponibile */ }
   return null;
 }
