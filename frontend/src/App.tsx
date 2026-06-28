@@ -3491,7 +3491,9 @@ export default function App() {
     const impShares = snapshotSharesFor(impWhId);
     let success = 0, fail = 0;
     for (const row of valid) {
-      const cat = row.category && userCategories.includes(row.category) ? row.category : importCategory;
+      // Reparto della riga: usa QUALSIASI reparto scritto nell'Excel (nuovo o esistente);
+      // se la cella è vuota, ripiega sul reparto selezionato nella modale.
+      const cat = (row.category && String(row.category).trim()) ? String(row.category).trim() : importCategory;
       const { ok } = await apiCall('/products', {
         method: 'POST',
         body: JSON.stringify({
