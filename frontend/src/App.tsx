@@ -3447,16 +3447,48 @@ export default function App() {
     price: ['prezzo', 'price', 'prezzo acquisto', 'costo', 'purchase price', 'acquisto', 'pagato'],
     category: ['categoria', 'category', 'reparto', 'tipo'],
   };
+  // Deduce la MARCA dal nome completo (quando nel file non c'è una colonna marca).
+  const BRAND_HINTS: [RegExp, string][] = [
+    [/\bair jordan\b|\bjordan\b|\baj ?\d/i, 'Jordan'],
+    [/\bdunk\b|\bair force\b|\baf1\b|\bblazer\b|\bcortez\b|\bvapormax\b|\bair max\b|\bzoom\b|\bnike\b|\bsb\b/i, 'Nike'],
+    [/\byeezy\b|\bfoam\b/i, 'Yeezy'],
+    [/\badidas\b|\bsamba\b|\bgazelle\b|\bcampus\b|\bsuperstar\b|\bforum\b|\bspezial\b/i, 'Adidas'],
+    [/\bnew balance\b|\bnb\b/i, 'New Balance'],
+    [/\bbalenciaga\b|\btriple s\b|\btrack\b|\barena\b/i, 'Balenciaga'],
+    [/\bsupreme\b/i, 'Supreme'],
+    [/\brick owens\b|\bramones\b|\bgeobasket\b/i, 'Rick Owens'],
+    [/\basics\b|\bgel\b/i, 'Asics'],
+    [/\bsalomon\b|\bxt-?6\b/i, 'Salomon'],
+    [/\bconverse\b|\bchuck\b/i, 'Converse'],
+    [/\bvans\b/i, 'Vans'], [/\bpuma\b/i, 'Puma'], [/\bcrocs\b/i, 'Crocs'],
+    [/\btimberland\b/i, 'Timberland'], [/\bugg\b/i, 'UGG'],
+    [/\boff-?white\b/i, 'Off-White'], [/\btravis\b|\bcactus jack\b/i, 'Travis Scott'],
+    [/\bnocta\b/i, 'Nike'], [/\bterra\b/i, 'Adidas'],
+  ];
+  const deriveBrand = (name: string): string => {
+    for (const [re, b] of BRAND_HINTS) if (re.test(name)) return b;
+    return (name.trim().split(/\s+/)[0] || ''); // fallback: prima parola
+  };
   // Costruisce le righe-prodotto dalle righe grezze usando l'abbinamento colonna→campo scelto.
-  const applyImportMap = (raw: any[], map: Record<string, string>) => raw.map((row: any) => ({
-    brand: map.brand ? String(row[map.brand] ?? '').trim() : '',
-    name: map.name ? String(row[map.name] ?? '').trim() : '',
-    size: map.size ? String(row[map.size] ?? '').trim() : '',
-    condition: map.condition ? String(row[map.condition] ?? '').trim() : '',
-    // prezzo robusto: gestisce "150,00", "€150", "150.00" → 150
-    price: map.price ? (parseFloat(String(row[map.price] ?? '').replace(/[^0-9,.-]/g, '').replace(',', '.')) || 0) : 0,
-    category: map.category ? String(row[map.category] ?? '').trim() : '',
-  }));
+  // Se manca la marca, la DEDUCE dal nome (e la toglie dal nome per non duplicarla).
+  const applyImportMap = (raw: any[], map: Record<string, string>) => raw.map((row: any) => {
+    let brand = map.brand ? String(row[map.brand] ?? '').trim() : '';
+    let name = map.name ? String(row[map.name] ?? '').trim() : '';
+    if (!brand && name) {
+      brand = deriveBrand(name);
+      if (brand && name.toLowerCase().startsWith(brand.toLowerCase())) {
+        name = name.slice(brand.length).trim() || name;
+      }
+    }
+    return {
+      brand, name,
+      size: map.size ? String(row[map.size] ?? '').trim() : '',
+      condition: map.condition ? String(row[map.condition] ?? '').trim() : '',
+      // prezzo robusto: gestisce "150,00", "€150", "1007,5" → numero
+      price: map.price ? (parseFloat(String(row[map.price] ?? '').replace(/[^0-9,.-]/g, '').replace(',', '.')) || 0) : 0,
+      category: map.category ? String(row[map.category] ?? '').trim() : '',
+    };
+  });
   // Cambia l'abbinamento di un campo e ricalcola l'anteprima.
   const setImportField = (field: string, header: string) => {
     const m = { ...importMap }; if (header) m[field] = header; else delete m[field];
@@ -3482,6 +3514,27 @@ export default function App() {
         const h = headers.find(hh => IMPORT_ALIASES[field].includes(normalize(hh)));
         if (h) map[field] = h;
       });
+      // Fallback "smart" (file senza intestazioni chiare, es. una colonna nome + una prezzo):
+      // colonna più NUMERICA = prezzo, colonna più TESTUALE = nome.
+      const stats = headers.map(h => {
+        let num = 0, len = 0, n = 0;
+        for (const row of raw.slice(0, 40)) {
+          const v = row[h]; if (v === '' || v == null) continue; n++;
+          const parsed = parseFloat(String(v).replace(/[^0-9,.-]/g, '').replace(',', '.'));
+          if (!isNaN(parsed) && /\d/.test(String(v))) num++;
+          len += String(v).length;
+        }
+        return { h, numRatio: n ? num / n : 0, avgLen: n ? len / n : 0 };
+      });
+      const used = () => Object.values(map);
+      if (!map.price) {
+        const best = stats.filter(c => !used().includes(c.h)).sort((a, b) => b.numRatio - a.numRatio)[0];
+        if (best && best.numRatio > 0.6) map.price = best.h;
+      }
+      if (!map.name) {
+        const best = stats.filter(c => !used().includes(c.h) && c.numRatio < 0.5).sort((a, b) => b.avgLen - a.avgLen)[0];
+        if (best && best.avgLen >= 3) map.name = best.h;
+      }
       setImportRaw(raw);
       setImportHeaders(headers);
       setImportMap(map);
@@ -8813,7 +8866,11 @@ export default function App() {
                         <select value={importMap[f.key] || ''} onChange={e => setImportField(f.key, e.target.value)}
                           className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2 py-1.5 text-xs outline-none focus:border-[#6b54c6]">
                           <option value="">— nessuna —</option>
-                          {importHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                          {importHeaders.map(h => {
+                            const sample = (importRaw.find((r: any) => r[h] !== '' && r[h] != null) || {})[h];
+                            const lbl = /^__EMPTY/.test(h) ? 'Colonna' : h;
+                            return <option key={h} value={h}>{lbl}{sample != null ? ` — es. ${String(sample).slice(0, 16)}` : ''}</option>;
+                          })}
                         </select>
                       </div>
                     ))}
