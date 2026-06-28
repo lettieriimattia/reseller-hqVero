@@ -75,16 +75,58 @@ const TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'modifica_prodotto',
+      description: 'Modifica un prodotto GIÀ presente in magazzino (prezzo d\'acquisto, taglia, condizione o categoria). Individua il prodotto per marca+nome (e taglia se serve). Usalo quando l\'utente dice "cambia/modifica/correggi" un articolo che ha già.',
+      parameters: {
+        type: 'object',
+        properties: {
+          brand: { type: 'string', description: 'Marca per individuare il prodotto (facoltativo)' },
+          nome: { type: 'string', description: 'Nome del modello da modificare' },
+          taglia: { type: 'string', description: 'Taglia attuale per individuarlo (facoltativo)' },
+          nuovo_prezzo: { type: ['number', 'string'], description: 'Nuovo prezzo d\'acquisto in euro (facoltativo)' },
+          nuova_taglia: { type: 'string', description: 'Nuova taglia (facoltativo)' },
+          nuova_condizione: { type: 'string', description: 'Nuova condizione, es. "Nuovo" (facoltativo)' },
+          nuova_categoria: { type: 'string', description: 'Nuova categoria/reparto (facoltativo)' },
+        },
+        required: ['nome'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'vendi_prodotto',
+      description: 'Vende uno o più articoli GIÀ in magazzino: li segna come VENDUTO col prezzo di vendita. Individua per marca+nome (e taglia). Usalo quando l\'utente dice "vendi/ho venduto X a Y euro".',
+      parameters: {
+        type: 'object',
+        properties: {
+          brand: { type: 'string', description: 'Marca per individuare il prodotto (facoltativo)' },
+          nome: { type: 'string', description: 'Nome del modello venduto' },
+          taglia: { type: 'string', description: 'Taglia per individuarlo (facoltativo)' },
+          prezzo_vendita: { type: ['number', 'string'], description: 'Prezzo di vendita per unità, in euro' },
+          piattaforma: { type: 'string', description: 'Dove l\'hai venduto: Vinted/StockX/eBay/Subito/Privato (facoltativo)' },
+          quantita: { type: ['number', 'string'], description: 'Quante unità vendere (default 1)' },
+        },
+        required: ['nome', 'prezzo_vendita'],
+      },
+    },
+  },
 ];
 
 const SYSTEM_PROMPT = `Sei "HQ", l'assistente di HQVault (gestionale per reseller di sneaker/streetwear).
-Aiuti l'utente a: cercare modelli nel catalogo, aggiungere prodotti al magazzino, valutarne il prezzo.
+Aiuti l'utente a: cercare modelli nel catalogo, aggiungere/modificare/vendere prodotti del magazzino, valutarne il prezzo.
 Regole:
 - Rispondi SEMPRE in italiano, in modo breve e amichevole.
-- Quando l'utente vuole inserire un prodotto, usa il tool "aggiungi_prodotto" con i dati che ti dà; se manca la taglia o il prezzo va bene lo stesso (li metterà dopo).
+- Per INSERIRE un prodotto usa "aggiungi_prodotto" con i dati che ti dà; se manca la taglia o il prezzo va bene (li metterà dopo).
+- Se l'utente aggiunge un articolo IDENTICO a uno che ha già (stessa marca+nome+taglia), aggiungilo lo stesso: il sistema riconosce il duplicato e AUMENTA lo stock (non serve dire che esiste già).
 - Se l'utente dice un numero di unità uguali (es. "aggiungi 4 Jordan 4 uguali"), imposta "quantita".
+- Per MODIFICARE un articolo già in magazzino (prezzo, taglia, condizione, categoria) usa "modifica_prodotto".
+- Per VENDERE un articolo già in magazzino usa "vendi_prodotto" col prezzo di vendita (e quantità se più di una).
 - Se non sei sicuro del modello esatto, usa "cerca_catalogo" e proponi i risultati.
-- Dopo un'azione, conferma in una riga cosa hai fatto (es. "✅ Aggiunto: Jordan 4 Bred, taglia 42").
+- Dopo un'azione, conferma in una riga cosa hai fatto (es. "✅ Aggiunto: Jordan 4 Bred, taglia 42 — stock a 21").
 - Non inventare prezzi: se servono usa "valuta_prezzo".`;
 
 // Trova il magazzino di destinazione dell'utente (OWNER top-level, altrimenti il primo).
@@ -102,6 +144,19 @@ async function defaultCategory(userId: string, hint?: string): Promise<string> {
     where: { userId, deletedAt: null }, select: { category: true }, orderBy: { createdAt: 'desc' },
   });
   return existing?.category || 'Scarpe';
+}
+
+// Trova i prodotti IN STOCK dell'utente che corrispondono a marca/nome(/taglia).
+// Usato da "modifica_prodotto" e "vendi_prodotto" per individuare l'articolo dalla chat.
+async function findUserStock(userId: string, q: { brand?: any; nome?: any; taglia?: any }) {
+  const where: any = { userId, status: 'IN STOCK', deletedAt: null };
+  const brand = q.brand ? String(q.brand).trim() : '';
+  const nome = q.nome ? String(q.nome).trim() : '';
+  const taglia = q.taglia ? String(q.taglia).trim() : '';
+  if (brand) where.brand = { contains: brand, mode: 'insensitive' };
+  if (nome) where.name = { contains: nome, mode: 'insensitive' };
+  if (taglia && taglia !== '—') where.size = taglia;
+  return prisma.product.findMany({ where, orderBy: { createdAt: 'asc' } });
 }
 
 // ---- Esecuzione di un singolo tool ----
@@ -124,45 +179,93 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
       if (quotaErr) return { error: 'Hai raggiunto il limite di prodotti del tuo piano.' };
       const warehouseId = await findTargetWarehouse(ctx.userId);
       if (!warehouseId) return { error: 'Nessun magazzino trovato per l\'utente.' };
-      const category = await defaultCategory(ctx.userId, args.categoria);
+      const size = (args.taglia ? String(args.taglia) : '').trim() || '—';
 
-      // Foto ufficiale dal catalogo (come fa la schermata Catalogo): cerca per SKU o nome e
-      // salva il LINK diretto dell'immagine — niente Cloudinary, DB piccolo. KicksDB primario,
-      // StockX fallback. Se trovo lo style code lo aggancio anch'esso al prodotto.
+      // DEDUP STOCK: se esiste già un articolo IDENTICO in stock (stessa marca+nome+taglia),
+      // eredito foto/sku/categoria/prezzo così il magazzino lo RAGGRUPPA e il contatore sale
+      // (es. stock da 20 + 1 identico → 21), invece di creare un doppione scollegato.
+      const twin = await prisma.product.findFirst({
+        where: {
+          userId: ctx.userId, status: 'IN STOCK', deletedAt: null, size,
+          brand: { equals: brand, mode: 'insensitive' },
+          name: { equals: nome, mode: 'insensitive' },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const category = twin?.category || await defaultCategory(ctx.userId, args.categoria);
+      const condition = (args.condizione ? String(args.condizione) : '').trim() || twin?.condition || '—';
+      const givenPrice = Number(args.prezzo) > 0 ? Number(args.prezzo) : null;
+      const purchasePrice = givenPrice ?? (twin?.purchasePrice ?? 0);
+      let resolvedSku: string | null = args.sku ? String(args.sku).trim() : (twin?.sku || null);
+
+      // Foto: eredito dal gemello se c'è; altrimenti la cerco nel catalogo (KicksDB→StockX),
+      // salvo il LINK diretto dell'immagine — niente Cloudinary, DB piccolo.
       let photo: string | null = null;
-      let resolvedSku: string | null = args.sku ? String(args.sku).trim() : null;
-      const q = resolvedSku || `${brand} ${nome}`;
-      try {
-        let best: { image: string | null; styleId: string | null } | undefined;
-        if (isKicksConfigured()) {
-          const k = await kicksSearch(q, { limit: 5 });
-          best = k.find(c => c.image) || k[0];
-        }
-        if ((!best || !best.image) && isStockXConfigured()) {
-          const s = await searchStockXCandidates(q, { limit: 5 });
-          best = s.find(c => c.image) || s[0] || best;
-        }
-        if (best?.image) photo = best.image;
-        if (!resolvedSku && best?.styleId) resolvedSku = best.styleId;
-      } catch { /* foto facoltativa: se il catalogo non risponde, aggiungo comunque */ }
+      if (twin?.photos) { try { photo = JSON.parse(twin.photos)?.[0] || null; } catch { /* foto gemello illeggibile */ } }
+      if (!photo) {
+        const q = resolvedSku || `${brand} ${nome}`;
+        try {
+          let best: { image: string | null; styleId: string | null } | undefined;
+          if (isKicksConfigured()) {
+            const k = await kicksSearch(q, { limit: 5 });
+            best = k.find(c => c.image) || k[0];
+          }
+          if ((!best || !best.image) && isStockXConfigured()) {
+            const s = await searchStockXCandidates(q, { limit: 5 });
+            best = s.find(c => c.image) || s[0] || best;
+          }
+          if (best?.image) photo = best.image;
+          if (!resolvedSku && best?.styleId) resolvedSku = best.styleId;
+        } catch { /* foto facoltativa: se il catalogo non risponde, aggiungo comunque */ }
+      }
 
       const data = {
-        category, brand, name: nome,
-        size: (args.taglia ? String(args.taglia) : '').trim() || '—',
-        condition: (args.condizione ? String(args.condizione) : '').trim() || '—',
-        purchasePrice: Number(args.prezzo) > 0 ? Number(args.prezzo) : 0,
+        category, brand, name: nome, size, condition, purchasePrice,
         status: 'IN STOCK',
         userId: ctx.userId, warehouseId,
         sku: resolvedSku || null,
         photos: photo ? JSON.stringify([photo]) : null,
       };
-      // N unità identiche → il magazzino le raggruppa con un contatore (modificabile in modifica).
-      if (qty > 1) {
-        await prisma.product.createMany({ data: Array.from({ length: qty }, () => ({ ...data })) });
-        return { ok: true, aggiunto: `${brand} ${nome}`, taglia: data.size, prezzo: data.purchasePrice, foto: !!photo, quantita: qty };
+      if (qty > 1) await prisma.product.createMany({ data: Array.from({ length: qty }, () => ({ ...data })) });
+      else await prisma.product.create({ data });
+
+      // Conteggio totale di questo identico articolo (per il messaggio "stock a N").
+      const stockTotale = await prisma.product.count({
+        where: {
+          userId: ctx.userId, status: 'IN STOCK', deletedAt: null, size,
+          brand: { equals: brand, mode: 'insensitive' },
+          name: { equals: nome, mode: 'insensitive' },
+        },
+      });
+      return { ok: true, aggiunto: `${brand} ${nome}`, taglia: size, prezzo: purchasePrice, foto: !!photo, quantita: qty, stock_totale: stockTotale, raggruppato: !!twin };
+    }
+
+    if (name === 'modifica_prodotto') {
+      const prods = await findUserStock(ctx.userId, { brand: args.brand, nome: args.nome, taglia: args.taglia });
+      if (!prods.length) return { error: 'Non ho trovato quel prodotto in magazzino.' };
+      const upd: any = {};
+      if (Number(args.nuovo_prezzo) > 0) upd.purchasePrice = Number(args.nuovo_prezzo);
+      if (args.nuova_taglia && String(args.nuova_taglia).trim()) upd.size = String(args.nuova_taglia).trim();
+      if (args.nuova_condizione && String(args.nuova_condizione).trim()) upd.condition = String(args.nuova_condizione).trim();
+      if (args.nuova_categoria && String(args.nuova_categoria).trim()) upd.category = String(args.nuova_categoria).trim();
+      if (!Object.keys(upd).length) return { error: 'Dimmi cosa modificare: prezzo, taglia, condizione o categoria.' };
+      await prisma.product.updateMany({ where: { id: { in: prods.map(p => p.id) } }, data: upd });
+      return { ok: true, modificati: prods.length, prodotto: `${prods[0].brand} ${prods[0].name}`, modifiche: upd };
+    }
+
+    if (name === 'vendi_prodotto') {
+      const prezzo = Number(args.prezzo_vendita);
+      if (!(prezzo > 0)) return { error: 'Mi serve il prezzo di vendita.' };
+      const sellQty = Math.min(Math.max(Math.floor(Number(args.quantita) || 1), 1), 50);
+      const all = await findUserStock(ctx.userId, { brand: args.brand, nome: args.nome, taglia: args.taglia });
+      if (!all.length) return { error: 'Non ho trovato quel prodotto disponibile in magazzino.' };
+      const prods = all.slice(0, sellQty);
+      const platform = (args.piattaforma ? String(args.piattaforma).trim() : '') || 'Privato';
+      for (const p of prods) {
+        await prisma.product.update({ where: { id: p.id }, data: { salePrice: prezzo, platform, status: 'VENDUTO' } });
       }
-      const product = await prisma.product.create({ data });
-      return { ok: true, id: product.id, aggiunto: `${brand} ${nome}`, taglia: product.size, prezzo: product.purchasePrice, foto: !!photo, quantita: 1 };
+      return { ok: true, venduti: prods.length, prodotto: `${prods[0].brand} ${prods[0].name}`, taglia: prods[0].size, prezzo, piattaforma: platform };
     }
 
     if (name === 'valuta_prezzo') {
@@ -200,7 +303,22 @@ function summarizeToolResult(name: string, result: any): string {
   if (name === 'aggiungi_prodotto' && result?.ok) {
     const taglia = result.taglia && result.taglia !== '—' ? `, taglia ${result.taglia}` : '';
     const qty = result.quantita > 1 ? ` ×${result.quantita}` : '';
-    return `✅ Aggiunto: ${result.aggiunto}${qty}${taglia}${result.foto ? ' (con foto)' : ''}.`;
+    const stock = result.raggruppato && result.stock_totale ? ` — stock a ${result.stock_totale}` : '';
+    return `✅ Aggiunto: ${result.aggiunto}${qty}${taglia}${result.foto ? ' (con foto)' : ''}${stock}.`;
+  }
+  if (name === 'modifica_prodotto' && result?.ok) {
+    const parti: string[] = [];
+    if (result.modifiche?.purchasePrice != null) parti.push(`prezzo ${result.modifiche.purchasePrice}€`);
+    if (result.modifiche?.size) parti.push(`taglia ${result.modifiche.size}`);
+    if (result.modifiche?.condition) parti.push(`condizione ${result.modifiche.condition}`);
+    if (result.modifiche?.category) parti.push(`categoria ${result.modifiche.category}`);
+    const n = result.modificati > 1 ? ` (${result.modificati} pezzi)` : '';
+    return `✏️ Modificato ${result.prodotto}${n}: ${parti.join(', ')}.`;
+  }
+  if (name === 'vendi_prodotto' && result?.ok) {
+    const taglia = result.taglia && result.taglia !== '—' ? ` (taglia ${result.taglia})` : '';
+    const n = result.venduti > 1 ? ` ×${result.venduti}` : '';
+    return `💰 Venduto: ${result.prodotto}${taglia}${n} a ${result.prezzo}€ su ${result.piattaforma}.`;
   }
   if (name === 'valuta_prezzo' && result?.valore != null) return `💶 ${result.modello || 'Valore'}: circa ${result.valore}€ (${result.fonte}).`;
   return '✅ Fatto.';
