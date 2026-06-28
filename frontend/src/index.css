@@ -107,7 +107,18 @@
   --bg-blur: rgba(11,11,13,0.95);
   --bg-overlay: rgba(11,11,13,0.72);
   --surface-blur: rgba(20,20,23,0.95);
+  /* Cockpit Pagani in chiave Lux: i valori/profitto diventano CHAMPAGNE (il metallo = il
+     valore), i negativi oxblood, il secondario beige caldo. Così il cruscotto esistente
+     (che usa --teal/--rust/--beige) si veste premium senza toccare il markup. */
+  --teal: #c9a86a;          /* "ottanio" → oro champagne (valore/accento) */
+  --teal-soft: rgba(201,168,106,0.12);
+  --teal-line: rgba(201,168,106,0.42);
+  --rust: #b9745a;          /* ruggine → oxblood */
+  --rust-soft: rgba(185,116,90,0.13);
+  --beige: #a89f90;         /* testo secondario caldo */
 }
+/* Lux: micro-label di sistema più rarefatte (kerning ampio, champagne tenue). */
+.lux .sys-label { letter-spacing: 0.2em; }
 /* Lux: rimpiazza il viola hardcoded (#6b54c6) con champagne e smorza i neon verdi/rossi.
    Su accento champagne (chiaro) il testo diventa scuro → look raffinato. */
 .lux .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #14110a !important; }
@@ -116,6 +127,12 @@
 .lux .text-green-400, .lux .text-emerald-400 { color: #7e9a78 !important; }  /* verde salvia spento */
 .lux .text-green-300     { color: #8fae88 !important; }
 .lux .text-red-400, .lux .text-red-300       { color: #b9745a !important; }  /* oxblood/rust chiaro */
+/* Lux: ogni pannello prende una velatura champagne dall'alto (riflesso metallico tenue) e un
+   bordo a filo di capello → look "scolpito dal pieno", premium. */
+.lux .bg-\[var\(--surface\)\] {
+  background-image: linear-gradient(180deg, rgba(201,168,106,0.035), rgba(201,168,106,0) 42%);
+}
+.lux .mech:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,168,106,0.12); }
 
 /* ===== TEMA CHIARO: colori semantici accentati =====
    Le tinte -400 di Tailwind sono troppo chiare su sfondo bianco.
