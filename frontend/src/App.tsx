@@ -316,6 +316,7 @@ export default function App() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [repartiOpen, setRepartiOpen] = useState(false); // lista reparti a tendina nelle impostazioni
   const [marketingConsent, setMarketingConsent] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false); // consenso privacy (obbligatorio in registrazione)
   
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   // Recupero password ("Password dimenticata?"): step email → codice+nuova password.
@@ -4114,30 +4115,33 @@ export default function App() {
             )}
             
             {authMode === 'register' && (
-              <div className="space-y-3 mt-4">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" required className="mt-0.5 shrink-0 accent-white w-4 h-4 rounded" />
+              <div className="space-y-2 mt-4">
+                {/* Privacy (obbligatorio) — riga grande tappabile, niente più mini-checkbox */}
+                <button type="button" onClick={() => setPrivacyAccepted(v => !v)}
+                  className="w-full flex items-start gap-3 text-left p-2.5 rounded-xl border border-[var(--border-2)] active:bg-white/5 transition-colors">
+                  <span className={`mt-0.5 shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${privacyAccepted ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-[var(--border-3)]'}`}>
+                    {privacyAccepted && <Check size={16} className="text-white" />}
+                  </span>
                   <span className="text-[12px] text-[var(--text-soft)] leading-relaxed">
                     {t('auth.privacyPre')}{' '}
-                    <button type="button" onClick={() => setPrivacyOpen(true)} className="text-[var(--text)] underline underline-offset-2 hover:no-underline">
+                    <span onClick={e => { e.stopPropagation(); setPrivacyOpen(true); }} className="text-[var(--text)] underline underline-offset-2">
                       {t('cookie.privacy')}
-                    </button>
+                    </span>
                     {' '}{t('auth.privacyPost')}{' '}
                     <span className="text-[var(--text-faint)]">{t('auth.required')}</span>
                   </span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={marketingConsent}
-                    onChange={e => setMarketingConsent(e.target.checked)}
-                    className="mt-0.5 shrink-0 accent-white w-4 h-4 rounded"
-                  />
+                </button>
+                {/* Marketing (opzionale) */}
+                <button type="button" onClick={() => setMarketingConsent(v => !v)}
+                  className="w-full flex items-start gap-3 text-left p-2.5 rounded-xl border border-[var(--border-2)] active:bg-white/5 transition-colors">
+                  <span className={`mt-0.5 shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${marketingConsent ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-[var(--border-3)]'}`}>
+                    {marketingConsent && <Check size={16} className="text-white" />}
+                  </span>
                   <span className="text-[12px] text-[var(--text-soft)] leading-relaxed">
                     {t('auth.marketingConsent')}{' '}
                     <span className="text-[var(--text-faint)]">{t('auth.optional')}</span>
                   </span>
-                </label>
+                </button>
               </div>
             )}
 
