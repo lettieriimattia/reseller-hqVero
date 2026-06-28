@@ -156,33 +156,55 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
   // Wake-word "Ehy HQ" via VOSK (on-device): quando l'utente l'ha ATTIVATA, ascolta in
   // continuo e a riconoscimento apre la chat, registra il comando (pausa = fine), trascrive
   // con Whisper e invia. Modello scelto per lingua (it: "acca cu"…, en: "hey hq"…).
+  // true quando l'utente ha ATTIVATO il vocale ora (toggle): in quel caso il permesso mic è
+  // appena stato concesso → si parte subito. Sull'apertura "fredda" invece NON si chiede.
+  const userArmedRef = useRef(false);
   useEffect(() => {
     if (!wakeEnabled || !recSupported || !gestureReady) return;
     let cancelled = false;
-    setWakeLoading(true);
 
-    const isEn = (lang || 'it').toLowerCase().startsWith('en');
-    const modelUrl = isEn ? '/vosk/model-en.tar.gz' : '/vosk/model-it.tar.gz';
-    const triggers = isEn
-      ? ['hey hq', 'ehy hq', 'hey h q', 'hq', 'h q', 'headquarters']
-      : ['acca cu', 'acca qu', 'acca cchu', 'ehy hq', 'hey hq', 'hq', 'h q', 'headquarters'];
+    const begin = () => {
+      if (cancelled) return;
+      setWakeLoading(true);
+      const isEn = (lang || 'it').toLowerCase().startsWith('en');
+      const modelUrl = isEn ? '/vosk/model-en.tar.gz' : '/vosk/model-it.tar.gz';
+      const triggers = isEn
+        ? ['hey hq', 'ehy hq', 'hey h q', 'hq', 'h q', 'headquarters']
+        : ['acca cu', 'acca qu', 'acca cchu', 'ehy hq', 'hey hq', 'hq', 'h q', 'headquarters'];
 
-    // Comando riconosciuto da Vosk (testo dopo "ehy hq") → ESEGUE in BACKGROUND, senza aprire
-    // la chat. L'esito appare a toast. (Es. dal magazzino: "hq inseriscimi una Jordan 4".)
-    const onCommand = (text: string) => {
-      const t = (text || '').trim();
-      if (!t || convoRef.current) return;
-      sendRef.current(t, true);
+      // Comando riconosciuto da Vosk (testo dopo "ehy hq") → ESEGUE in BACKGROUND, senza aprire
+      // la chat. L'esito appare a toast. (Es. dal magazzino: "hq inseriscimi una Jordan 4".)
+      const onCommand = (text: string) => {
+        const t = (text || '').trim();
+        if (!t || convoRef.current) return;
+        sendRef.current(t, true);
+      };
+
+      startVoskWakeWord({ modelUrl, triggers, onCommand, onWake: () => showToast('🎙️ Dimmi pure…', 'ok') })
+        .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); setWakeLoading(false); })
+        .catch((e: any) => {
+          setWakeLoading(false); setWakeOn(false);
+          const msg = 'Voce non avviata: ' + (e?.message || 'errore modello/mic');
+          showToast(msg, 'err');
+          setMessages(m => [...m, { role: 'assistant', content: '⚠️ ' + msg }]); // visibile e persistente
+        });
     };
 
-    startVoskWakeWord({ modelUrl, triggers, onCommand, onWake: () => showToast('🎙️ Dimmi pure…', 'ok') })
-      .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); setWakeLoading(false); })
-      .catch((e: any) => {
-        setWakeLoading(false); setWakeOn(false);
-        const msg = 'Voce non avviata: ' + (e?.message || 'errore modello/mic');
-        showToast(msg, 'err');
-        setMessages(m => [...m, { role: 'assistant', content: '⚠️ ' + msg }]); // visibile e persistente
-      });
+    if (userArmedRef.current) {
+      // L'utente l'ha appena attivato → mic già concesso, parto subito.
+      userArmedRef.current = false;
+      begin();
+    } else {
+      // Apertura dell'app: NON chiedere il microfono. Parto in automatico SOLO se il permesso è
+      // già concesso (persistito). Se è da chiedere o non interrogabile (es. iOS), resto in
+      // attesa che l'utente tocchi il mic → niente prompt ad ogni apertura.
+      (async () => {
+        try {
+          const st: any = await (navigator as any).permissions?.query?.({ name: 'microphone' });
+          if (st && st.state === 'granted') begin();
+        } catch { /* Permissions API non supportata: nessun avvio automatico, nessun prompt */ }
+      })();
+    }
 
     return () => {
       cancelled = true;
@@ -199,7 +221,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
 
   // Attivazione/disattivazione da fuori (toggle nelle Impostazioni) via evento.
   useEffect(() => {
-    const handler = (e: Event) => setWakeEnabled(!!(e as CustomEvent).detail);
+    const handler = (e: Event) => { const on = !!(e as CustomEvent).detail; if (on) userArmedRef.current = true; setWakeEnabled(on); };
     window.addEventListener('hq-wake', handler as EventListener);
     return () => window.removeEventListener('hq-wake', handler as EventListener);
   }, []);
@@ -272,7 +294,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
               </div>
               <div className="flex items-center gap-1">
                 {/* Toggle wake-word "Ehy HQ" (Vosk on-device). L'utente la accende: niente mic a sorpresa. */}
-                <button onClick={() => setWakeEnabled(v => !v)} aria-label={wakeEnabled ? 'Disattiva Ehy HQ' : 'Attiva Ehy HQ'}
+                <button onClick={() => setWakeEnabled(v => { if (!v) userArmedRef.current = true; return !v; })} aria-label={wakeEnabled ? 'Disattiva Ehy HQ' : 'Attiva Ehy HQ'}
                   title='Ascolto "Ehy HQ"'
                   className={`flex items-center gap-1.5 px-2.5 h-8 rounded-full text-[11px] font-bold transition-colors ${
                     wakeOn ? 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/30'
