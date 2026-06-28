@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { DynamicForm } from './components/DynamicForm';
 import CatalogBrowser from './components/CatalogBrowser';
 import AssistantChat from './components/AssistantChat';
+import SmartLotModal from './components/SmartLotModal';
 import { getLang, setLangStorage, translate, LANGUAGES, MARKETPLACE_ENABLED, type Lang } from './i18n';
 // xlsx caricato on-demand (import dinamico) dentro gli handler: resta fuori dal bundle iniziale
 // Grafico caricato in lazy: recharts finisce in un chunk separato, fuori dal bundle iniziale
@@ -471,6 +472,7 @@ export default function App() {
   // la loro somma viene SOTTRATTA dal ricavo (aggiunta alle fees del prodotto).
   const [sellExtraCosts, setSellExtraCosts] = useState<{ desc: string; amount: string }[]>([]);
   const [sellExtraOpen, setSellExtraOpen] = useState(false);
+  const [smartLotOpen, setSmartLotOpen] = useState(false); // flusso "Lotto smart (IA)"
   // Tracking opzionale della spedizione di vendita (OUTBOUND) direttamente nel flusso Vendi
   const [sellTrackingCode, setSellTrackingCode] = useState('');
   const [sellTrackingCarrier, setSellTrackingCarrier] = useState('Auto');
@@ -4674,6 +4676,10 @@ export default function App() {
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-1 px-4 py-3 bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl text-sm">
                   <span className="text-[var(--text-soft)]"><span className="font-extrabold text-[var(--text)] num">{pezzi}</span> {t('mag.pieces')} · <span className="font-extrabold text-[var(--text)] num">{groupedInStockArray.length}</span> {t('mag.models')}</span>
                   <span className="sm:ml-auto flex items-baseline gap-1.5"><span className="sys-label">{t('mag.stockValue')}</span> <span className="font-extrabold text-[var(--teal)] num text-base">{costo.toFixed(0)}€</span></span>
+                  <button onClick={() => setSmartLotOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#6b54c6]/15 text-[#6b54c6] hover:bg-[#6b54c6]/25 text-xs font-bold transition-colors">
+                    <Sparkles size={13} /> Lotto smart
+                  </button>
                 </div>
               );
             })()}
@@ -7400,6 +7406,18 @@ export default function App() {
 
       {/* ========== CHATBOX "HQ" (aperta a tutti · solo telefono) ========== */}
       <AssistantChat apiCall={apiCall} showToast={showToast} onAction={fetchProducts} lang={lang} hideBar={bulkMode} />
+
+      {smartLotOpen && (
+        <SmartLotModal
+          apiCall={apiCall}
+          showToast={showToast}
+          onDone={fetchProducts}
+          onClose={() => setSmartLotOpen(false)}
+          categories={userCategories}
+          warehouses={warehouses.map(w => ({ id: w.id, name: w.name, parentId: w.parentId }))}
+          baseWarehouseId={baseWarehouse?.id}
+        />
+      )}
 
       {/* ========== MODALE: AGGIUNGI PRODOTTO ========== */}
       {isFormOpen && (

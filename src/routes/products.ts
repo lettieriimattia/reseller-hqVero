@@ -212,6 +212,89 @@ router.post('/lot', async (req: AuthRequest, res: Response) => {
 });
 
 // ==========================================
+// POST /products/lot-smart — Lotto MISTO (IA): crea N articoli DIVERSI (riconosciuti dall'IA)
+// con split automatico del costo totale, equo o pesato sul valore di mercato.
+// body: { lotName, totalPrice, splitMode:'equal'|'weighted', warehouseId?, items: [
+//   { category, brand, name, size, condition, sku?, photo?, marketValue? }, ... ] }
+// ==========================================
+router.post('/lot-smart', async (req: AuthRequest, res: Response) => {
+  try {
+    const { lotName, totalPrice, splitMode, warehouseId: bodyWarehouseId, items } = req.body;
+    if (!lotName || !Array.isArray(items) || items.length < 1 || items.length > 200) {
+      return res.status(400).json({ error: 'Dati lotto non validi.' });
+    }
+    const total = Math.max(Number(totalPrice) || 0, 0);
+
+    const quotaErr = await checkProductQuota(req.user!.userId, items.length);
+    if (quotaErr) return res.status(402).json(quotaErr);
+
+    const memberships = await prisma.membership.findMany({
+      where: { userId: req.user!.userId }, include: { warehouse: true },
+    });
+    const targetMembership = bodyWarehouseId
+      ? memberships.find(m => m.warehouseId === bodyWarehouseId)
+      : (memberships.find(m => m.role === 'OWNER' && !m.warehouse.parentId) || memberships[0]);
+    if (!targetMembership) return res.status(403).json({ error: 'Non sei membro di questo magazzino.' });
+
+    // SPLIT del costo totale fra i pezzi: pesato sul valore di mercato (se richiesto e disponibile),
+    // altrimenti equo. L'ultimo pezzo assorbe l'arrotondamento così la somma torna esatta.
+    const weights = items.map((it: any) => Math.max(Number(it.marketValue) || 0, 0));
+    const weightSum = weights.reduce((a: number, b: number) => a + b, 0);
+    const useWeighted = splitMode === 'weighted' && weightSum > 0;
+    let allocated = 0;
+    const costs = items.map((_: any, i: number) => {
+      if (total <= 0) return 0;
+      if (i === items.length - 1) return Math.round((total - allocated) * 100) / 100; // resto
+      const c = useWeighted
+        ? Math.round((total * weights[i] / weightSum) * 100) / 100
+        : Math.round((total / items.length) * 100) / 100;
+      allocated += c;
+      return c;
+    });
+
+    const created = await prisma.$transaction(
+      items.map((it: any, i: number) => prisma.product.create({
+        data: {
+          category: (it.category || 'Generico').toString(),
+          brand: (it.brand || lotName).toString(),
+          name: (it.name || it.brand || 'Articolo').toString(),
+          size: (it.size || '-').toString(),
+          condition: (it.condition || 'N/D').toString(),
+          purchasePrice: costs[i],
+          status: 'IN STOCK',
+          userId: req.user!.userId,
+          warehouseId: targetMembership.warehouseId,
+          notes: `Lotto "${lotName}"`,
+          photos: it.photo ? JSON.stringify([it.photo]) : null,
+          sku: it.sku ? it.sku.toString() : null,
+          marketPriceAvg: Number(it.marketValue) > 0 ? Number(it.marketValue) : null,
+          lotName,
+        },
+      }))
+    );
+
+    await Promise.all(created.map(p => logInventory({
+      productId: p.id, userId: req.user!.userId, action: 'STATUS_CHANGE',
+      field: 'status', newValue: 'IN STOCK', note: `Creato da lotto smart "${lotName}"`,
+    })));
+    await audit({
+      action: 'PRODUCT_CREATE', userId: req.user!.userId, req, resource: created[0].id,
+      metadata: { lotSmart: lotName, quantity: created.length, totalPrice: total, splitMode: useWeighted ? 'weighted' : 'equal' },
+    });
+    await notifyWarehouseMembers({
+      warehouseId: targetMembership.warehouseId, excludeUserId: req.user!.userId,
+      type: 'PRODUCT_ADDED', title: `Lotto aggiunto: ${lotName}`,
+      message: `${created.length} pezzi (tot. ${total}€)`,
+    });
+
+    res.json({ created: created.length, products: created });
+  } catch (err: any) {
+    logger.error('Errore POST /products/lot-smart', { err: err.message });
+    res.status(500).json({ error: 'Errore creazione lotto smart' });
+  }
+});
+
+// ==========================================
 // POST /products — crea prodotto singolo
 // ==========================================
 router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Response) => {
