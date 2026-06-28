@@ -50,17 +50,18 @@ async function findCatalogImage(brand?: string | null, name?: string | null): Pr
       });
       let best: any = null, bestS = 0;
       for (const c of cands) { const s = imgMatchScore(q, `${c.brand || ''} ${c.name || ''}`); if (s > bestS) { bestS = s; best = c; } }
-      if (best && bestS >= 0.6) return { image: best.image!, sku: best.sku || null };
+      if (best && bestS >= 0.4) return { image: best.image!, sku: best.sku || null };
     } catch { /* ignora */ }
   }
   // 2) fonte esterna (KicksDB → StockX), poi sceglie il candidato col punteggio migliore.
+  // Soglia bassa = MASSIMA copertura (ogni prodotto prende la foto del match più vicino).
   try {
     const cands: any[] = [];
-    if (isKicksConfigured()) cands.push(...await kicksSearch(q, { limit: 8 }).catch(() => []));
-    if (cands.length < 3 && isStockXConfigured()) cands.push(...(await searchStockXCandidates(q, { limit: 8 }).catch(() => [])));
+    if (isKicksConfigured()) cands.push(...await kicksSearch(q, { limit: 10 }).catch(() => []));
+    if (isStockXConfigured()) cands.push(...(await searchStockXCandidates(q, { limit: 10 }).catch(() => [])));
     let best: any = null, bestS = 0;
     for (const c of cands) { if (!c.image) continue; const s = imgMatchScore(q, c.title || ''); if (s > bestS) { bestS = s; best = c; } }
-    if (best && bestS >= 0.5) return { image: best.image, sku: best.styleId || null };
+    if (best && bestS >= 0.34) return { image: best.image, sku: best.styleId || null };
   } catch { /* fonte non disponibile */ }
   return null;
 }
