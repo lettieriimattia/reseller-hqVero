@@ -46,6 +46,14 @@
   <body>
     <!-- Splash istantanea: tema coerente + auto-rimozione dopo ~2s -->
     <div id="hq-splash">
+      <!-- Se esiste /vault-intro.mp4 (video AI fotorealistico generato dall'immagine master del
+           caveau) viene riprodotto a tutto schermo SOPRA l'SVG. Se il file manca, l'evento error
+           lo nasconde e resta l'animazione SVG vettoriale. object-fit:contain = nessun ritaglio. -->
+      <video id="hq-vault-video" autoplay muted playsinline preload="auto"
+        style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .35s ease;z-index:3;pointer-events:none">
+        <source src="/vault-intro.mp4" type="video/mp4" />
+        <source src="/vault-intro.webm" type="video/webm" />
+      </video>
       <div class="vl-floor"></div>
       <div class="vl-wrap">
         <div class="vl-glowdiv"></div>
@@ -97,10 +105,24 @@
         var s = document.getElementById('hq-splash');
         if (!s) return;
         try { if (localStorage.getItem('hq-theme') === 'light') s.classList.add('hq-light'); } catch (e) {}
-        setTimeout(function () {
+        var done = false;
+        function hide() {
+          if (done) return; done = true;
           s.classList.add('hq-hide');
           setTimeout(function () { if (s && s.parentNode) s.parentNode.removeChild(s); }, 550);
-        }, 2700);
+        }
+        // Video AI (se presente): mostralo sopra l'SVG, e chiudi lo splash quando finisce.
+        var v = document.getElementById('hq-vault-video');
+        var hasVideo = false;
+        if (v) {
+          v.addEventListener('loadeddata', function () { v.style.opacity = '1'; });
+          v.addEventListener('playing', function () { hasVideo = true; });
+          v.addEventListener('ended', hide);
+        }
+        // Senza video: nascondi dopo ~2.7s (animazione SVG). Col video: lascia finire ('ended'),
+        // con un tetto di sicurezza a 4s perché lo splash non resti mai bloccato.
+        setTimeout(function () { if (!hasVideo) hide(); }, 2700);
+        setTimeout(hide, 4000);
       })();
     </script>
     <div id="root"></div>

@@ -15,6 +15,7 @@ interface Props {
   showToast: (msg: string, type?: 'ok' | 'err' | 'warn') => void;
   onAction: () => void; // refresh magazzino dopo un'azione (es. prodotto aggiunto)
   lang?: string;        // lingua app → sceglie il modello Vosk (it/en) per la wake-word
+  hideBar?: boolean;    // nascondi la barra flottante (es. quando è aperta la barra selezione multipla)
 }
 
 type VoiceState = 'idle' | 'recording' | 'transcribing';
@@ -32,7 +33,7 @@ function Waveform({ level }: { level: number }) {
   );
 }
 
-export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it' }: Props) {
+export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it', hideBar = false }: Props) {
   const [open, setOpen] = useState(false);
   // La conversazione resta finché non chiudi l'app (sessionStorage = si svuota alla chiusura).
   const [messages, setMessages] = useState<Msg[]>(() => {
@@ -332,8 +333,9 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
         </div>
       )}
 
-      {/* Barra flottante (chat chiusa) — solo telefono, sopra la bottom-nav. */}
-      {!open && (
+      {/* Barra flottante (chat chiusa) — solo telefono, sopra la bottom-nav.
+          Nascosta quando è attiva la selezione multipla (barra bulk), per non sovrapporsi. */}
+      {!open && !hideBar && (
         <div className="lg:hidden fixed left-3 right-3 z-[45]" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}>
           {bar}
         </div>

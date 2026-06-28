@@ -7337,7 +7337,7 @@ export default function App() {
       </nav>
 
       {/* ========== CHATBOX "HQ" (aperta a tutti · solo telefono) ========== */}
-      <AssistantChat apiCall={apiCall} showToast={showToast} onAction={fetchProducts} lang={lang} />
+      <AssistantChat apiCall={apiCall} showToast={showToast} onAction={fetchProducts} lang={lang} hideBar={bulkMode} />
 
       {/* ========== MODALE: AGGIUNGI PRODOTTO ========== */}
       {isFormOpen && (
