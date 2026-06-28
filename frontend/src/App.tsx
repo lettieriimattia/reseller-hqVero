@@ -7626,7 +7626,7 @@ export default function App() {
               <div>
                 <h2 className="text-xl font-semibold">{t('form.addTitle')}</h2>
                 <button type="button"
-                  onClick={() => { setIsFormOpen(false); setLotCategory(userCategories[0] || ''); setLotOpen(true); }}
+                  onClick={() => { setIsFormOpen(false); setSmartLotOpen(true); }}
                   className="text-[11px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors mt-0.5 flex items-center gap-1">
                   <Layers size={10} /> {t('form.buyingLot')}
                 </button>

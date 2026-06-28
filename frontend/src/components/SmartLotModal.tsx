@@ -242,6 +242,10 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
             className="w-full py-3 rounded-2xl border border-dashed border-teal-500/40 text-teal-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-teal-500/10">
             <Wand2 size={17} /> Più carte da una foto (IA)
           </button>
+          <button onClick={() => setItems(prev => [...prev, { id: Math.random().toString(36).slice(2), photo: null, brand: '', name: '', size: '-', category: '', condition: 'N/D', marketValue: 0, scanning: false }])}
+            className="w-full py-2.5 rounded-2xl border border-dashed border-[var(--border-2)] text-[var(--text-soft)] font-bold text-sm flex items-center justify-center gap-2 hover:text-[var(--text)]">
+            <Plus size={15} /> Aggiungi riga a mano
+          </button>
         </div>
 
         {/* Footer: costo totale + split + crea */}
