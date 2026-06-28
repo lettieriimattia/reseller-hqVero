@@ -2810,6 +2810,12 @@ export default function App() {
     }
   };
 
+  // Sposta una foto in PRIMA posizione = diventa la foto PRINCIPALE (quella mostrata sul prodotto).
+  const setPrimaryPhoto = (index: number, isEdit = false) => {
+    const upd = (prev: string[]) => { if (index <= 0 || index >= prev.length) return prev; const next = [...prev]; const [p] = next.splice(index, 1); next.unshift(p); return next; };
+    if (isEdit) setEditPhotos(upd); else setProductPhotos(upd);
+  };
+
   
   // ==========================================
   // ==========================================
@@ -7631,8 +7637,8 @@ export default function App() {
                 <h2 className="text-xl font-semibold">{t('form.addTitle')}</h2>
                 <button type="button"
                   onClick={() => { setIsFormOpen(false); setSmartLotOpen(true); }}
-                  className="text-[11px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors mt-0.5 flex items-center gap-1">
-                  <Layers size={10} /> {t('form.buyingLot')}
+                  className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#6b54c6]/15 text-[#6b54c6] hover:bg-[#6b54c6]/25 text-xs font-bold transition-colors">
+                  <Layers size={14} /> {t('form.buyingLot')}
                 </button>
               </div>
               <button onClick={() => setIsFormOpen(false)}
@@ -7726,12 +7732,19 @@ export default function App() {
                 {/* Griglia foto */}
                 <div className="grid grid-cols-5 gap-2 mb-3">
                   {productPhotos.map((photo, i) => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border border-violet-500/30">
+                    <div key={i} className={`relative aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border ${i === 0 ? 'border-[var(--teal)] ring-1 ring-[var(--teal)]' : 'border-violet-500/30'}`}>
                       <img src={photo} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removePhoto(i)}
                         className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
                         <X size={10} />
                       </button>
+                      {/* Foto principale = la prima. Tocca la stella per rendere principale un'altra. */}
+                      {i === 0 ? (
+                        <span className="absolute top-1 left-1 w-5 h-5 rounded-full bg-[var(--teal)] text-white flex items-center justify-center text-[10px]" title="Foto principale">★</span>
+                      ) : (
+                        <button type="button" onClick={() => setPrimaryPhoto(i)} title="Rendi principale"
+                          className="absolute top-1 left-1 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center text-white text-[10px] hover:bg-[var(--teal)] transition-colors">☆</button>
+                      )}
                       <button type="button" onClick={() => runAIScan(photo, category)}
                         disabled={isScanning}
                         className="absolute bottom-0 left-0 right-0 bg-violet-600/80 hover:bg-violet-500/90 py-0.5 text-[9px] font-bold text-center transition-colors disabled:opacity-40">
