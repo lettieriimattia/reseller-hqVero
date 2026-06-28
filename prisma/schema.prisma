@@ -53,18 +53,35 @@ model User {
   lockedUntil       DateTime?      // Account temporaneamente bloccato dopo X tentativi
   lastLoginAt       DateTime?
   lastLoginIp       String?
-  
+  webauthnChallenge String?        // challenge temporanea per Face ID / passkey (WebAuthn)
+
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
-  
+
   memberships       Membership[]
   products          Product[]
   refreshTokens     RefreshToken[]
   notifications     Notification[]
   auditLogs         AuditLog[]
   inventoryLogs     InventoryLog[]
-  
+  webauthnCreds     WebAuthnCredential[]
+
   @@index([email])
+}
+
+// Credenziale WebAuthn / Passkey (Face ID, Touch ID, Windows Hello)
+model WebAuthnCredential {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId String   @unique          // id credenziale (base64url)
+  publicKey    Bytes                      // chiave pubblica
+  counter      BigInt   @default(0)       // contatore anti-clonazione
+  transports   String?                    // JSON array (es. ["internal"])
+  deviceName   String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
 }
 
 // ==========================================

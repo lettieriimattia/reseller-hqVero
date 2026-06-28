@@ -70,7 +70,7 @@ async function sendPasswordResetCode(user: { id: string; email: string; name?: s
 }
 
 // Oggetto utente standard restituito al frontend (login + verifica).
-function userResponse(user: any) {
+export function userResponse(user: any) {
   return {
     id: user.id, name: user.name, email: user.email,
     twoFactorEnabled: user.twoFactorEnabled, plan: user.plan,
@@ -87,7 +87,7 @@ function userResponse(user: any) {
 // ==========================================
 // HELPER: setta cookies access + refresh
 // ==========================================
-async function issueTokens(res: Response, user: { id: string; email: string }, req: Request) {
+export async function issueTokens(res: Response, user: { id: string; email: string }, req: Request) {
   const accessSecret = process.env.JWT_ACCESS_SECRET!;
   const refreshSecret = process.env.JWT_REFRESH_SECRET!;
   
@@ -749,6 +749,138 @@ router.delete('/delete-account', authenticate, async (req: AuthRequest, res: Res
     logger.error('Errore eliminazione account', { err: err.message });
     res.status(500).json({ error: 'Errore eliminazione account.' });
   }
+});
+
+// ==========================================
+// FACE ID / PASSKEY (WebAuthn) — login senza password con Face ID/Touch ID/Windows Hello.
+// ==========================================
+import {
+  generateRegistrationOptions, verifyRegistrationResponse,
+  generateAuthenticationOptions, verifyAuthenticationResponse,
+} from '@simplewebauthn/server';
+
+function rpInfo() {
+  const url = process.env.APP_URL || 'http://localhost:5173';
+  let rpID = 'localhost', origin = url;
+  try { const u = new URL(url); rpID = u.hostname; origin = u.origin; } catch { /* APP_URL malformato */ }
+  return { rpID, origin };
+}
+
+// 1) Opzioni di REGISTRAZIONE passkey (utente loggato che attiva il Face ID).
+router.post('/webauthn/register/options', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { rpID } = rpInfo();
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId }, include: { webauthnCreds: true } });
+    if (!user) return res.status(404).json({ error: 'Utente non trovato.' });
+    const options = await generateRegistrationOptions({
+      rpName: 'HQVault', rpID,
+      userName: user.email,
+      userID: new TextEncoder().encode(user.id),
+      attestationType: 'none',
+      excludeCredentials: user.webauthnCreds.map(c => ({ id: c.credentialId })) as any,
+      authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
+    });
+    await prisma.user.update({ where: { id: user.id }, data: { webauthnChallenge: options.challenge } });
+    res.json(options);
+  } catch (err: any) {
+    logger.error('webauthn register options', { err: err.message });
+    res.status(500).json({ error: 'Errore Face ID.' });
+  }
+});
+
+// 2) Verifica REGISTRAZIONE → salva la credenziale.
+router.post('/webauthn/register/verify', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { rpID, origin } = rpInfo();
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    if (!user || !user.webauthnChallenge) return res.status(400).json({ error: 'Sessione Face ID scaduta, riprova.' });
+    const verification = await verifyRegistrationResponse({
+      response: req.body.response,
+      expectedChallenge: user.webauthnChallenge,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
+    });
+    if (!verification.verified || !verification.registrationInfo) return res.status(400).json({ error: 'Verifica Face ID fallita.' });
+    const cred: any = (verification.registrationInfo as any).credential;
+    await prisma.webAuthnCredential.create({
+      data: {
+        userId: user.id,
+        credentialId: cred.id,
+        publicKey: Buffer.from(cred.publicKey),
+        counter: BigInt(cred.counter || 0),
+        transports: cred.transports ? JSON.stringify(cred.transports) : null,
+        deviceName: (req.headers['user-agent'] || '').toString().slice(0, 80) || null,
+      },
+    });
+    await prisma.user.update({ where: { id: user.id }, data: { webauthnChallenge: null } });
+    res.json({ ok: true });
+  } catch (err: any) {
+    logger.error('webauthn register verify', { err: err.message });
+    res.status(500).json({ error: 'Errore registrazione Face ID.' });
+  }
+});
+
+// 3) Opzioni di LOGIN con Face ID (utente NON loggato, fornisce l'email).
+router.post('/webauthn/auth/options', authLimiter, async (req: Request, res: Response) => {
+  try {
+    const { rpID } = rpInfo();
+    const email = (req.body?.email || '').toString().trim().toLowerCase();
+    const user = await prisma.user.findUnique({ where: { email }, include: { webauthnCreds: true } });
+    if (!user || !user.webauthnCreds.length) return res.status(400).json({ error: 'Face ID non configurato per questo account.' });
+    const options = await generateAuthenticationOptions({
+      rpID,
+      allowCredentials: user.webauthnCreds.map(c => ({ id: c.credentialId, transports: c.transports ? JSON.parse(c.transports) : undefined })) as any,
+      userVerification: 'preferred',
+    });
+    await prisma.user.update({ where: { id: user.id }, data: { webauthnChallenge: options.challenge } });
+    res.json(options);
+  } catch (err: any) {
+    logger.error('webauthn auth options', { err: err.message });
+    res.status(500).json({ error: 'Errore Face ID.' });
+  }
+});
+
+// 4) Verifica LOGIN Face ID → emette i cookie e logga l'utente.
+router.post('/webauthn/auth/verify', authLimiter, async (req: Request, res: Response) => {
+  try {
+    const { rpID, origin } = rpInfo();
+    const email = (req.body?.email || '').toString().trim().toLowerCase();
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { webauthnCreds: true, memberships: { include: { warehouse: true } } },
+    });
+    if (!user || !user.webauthnChallenge) return res.status(400).json({ error: 'Sessione Face ID scaduta, riprova.' });
+    const cred = user.webauthnCreds.find(c => c.credentialId === req.body?.response?.id);
+    if (!cred) return res.status(400).json({ error: 'Credenziale Face ID non riconosciuta.' });
+    const verification = await verifyAuthenticationResponse({
+      response: req.body.response,
+      expectedChallenge: user.webauthnChallenge,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
+      credential: { id: cred.credentialId, publicKey: cred.publicKey as any, counter: Number(cred.counter), transports: cred.transports ? JSON.parse(cred.transports) : undefined },
+    } as any);
+    if (!verification.verified) return res.status(400).json({ error: 'Face ID non valido.' });
+    await prisma.webAuthnCredential.update({ where: { id: cred.id }, data: { counter: BigInt(verification.authenticationInfo.newCounter) } });
+    await prisma.user.update({ where: { id: user.id }, data: { webauthnChallenge: null, lastLoginAt: new Date(), lastLoginIp: req.ip, failedLoginCount: 0, lockedUntil: null } });
+    await issueTokens(res, user, req);
+    await audit({ action: 'LOGIN_SUCCESS', success: true, userId: user.id, req, metadata: { via: 'webauthn' } });
+    res.json({ user: userResponse(user) });
+  } catch (err: any) {
+    logger.error('webauthn auth verify', { err: err.message });
+    res.status(500).json({ error: 'Errore login Face ID.' });
+  }
+});
+
+// Stato: l'utente ha già un Face ID configurato? (per Impostazioni)
+router.get('/webauthn/status', authenticate, async (req: AuthRequest, res: Response) => {
+  const count = await prisma.webAuthnCredential.count({ where: { userId: req.user!.userId } });
+  res.json({ enabled: count > 0, count });
+});
+
+// Rimuove tutte le passkey dell'utente (disattiva Face ID).
+router.delete('/webauthn', authenticate, async (req: AuthRequest, res: Response) => {
+  await prisma.webAuthnCredential.deleteMany({ where: { userId: req.user!.userId } });
+  res.json({ ok: true });
 });
 
 export default router;

@@ -4,6 +4,7 @@ import { DynamicForm } from './components/DynamicForm';
 import CatalogBrowser from './components/CatalogBrowser';
 import AssistantChat from './components/AssistantChat';
 import SmartLotModal from './components/SmartLotModal';
+import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { getLang, setLangStorage, translate, LANGUAGES, MARKETPLACE_ENABLED, type Lang } from './i18n';
 // xlsx caricato on-demand (import dinamico) dentro gli handler: resta fuori dal bundle iniziale
 // Grafico caricato in lazy: recharts finisce in un chunk separato, fuori dal bundle iniziale
@@ -12,7 +13,7 @@ import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
-  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon,
+  KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon, ScanFace,
   Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal,
   Footprints, Shirt, Watch, ShoppingBag, Gem, Glasses, SprayCan, Smartphone,
   Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check
@@ -317,6 +318,7 @@ export default function App() {
   const [repartiOpen, setRepartiOpen] = useState(false); // lista reparti a tendina nelle impostazioni
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false); // consenso privacy (obbligatorio in registrazione)
+  const [faceIdOn, setFaceIdOn] = useState(false); // Face ID / passkey configurato per questo account
   
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   // Recupero password ("Password dimenticata?"): step email → codice+nuova password.
@@ -1971,6 +1973,12 @@ export default function App() {
     p.status === 'PAGATO' || (p.toShip && p.status === 'IN STOCK')
   );
 
+  // Carica lo stato Face ID quando si è loggati (per il toggle in Impostazioni).
+  useEffect(() => {
+    if (!isAuthenticated) { setFaceIdOn(false); return; }
+    apiCall<any>('/auth/webauthn/status').then(({ ok, data }) => { if (ok) setFaceIdOn(!!data?.enabled); }).catch(() => {});
+  }, [isAuthenticated]);
+
   // ==========================================
   // HANDLERS AUTH
   // ==========================================
@@ -2031,6 +2039,40 @@ export default function App() {
     }
   };
   
+  // ===== FACE ID (Passkey / WebAuthn) =====
+  const loginFaceId = async () => {
+    const email = authEmail.trim().toLowerCase();
+    if (!email) { setAuthError('Inserisci prima la tua email'); return; }
+    setAuthError(null);
+    try {
+      const { ok, data: options } = await apiCall<any>('/auth/webauthn/auth/options', { method: 'POST', body: JSON.stringify({ email }) });
+      if (!ok) { setAuthError(options?.error || 'Face ID non configurato per questo account'); return; }
+      const authResp = await startAuthentication({ optionsJSON: options });
+      const { ok: ok2, data } = await apiCall<any>('/auth/webauthn/auth/verify', { method: 'POST', body: JSON.stringify({ email, response: authResp }) });
+      if (ok2 && data?.user) { setUser(data.user); setIsAuthenticated(true); }
+      else setAuthError(data?.error || 'Login Face ID fallito');
+    } catch (e: any) {
+      setAuthError(e?.name === 'NotAllowedError' ? 'Face ID annullato' : 'Face ID non disponibile su questo dispositivo');
+    }
+  };
+  const enableFaceId = async () => {
+    try {
+      const { ok, data: options } = await apiCall<any>('/auth/webauthn/register/options', { method: 'POST' });
+      if (!ok) { showToast('Errore Face ID', 'err'); return; }
+      const regResp = await startRegistration({ optionsJSON: options });
+      const { ok: ok2 } = await apiCall<any>('/auth/webauthn/register/verify', { method: 'POST', body: JSON.stringify({ response: regResp }) });
+      if (ok2) { setFaceIdOn(true); showToast('✅ Face ID attivato! Da ora puoi entrare col volto.', 'ok'); }
+      else showToast('Verifica Face ID fallita', 'err');
+    } catch (e: any) {
+      showToast(e?.name === 'NotAllowedError' ? 'Face ID annullato' : 'Face ID non disponibile su questo dispositivo', 'warn');
+    }
+  };
+  const disableFaceId = async () => {
+    await apiCall('/auth/webauthn', { method: 'DELETE' });
+    setFaceIdOn(false);
+    showToast('Face ID disattivato', 'ok');
+  };
+
   const submitVerify = async () => {
     if (verifyCode.trim().length < 4) { setAuthError('Inserisci il codice ricevuto via email'); return; }
     setAuthLoading(true); setAuthError(null);
@@ -4158,11 +4200,17 @@ export default function App() {
             </button>
 
             {authMode === 'login' && !require2FA && (
-              <button type="button"
-                onClick={() => { setForgotEmail(authEmail); setForgotStep('email'); setForgotCode(''); setForgotNewPw(''); setForgotMsg(null); setForgotOpen(true); }}
-                className="w-full text-center text-xs text-[var(--text-soft)] hover:text-[var(--text)] mt-3 transition-colors font-semibold">
-                Password dimenticata?
-              </button>
+              <>
+                <button type="button" onClick={loginFaceId}
+                  className="w-full mt-3 py-3 rounded-xl border border-[var(--border-2)] text-[var(--text)] font-bold text-sm flex items-center justify-center gap-2 hover:border-[#6b54c6] transition-colors">
+                  <ScanFace size={18} className="text-[#6b54c6]" /> Entra con Face ID
+                </button>
+                <button type="button"
+                  onClick={() => { setForgotEmail(authEmail); setForgotStep('email'); setForgotCode(''); setForgotNewPw(''); setForgotMsg(null); setForgotOpen(true); }}
+                  className="w-full text-center text-xs text-[var(--text-soft)] hover:text-[var(--text)] mt-3 transition-colors font-semibold">
+                  Password dimenticata?
+                </button>
+              </>
             )}
           </form>
 
@@ -6719,6 +6767,32 @@ export default function App() {
               </div>
             </section>
             
+            {/* SEZIONE: Face ID (Passkey / WebAuthn) */}
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <ScanFace className={faceIdOn ? 'text-green-400 mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={24} />
+                  <div>
+                    <h3 className="text-lg font-bold tracking-tighter">Face ID</h3>
+                    <p className="text-xs text-[var(--text-soft)] mt-1 max-w-md">
+                      {faceIdOn ? 'Attivo: entri col volto o impronta, senza password.' : 'Entra con Face ID / impronta invece della password — veloce e sicuro. Su questo dispositivo.'}
+                    </p>
+                  </div>
+                </div>
+                {faceIdOn ? (
+                  <button onClick={disableFaceId}
+                    className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
+                    Disattiva
+                  </button>
+                ) : (
+                  <button onClick={enableFaceId}
+                    className="px-4 py-2 bg-[#6b54c6] hover:bg-[#8a78d9] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
+                    Attiva
+                  </button>
+                )}
+              </div>
+            </section>
+
             {/* SEZIONE: CAMBIA PASSWORD */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
