@@ -316,6 +316,14 @@ export default function App() {
   const [marketingConsent, setMarketingConsent] = useState(false);
   
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  // Recupero password ("Password dimenticata?"): step email → codice+nuova password.
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotStep, setForgotStep] = useState<'email' | 'code'>('email');
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotCode, setForgotCode] = useState('');
+  const [forgotNewPw, setForgotNewPw] = useState('');
+  const [forgotBusy, setForgotBusy] = useState(false);
+  const [forgotMsg, setForgotMsg] = useState<string | null>(null);
   const [regType, setRegType] = useState<'new_team' | 'join_team'>('new_team');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
@@ -4009,7 +4017,70 @@ export default function App() {
               {authLoading ? <Loader2 className="animate-spin" size={20} /> :
                 require2FA ? t('auth.verify2fa') : (authMode === 'login' ? t('auth.enter') : t('auth.register'))}
             </button>
+
+            {authMode === 'login' && !require2FA && (
+              <button type="button"
+                onClick={() => { setForgotEmail(authEmail); setForgotStep('email'); setForgotCode(''); setForgotNewPw(''); setForgotMsg(null); setForgotOpen(true); }}
+                className="w-full text-center text-xs text-[var(--text-soft)] hover:text-[var(--text)] mt-3 transition-colors font-semibold">
+                Password dimenticata?
+              </button>
+            )}
           </form>
+
+          {/* Modale recupero password */}
+          {forgotOpen && (
+            <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-center justify-center p-5" onClick={() => { if (!forgotBusy) setForgotOpen(false); }}>
+              <div className="w-full max-w-sm bg-[var(--surface)] border border-[var(--border-2)] rounded-3xl p-6" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-lg font-extrabold text-[var(--text)]">Recupero password</h3>
+                  <button onClick={() => setForgotOpen(false)} className="p-1.5 rounded-full text-[var(--text-faint)] hover:text-[var(--text)]"><X size={20} /></button>
+                </div>
+                {forgotStep === 'email' ? (
+                  <>
+                    <p className="text-sm text-[var(--text-soft)] mb-4">Inserisci la tua email: ti invieremo un codice per reimpostare la password.</p>
+                    <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="mario@email.com" autoFocus
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] outline-none focus:border-[#6b54c6]" />
+                    {forgotMsg && <p className="text-xs text-red-400 mt-2">{forgotMsg}</p>}
+                    <button disabled={forgotBusy || !forgotEmail.trim()}
+                      onClick={async () => {
+                        setForgotBusy(true); setForgotMsg(null);
+                        const { ok, data } = await apiCall<any>('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email: forgotEmail.trim() }) });
+                        setForgotBusy(false);
+                        if (!ok) { setForgotMsg(data?.error || 'Errore. Riprova.'); return; }
+                        setForgotStep('code');
+                      }}
+                      className="w-full mt-4 py-3 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white font-bold disabled:opacity-40 flex items-center justify-center gap-2">
+                      {forgotBusy && <Loader2 size={18} className="animate-spin" />} Invia codice
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-[var(--text-soft)] mb-4">Se l'email è registrata, ti abbiamo inviato un codice a <b className="text-[var(--text)]">{forgotEmail}</b>. Inseriscilo e scegli una nuova password.</p>
+                    <input value={forgotCode} onChange={e => setForgotCode(e.target.value)} placeholder="Codice (6 cifre)" inputMode="numeric"
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] outline-none focus:border-[#6b54c6] mb-2.5 tracking-[0.3em]" />
+                    <input type="password" value={forgotNewPw} onChange={e => setForgotNewPw(e.target.value)} placeholder="Nuova password"
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] outline-none focus:border-[#6b54c6]" />
+                    <p className="text-[10px] text-[var(--text-faint)] mt-1.5">Min 10 caratteri: maiuscola, minuscola, numero e simbolo.</p>
+                    {forgotMsg && <p className="text-xs text-red-400 mt-2">{forgotMsg}</p>}
+                    <button disabled={forgotBusy || !forgotCode.trim() || !forgotNewPw}
+                      onClick={async () => {
+                        setForgotBusy(true); setForgotMsg(null);
+                        const { ok, data } = await apiCall<any>('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email: forgotEmail.trim(), code: forgotCode.trim(), newPassword: forgotNewPw }) });
+                        setForgotBusy(false);
+                        if (!ok) { setForgotMsg(data?.error || 'Codice non valido o scaduto.'); return; }
+                        setForgotOpen(false);
+                        setAuthEmail(forgotEmail.trim());
+                        showToast('Password reimpostata. Accedi con la nuova password.', 'ok');
+                      }}
+                      className="w-full mt-4 py-3 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white font-bold disabled:opacity-40 flex items-center justify-center gap-2">
+                      {forgotBusy && <Loader2 size={18} className="animate-spin" />} Reimposta password
+                    </button>
+                    <button onClick={() => { setForgotStep('email'); setForgotMsg(null); }} className="w-full mt-2 text-xs text-[var(--text-soft)] hover:text-[var(--text)]">← Rimanda il codice / cambia email</button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
           
           <div className="mt-6 text-center">
             <button type="button" 
