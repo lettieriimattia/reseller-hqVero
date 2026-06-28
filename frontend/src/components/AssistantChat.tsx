@@ -4,7 +4,7 @@
 // Microfono = dettatura vocale (Web Speech API). La wake-word "Ehy HQ" arriva in fase 3 (Picovoice).
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Sparkles, Send, Mic, X, Loader2, Square, Radio } from 'lucide-react';
+import { Sparkles, Send, Mic, X, Loader2, Square, Radio, Plus } from 'lucide-react';
 import { recordCommand, transcribe, startVoskWakeWord, isRecordingSupported, type WakeWordHandle } from '../lib/voice';
 
 type ApiCall = <T = any>(path: string, opts?: RequestInit) => Promise<{ ok: boolean; data: T; status: number }>;
@@ -16,6 +16,7 @@ interface Props {
   onAction: () => void; // refresh magazzino dopo un'azione (es. prodotto aggiunto)
   lang?: string;        // lingua app → sceglie il modello Vosk (it/en) per la wake-word
   hideBar?: boolean;    // nascondi la barra flottante (es. quando è aperta la barra selezione multipla)
+  onPlus?: () => void;  // tap sul "+" nella barra → apre l'aggiunta prodotto
 }
 
 type VoiceState = 'idle' | 'recording' | 'transcribing';
@@ -33,7 +34,7 @@ function Waveform({ level }: { level: number }) {
   );
 }
 
-export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it', hideBar = false }: Props) {
+export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it', hideBar = false, onPlus }: Props) {
   const [open, setOpen] = useState(false);
   // La conversazione resta finché non chiudi l'app (sessionStorage = si svuota alla chiusura).
   const [messages, setMessages] = useState<Msg[]>(() => {
@@ -237,12 +238,15 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
   // Barra di scrittura/voce (riusata: ancorata nel pannello quando aperto, flottante quando chiuso).
   const bar = (
     <div className="relative rounded-full p-px bg-gradient-to-r from-violet-500/90 via-fuchsia-500/90 to-violet-500/90 shadow-[0_8px_44px_-8px_rgba(107,84,198,0.7)]">
-      <div className="flex items-center gap-2 rounded-full bg-[var(--surface)]/90 backdrop-blur-xl border border-white/5 pl-4 pr-1.5 py-2">
-        {convo
-          ? <Radio size={16} className="text-red-400 shrink-0 animate-pulse" aria-label="In conversazione" />
-          : wakeOn
-            ? <Radio size={16} className="text-violet-400 shrink-0 animate-pulse" aria-label="In ascolto di Ehy HQ" />
-            : <Sparkles size={16} className="text-violet-400 shrink-0" />}
+      <div className="flex items-center gap-2 rounded-full bg-[var(--surface)]/90 backdrop-blur-xl border border-white/5 pl-1.5 pr-1.5 py-2">
+        {/* "+" grande = aggiungi un prodotto al volo. Quando ascolta/parla, un puntino pulsa sopra. */}
+        <button onClick={() => { onPlus?.(); }} aria-label="Aggiungi prodotto"
+          className="relative w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-md shadow-violet-500/30 hover:from-violet-400 hover:to-violet-500 transition-all active:scale-90">
+          <Plus size={20} />
+          {(convo || wakeOn) && (
+            <span className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--surface)] animate-pulse ${convo ? 'bg-red-400' : 'bg-violet-300'}`} />
+          )}
+        </button>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
