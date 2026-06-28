@@ -31,9 +31,9 @@ const VERIFY_TTL_MS = 30 * 60 * 1000; // codice valido 30 minuti
 
 // La verifica email è attiva solo se l'invio email è configurato (BREVO_API_KEY).
 // Così, se l'email non è pronta, le registrazioni non si bloccano.
-// TEMPORANEO: verifica email DISATTIVATA → qualsiasi email (anche inventata) può entrare.
-// Per riattivarla: metti EMAIL_VERIFICATION_ENABLED = true (e configura BREVO_API_KEY).
-const EMAIL_VERIFICATION_ENABLED = false;
+// Verifica email ATTIVA: si applica solo se l'invio email è configurato (BREVO_API_KEY).
+// Se BREVO non è impostata, emailConfigured()=false → non blocca le registrazioni.
+const EMAIL_VERIFICATION_ENABLED = true;
 function emailConfigured() { return EMAIL_VERIFICATION_ENABLED && !!process.env.BREVO_API_KEY; }
 function genVerifyCode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
 
@@ -50,6 +50,23 @@ async function sendVerificationCode(user: { id: string; email: string; name?: st
     text: `Il tuo codice di verifica è: ${code}. Scade tra 30 minuti.`,
     html: `<div style="font-family:Arial,sans-serif"><h2>Conferma la tua email</h2><p>Il tuo codice di verifica è:</p><p style="font-size:28px;font-weight:bold;letter-spacing:4px">${code}</p><p style="color:#888">Scade tra 30 minuti. Se non hai creato un account, ignora questa email.</p></div>`,
   }).catch((e) => logger.error('Invio codice verifica fallito', { err: e?.message }));
+}
+
+const RESET_TTL_MS = 30 * 60 * 1000; // codice reset valido 30 minuti
+
+// Genera + salva + invia il codice per il RECUPERO password.
+async function sendPasswordResetCode(user: { id: string; email: string; name?: string }) {
+  const code = genVerifyCode();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordResetCode: code, passwordResetExpires: new Date(Date.now() + RESET_TTL_MS) },
+  });
+  await sendEmail({
+    to: user.email,
+    subject: 'Recupero password — HQVault',
+    text: `Il tuo codice per reimpostare la password è: ${code}. Scade tra 30 minuti. Se non l'hai richiesto, ignora questa email: il tuo account è al sicuro.`,
+    html: `<div style="font-family:Arial,sans-serif"><h2>Reimposta la password</h2><p>Il tuo codice è:</p><p style="font-size:28px;font-weight:bold;letter-spacing:4px">${code}</p><p style="color:#888">Scade tra 30 minuti. Se non hai richiesto il recupero, ignora questa email.</p></div>`,
+  }).catch((e) => logger.error('Invio codice reset fallito', { err: e?.message }));
 }
 
 // Oggetto utente standard restituito al frontend (login + verifica).
@@ -405,6 +422,75 @@ router.post('/resend-verification', authLimiter, async (req: Request, res: Respo
   } catch (err: any) {
     logger.error('Errore resend-verification', { err: err.message });
     res.json({ ok: true });
+  }
+});
+
+// ==========================================
+// POST /auth/forgot-password — { email } → invia un codice OTP per reimpostare la password.
+// Risposta SEMPRE generica (anti-enumeration): non rivela se l'email è registrata.
+// ==========================================
+router.post('/forgot-password', authLimiter, async (req: Request, res: Response) => {
+  try {
+    const email = (req.body?.email || '').toString().trim().toLowerCase();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      return res.status(400).json({ error: 'Email non valida.' });
+    }
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user) {
+      await sendPasswordResetCode(user);
+      await audit({ action: 'PASSWORD_RESET_REQUEST', userId: user.id, req }).catch(() => {});
+    }
+    return res.json({ ok: true, message: 'Se l\'email è registrata, ti abbiamo inviato un codice per reimpostare la password.' });
+  } catch (err: any) {
+    logger.error('Errore forgot-password', { err: err.message });
+    return res.status(500).json({ error: 'Errore. Riprova.' });
+  }
+});
+
+// ==========================================
+// POST /auth/reset-password — { email, code, newPassword } → verifica il codice e imposta la
+// nuova password. Sblocca l'account, verifica l'email, e INVALIDA tutte le sessioni attive.
+// ==========================================
+router.post('/reset-password', authLimiter, async (req: Request, res: Response) => {
+  try {
+    const email = (req.body?.email || '').toString().trim().toLowerCase();
+    const code = (req.body?.code || '').toString().trim();
+    const newPassword = (req.body?.newPassword || '').toString();
+    if (!email || !code || !newPassword) return res.status(400).json({ error: 'Dati mancanti.' });
+
+    const pw = validatePassword(newPassword);
+    if (!pw.valid) return res.status(400).json({ error: 'Password troppo debole: ' + pw.errors.join(', ') });
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !user.passwordResetCode || !user.passwordResetExpires
+      || user.passwordResetCode !== code || user.passwordResetExpires < new Date()) {
+      await audit({ action: 'PASSWORD_RESET_FAIL', userId: user?.id, success: false, req }).catch(() => {});
+      return res.status(400).json({ error: 'Codice non valido o scaduto.' });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashed,
+        passwordResetCode: null,
+        passwordResetExpires: null,
+        failedLoginCount: 0,   // il reset sblocca l'account
+        lockedUntil: null,
+        emailVerified: true,   // ha dimostrato di possedere l'email
+      },
+    });
+    // SICUREZZA: dopo un reset, revoca tutte le sessioni attive (refresh token).
+    await prisma.refreshToken.updateMany({
+      where: { userId: user.id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    }).catch(() => {});
+
+    await audit({ action: 'PASSWORD_RESET_SUCCESS', userId: user.id, req }).catch(() => {});
+    return res.json({ ok: true, message: 'Password reimpostata. Ora puoi accedere con la nuova password.' });
+  } catch (err: any) {
+    logger.error('Errore reset-password', { err: err.message });
+    return res.status(500).json({ error: 'Errore. Riprova.' });
   }
 });
 

@@ -34,6 +34,8 @@ model User {
   emailVerified     Boolean        @default(true)
   emailVerifyCode   String?        // codice OTP a 6 cifre
   emailVerifyExpires DateTime?
+  passwordResetCode    String?     // codice OTP a 6 cifre per il recupero password
+  passwordResetExpires DateTime?
 
   // Preferenze notifiche push: JSON { offers, messages, sales, shipping, disputes, team, insights }.
   // null = tutte attive (default). Le notifiche di sicurezza non sono disattivabili.
