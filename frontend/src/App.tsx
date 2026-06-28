@@ -701,6 +701,11 @@ export default function App() {
   const [importWarehouseId, setImportWarehouseId] = useState(''); // magazzino per l'import (default: base)
   const [isImporting, setIsImporting] = useState(false);
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  // Import "qualsiasi Excel": teniamo righe grezze + intestazioni + abbinamento colonna→campo,
+  // così l'utente può mappare il SUO file (colonne con nomi diversi).
+  const [importRaw, setImportRaw] = useState<any[]>([]);
+  const [importHeaders, setImportHeaders] = useState<string[]>([]);
+  const [importMap, setImportMap] = useState<Record<string, string>>({});
 
   // ----- TEAM PANEL -----
   const [teamPanelOpen, setTeamPanelOpen] = useState(false);
@@ -3429,8 +3434,34 @@ export default function App() {
   };
 
   // ==========================================
-  // IMPORT EXCEL
+  // IMPORT EXCEL — funziona con QUALSIASI file: l'utente abbina le sue colonne ai campi.
   // ==========================================
+  // Campi dell'app + alias per l'auto-rilevamento delle colonne.
+  const IMPORT_ALIASES: Record<string, string[]> = {
+    brand: ['brand', 'marca', 'marchio'],
+    name: ['nome', 'modello', 'name', 'model', 'descrizione', 'prodotto', 'articolo'],
+    size: ['taglia', 'size', 'misura'],
+    condition: ['condizione', 'condition', 'stato'],
+    price: ['prezzo', 'price', 'prezzo acquisto', 'costo', 'purchase price', 'acquisto', 'pagato'],
+    category: ['categoria', 'category', 'reparto', 'tipo'],
+  };
+  // Costruisce le righe-prodotto dalle righe grezze usando l'abbinamento colonna→campo scelto.
+  const applyImportMap = (raw: any[], map: Record<string, string>) => raw.map((row: any) => ({
+    brand: map.brand ? String(row[map.brand] ?? '').trim() : '',
+    name: map.name ? String(row[map.name] ?? '').trim() : '',
+    size: map.size ? String(row[map.size] ?? '').trim() : '',
+    condition: map.condition ? String(row[map.condition] ?? '').trim() : '',
+    // prezzo robusto: gestisce "150,00", "€150", "150.00" → 150
+    price: map.price ? (parseFloat(String(row[map.price] ?? '').replace(/[^0-9,.-]/g, '').replace(',', '.')) || 0) : 0,
+    category: map.category ? String(row[map.category] ?? '').trim() : '',
+  }));
+  // Cambia l'abbinamento di un campo e ricalcola l'anteprima.
+  const setImportField = (field: string, header: string) => {
+    const m = { ...importMap }; if (header) m[field] = header; else delete m[field];
+    setImportMap(m);
+    setImportRows(applyImportMap(importRaw, m));
+  };
+
   const handleExcelFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -3441,21 +3472,18 @@ export default function App() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const raw: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       if (raw.length === 0) { showToast(t('ts.emptyFile'), 'err'); return; }
+      const headers = Object.keys(raw[0] || {});
       const normalize = (k: string) => k.toLowerCase().trim().replace(/[_\s]+/g, ' ');
-      const parsed = raw.map((row: any) => {
-        const r: any = {};
-        Object.keys(row).forEach(k => {
-          const n = normalize(k);
-          if (['brand', 'marca', 'marchio'].includes(n)) r.brand = String(row[k]).trim();
-          else if (['nome', 'modello', 'name', 'model', 'descrizione', 'prodotto'].includes(n)) r.name = String(row[k]).trim();
-          else if (['taglia', 'size', 'misura'].includes(n)) r.size = String(row[k]).trim();
-          else if (['condizione', 'condition', 'stato'].includes(n)) r.condition = String(row[k]).trim();
-          else if (['prezzo', 'price', 'prezzo acquisto', 'costo', 'purchase price'].includes(n)) r.price = parseFloat(String(row[k])) || 0;
-          else if (['categoria', 'category', 'reparto', 'tipo'].includes(n)) r.category = String(row[k]).trim();
-        });
-        return r;
+      // Auto-rileva l'abbinamento colonna→campo (poi l'utente può correggerlo nella modale).
+      const map: Record<string, string> = {};
+      Object.keys(IMPORT_ALIASES).forEach(field => {
+        const h = headers.find(hh => IMPORT_ALIASES[field].includes(normalize(hh)));
+        if (h) map[field] = h;
       });
-      setImportRows(parsed);
+      setImportRaw(raw);
+      setImportHeaders(headers);
+      setImportMap(map);
+      setImportRows(applyImportMap(raw, map));
       setImportCategory(userCategories[0] || '');
       setImportErrors([]);
       setImportOpen(true);
@@ -8774,14 +8802,37 @@ export default function App() {
                 className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors"><X size={20} /></button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3 text-xs text-blue-400">
-                <p className="font-bold mb-1">Colonne riconosciute (intestazione prima riga):</p>
-                <p className="font-mono">Brand • Nome • Taglia • Condizione • Prezzo • Categoria</p>
-                <button onClick={downloadImportTemplate}
-                  className="mt-2 text-[10px] underline hover:text-blue-300 transition-colors">
-                  Scarica template .xlsx con esempi →
-                </button>
-              </div>
+              {/* Abbinamento colonne: funziona con QUALSIASI Excel. Auto-rilevato, correggibile. */}
+              {importHeaders.length > 0 ? (
+                <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest mb-2.5">Abbina le tue colonne</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {[
+                      { key: 'brand', label: 'Marca *' },
+                      { key: 'name', label: 'Nome / Modello *' },
+                      { key: 'price', label: 'Prezzo *' },
+                      { key: 'size', label: 'Taglia' },
+                      { key: 'condition', label: 'Condizione' },
+                      { key: 'category', label: 'Reparto' },
+                    ].map(f => (
+                      <div key={f.key}>
+                        <label className="text-[10px] text-[var(--text-soft)] block mb-1">{f.label}</label>
+                        <select value={importMap[f.key] || ''} onChange={e => setImportField(f.key, e.target.value)}
+                          className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2 py-1.5 text-xs outline-none focus:border-[#6b54c6]">
+                          <option value="">— nessuna —</option>
+                          {importHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-[var(--text-faint)] mt-2.5">Le ho abbinate da solo dal tuo file: correggi se serve. <span className="text-[var(--text-soft)]">*</span> = obbligatorie.</p>
+                </div>
+              ) : (
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3 text-xs text-blue-400">
+                  <p className="font-bold mb-1">Carica il TUO Excel: poi abbini le colonne ai campi dell'app.</p>
+                  <button onClick={downloadImportTemplate} className="mt-1 text-[10px] underline hover:text-blue-300 transition-colors">Oppure scarica un template di esempio →</button>
+                </div>
+              )}
 
               <div className="flex items-center gap-3">
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex-1">
