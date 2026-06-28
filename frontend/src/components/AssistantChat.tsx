@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Sparkles, Send, Mic, X, Loader2, Square, Radio, Plus } from 'lucide-react';
-import { recordCommand, transcribe, startVoskWakeWord, isRecordingSupported, type WakeWordHandle } from '../lib/voice';
+import { recordCommand, transcribe, startVoskWakeWord, isRecordingSupported, VoiceRecorder, type WakeWordHandle } from '../lib/voice';
 
 type ApiCall = <T = any>(path: string, opts?: RequestInit) => Promise<{ ok: boolean; data: T; status: number }>;
 type Msg = { role: 'user' | 'assistant'; content: string };
@@ -54,6 +54,16 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
   const [gestureReady, setGestureReady] = useState(false);
   const [convo, setConvo] = useState(false); // modalità conversazione continua (mani libere)
   const [micLevel, setMicLevel] = useState(0); // livello audio dal vivo (onda)
+  // Push-to-talk stile WhatsApp: tieni premuto = registra · su = blocca · sinistra = annulla.
+  const [pttActive, setPttActive] = useState(false);
+  const [pttLocked, setPttLocked] = useState(false);
+  const [pttCancel, setPttCancel] = useState(false);
+  const [pttSecs, setPttSecs] = useState(0);
+  const recRef = useRef<VoiceRecorder | null>(null);
+  const pttStartRef = useRef({ x: 0, y: 0 });
+  const pttLockedRef = useRef(false);
+  const pttCancelRef = useRef(false);
+  const pttTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wakeRef = useRef<WakeWordHandle | null>(null);
   const voiceBusyRef = useRef(false);
   const convoRef = useRef(false);
@@ -154,6 +164,56 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
   // Ferma la conversazione se il pannello viene chiuso.
   useEffect(() => { if (!open && convoRef.current) stopConvo(); }, [open, stopConvo]);
 
+  // ===== Push-to-talk (mic stile WhatsApp) =====
+  const finishPtt = useCallback(async (action: 'send' | 'cancel') => {
+    const rec = recRef.current;
+    recRef.current = null;
+    if (pttTimerRef.current) { clearInterval(pttTimerRef.current); pttTimerRef.current = null; }
+    setPttActive(false); setPttLocked(false); setPttCancel(false);
+    pttLockedRef.current = false; pttCancelRef.current = false;
+    if (!rec) return;
+    if (action === 'cancel') { rec.cancel(); return; }
+    const clip = await rec.stop();
+    if (!clip) return;                       // niente audio
+    setVoiceState('transcribing');
+    let text = '';
+    try { text = await transcribe(apiCall, clip.base64, clip.mime); } catch { /* errore trascrizione */ }
+    setVoiceState('idle');
+    const t = (text || '').trim();
+    if (t) sendRef.current(t, true);         // esegue il comando in background (toast)
+  }, [apiCall]);
+
+  const startPtt = useCallback(async (e: React.PointerEvent) => {
+    if (pttActive || sending) return;
+    e.preventDefault();
+    if (!recSupported) { showToast('Microfono non disponibile su questo browser', 'warn'); return; }
+    try { (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); } catch { /* noop */ }
+    pttStartRef.current = { x: e.clientX, y: e.clientY };
+    setPttCancel(false); setPttLocked(false);
+    pttCancelRef.current = false; pttLockedRef.current = false;
+    const rec = new VoiceRecorder();
+    try { await rec.start(); } catch { showToast('Permesso microfono negato', 'err'); return; }
+    recRef.current = rec;
+    setPttActive(true); setPttSecs(0);
+    pttTimerRef.current = setInterval(() => setPttSecs(s => s + 1), 1000);
+  }, [pttActive, sending, recSupported, showToast]);
+
+  const movePtt = useCallback((e: React.PointerEvent) => {
+    if (!recRef.current || pttLockedRef.current) return;
+    const dy = pttStartRef.current.y - e.clientY; // su = positivo
+    const dx = pttStartRef.current.x - e.clientX; // sinistra = positivo
+    if (dy > 70) { pttLockedRef.current = true; setPttLocked(true); pttCancelRef.current = false; setPttCancel(false); return; }
+    const c = dx > 90;
+    if (c !== pttCancelRef.current) { pttCancelRef.current = c; setPttCancel(c); }
+  }, []);
+
+  const endPtt = useCallback((e: React.PointerEvent) => {
+    if (!recRef.current) return;
+    try { (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId); } catch { /* noop */ }
+    if (pttLockedRef.current) return;        // bloccato: resta a registrare, si invia col tasto
+    finishPtt(pttCancelRef.current ? 'cancel' : 'send');
+  }, [finishPtt]);
+
   // Wake-word "Ehy HQ" via VOSK (on-device): quando l'utente l'ha ATTIVATA, ascolta in
   // continuo e a riconoscimento apre la chat, registra il comando (pausa = fine), trascrive
   // con Whisper e invia. Modello scelto per lingua (it: "acca cu"…, en: "hey hq"…).
@@ -238,6 +298,30 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
   // Barra di scrittura/voce (riusata: ancorata nel pannello quando aperto, flottante quando chiuso).
   const bar = (
     <div className="relative rounded-full p-px bg-gradient-to-r from-violet-500/90 via-fuchsia-500/90 to-violet-500/90 shadow-[0_8px_44px_-8px_rgba(107,84,198,0.7)]">
+      {/* Overlay registrazione (push-to-talk) sopra la barra. */}
+      {pttActive && (
+        <div className="absolute left-0 right-0 bottom-full mb-3 flex justify-center px-2">
+          <div className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl border backdrop-blur-xl shadow-xl ${pttCancel ? 'bg-red-500/20 border-red-400/40' : 'bg-[var(--surface)]/95 border-white/10'}`}>
+            {pttCancel ? (
+              <span className="text-sm font-bold text-red-300 flex items-center gap-2"><X size={16} /> Rilascia per annullare</span>
+            ) : (
+              <>
+                <span className="w-2.5 h-2.5 rounded-full bg-red-400 animate-pulse shrink-0" />
+                <span className="text-sm font-semibold text-[var(--text)] tabular-nums">{Math.floor(pttSecs / 60)}:{(pttSecs % 60).toString().padStart(2, '0')}</span>
+                {pttLocked ? (
+                  <>
+                    <span className="text-xs text-[var(--text-soft)]">in registrazione…</span>
+                    <button onClick={() => finishPtt('cancel')} className="ml-1 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-[var(--text-soft)] hover:text-red-400 transition-colors"><X size={16} /></button>
+                    <button onClick={() => finishPtt('send')} className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-violet-500 to-violet-600 text-white"><Send size={15} /></button>
+                  </>
+                ) : (
+                  <span className="text-xs text-[var(--text-soft)]">⬆︎ blocca · ⬅︎ annulla · rilascia = invia</span>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
       <div className="flex items-center gap-2 rounded-full bg-[var(--surface)]/90 backdrop-blur-xl border border-white/5 pl-1.5 pr-1.5 py-2">
         {/* "+" grande = aggiungi un prodotto al volo. Quando ascolta/parla, un puntino pulsa sopra. */}
         <button onClick={() => { onPlus?.(); }} aria-label="Aggiungi prodotto"
@@ -259,12 +343,15 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
             : 'Chiedi a HQVault...'}
           disabled={convo}
           className="flex-1 bg-transparent outline-none text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] min-w-0 disabled:opacity-70" />
-        <button onClick={toggleMic}
-          aria-label={convo ? 'Ferma conversazione' : 'Parla con HQ (conversazione)'}
-          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-            convo ? 'bg-red-500/15 text-red-400 ring-1 ring-red-500/30 animate-pulse' : 'text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-white/5'
+        <button
+          onPointerDown={startPtt} onPointerMove={movePtt} onPointerUp={endPtt}
+          onPointerCancel={() => finishPtt('cancel')} onContextMenu={e => e.preventDefault()}
+          aria-label="Tieni premuto per parlare"
+          style={{ touchAction: 'none' }}
+          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
+            pttActive ? (pttCancel ? 'bg-red-500/25 text-red-300 scale-110' : 'bg-red-500/15 text-red-400 ring-1 ring-red-500/30 scale-110') : 'text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-white/5'
           }`}>
-          {convo ? <Square size={16} className="fill-current" /> : <Mic size={18} />}
+          <Mic size={18} />
         </button>
         <button onClick={() => send(input)} disabled={sending || !input.trim()} aria-label="Invia"
           className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-lg shadow-violet-500/30 transition-all hover:from-violet-400 hover:to-violet-500 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed">
