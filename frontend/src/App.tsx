@@ -1601,6 +1601,50 @@ export default function App() {
     return () => document.removeEventListener('pointerdown', onDown);
   }, [notifPanelOpen]);
 
+  // Chiusura UNIVERSALE delle finestre: ESC (desktop) e click FUORI dal riquadro chiudono la
+  // modale aperta in cima — esattamente come premere la X. Gli sfondi modali usano "fixed
+  // inset-0": se il target del click è proprio lo sfondo (classe inset-0) = click fuori dal box.
+  useEffect(() => {
+    const stack: Array<[boolean, () => void]> = [
+      [cmdOpen, () => setCmdOpen(false)],
+      [barcodeModalOpen, () => setBarcodeModalOpen(false)],
+      [deleteConfirmOpen, () => setDeleteConfirmOpen(false)],
+      [bulkDeleteConfirmOpen, () => setBulkDeleteConfirmOpen(false)],
+      [planModalOpen, () => setPlanModalOpen(false)],
+      [twoFaDisableOpen, () => setTwoFaDisableOpen(false)],
+      [twoFaSetupOpen, () => setTwoFaSetupOpen(false)],
+      [changePwdOpen, () => setChangePwdOpen(false)],
+      [trackingModalOpen, () => setTrackingModalOpen(false)],
+      [sourcingOpen, () => setSourcingOpen(false)],
+      [showProfitSharesModal, () => setShowProfitSharesModal(false)],
+      [bulkSellOpen, () => setBulkSellOpen(false)],
+      [sellModalOpen, () => setSellModalOpen(false)],
+      [lotOpen, () => setLotOpen(false)],
+      [incomingOpen, () => setIncomingOpen(false)],
+      [importOpen, () => setImportOpen(false)],
+      [isFormOpen, () => setIsFormOpen(false)],
+      [editModalOpen, () => setEditModalOpen(false)],
+      [notifPrefsOpen, () => setNotifPrefsOpen(false)],
+      [teamPanelOpen, () => setTeamPanelOpen(false)],
+      [adminPanelOpen, () => setAdminPanelOpen(false)],
+      [guideOpen, () => setGuideOpen(false)],
+      [privacyOpen, () => setPrivacyOpen(false)],
+    ];
+    const closeTop = (): boolean => {
+      const top = stack.find(([o]) => o);
+      if (top) { top[1](); return true; }
+      return false;
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && closeTop()) e.preventDefault(); };
+    const onDown = (e: MouseEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && el.classList && el.classList.contains('inset-0')) closeTop();
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('mousedown', onDown);
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onDown); };
+  }, [cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, privacyOpen]);
+
   useEffect(() => {
     if (userCategories.length > 0 && category === '') setCategory(userCategories[0]);
     // NB: niente reset di `size` qui. `userCategories` è un array ricreato a ogni render,
