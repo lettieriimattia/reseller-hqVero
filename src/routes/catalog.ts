@@ -31,6 +31,9 @@ const TYPE_TO_PRODUCTTYPE: Record<string, string> = {
   sneakers: 'sneakers', apparel: 'apparel', borse: 'handbag',
   accessori: 'accessor', carte: 'trading', elettronica: 'electronic',
 };
+// Le 6 categorie "ufficiali". Tutto il resto è una categoria PERSONALIZZATA dell'utente
+// (scritta nel catalogo): per quelle cerchiamo i prodotti dal vivo usando il nome come query.
+const KNOWN_TYPES = new Set(Object.keys(TYPE_TO_PRODUCTTYPE));
 
 // Ricerche "seed" per categoria: riempiono il TUO DB (cache) così il catalogo è già pieno.
 // Più query = catalogo più ricco per ogni reparto (ognuna porta ~12 prodotti in cache).
@@ -176,6 +179,24 @@ function dedupKey(c: { sku?: string | null; stockxProductId?: string | null; tit
     .toString().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 120);
 }
 
+// Mappa un candidato della fonte DIRETTAMENTE in risultato UI (per le categorie personalizzate,
+// dove non possiamo affidarci al filtro productType della cache). Dedup sulla key.
+function candsToResults(cands: CatalogCandidate[]): CatalogResult[] {
+  const seen = new Set<string>();
+  const out: CatalogResult[] = [];
+  for (const c of cands) {
+    const key = dedupKey({ sku: c.styleId, stockxProductId: c.productId, title: c.title });
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    const split = splitBrandName(c.title);
+    const brand = c.brand || split.brand;
+    const name = c.brand && c.title.toLowerCase().startsWith(c.brand.toLowerCase())
+      ? (c.title.slice(c.brand.length).trim() || c.title) : split.name;
+    out.push({ key, brand, name, sku: c.styleId || null, image: c.image || null, productType: inferCategory(c.title, c.productType) });
+  }
+  return out;
+}
+
 interface CatalogResult {
   key: string; brand: string; name: string; sku: string | null;
   image: string | null; productType: string | null;
@@ -250,6 +271,17 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
     const q = (req.query.q || '').toString().trim();
     const type = (req.query.type || '').toString().trim().toLowerCase();
     if (q.length < 2) return res.json([]);
+
+    // CATEGORIA PERSONALIZZATA (es. l'utente ha aggiunto "Profumi"/"Vinili"): non c'è un
+    // productType in cache da filtrare → cerco dal vivo combinando categoria + query e
+    // restituisco i candidati senza filtro di categoria.
+    if (type && !KNOWN_TYPES.has(type) && (isCatalogConfigured())) {
+      const cands = await providerSearch(`${type} ${q}`.trim(), { limit: 20 });
+      for (const c of cands) await upsertCandidate(c, undefined, type).catch(() => {});
+      const out = candsToResults(cands);
+      const withImg = out.filter(r => r.image);
+      return res.json((withImg.length >= 3 ? withImg : out).slice(0, 20));
+    }
 
     const byKey = new Map<string, CatalogResult>();
 
@@ -352,6 +384,17 @@ router.get('/popular', async (req: AuthRequest, res: Response) => {
   try {
     await ensureCatalogVersion();
     const type = (req.query.type || '').toString().trim().toLowerCase();
+
+    // CATEGORIA PERSONALIZZATA: nessun seed/cache per productType → uso il nome categoria
+    // come query e cerco i prodotti giusti dal vivo (poi li tengo in cache, best-effort).
+    if (type && !KNOWN_TYPES.has(type) && isCatalogConfigured()) {
+      const cands = await providerSearch(type, { limit: 30 });
+      for (const c of cands) await upsertCandidate(c, undefined, type).catch(() => {});
+      const out = candsToResults(cands);
+      const withImg = out.filter(r => r.image);
+      return res.json((withImg.length >= 6 ? withImg : out).slice(0, 60));
+    }
+
     // Ordine FISSO: per data di inserimento (createdAt non cambia ai re-seed) → il catalogo
     // non si rimescola più ad ogni apertura.
     const order = [{ createdAt: 'asc' as const }];

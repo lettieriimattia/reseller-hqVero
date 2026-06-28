@@ -59,6 +59,28 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
   const [adding, setAdding] = useState<Record<string, boolean>>({});
   const [addedFlash, setAddedFlash] = useState<Record<string, boolean>>({});
   const [preview, setPreview] = useState<CatalogResult | null>(null); // anteprima ingrandita (tap)
+  // Categorie PERSONALIZZATE aggiunte dall'utente (oltre alle 6 ufficiali): il backend per
+  // queste cerca i prodotti dal vivo usando il nome come query. Salvate in locale.
+  const [customTypes, setCustomTypes] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('hq_catalog_cats') || '[]'); } catch { return []; }
+  });
+  const addCustomType = () => {
+    const name = (window.prompt('Nuova categoria (es. Profumi, Vinili, Orologi):') || '').trim();
+    if (!name) return;
+    const exists = [...TYPES.map(t => t.label.toLowerCase()), ...customTypes.map(c => c.toLowerCase())].includes(name.toLowerCase());
+    if (!exists) {
+      const next = [...customTypes, name];
+      setCustomTypes(next);
+      try { localStorage.setItem('hq_catalog_cats', JSON.stringify(next)); } catch { /* storage pieno: pazienza */ }
+    }
+    setType(name.toLowerCase());
+  };
+  const removeCustomType = (name: string) => {
+    const next = customTypes.filter(c => c !== name);
+    setCustomTypes(next);
+    try { localStorage.setItem('hq_catalog_cats', JSON.stringify(next)); } catch { /* ignora */ }
+    if (type === name.toLowerCase()) setType('');
+  };
 
   const debTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -102,7 +124,10 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
   // TAP sul "+": aggiunge SUBITO il prodotto (come StockX). Prezzo/taglia dopo, dalla Modifica.
   const quickAdd = async (item: CatalogResult) => {
     if (adding[item.key]) return;
-    const category = pickCategory(item.productType);
+    // Se sono in una categoria personalizzata, il prodotto va in quel reparto; altrimenti
+    // scelgo il reparto in base al tipo del risultato.
+    const customLabel = customTypes.find(c => c.toLowerCase() === type);
+    const category = customLabel || pickCategory(item.productType);
     setAdding(a => ({ ...a, [item.key]: true }));
     const { ok, data } = await apiCall<any>('/products', {
       method: 'POST',
@@ -150,6 +175,18 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
                 type === tp.id ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'
               }`}>{tp.label}</button>
           ))}
+          {/* Categorie personalizzate dell'utente (doppio tap per rimuovere) */}
+          {customTypes.map(c => (
+            <button key={c} onClick={() => setType(c.toLowerCase())} onDoubleClick={() => removeCustomType(c)}
+              title="Doppio tap per rimuovere"
+              className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                type === c.toLowerCase() ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'
+              }`}>{c}</button>
+          ))}
+          <button onClick={addCustomType}
+            className="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--fill)] text-[#6b54c6] hover:bg-[#6b54c6]/10 flex items-center gap-1">
+            <Plus size={13} /> Categoria
+          </button>
         </div>
       </div>
 

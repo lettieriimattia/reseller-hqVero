@@ -466,6 +466,10 @@ export default function App() {
   const [sellPlatform, setSellPlatform] = useState('Vinted');
   const [sellPaymentMethod, setSellPaymentMethod] = useState('Nessuna Fee (Contanti/Bonifico)');
   const [sellFees, setSellFees] = useState('0');
+  // Costi extra per la vendita (scatola, etichetta spedizione, dogana…): voci modificabili,
+  // la loro somma viene SOTTRATTA dal ricavo (aggiunta alle fees del prodotto).
+  const [sellExtraCosts, setSellExtraCosts] = useState<{ desc: string; amount: string }[]>([]);
+  const [sellExtraOpen, setSellExtraOpen] = useState(false);
   // Tracking opzionale della spedizione di vendita (OUTBOUND) direttamente nel flusso Vendi
   const [sellTrackingCode, setSellTrackingCode] = useState('');
   const [sellTrackingCarrier, setSellTrackingCarrier] = useState('Auto');
@@ -2889,6 +2893,7 @@ export default function App() {
     });
     setSellQuantity(ids.length.toString());
     setSellPrice('');
+    setSellExtraCosts([]); setSellExtraOpen(false);
     setSellTrackingCode(''); setSellTrackingCarrier('Auto');
     setSellModalOpen(true);
   };
@@ -2900,7 +2905,10 @@ export default function App() {
     const qtyToProcess = parseInt(sellQuantity) || 1;
     const idsToProcess = productToSell.ids.slice(0, qtyToProcess);
     const unitSalePrice = parseFloat(sellPrice) / qtyToProcess;
-    const unitFees = (parseFloat(sellFees) || 0) / qtyToProcess;
+    // Costi extra (scatola, etichetta, dogana…): somma totale, divisa per le unità e
+    // aggiunta alle fees → così viene sottratta dal ricavo nel calcolo del profitto.
+    const extraTotal = sellExtraCosts.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0);
+    const unitFees = ((parseFloat(sellFees) || 0) + extraTotal) / qtyToProcess;
     
     let hasError = false;
     for (const id of idsToProcess) {
@@ -8008,17 +8016,61 @@ export default function App() {
                 </select>
               </div>
               
+              {/* Costi extra alla vendita (scatola, etichetta spedizione, dogana…): tendina con
+                  voci modificabili; la loro somma viene SOTTRATTA dal ricavo. */}
+              <div className="bg-[var(--surface-2)] rounded-xl overflow-hidden">
+                <button type="button" onClick={() => setSellExtraOpen(o => !o)}
+                  className="w-full flex items-center justify-between p-3 text-left">
+                  <span className="text-xs font-bold text-[var(--text-soft)] flex items-center gap-1.5">
+                    <Package size={13} /> Costi extra <span className="font-normal text-[var(--text-faint)] hidden sm:inline">(scatola, spedizione, dogana…)</span>
+                  </span>
+                  {(() => { const ex = sellExtraCosts.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0); return (
+                    <span className="flex items-center gap-1.5">
+                      <span className={`text-xs font-bold ${ex > 0 ? 'text-red-400' : 'text-[#6b54c6]'}`}>{ex > 0 ? `-${ex.toFixed(2)}€` : 'Aggiungi'}</span>
+                      <ChevronDown size={14} className={`text-[var(--text-faint)] transition-transform ${sellExtraOpen ? 'rotate-180' : ''}`} />
+                    </span>
+                  ); })()}
+                </button>
+                {sellExtraOpen && (
+                  <div className="px-3 pb-3 space-y-2">
+                    {sellExtraCosts.map((c, i) => (
+                      <div key={i} className="flex gap-2">
+                        <input type="text" value={c.desc} placeholder="Descrizione (es. Scatola)"
+                          onChange={(e: any) => setSellExtraCosts(arr => arr.map((x, j) => j === i ? { ...x, desc: e.target.value } : x))}
+                          className="flex-1 min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#6b54c6]" />
+                        <input type="number" step="0.01" value={c.amount} placeholder="€"
+                          onChange={(e: any) => setSellExtraCosts(arr => arr.map((x, j) => j === i ? { ...x, amount: e.target.value } : x))}
+                          className="w-20 shrink-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#6b54c6]" />
+                        <button type="button" onClick={() => setSellExtraCosts(arr => arr.filter((_, j) => j !== i))}
+                          className="w-9 shrink-0 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"><X size={14} /></button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => setSellExtraCosts(arr => [...arr, { desc: '', amount: '' }])}
+                      className="w-full py-2 rounded-lg border border-dashed border-[var(--border-2)] text-xs font-bold text-[#6b54c6] hover:bg-[#6b54c6]/10 flex items-center justify-center gap-1.5">
+                      <Plus size={13} /> Aggiungi costo
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="bg-[var(--surface-2)] p-3 rounded-xl space-y-1.5">
                 <div className="flex justify-between text-xs">
                   <span className="text-[var(--text-soft)]">{t('sell.feesCalc')}</span>
                   <span className="font-bold text-red-400">-{sellFees}€</span>
                 </div>
+                {(() => { const ex = sellExtraCosts.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0); return ex > 0 ? (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[var(--text-soft)]">Costi extra</span>
+                    <span className="font-bold text-red-400">-{ex.toFixed(2)}€</span>
+                  </div>
+                ) : null; })()}
                 {productToSell?.purchasePrice && sellPrice && (() => {
                   const qty = parseInt(sellQuantity) || 1;
                   const totalCost = productToSell.purchasePrice! * qty;
                   const saleTotal = parseFloat(sellPrice) || 0;
                   const feesNum = parseFloat(sellFees) || 0;
-                  const profit = saleTotal - totalCost - feesNum;
+                  const extraNum = sellExtraCosts.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0);
+                  const profit = saleTotal - totalCost - feesNum - extraNum;
                   const margin = totalCost > 0 ? (profit / totalCost * 100) : 0;
                   return (
                     <>
