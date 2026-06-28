@@ -365,14 +365,15 @@ export default function App() {
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   
   // ----- TEMA (scuro / chiaro / glass) -----
-  const [theme, setTheme] = useState<'dark' | 'light' | 'glass'>(() => {
-    try { return (localStorage.getItem('hq-theme') as 'dark' | 'light' | 'glass') || 'dark'; } catch { return 'dark'; }
+  // 'lux' = tema premium Carbon+Champagne, selezionabile solo dall'admin (anteprima).
+  const [theme, setTheme] = useState<'dark' | 'light' | 'glass' | 'lux'>(() => {
+    try { return (localStorage.getItem('hq-theme') as 'dark' | 'light' | 'glass' | 'lux') || 'dark'; } catch { return 'dark'; }
   });
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('light', 'glass');
-    if (theme === 'light' || theme === 'glass') root.classList.add(theme);
-    try { localStorage.setItem('hq-theme', theme); } catch {}
+    root.classList.remove('light', 'glass', 'lux');
+    if (theme !== 'dark') root.classList.add(theme);
+    try { localStorage.setItem('hq-theme', theme); } catch { /* storage non disponibile */ }
   }, [theme]);
 
   // ----- UI STATE -----
@@ -6762,7 +6763,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  {theme === 'light' ? <Sun className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#6b54c6] mt-0.5" size={22} /> : <Moon className="text-[#6b54c6] mt-0.5" size={22} />}
+                  {theme === 'light' ? <Sun className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'lux' ? <Gem className="text-[#c9a86a] mt-0.5" size={22} /> : <Moon className="text-[#6b54c6] mt-0.5" size={22} />}
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.appearance')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">{t('set.appearanceDesc')}</p>
@@ -6787,6 +6788,15 @@ export default function App() {
                     }`}>
                     <Sparkles size={13} /> {t('set.themeGlass')}
                   </button>
+                  {/* Tema premium Carbon+Champagne: SOLO admin, per anteprima/feedback */}
+                  {isAdminUser && (
+                    <button onClick={() => setTheme('lux')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                        theme === 'lux' ? 'bg-[#c9a86a] text-[#14110a]' : 'text-[var(--text-soft)]'
+                      }`}>
+                      <Gem size={13} /> Lux
+                    </button>
+                  )}
                 </div>
               </div>
             </section>

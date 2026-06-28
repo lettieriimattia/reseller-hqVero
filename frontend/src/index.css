@@ -82,6 +82,41 @@
   --gold-line: rgba(154,123,63,0.42);
 }
 
+/* ===== TEMA "LUX" — Carbon + Champagne (PREMIUM, anteprima admin) =====
+   Nero carbon, testo avorio/bone, UN accento metallico (oro champagne) usato col contagocce,
+   verdi/rossi smorzati (salvia/oxblood). Sostituisce il viola come identità. */
+.lux {
+  --accent: #c9a86a;        /* champagne gold (accento unico) */
+  --accent-hover: #dcc08a;
+  --gold: #c9a86a;
+  --gold-soft: rgba(201,168,106,0.14);
+  --gold-line: rgba(201,168,106,0.40);
+  --bg: #0b0b0d;            /* near-black carbon */
+  --surface: #141417;       /* pannelli */
+  --surface-2: #0f0f12;     /* inset/input */
+  --border: rgba(201,168,106,0.08);    /* hairline con velo oro */
+  --border-2: rgba(201,168,106,0.14);
+  --border-3: rgba(201,168,106,0.24);
+  --text: #ede9e0;          /* avorio/bone */
+  --text-soft: #9a938a;     /* beige caldo */
+  --text-muted: #b8b1a6;
+  --text-faint: #6b655c;
+  --fill: rgba(201,168,106,0.06);
+  --fill-2: rgba(201,168,106,0.10);
+  --fill-3: rgba(201,168,106,0.18);
+  --bg-blur: rgba(11,11,13,0.95);
+  --bg-overlay: rgba(11,11,13,0.72);
+  --surface-blur: rgba(20,20,23,0.95);
+}
+/* Lux: rimpiazza il viola hardcoded (#6b54c6) con champagne e smorza i neon verdi/rossi.
+   Su accento champagne (chiaro) il testo diventa scuro → look raffinato. */
+.lux .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #14110a !important; }
+.lux .text-\[\#6b54c6\]   { color: var(--accent) !important; }
+.lux .border-\[\#6b54c6\] { border-color: var(--accent) !important; }
+.lux .text-green-400, .lux .text-emerald-400 { color: #7e9a78 !important; }  /* verde salvia spento */
+.lux .text-green-300     { color: #8fae88 !important; }
+.lux .text-red-400, .lux .text-red-300       { color: #b9745a !important; }  /* oxblood/rust chiaro */
+
 /* ===== TEMA CHIARO: colori semantici accentati =====
    Le tinte -400 di Tailwind sono troppo chiare su sfondo bianco.
    Le scuriamo solo in light mode (override più specifico). */
