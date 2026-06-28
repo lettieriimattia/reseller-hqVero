@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch server.ts",
     "build": "prisma generate && npm install --include=dev --prefix frontend && npm run build --prefix frontend && tsc",
-    "start": "prisma db push --accept-data-loss && node dist/server.js",
+    "start": "prisma db push --accept-data-loss & node dist/server.js",
     "generate-cert": "node scripts/generate-cert.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
