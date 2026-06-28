@@ -38,6 +38,16 @@
       @keyframes vlGlow  { 0%,60%{opacity:.06} 82%{opacity:.42} 100%{opacity:.26} }
       #hq-splash .vl-wrap{ position:relative; width:min(360px,90vw); height:min(360px,90vw); display:flex; align-items:center; justify-content:center; }
       #hq-splash .vl-glowdiv{ position:absolute; inset:6%; border-radius:50%; background:radial-gradient(circle,rgba(44,156,142,.8),transparent 60%); filter:blur(26px); animation:vlGlow 3.4s ease infinite; }
+      /* Video caveau: centrato, con ingresso scale-in premium. Su PC più piccolo (tanto nero
+         attorno = respiro/lusso); su mobile riempie di più. */
+      #hq-splash .vl-video{
+        position:absolute; inset:0; margin:auto; width:auto; height:auto;
+        max-width:min(440px,84vw); max-height:82vh; object-fit:contain; z-index:3; pointer-events:none;
+        opacity:0; transform:scale(.96);
+        transition:opacity .5s ease, transform .8s cubic-bezier(.2,.7,.2,1);
+      }
+      #hq-splash .vl-video.vl-on{ opacity:1; transform:scale(1); }
+      @media (min-width:1024px){ #hq-splash .vl-video{ max-width:300px; max-height:52vh; } }
       #hq-splash .vl-door{ transform-origin:200px 200px; animation:vlSlam 3.4s cubic-bezier(.3,.72,.2,1) infinite; }
       #hq-splash .vl-wheel{ transform-origin:200px 200px; animation:vlWheel 3.4s cubic-bezier(.4,0,.2,1) infinite; }
       #hq-splash .vl-mech{ transform-origin:200px 200px; animation:vlMech 3.4s cubic-bezier(.4,0,.2,1) infinite; }
@@ -50,8 +60,7 @@
       <!-- Se esiste /vault-intro.mp4 (video AI fotorealistico generato dall'immagine master del
            caveau) viene riprodotto a tutto schermo SOPRA l'SVG. Se il file manca, l'evento error
            lo nasconde e resta l'animazione SVG vettoriale. object-fit:contain = nessun ritaglio. -->
-      <video id="hq-vault-video" autoplay muted playsinline preload="auto"
-        style="position:absolute;inset:0;margin:auto;width:auto;height:auto;max-width:min(560px,92vw);max-height:92vh;object-fit:contain;opacity:0;transition:opacity .35s ease;z-index:3;pointer-events:none">
+      <video id="hq-vault-video" class="vl-video" autoplay muted playsinline preload="auto">
         <source src="/vault-intro.mp4" type="video/mp4" />
         <source src="/vault-intro.webm" type="video/webm" />
       </video>
@@ -116,7 +125,7 @@
         var v = document.getElementById('hq-vault-video');
         var hasVideo = false;
         if (v) {
-          v.addEventListener('loadeddata', function () { v.style.opacity = '1'; });
+          v.addEventListener('loadeddata', function () { v.classList.add('vl-on'); });
           v.addEventListener('playing', function () { hasVideo = true; });
           v.addEventListener('ended', hide);
         }
