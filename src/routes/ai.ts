@@ -5,7 +5,8 @@ import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimit';
 import { validate, aiScanSchema, priceEstimateSchema } from '../middleware/validate';
-import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, getVisionStatus, ListingPlatform } from '../services/ai.service';
+import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, getVisionStatus, ListingPlatform, scanMultipleCards } from '../services/ai.service';
+import { pokemonSearch } from '../services/pokemon.service';
 import { getMarketValuation } from '../services/price.service';
 import { getCardValue } from '../services/cards.service';
 import { getValuation } from '../services/valuation.service';
@@ -47,6 +48,34 @@ router.post('/scan', validate(aiScanSchema), async (req: AuthRequest, res: Respo
   } catch (err: any) {
     logger.error('Errore /ai/scan', { err: err.message });
     res.status(500).json({ error: err.message || 'Errore scan IA' });
+  }
+});
+
+// ==========================================
+// POST /api/ai/scan-cards — riconosce PIÙ carte Pokémon in UNA foto (pagina raccoglitore) e
+// per ognuna recupera la foto ufficiale dal catalogo Pokémon. Per i "lotti carte".
+// ==========================================
+router.post('/scan-cards', async (req: AuthRequest, res: Response) => {
+  try {
+    const { imageBase64 } = req.body || {};
+    if (!imageBase64 || typeof imageBase64 !== 'string') return res.status(400).json({ error: 'Immagine mancante.' });
+    const cards = await scanMultipleCards(imageBase64);
+    // Arricchisci ogni carta con la FOTO ufficiale dal catalogo Pokémon (pokemontcg.io).
+    const out: any[] = [];
+    for (const c of cards) {
+      let image: string | null = null;
+      try {
+        const q = c.number ? `${c.name} ${c.number}` : c.name;
+        const found = await pokemonSearch(q, 1).catch(() => []);
+        if (found[0]?.image) image = found[0].image;
+      } catch { /* foto facoltativa */ }
+      out.push({ name: c.name, number: c.number, image });
+    }
+    await audit({ action: 'AI_SCAN', userId: req.user!.userId, req, metadata: { type: 'multi_card', count: out.length } });
+    res.json({ cards: out });
+  } catch (err: any) {
+    logger.error('Errore /ai/scan-cards', { err: err.message });
+    res.status(500).json({ error: err.message || 'Errore riconoscimento carte' });
   }
 });
 

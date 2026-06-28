@@ -56,6 +56,39 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
   const [splitMode, setSplitMode] = useState<'equal' | 'weighted'>('equal');
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const cardsRef = useRef<HTMLInputElement>(null);
+
+  // Foto con PIÙ carte (es. pagina di raccoglitore): l'IA le riconosce tutte → aggiunge ogni
+  // carta come voce, con foto ufficiale dal catalogo Pokémon. Costo poi diviso fra le carte.
+  const onCardsPhoto = async (files: FileList | null) => {
+    if (!files || !files[0]) return;
+    let photo: string | null = null;
+    try { photo = await compress(files[0]); } catch { return; }
+    const tmpId = Math.random().toString(36).slice(2);
+    setItems(prev => [...prev, { id: tmpId, photo, brand: 'Pokémon', name: 'Riconosco le carte…', size: '-', category: 'Carte', condition: 'N/D', marketValue: 0, scanning: true }]);
+    try {
+      const { ok, data } = await apiCall<any>('/api/ai/scan-cards', { method: 'POST', body: JSON.stringify({ imageBase64: photo }) });
+      const cards = (ok && Array.isArray(data?.cards)) ? data.cards : [];
+      setItems(prev => {
+        const without = prev.filter(it => it.id !== tmpId);
+        const added: LotItem[] = cards.map((c: any) => ({
+          id: Math.random().toString(36).slice(2),
+          photo: c.image || null,
+          brand: 'Pokémon',
+          name: [c.name, c.number].filter(Boolean).join(' '),
+          size: '-', category: 'Carte', condition: 'N/D',
+          marketValue: 0, scanning: false,
+        }));
+        return [...without, ...added];
+      });
+      if (!cards.length) showToast('Nessuna carta riconosciuta nella foto', 'warn');
+      else showToast(`${cards.length} carte riconosciute`, 'ok');
+    } catch {
+      setItems(prev => prev.filter(it => it.id !== tmpId));
+      showToast('Errore riconoscimento carte', 'err');
+    }
+    if (cardsRef.current) cardsRef.current.value = '';
+  };
 
   // ESC chiude (coerente col resto dell'app).
   useEffect(() => {
@@ -200,9 +233,14 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
 
           {/* Aggiungi foto */}
           <input ref={fileRef} type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={e => onFiles(e.target.files)} />
+          <input ref={cardsRef} type="file" accept="image/*" className="hidden" onChange={e => onCardsPhoto(e.target.files)} />
           <button onClick={() => fileRef.current?.click()}
             className="w-full py-3 rounded-2xl border border-dashed border-[#6b54c6]/40 text-[#6b54c6] font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#6b54c6]/10">
-            <Camera size={17} /> {items.length ? 'Aggiungi altre foto' : 'Scatta / scegli foto'}
+            <Camera size={17} /> {items.length ? 'Aggiungi altre foto' : 'Scatta / scegli foto (1 per prodotto)'}
+          </button>
+          <button onClick={() => cardsRef.current?.click()}
+            className="w-full py-3 rounded-2xl border border-dashed border-teal-500/40 text-teal-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-teal-500/10">
+            <Wand2 size={17} /> Più carte da una foto (IA)
           </button>
         </div>
 

@@ -155,6 +155,31 @@ async function visionComplete(opts: {
   return completion.choices[0]?.message?.content?.trim() || '';
 }
 
+// Riconosce PIÙ carte Pokémon in UNA sola foto (es. pagina di raccoglitore) → lista nome+numero.
+export async function scanMultipleCards(imageBase64: string): Promise<{ name: string; number: string | null }[]> {
+  const prompt = `Nell'immagine ci sono PIÙ carte Pokémon (es. una pagina di raccoglitore con tante carte).
+Elenca OGNI carta visibile, una per una. Per ciascuna indica:
+- "name": il nome della carta (Pokémon) in inglese se possibile (es. "Charizard V", "Arceus V", "Manaphy")
+- "number": il numero di collezione se leggibile (es. "020/192"), altrimenti null
+Rispondi SOLO con un array JSON, niente altro testo:
+[{"name":"Charizard V","number":"154/172"},{"name":"Arceus V","number":null}]`;
+  let raw = '';
+  try {
+    raw = await visionComplete({ prompt, imageBase64, temperature: 0.1, maxTokens: 1800, groqModel: 'meta-llama/llama-4-scout-17b-16e-instruct' });
+  } catch (e: any) { logger.error('scanMultipleCards vision', { err: e?.message }); return []; }
+  try {
+    const m = raw.match(/\[[\s\S]*\]/);
+    const arr = JSON.parse(m ? m[0] : raw);
+    if (Array.isArray(arr)) {
+      return arr
+        .map((c: any) => ({ name: String(c?.name || '').trim(), number: c?.number ? String(c.number).trim() : null }))
+        .filter((c: any) => c.name.length > 0)
+        .slice(0, 40);
+    }
+  } catch { /* parse fallita */ }
+  return [];
+}
+
 export interface ScanResult {
   category: string;
   brand?: string;
