@@ -483,6 +483,16 @@ export default function App() {
   const [sellExtraCosts, setSellExtraCosts] = useState<{ desc: string; amount: string }[]>([]);
   const [sellExtraOpen, setSellExtraOpen] = useState(false);
   const [smartLotOpen, setSmartLotOpen] = useState(false); // flusso "Lotto smart (IA)"
+  const [enrichingPhotos, setEnrichingPhotos] = useState(false);
+  const enrichMissingPhotos = async () => {
+    setEnrichingPhotos(true);
+    showToast('🖼️ Cerco le foto mancanti…', 'ok');
+    const { ok, data } = await apiCall<any>('/products/enrich-photos', { method: 'POST', body: JSON.stringify({}) });
+    setEnrichingPhotos(false);
+    if (!ok) { showToast('Errore ricerca foto', 'err'); return; }
+    await fetchProducts();
+    showToast(data?.updated ? `✅ ${data.updated} foto agganciate` : 'Nessuna nuova foto trovata', data?.updated ? 'ok' : 'warn');
+  };
   // Tracking opzionale della spedizione di vendita (OUTBOUND) direttamente nel flusso Vendi
   const [sellTrackingCode, setSellTrackingCode] = useState('');
   const [sellTrackingCarrier, setSellTrackingCarrier] = useState('Auto');
@@ -3573,25 +3583,34 @@ export default function App() {
     const impWhId = importWarehouseId || baseWarehouse?.id;
     const impShares = snapshotSharesFor(impWhId);
     let success = 0, fail = 0;
+    const createdIds: string[] = [];
     for (const row of valid) {
       // Reparto della riga: usa QUALSIASI reparto scritto nell'Excel (nuovo o esistente);
       // se la cella è vuota, ripiega sul reparto selezionato nella modale.
       const cat = (row.category && String(row.category).trim()) ? String(row.category).trim() : importCategory;
-      const { ok } = await apiCall('/products', {
+      const { ok, data } = await apiCall<any>('/products', {
         method: 'POST',
         body: JSON.stringify({
           category: cat, brand: row.brand, name: row.name,
           size: row.size || 'Unisize', condition: row.condition || 'DS', price: row.price,
           warehouseId: impWhId || undefined,
           customShares: impShares,
+          skipAutoPhoto: true, // import veloce: le foto le agganciamo in batch dopo
         }),
       });
-      ok ? success++ : fail++;
+      if (ok) { success++; if (data?.id) createdIds.push(data.id); } else fail++;
     }
     setIsImporting(false);
     await fetchProducts();
     setImportOpen(false); setImportRows([]); setImportErrors([]);
     fail > 0 ? showToast(`Importati ${success}, errori: ${fail}`, 'warn') : showToast(`${success} prodotti importati!`);
+    // Aggancio AUTOMATICO delle foto dal catalogo (in background).
+    if (createdIds.length) {
+      showToast('🖼️ Cerco le foto dei prodotti…', 'ok');
+      const { data: er } = await apiCall<any>('/products/enrich-photos', { method: 'POST', body: JSON.stringify({ ids: createdIds }) }).catch(() => ({ data: null } as any));
+      await fetchProducts();
+      if (er?.updated) showToast(`✅ ${er.updated} foto agganciate`, 'ok');
+    }
   };
 
   // ==========================================
@@ -4832,6 +4851,10 @@ export default function App() {
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-1 px-4 py-3 bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl text-sm">
                   <span className="text-[var(--text-soft)]"><span className="font-extrabold text-[var(--text)] num">{pezzi}</span> {t('mag.pieces')} · <span className="font-extrabold text-[var(--text)] num">{groupedInStockArray.length}</span> {t('mag.models')}</span>
                   <span className="sm:ml-auto flex items-baseline gap-1.5"><span className="sys-label">{t('mag.stockValue')}</span> <span className="font-extrabold text-[var(--teal)] num text-base">{costo.toFixed(0)}€</span></span>
+                  <button onClick={enrichMissingPhotos} disabled={enrichingPhotos}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--teal-soft)] text-[var(--teal)] hover:opacity-80 text-xs font-bold transition-opacity disabled:opacity-50">
+                    {enrichingPhotos ? <Loader2 size={13} className="animate-spin" /> : <ImageIcon size={13} />} Trova foto
+                  </button>
                   <button onClick={() => setSmartLotOpen(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#6b54c6]/15 text-[#6b54c6] hover:bg-[#6b54c6]/25 text-xs font-bold transition-colors">
                     <Sparkles size={13} /> Lotto smart

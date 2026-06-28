@@ -16,11 +16,38 @@ import { audit } from '../services/audit.service';
 import { logInventory } from '../services/inventory-log.service';
 import { notifyWarehouseMembers } from '../services/notification.service';
 import { getMarketValuation } from '../services/price.service';
-import { getStockXValuation, isStockXConfigured } from '../services/stockx.service';
+import { getStockXValuation, isStockXConfigured, searchStockXCandidates } from '../services/stockx.service';
+import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
 import { checkProductQuota, requireFeature } from '../middleware/plan';
 import { isFeatureLive } from '../config/plans';
 import { isAdminEmail } from '../config/admins';
 import { logger } from '../utils/logger';
+
+// Cerca la FOTO ufficiale di un prodotto dal catalogo: prima la cache locale (gratis, niente
+// quota), poi KicksDB→StockX. Ritorna {image, sku} o null. Usata per agganciare le foto in
+// AUTOMATICO ai prodotti senza immagine (import, aggiunta manuale).
+async function findCatalogImage(brand?: string | null, name?: string | null): Promise<{ image: string; sku: string | null } | null> {
+  const nm = (name || '').trim();
+  const q = `${brand || ''} ${nm}`.trim();
+  if (q.length < 2) return null;
+  // 1) cache locale CatalogItem (per nome) — niente consumo quota
+  if (nm.length >= 3) {
+    try {
+      const cached = await prisma.catalogItem.findFirst({
+        where: { image: { not: null }, name: { contains: nm, mode: 'insensitive' } },
+      });
+      if (cached?.image) return { image: cached.image, sku: cached.sku || null };
+    } catch { /* ignora */ }
+  }
+  // 2) fonte esterna (KicksDB → StockX)
+  try {
+    let best: any;
+    if (isKicksConfigured()) { const k = await kicksSearch(q, { limit: 5 }); best = k.find((c: any) => c.image) || k[0]; }
+    if ((!best || !best.image) && isStockXConfigured()) { const s = await searchStockXCandidates(q, { limit: 5 }); best = s.find((c: any) => c.image) || s[0] || best; }
+    if (best?.image) return { image: best.image, sku: best.styleId || null };
+  } catch { /* fonte non disponibile */ }
+  return null;
+}
 
 const router = Router();
 
@@ -297,6 +324,30 @@ router.post('/lot-smart', async (req: AuthRequest, res: Response) => {
 // ==========================================
 // POST /products — crea prodotto singolo
 // ==========================================
+// POST /products/enrich-photos — { ids? } → aggancia la foto dal catalogo ai prodotti SENZA
+// immagine. Se 'ids' manca, processa tutti i prodotti IN STOCK dell'utente senza foto.
+router.post('/enrich-photos', async (req: AuthRequest, res: Response) => {
+  try {
+    const ids: string[] = Array.isArray(req.body?.ids) ? req.body.ids.slice(0, 300) : [];
+    const where: any = { userId: req.user!.userId, deletedAt: null, photos: null };
+    if (ids.length) where.id = { in: ids };
+    else where.status = 'IN STOCK';
+    const products = await prisma.product.findMany({ where, take: 300 });
+    let updated = 0;
+    for (const p of products) {
+      const found = await findCatalogImage(p.brand, p.name);
+      if (found?.image) {
+        await prisma.product.update({ where: { id: p.id }, data: { photos: JSON.stringify([found.image]), sku: p.sku || found.sku } });
+        updated++;
+      }
+    }
+    res.json({ updated, scanned: products.length });
+  } catch (err: any) {
+    logger.error('Errore POST /products/enrich-photos', { err: err.message });
+    res.status(500).json({ error: 'Errore aggancio foto' });
+  }
+});
+
 router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Response) => {
   try {
     const {
@@ -354,6 +405,12 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
     // Le foto già esterne (link http/https, es. immagini del catalogo StockX) restano
     // tali e quali: NON le ricarichiamo su Cloudinary → zero storage occupato.
     let finalPhotos = photos && Array.isArray(photos) && photos.length > 0 ? photos : null;
+    // PRASSI: se non è stata fornita nessuna foto, la cerco da sola dal catalogo (a meno che
+    // il chiamante chieda di saltare, es. import bulk che poi aggancia le foto in batch).
+    if (!finalPhotos && !req.body.skipAutoPhoto) {
+      const found = await findCatalogImage(brand, name);
+      if (found) finalPhotos = [found.image];
+    }
     if (finalPhotos && isCloudinaryConfigured()) {
       const toUpload = finalPhotos.filter((p: any) => typeof p === 'string' && p.startsWith('data:'));
       if (toUpload.length > 0) {
