@@ -309,7 +309,9 @@ export default function App() {
     const iv = setInterval(check, 20000);
     return () => clearInterval(iv);
   }, []);
-  const [cookieConsent, setCookieConsent] = useState<boolean>(() => !!localStorage.getItem('hq_cookie_consent'));
+  // Banner cookie DISABILITATO: l'app usa solo cookie tecnici strettamente necessari (niente
+  // profilazione) → il consenso non è richiesto dal Garante, quindi niente popup ad ogni accesso.
+  const [cookieConsent, setCookieConsent] = useState<boolean>(true);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [repartiOpen, setRepartiOpen] = useState(false); // lista reparti a tendina nelle impostazioni
@@ -7439,16 +7441,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ========== FAB MOBILE ========== */}
-      {/* Per gli admin la chatbox "HQ" occupa la fascia sopra la nav: alzo il FAB così
-          non si sovrappone alla barra di scrittura (vedi AssistantChat, bottom 72px). */}
-      <button
-        onClick={() => openAddForm()}
-        className="lg:hidden fixed z-40 bg-[#6b54c6] rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-all"
-        style={{ width: 54, height: 54, bottom: `calc(${isAdminUser ? '8.5rem' : '5.5rem'} + env(safe-area-inset-bottom))`, right: 16 }}
-      >
-        <Plus size={24} />
-      </button>
+      {/* FAB "+" mobile RIMOSSO: l'aggiunta si fa dal "+" verde dentro la barra chat (più pulito). */}
 
       {/* ========== ADD TYPE PICKER ========== */}
 

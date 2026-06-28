@@ -325,10 +325,10 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       <div className="flex items-center gap-2 rounded-full bg-[var(--surface)]/90 backdrop-blur-xl border border-white/5 pl-1.5 pr-1.5 py-2">
         {/* "+" grande = aggiungi un prodotto al volo. Quando ascolta/parla, un puntino pulsa sopra. */}
         <button onClick={() => { onPlus?.(); }} aria-label="Aggiungi prodotto"
-          className="relative w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-md shadow-violet-500/30 hover:from-violet-400 hover:to-violet-500 transition-all active:scale-90">
-          <Plus size={20} />
+          className="relative w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-md shadow-teal-500/30 hover:from-teal-400 hover:to-emerald-500 transition-all active:scale-90">
+          <Plus size={22} />
           {(convo || wakeOn) && (
-            <span className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--surface)] animate-pulse ${convo ? 'bg-red-400' : 'bg-violet-300'}`} />
+            <span className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--surface)] animate-pulse ${convo ? 'bg-red-400' : 'bg-teal-200'}`} />
           )}
         </button>
         <input
