@@ -1037,6 +1037,26 @@ export default function App() {
   const [lotName, setLotName] = useState('');
   const [lotCategory, setLotCategory] = useState('');
   const [lotTotal, setLotTotal] = useState('');
+  const [lotPhotos, setLotPhotos] = useState<string[]>([]); // foto del lotto (es. pagina raccoglitore carte)
+  const onLotPhotoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1100; let { width, height } = img;
+        if (width > height && width > max) { height = height * max / width; width = max; }
+        else if (height >= width && height > max) { width = width * max / height; height = max; }
+        const c = document.createElement('canvas'); c.width = width; c.height = height;
+        const ctx = c.getContext('2d'); if (!ctx) return;
+        ctx.drawImage(img, 0, 0, width, height);
+        setLotPhotos([c.toDataURL('image/jpeg', 0.74)]);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
   const [lotQty, setLotQty] = useState('');
   const [lotBrand, setLotBrand] = useState('');
   const [lotNotes, setLotNotes] = useState('');
@@ -2818,12 +2838,13 @@ export default function App() {
         notes: lotNotes.trim() || null,
         warehouseId: lotWhId || undefined,
         customShares: lotShares,
+        photos: lotPhotos.length ? lotPhotos : undefined,
       }),
     });
     if (ok) {
       await fetchProducts();
       setLotOpen(false);
-      setLotName(''); setLotCategory(''); setLotTotal(''); setLotQty(''); setLotBrand(''); setLotNotes(''); setLotWarehouseId('');
+      setLotName(''); setLotCategory(''); setLotTotal(''); setLotQty(''); setLotBrand(''); setLotNotes(''); setLotWarehouseId(''); setLotPhotos([]);
       showToast(`✓ Lotto creato: ${data.created} prodotti a ${data.pricePerUnit.toFixed(2)}€ cad.`);
     }
     setIsCreatingLot(false);
@@ -9124,6 +9145,22 @@ export default function App() {
                 <input value={lotNotes} onChange={e => setLotNotes(e.target.value)}
                   placeholder="Es: acquistato da privato, condizioni miste..."
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] placeholder-gray-600 focus:border-[var(--border-3)] outline-none" />
+              </div>
+
+              {/* Foto del lotto (es. pagina del raccoglitore di carte): applicata a tutti i pezzi */}
+              <div>
+                <label className="text-[10px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.1em] block mb-2">Foto del lotto <span className="text-gray-700 normal-case font-normal">(opzionale — es. la foto delle carte)</span></label>
+                {lotPhotos[0] ? (
+                  <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-[var(--border-2)] bg-white">
+                    <img src={lotPhotos[0]} alt="" className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => setLotPhotos([])} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center"><X size={13} /></button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[var(--border-2)] text-[var(--text-soft)] text-sm cursor-pointer hover:border-[#6b54c6] hover:text-[var(--text)] transition-colors">
+                    <Camera size={16} /> Aggiungi foto
+                    <input type="file" accept="image/*" className="hidden" onChange={onLotPhotoFile} />
+                  </label>
+                )}
               </div>
 
               <div className="flex gap-2 pt-1">

@@ -146,11 +146,20 @@ router.put('/auto-publish', async (req: AuthRequest, res: Response) => {
 // ==========================================
 router.post('/lot', async (req: AuthRequest, res: Response) => {
   try {
-    const { category, lotName, totalPrice, quantity, brand, size, condition, notes, attributes, warehouseId: bodyWarehouseId, customShares } = req.body;
+    const { category, lotName, totalPrice, quantity, brand, size, condition, notes, attributes, warehouseId: bodyWarehouseId, customShares, photos } = req.body;
 
     if (!category || !lotName || !totalPrice || !quantity || quantity < 2 || quantity > 200) {
       return res.status(400).json({ error: 'Dati lotto non validi.' });
     }
+
+    // Foto del lotto (es. la foto della pagina del raccoglitore di carte): applicata a TUTTI i
+    // pezzi del lotto. Se è una foto scattata (base64) e Cloudinary è attivo, la carichiamo.
+    let lotPhotos: string[] | null = Array.isArray(photos) && photos.length > 0 ? photos.filter((p: any) => typeof p === 'string') : null;
+    if (lotPhotos && isCloudinaryConfigured()) {
+      const toUp = lotPhotos.filter(p => p.startsWith('data:'));
+      if (toUp.length) { const up = await uploadImages(toUp); let i = 0; lotPhotos = lotPhotos.map(p => p.startsWith('data:') ? up[i++] : p); }
+    }
+    const lotPhotosJson = lotPhotos ? JSON.stringify(lotPhotos) : null;
 
     // Quote (snapshot delle percentuali del magazzino al momento della creazione),
     // identico al prodotto singolo: ogni pezzo del lotto le porta con sé.
@@ -197,6 +206,7 @@ router.post('/lot', async (req: AuthRequest, res: Response) => {
             customShares: parsedShares,
             notes: notes ? `${lotNote} — ${notes}` : lotNote,
             attributes: (attributes && typeof attributes === 'object') ? JSON.stringify(attributes) : null,
+            photos: lotPhotosJson,
             lotName,
           },
         })
