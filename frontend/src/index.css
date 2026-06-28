@@ -132,6 +132,10 @@
   background-image: linear-gradient(180deg, rgba(150,170,176,0.035), rgba(150,170,176,0) 42%);
 }
 .lux .mech:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(31,168,159,0.14); }
+/* Lux: numeri "da quadrante" — cifre a larghezza fissa e kerning stretto (strumentazione). */
+.lux .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+/* Lux: filo teal sotto i titoli di sezione marcati (gauge bezel discreto). */
+.lux .lux-underline::after { background: linear-gradient(90deg, transparent, var(--teal-line) 25%, var(--teal-line) 75%, transparent); }
 
 /* ===== TEMA CHIARO: colori semantici accentati =====
    Le tinte -400 di Tailwind sono troppo chiare su sfondo bianco.
