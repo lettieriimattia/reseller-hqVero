@@ -139,58 +139,78 @@ function HQLoader() {
 // VAULT LOADER — animazione vera: la porta della cassaforte SBATTE chiusa, il volantino
 // GIRA per bloccare e la luce diventa TEAL (chiuso). In loop finché l'app carica.
 function VaultLoader() {
+  const C = 200; // centro
   const ring = (n: number, r: number) =>
-    Array.from({ length: n }, (_, i) => { const a = (i / n) * 2 * Math.PI; return [160 + r * Math.cos(a), 160 + r * Math.sin(a)] as const; });
+    Array.from({ length: n }, (_, i) => { const a = (i / n) * 2 * Math.PI; return [C + r * Math.cos(a), C + r * Math.sin(a)] as const; });
+  const bars = [0, 90, 180, 270]; // chiavistelli a croce (come la reference)
+  const spokes = [22.5, 67.5, 112.5, 157.5, 202.5, 247.5, 292.5, 337.5]; // 8 razze del volantino
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 'min(360px, 88vw)', height: 'min(360px, 88vw)' }} aria-label="Caricamento">
+    <div className="relative flex items-center justify-center" style={{ width: 'min(360px, 90vw)', height: 'min(360px, 90vw)' }} aria-label="Caricamento">
       <style>{`
-        @keyframes vlSlam  { 0%{transform:scale(.84) rotate(-8deg);opacity:0} 22%{opacity:1} 58%{transform:scale(1.025) rotate(2deg)} 78%{transform:scale(.992) rotate(-.8deg)} 100%{transform:scale(1) rotate(0)} }
-        @keyframes vlWheel { 0%,24%{transform:rotate(0)} 76%,100%{transform:rotate(270deg)} }
-        @keyframes vlLight { 0%,64%{fill:#33333a} 74%{fill:#7defdf} 100%{fill:#2c9c8e} }
-        @keyframes vlGlow  { 0%,58%{opacity:.08} 80%{opacity:.5} 100%{opacity:.3} }
+        @keyframes vlSlam  { 0%{transform:scale(.88) rotate(-6deg);opacity:0} 24%{opacity:1} 62%{transform:scale(1.02) rotate(1.5deg)} 80%{transform:scale(.994) rotate(-.6deg)} 100%{transform:scale(1) rotate(0)} }
+        @keyframes vlWheel { 0%,26%{transform:rotate(0)} 82%,100%{transform:rotate(135deg)} }
+        @keyframes vlMech  { 0%,26%{transform:rotate(0)} 82%,100%{transform:rotate(-22deg)} }
+        @keyframes vlGlow  { 0%,60%{opacity:.06} 82%{opacity:.42} 100%{opacity:.26} }
         @keyframes vlSheen { to { transform: rotate(360deg); } }
-        .vl-door{transform-origin:160px 160px;animation:vlSlam 3.2s cubic-bezier(.32,.72,.2,1) infinite}
-        .vl-wheel{transform-origin:160px 160px;animation:vlWheel 3.2s cubic-bezier(.4,0,.2,1) infinite}
-        .vl-light{animation:vlLight 3.2s ease infinite}
-        .vl-glow{animation:vlGlow 3.2s ease infinite}
-        .vl-sheen{transform-origin:160px 160px;animation:vlSheen 6s linear infinite}
+        .vl-door{transform-origin:200px 200px;animation:vlSlam 3.4s cubic-bezier(.3,.72,.2,1) infinite}
+        .vl-wheel{transform-origin:200px 200px;animation:vlWheel 3.4s cubic-bezier(.4,0,.2,1) infinite}
+        .vl-mech{transform-origin:200px 200px;animation:vlMech 3.4s cubic-bezier(.4,0,.2,1) infinite}
+        .vl-glow{animation:vlGlow 3.4s ease infinite}
+        .vl-sheen{transform-origin:200px 200px;animation:vlSheen 7s linear infinite}
       `}</style>
-      <div className="vl-glow absolute inset-[4%]" style={{ borderRadius: '50%', background: 'radial-gradient(circle, rgba(44,156,142,0.85), transparent 60%)', filter: 'blur(22px)' }} />
-      <svg viewBox="0 0 320 320" width="100%" height="100%" className="relative" style={{ filter: 'drop-shadow(0 18px 50px rgba(0,0,0,0.75))' }}>
+      <div className="vl-glow absolute inset-[6%]" style={{ borderRadius: '50%', background: 'radial-gradient(circle, rgba(44,156,142,0.8), transparent 60%)', filter: 'blur(26px)' }} />
+      <svg viewBox="0 0 400 400" width="100%" height="100%" className="relative" style={{ filter: 'drop-shadow(0 20px 56px rgba(0,0,0,0.8))' }}>
         <defs>
-          <radialGradient id="vSteel" cx="38%" cy="28%" r="82%"><stop offset="0%" stopColor="#4a4a55" /><stop offset="48%" stopColor="#24242b" /><stop offset="100%" stopColor="#0b0b0f" /></radialGradient>
-          <radialGradient id="vDoor" cx="40%" cy="30%" r="85%"><stop offset="0%" stopColor="#454550" /><stop offset="52%" stopColor="#1f1f27" /><stop offset="100%" stopColor="#101015" /></radialGradient>
-          <linearGradient id="vRim" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#74747f" /><stop offset="45%" stopColor="#2a2a32" /><stop offset="100%" stopColor="#5a5a64" /></linearGradient>
-          <linearGradient id="vChrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9a9aa6" /><stop offset="42%" stopColor="#3c3c46" /><stop offset="55%" stopColor="#5c5c66" /><stop offset="100%" stopColor="#191920" /></linearGradient>
-          <radialGradient id="vSheenG" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="rgba(255,255,255,0)" /><stop offset="78%" stopColor="rgba(255,255,255,0)" /><stop offset="86%" stopColor="rgba(255,255,255,0.12)" /><stop offset="100%" stopColor="rgba(255,255,255,0)" /></radialGradient>
+          <radialGradient id="vSteel" cx="40%" cy="26%" r="82%"><stop offset="0%" stopColor="#56565f" /><stop offset="46%" stopColor="#26262d" /><stop offset="100%" stopColor="#090a0d" /></radialGradient>
+          <radialGradient id="vDoor" cx="42%" cy="28%" r="84%"><stop offset="0%" stopColor="#50505b" /><stop offset="50%" stopColor="#212129" /><stop offset="100%" stopColor="#0d0d12" /></radialGradient>
+          <linearGradient id="vRim" x1="0" y1="0" x2="0.9" y2="1"><stop offset="0%" stopColor="#8e8e9a" /><stop offset="48%" stopColor="#2c2c34" /><stop offset="100%" stopColor="#5e5e68" /></linearGradient>
+          <linearGradient id="vBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#a0a0ac" /><stop offset="44%" stopColor="#3a3a44" /><stop offset="56%" stopColor="#56565f" /><stop offset="100%" stopColor="#15151b" /></linearGradient>
+          <radialGradient id="vHub" cx="40%" cy="34%" r="72%"><stop offset="0%" stopColor="#a0a0ac" /><stop offset="58%" stopColor="#3a3a44" /><stop offset="100%" stopColor="#131319" /></radialGradient>
+          <radialGradient id="vSpec" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="rgba(255,255,255,0.55)" /><stop offset="70%" stopColor="rgba(255,255,255,0.06)" /><stop offset="100%" stopColor="rgba(255,255,255,0)" /></radialGradient>
         </defs>
-        <rect x="12" y="12" width="296" height="296" rx="48" fill="url(#vSteel)" stroke="#34343d" strokeWidth="2.5" />
-        <rect x="20" y="20" width="280" height="280" rx="42" fill="none" stroke="#0c0c11" strokeWidth="2" />
-        <g fill="url(#vChrome)" stroke="#141419" strokeWidth="2"><rect x="16" y="112" width="28" height="40" rx="8" /><rect x="16" y="168" width="28" height="40" rx="8" /></g>
-        <circle cx="160" cy="160" r="138" fill="none" stroke="#0d0d12" strokeWidth="2" />
-        <circle cx="160" cy="160" r="128" fill="none" stroke="url(#vRim)" strokeWidth="18" />
-        <circle cx="160" cy="160" r="118" fill="none" stroke="#0d0d12" strokeWidth="3" />
-        <g fill="#5c5c66" stroke="#16161b" strokeWidth="1">{ring(20, 128).map(([x, y], i) => <circle key={i} cx={x} cy={y} r="4.2" />)}</g>
-        <circle cx="160" cy="160" r="110" fill="#000" opacity="0.4" />
+        {/* parete + cornice con bulloneria */}
+        <rect x="8" y="8" width="384" height="384" rx="16" fill="url(#vSteel)" stroke="#101015" strokeWidth="3" />
+        <rect x="26" y="26" width="348" height="348" rx="9" fill="none" stroke="#0b0b10" strokeWidth="2" />
+        <rect x="38" y="38" width="324" height="324" rx="6" fill="none" stroke="#6a6a74" strokeWidth="7" strokeDasharray="2.5 40" strokeLinecap="round" />
+        {/* cardini (sinistra) */}
+        <g fill="url(#vBar)" stroke="#101015" strokeWidth="2">
+          <rect x="34" y="120" width="34" height="64" rx="11" /><rect x="34" y="216" width="34" height="64" rx="11" />
+          <rect x="44" y="150" width="14" height="100" rx="6" fill="#23232a" />
+        </g>
+        {/* scatola combinazione (destra) */}
+        <g><rect x="320" y="172" width="44" height="56" rx="6" fill="url(#vBar)" stroke="#101015" strokeWidth="2" /><circle cx="342" cy="200" r="13" fill="url(#vHub)" stroke="#101015" strokeWidth="2" /><circle cx="342" cy="200" r="4" fill="#0c0c11" /></g>
+        {/* anelli esterni del portello */}
+        <circle cx={C} cy={C} r="172" fill="none" stroke="#0c0c11" strokeWidth="3" />
+        <circle cx={C} cy={C} r="160" fill="none" stroke="url(#vRim)" strokeWidth="22" />
+        <circle cx={C} cy={C} r="147" fill="none" stroke="#0c0c11" strokeWidth="3" />
+        <g fill="#6c6c76" stroke="#16161b" strokeWidth="1">{ring(28, 160).map(([x, y], i) => <circle key={i} cx={x} cy={y} r="4.6" />)}</g>
+        <circle cx={C} cy={C} r="138" fill="#000" opacity="0.45" />
+        {/* PORTELLO che si chiude */}
         <g className="vl-door">
-          <circle cx="160" cy="160" r="106" fill="url(#vDoor)" stroke="#3c3c46" strokeWidth="4" />
-          <circle cx="160" cy="160" r="94" fill="none" stroke="#0e0e14" strokeWidth="2" />
-          <circle cx="160" cy="160" r="80" fill="none" stroke="#3a3a44" strokeWidth="1.5" />
-          <g stroke="#6a6a76" strokeWidth="2">{ring(36, 72).map(([x, y], i) => { const a = Math.atan2(y - 160, x - 160); return <line key={i} x1={x} y1={y} x2={160 + 66 * Math.cos(a)} y2={160 + 66 * Math.sin(a)} />; })}</g>
-          <circle className="vl-sheen" cx="160" cy="160" r="106" fill="url(#vSheenG)" />
+          <circle cx={C} cy={C} r="134" fill="url(#vDoor)" stroke="#3c3c46" strokeWidth="4" />
+          {/* anelli del meccanismo (segmentati) che ruotano piano */}
+          <g className="vl-mech">
+            <circle cx={C} cy={C} r="120" fill="none" stroke="#6a6a76" strokeWidth="9" strokeDasharray="3 13" />
+            <circle cx={C} cy={C} r="104" fill="none" stroke="#3a3a44" strokeWidth="2" />
+            <circle cx={C} cy={C} r="92" fill="none" stroke="#6a6a76" strokeWidth="7" strokeDasharray="2 11" />
+          </g>
+          <circle cx={C} cy={C} r="78" fill="none" stroke="#0e0e14" strokeWidth="2" />
+          <ellipse cx="150" cy="142" rx="78" ry="50" fill="url(#vSpec)" opacity="0.5" />
+          <circle className="vl-sheen" cx={C} cy={C} r="134" fill="url(#vSpec)" opacity="0.18" />
+          {/* VOLANTINO + CHIAVISTELLI che girano per bloccare */}
           <g className="vl-wheel">
-            <g stroke="url(#vChrome)" strokeWidth="13" strokeLinecap="round">
-              <line x1="160" y1="98" x2="160" y2="222" /><line x1="98" y1="160" x2="222" y2="160" />
-              <line x1="116" y1="116" x2="204" y2="204" /><line x1="204" y1="116" x2="116" y2="204" />
+            <g stroke="url(#vBar)" strokeWidth="22" strokeLinecap="round">
+              {bars.map(a => { const [x, y] = ring(1, 150)[0] && [C + 150 * Math.cos(a * Math.PI / 180), C + 150 * Math.sin(a * Math.PI / 180)]; return <line key={a} x1={C} y1={C} x2={x} y2={y} />; })}
             </g>
-            <g fill="url(#vChrome)" stroke="#141419" strokeWidth="1.5">{ring(8, 62).map(([x, y], i) => <circle key={i} cx={x} cy={y} r="9" />)}</g>
-            <circle cx="160" cy="160" r="28" fill="url(#vChrome)" stroke="#141419" strokeWidth="3" />
-            <circle cx="160" cy="160" r="22" fill="none" stroke="#6e6e7a" strokeWidth="1" />
-            <circle cx="160" cy="160" r="9" fill="#0c0c11" />
+            <g fill="url(#vHub)" stroke="#101015" strokeWidth="2">{bars.map(a => { const x = C + 150 * Math.cos(a * Math.PI / 180), y = C + 150 * Math.sin(a * Math.PI / 180); return <circle key={a} cx={x} cy={y} r="14" />; })}</g>
+            <g stroke="url(#vBar)" strokeWidth="9" strokeLinecap="round">{spokes.map(a => <line key={a} x1={C} y1={C} x2={C + 64 * Math.cos(a * Math.PI / 180)} y2={C + 64 * Math.sin(a * Math.PI / 180)} />)}</g>
+            <circle cx={C} cy={C} r="64" fill="none" stroke="url(#vRim)" strokeWidth="6" />
+            <circle cx={C} cy={C} r="34" fill="url(#vHub)" stroke="#101015" strokeWidth="3" />
+            <circle cx={C} cy={C} r="26" fill="none" stroke="#7a7a86" strokeWidth="1.5" />
+            <circle cx={C} cy={C} r="11" fill="#0b0b10" />
+            <circle cx="192" cy="190" r="4" fill="rgba(255,255,255,0.45)" />
           </g>
         </g>
-        <circle cx="160" cy="30" r="8" fill="#0e0e14" stroke="#2c2c34" strokeWidth="2" />
-        <circle className="vl-light" cx="160" cy="30" r="4.6" fill="#33333a" />
       </svg>
     </div>
   );
@@ -3661,9 +3681,12 @@ export default function App() {
   // ==========================================
   if (bootLoading) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-7">
+      <div className="min-h-screen relative flex flex-col items-center justify-center gap-7 overflow-hidden"
+        style={{ background: 'radial-gradient(125% 80% at 50% 24%, #1b1b21 0%, #0b0b0e 55%, #050506 100%)' }}>
+        {/* Ambiente: pavimento riflettente in basso (caveau in una stanza, come un vero caveau) */}
+        <div className="absolute left-0 right-0 bottom-0" style={{ height: '34%', background: 'linear-gradient(180deg, transparent, rgba(255,255,255,0.03) 38%, rgba(0,0,0,0.55))', borderTop: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 -1px 30px rgba(0,0,0,0.6)' }} />
         <VaultLoader />
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.4em] text-[var(--text-faint)] pl-[0.4em]">HQVault</p>
+        <p className="relative text-[11px] font-extrabold uppercase tracking-[0.4em] text-[var(--text-faint)] pl-[0.4em]">HQVault</p>
       </div>
     );
   }
