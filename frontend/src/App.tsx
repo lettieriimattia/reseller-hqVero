@@ -7319,9 +7319,9 @@ export default function App() {
               { id: 'market',     icon: Store },
               { id: 'chat',       icon: Mail },
             ] : []),
-            { id: 'analytics',  icon: BarChart3 },
+            { id: 'catalog',    icon: Layers },
             { id: 'tracking',   icon: Truck },
-            { id: 'catalog', icon: Layers },
+            { id: 'analytics',  icon: BarChart3 },
           ];
           return (
         <div className="relative grid px-1" style={{ gridTemplateColumns: `repeat(${bottomTabs.length}, minmax(0, 1fr))` }}>
