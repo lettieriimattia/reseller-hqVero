@@ -183,6 +183,23 @@ Rispondi SOLO con un array JSON, niente altro testo:
   return [];
 }
 
+// Normalizza un nome informale/abbreviato nel probabile NOME UFFICIALE per la ricerca catalogo
+// (es. "Jordan 7 TROPHY" → "Air Jordan 7 Trophy Room"). Best-effort, per agganciare le foto.
+export async function normalizeProductName(brand: string, name: string): Promise<string> {
+  const q = `${brand || ''} ${name || ''}`.trim();
+  if (q.length < 2) return q;
+  const prompt = `Trasforma questo nome informale/abbreviato di un prodotto (sneaker, carta Pokémon, capo, borsa, accessorio...) nel suo NOME UFFICIALE completo come appare su StockX, così da poterlo cercare.
+Input: "${q}"
+Rispondi SOLO col nome ufficiale su una riga, senza virgolette né spiegazioni. Se non lo riconosci, ripeti l'input.`;
+  try {
+    const completion = await groqCallWithRetry(client =>
+      client.chat.completions.create({ messages: [{ role: 'user', content: prompt }], model: TEXT_MODEL, temperature: 0, max_tokens: 40 })
+    );
+    const out = (completion.choices[0]?.message?.content || '').trim().split('\n')[0].replace(/^["']|["']$/g, '').trim();
+    return out.length >= 2 ? out : q;
+  } catch { return q; }
+}
+
 export interface ScanResult {
   category: string;
   brand?: string;

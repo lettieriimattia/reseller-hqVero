@@ -18,6 +18,7 @@ import { notifyWarehouseMembers } from '../services/notification.service';
 import { getMarketValuation } from '../services/price.service';
 import { getStockXValuation, isStockXConfigured, searchStockXCandidates } from '../services/stockx.service';
 import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
+import { normalizeProductName } from '../services/ai.service';
 import { checkProductQuota, requireFeature } from '../middleware/plan';
 import { isFeatureLive } from '../config/plans';
 import { isAdminEmail } from '../config/admins';
@@ -37,7 +38,7 @@ function imgMatchScore(query: string, title: string): number {
 // Cerca la FOTO ufficiale di un prodotto dal catalogo: prima la cache locale (gratis, niente
 // quota), poi KicksDB→StockX. Sceglie il candidato che COMBACIA MEGLIO col nome (soglia minima):
 // così non aggancia foto sbagliate e per i nomi inventati non mette nulla. Ritorna {image,sku}|null.
-async function findCatalogImage(brand?: string | null, name?: string | null): Promise<{ image: string; sku: string | null } | null> {
+async function findCatalogImage(brand?: string | null, name?: string | null, deep = false): Promise<{ image: string; sku: string | null } | null> {
   const nm = (name || '').trim();
   const q = `${brand || ''} ${nm}`.trim();
   if (q.length < 2) return null;
@@ -63,6 +64,15 @@ async function findCatalogImage(brand?: string | null, name?: string | null): Pr
     for (const c of cands) { if (!c.image) continue; const s = imgMatchScore(q, c.title || ''); if (s > bestS) { bestS = s; best = c; } }
     if (best && bestS >= 0.34) return { image: best.image, sku: best.styleId || null };
   } catch { /* fonte non disponibile */ }
+  // 3) DEEP (es. pulsante "Trova foto"): l'IA normalizza il nome al nome ufficiale e ri-cerca.
+  if (deep) {
+    try {
+      const norm = await normalizeProductName(brand || '', nm).catch(() => '');
+      if (norm && norm.toLowerCase().replace(/[^a-z0-9]/g, '') !== q.toLowerCase().replace(/[^a-z0-9]/g, '')) {
+        return await findCatalogImage(null, norm, false);
+      }
+    } catch { /* normalizzazione non disponibile */ }
+  }
   return null;
 }
 
@@ -362,7 +372,7 @@ router.post('/enrich-photos', async (req: AuthRequest, res: Response) => {
     const products = await prisma.product.findMany({ where, take: 300 });
     let updated = 0;
     for (const p of products) {
-      const found = await findCatalogImage(p.brand, p.name);
+      const found = await findCatalogImage(p.brand, p.name, true); // deep: usa l'IA per i nomi abbreviati
       if (found?.image) {
         await prisma.product.update({ where: { id: p.id }, data: { photos: JSON.stringify([found.image]), sku: p.sku || found.sku } });
         updated++;
