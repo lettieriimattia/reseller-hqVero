@@ -82,57 +82,56 @@
   --gold-line: rgba(154,123,63,0.42);
 }
 
-/* ===== TEMA "LUX" — Carbon + Champagne (PREMIUM, anteprima admin) =====
-   Nero carbon, testo avorio/bone, UN accento metallico (oro champagne) usato col contagocce,
-   verdi/rossi smorzati (salvia/oxblood). Sostituisce il viola come identità. */
+/* ===== TEMA "LUX" — Carbon + LED Teal (PREMIUM, anteprima admin) =====
+   Nero carbon opaco, testo bone, dettagli titanio, UN accento teal (lo stesso LED del logo
+   caveau) usato col contagocce. Negativi rust. Sostituisce il viola come identità. */
 .lux {
-  --accent: #c9a86a;        /* champagne gold (accento unico) */
-  --accent-hover: #dcc08a;
-  --gold: #c9a86a;
-  --gold-soft: rgba(201,168,106,0.14);
-  --gold-line: rgba(201,168,106,0.40);
-  --bg: #0b0b0d;            /* near-black carbon */
-  --surface: #141417;       /* pannelli */
-  --surface-2: #0f0f12;     /* inset/input */
-  --border: rgba(201,168,106,0.08);    /* hairline con velo oro */
-  --border-2: rgba(201,168,106,0.14);
-  --border-3: rgba(201,168,106,0.24);
-  --text: #ede9e0;          /* avorio/bone */
-  --text-soft: #9a938a;     /* beige caldo */
-  --text-muted: #b8b1a6;
-  --text-faint: #6b655c;
-  --fill: rgba(201,168,106,0.06);
-  --fill-2: rgba(201,168,106,0.10);
-  --fill-3: rgba(201,168,106,0.18);
-  --bg-blur: rgba(11,11,13,0.95);
-  --bg-overlay: rgba(11,11,13,0.72);
-  --surface-blur: rgba(20,20,23,0.95);
-  /* Cockpit Pagani in chiave Lux: i valori/profitto diventano CHAMPAGNE (il metallo = il
-     valore), i negativi oxblood, il secondario beige caldo. Così il cruscotto esistente
-     (che usa --teal/--rust/--beige) si veste premium senza toccare il markup. */
-  --teal: #c9a86a;          /* "ottanio" → oro champagne (valore/accento) */
-  --teal-soft: rgba(201,168,106,0.12);
-  --teal-line: rgba(201,168,106,0.42);
-  --rust: #b9745a;          /* ruggine → oxblood */
-  --rust-soft: rgba(185,116,90,0.13);
-  --beige: #a89f90;         /* testo secondario caldo */
+  --accent: #1fa89f;        /* teal LED (accento unico) */
+  --accent-hover: #34c2b8;
+  --gold: #1fa89f;          /* (riuso del token "gold" come accento teal) */
+  --gold-soft: rgba(31,168,159,0.14);
+  --gold-line: rgba(31,168,159,0.40);
+  --bg: #0a0b0c;            /* carbon matte (leggera tinta fredda) */
+  --surface: #131517;       /* pannelli */
+  --surface-2: #0e1012;     /* inset/input */
+  --border: rgba(150,170,176,0.08);    /* hairline freddo (titanio) */
+  --border-2: rgba(150,170,176,0.14);
+  --border-3: rgba(150,170,176,0.24);
+  --text: #e8eaec;          /* bone freddo */
+  --text-soft: #8a9298;     /* grigio freddo */
+  --text-muted: #b2bac0;
+  --text-faint: #5b6166;
+  --fill: rgba(150,170,176,0.06);
+  --fill-2: rgba(150,170,176,0.10);
+  --fill-3: rgba(150,170,176,0.18);
+  --bg-blur: rgba(10,11,12,0.95);
+  --bg-overlay: rgba(10,11,12,0.72);
+  --surface-blur: rgba(19,21,23,0.95);
+  /* Cockpit Pagani in chiave Lux: valori/profitto in TEAL (il LED = il valore), negativi rust,
+     secondario grigio titanio. Il cruscotto esistente (--teal/--rust/--beige) si veste premium
+     senza toccare il markup. */
+  --teal: #1fa89f;          /* ottanio LED (valore/accento) */
+  --teal-soft: rgba(31,168,159,0.12);
+  --teal-line: rgba(31,168,159,0.42);
+  --rust: #b5613a;          /* rust (negativi) */
+  --rust-soft: rgba(181,97,58,0.13);
+  --beige: #aab2b8;         /* testo secondario freddo (titanio) */
 }
-/* Lux: micro-label di sistema più rarefatte (kerning ampio, champagne tenue). */
+/* Lux: micro-label di sistema più rarefatte (kerning ampio). */
 .lux .sys-label { letter-spacing: 0.2em; }
-/* Lux: rimpiazza il viola hardcoded (#6b54c6) con champagne e smorza i neon verdi/rossi.
-   Su accento champagne (chiaro) il testo diventa scuro → look raffinato. */
-.lux .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #14110a !important; }
+/* Lux: rimpiazza il viola hardcoded (#6b54c6) con il teal e smorza i neon verdi/rossi. */
+.lux .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #04100f !important; }
 .lux .text-\[\#6b54c6\]   { color: var(--accent) !important; }
 .lux .border-\[\#6b54c6\] { border-color: var(--accent) !important; }
-.lux .text-green-400, .lux .text-emerald-400 { color: #7e9a78 !important; }  /* verde salvia spento */
-.lux .text-green-300     { color: #8fae88 !important; }
-.lux .text-red-400, .lux .text-red-300       { color: #b9745a !important; }  /* oxblood/rust chiaro */
-/* Lux: ogni pannello prende una velatura champagne dall'alto (riflesso metallico tenue) e un
-   bordo a filo di capello → look "scolpito dal pieno", premium. */
+.lux .text-green-400, .lux .text-emerald-400 { color: #45b3a6 !important; }  /* verde-teal smorzato */
+.lux .text-green-300     { color: #5fc4b7 !important; }
+.lux .text-red-400, .lux .text-red-300       { color: #c2714a !important; }  /* rust chiaro */
+/* Lux: ogni pannello prende una velatura fredda dall'alto (riflesso titanio tenue), bordo a
+   filo di capello → look "scolpito dal pieno", premium. */
 .lux .bg-\[var\(--surface\)\] {
-  background-image: linear-gradient(180deg, rgba(201,168,106,0.035), rgba(201,168,106,0) 42%);
+  background-image: linear-gradient(180deg, rgba(150,170,176,0.035), rgba(150,170,176,0) 42%);
 }
-.lux .mech:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,168,106,0.12); }
+.lux .mech:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(31,168,159,0.14); }
 
 /* ===== TEMA CHIARO: colori semantici accentati =====
    Le tinte -400 di Tailwind sono troppo chiare su sfondo bianco.

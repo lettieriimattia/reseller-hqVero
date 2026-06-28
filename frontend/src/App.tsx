@@ -6763,7 +6763,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  {theme === 'light' ? <Sun className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'lux' ? <Gem className="text-[#c9a86a] mt-0.5" size={22} /> : <Moon className="text-[#6b54c6] mt-0.5" size={22} />}
+                  {theme === 'light' ? <Sun className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'lux' ? <Gem className="text-[#1fa89f] mt-0.5" size={22} /> : <Moon className="text-[#6b54c6] mt-0.5" size={22} />}
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.appearance')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">{t('set.appearanceDesc')}</p>
@@ -6792,7 +6792,7 @@ export default function App() {
                   {isAdminUser && (
                     <button onClick={() => setTheme('lux')}
                       className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                        theme === 'lux' ? 'bg-[#c9a86a] text-[#14110a]' : 'text-[var(--text-soft)]'
+                        theme === 'lux' ? 'bg-[#1fa89f] text-[#04100f]' : 'text-[var(--text-soft)]'
                       }`}>
                       <Gem size={13} /> Lux
                     </button>
