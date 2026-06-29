@@ -489,6 +489,7 @@ export default function App() {
   const [sellExtraCosts, setSellExtraCosts] = useState<{ desc: string; amount: string }[]>([]);
   const [sellExtraOpen, setSellExtraOpen] = useState(false);
   const [smartLotOpen, setSmartLotOpen] = useState(false); // flusso "Lotto smart (IA)"
+  const [dashPopular, setDashPopular] = useState<any[]>([]); // catalogo che scorre in dashboard
   const [enrichingPhotos, setEnrichingPhotos] = useState(false);
   const enrichMissingPhotos = async () => {
     setEnrichingPhotos(true);
@@ -1980,6 +1981,14 @@ export default function App() {
   useEffect(() => {
     if (!isAuthenticated) { setFaceIdOn(false); return; }
     apiCall<any>('/auth/webauthn/status').then(({ ok, data }) => { if (ok) setFaceIdOn(!!data?.enabled); }).catch(() => {});
+  }, [isAuthenticated]);
+
+  // Catalogo "che scorre" in dashboard: carica i popolari una volta.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    apiCall<any[]>('/api/catalog/popular?type=').then(({ ok, data }) => {
+      if (ok && Array.isArray(data)) setDashPopular(data.filter((x: any) => x.image).slice(0, 20));
+    }).catch(() => {});
   }, [isAuthenticated]);
 
   // ==========================================
@@ -4746,44 +4755,30 @@ export default function App() {
               </section>
             )}
 
-            {/* Reparti */}
-            <section>
-              <p className="sys-label mb-3">{t('home.departments')}</p>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {userCategories.map((cat: string) => {
-                  const catAll = products.filter(p => p.category === cat);
-                  const catStock = catAll.filter(p => p.status === 'IN STOCK');
-                  const catSold = catAll.filter(p => p.status === 'VENDUTO');
-                  const catProfit = catSold.reduce((a, p) => a + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)), 0);
-                  const catSellRate = catAll.length > 0 ? Math.round((catSold.length / catAll.length) * 100) : 0;
-                  const catAvgMargin = catSold.length > 0
-                    ? catSold.reduce((a, p) => a + (p.purchasePrice > 0 ? ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)) / p.purchasePrice * 100 : 0), 0) / catSold.length
-                    : 0;
-                  return (
-                    <div key={cat} onClick={() => { setCurrentView('magazzino'); setFilterCat(cat); }}
-                      className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-4 lg:p-5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 cursor-pointer group">
-                      <div className="flex items-center justify-between mb-3 lg:mb-4">
-                        <span className="text-xl lg:text-3xl">{getCategoryIcon(cat)}</span>
-                        <span className="sys-label text-[9px] lg:text-[10px] px-2 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-muted)]">{catSellRate}%</span>
+            {/* Catalogo che scorre — scopri prodotti e aggiungili (al posto dei reparti) */}
+            {dashPopular.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="sys-label">Dal catalogo</p>
+                  <button onClick={() => navigateTo('catalog')} className="text-xs font-bold text-[#6b54c6] hover:text-[#8a78d9] transition-colors">Apri catalogo →</button>
+                </div>
+                <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 cursor-pointer"
+                  onClick={() => navigateTo('catalog')}>
+                  <div className="flex gap-3 px-3 animate-marquee" style={{ width: 'max-content' }}>
+                    {[...dashPopular, ...dashPopular].map((it, i) => (
+                      <div key={i} className="w-24 shrink-0">
+                        <div className="w-24 h-24 rounded-xl bg-white overflow-hidden flex items-center justify-center border border-[var(--border)]">
+                          {it.image ? <img src={proxyImg(it.image)} alt="" loading="lazy" className="w-full h-full object-contain" /> : null}
+                        </div>
+                        <p className="text-[10px] text-[var(--text-soft)] mt-1 truncate">{it.name}</p>
                       </div>
-                      <p className="font-extrabold text-base lg:text-2xl leading-none">{cat}</p>
-                      <p className="text-[11px] lg:text-sm text-[var(--text-soft)] mt-1 lg:mt-1.5 mb-3 lg:mb-4">{catStock.length} {t('home.stockWord')} · {catSold.length} {t('home.soldWord')}</p>
-                      <div className="h-0.5 lg:h-1 bg-[var(--fill)] rounded-full overflow-hidden mb-2.5 lg:mb-3">
-                        <div className="h-full bg-[var(--teal)] rounded-full" style={{ width: `${catSellRate}%` }} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className={`text-sm lg:text-lg font-extrabold num ${catProfit > 0 ? 'text-[var(--teal)]' : catProfit < 0 ? 'text-[var(--rust)]' : 'text-[var(--text-faint)]'}`}>
-                          {catProfit > 0 ? '+' : ''}{catProfit.toFixed(0)}€
-                        </p>
-                        {catAvgMargin !== 0 && (
-                          <p className="text-[11px] lg:text-sm text-[var(--text-soft)] num">avg {catAvgMargin > 0 ? '+' : ''}{catAvgMargin.toFixed(0)}%</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
+                    ))}
+                  </div>
+                  <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[var(--surface)] to-transparent" />
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[var(--surface)] to-transparent" />
+                </div>
+              </section>
+            )}
 
 
             {/* Spedizioni in corso */}

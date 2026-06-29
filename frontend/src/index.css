@@ -289,6 +289,11 @@ button:active { opacity: 0.75; }
   }
 }
 
+/* Marquee orizzontale (catalogo che scorre in dashboard) */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.animate-marquee { animation: marquee 45s linear infinite; }
+.animate-marquee:hover { animation-play-state: paused; }
+
 /* ===== Cockpit Pagani — accenti, etichette di sistema, feedback meccanico ===== */
 .text-teal  { color: var(--teal); }
 .text-rust  { color: var(--rust); }

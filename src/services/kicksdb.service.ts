@@ -14,6 +14,19 @@ export function isKicksConfigured(): boolean {
   return !!process.env.KICKSDB_API_KEY;
 }
 
+// Tetto GIORNALIERO di chiamate (sicurezza quota: ~1500/giorno = ~45k/mese, sotto il free 50k).
+// Oltre il tetto si serve solo dalla cache locale (niente nuove chiamate esterne).
+const DAILY_CAP = Number(process.env.KICKSDB_DAILY_CAP || 1500);
+let callsToday = 0;
+let callDay = new Date().toDateString();
+function underQuota(): boolean {
+  const today = new Date().toDateString();
+  if (today !== callDay) { callDay = today; callsToday = 0; }
+  if (callsToday >= DAILY_CAP) { logger.warn('KicksDB: tetto giornaliero raggiunto, solo cache'); return false; }
+  callsToday++;
+  return true;
+}
+
 // Shape comune di un candidato catalogo (allineato a StockXCandidate + brand).
 export interface CatalogCandidate {
   title: string;
@@ -42,6 +55,7 @@ export async function kicksSearch(
   opts?: { limit?: number; productType?: string },
 ): Promise<CatalogCandidate[]> {
   if (!isKicksConfigured()) return [];
+  if (!underQuota()) return []; // tetto giornaliero superato → solo cache
   const q = (query || '').replace(/[–—•|]/g, ' ').replace(/\s+/g, ' ').trim();
   if (q.length < 2) return [];
   const limit = Math.min(Math.max(opts?.limit || 20, 1), 50);
