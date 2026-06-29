@@ -114,12 +114,56 @@ const TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'cerca_magazzino',
+      description: 'ELENCA / CERCA i prodotti che l\'utente HA già in magazzino. Usalo quando chiede "cosa ho", "elenca le mie scarpe", "quante X ho", "mostrami il magazzino", ecc. Senza filtri elenca tutto lo stock.',
+      parameters: {
+        type: 'object',
+        properties: {
+          brand: { type: 'string', description: 'Filtra per marca (facoltativo)' },
+          nome: { type: 'string', description: 'Filtra per nome/modello (facoltativo)' },
+          taglia: { type: 'string', description: 'Filtra per taglia (facoltativo)' },
+          categoria: { type: 'string', description: 'Filtra per reparto/categoria (facoltativo)' },
+          stato: { type: 'string', enum: ['in_stock', 'venduto', 'tutti'], description: 'Stato: in stock (default), venduti, o tutti' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'riepilogo_magazzino',
+      description: 'Dà un RIEPILOGO del magazzino: pezzi in stock, valore dello stock, numero venduti, profitto totale. Usalo per "come va il magazzino", "quanto vale lo stock", "riepilogo".',
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'elimina_prodotto',
+      description: 'ELIMINA un articolo dal magazzino (individua per marca+nome+taglia). Usalo solo se l\'utente chiede esplicitamente di rimuovere/cancellare un prodotto.',
+      parameters: {
+        type: 'object',
+        properties: {
+          brand: { type: 'string', description: 'Marca (facoltativo)' },
+          nome: { type: 'string', description: 'Nome del modello da eliminare' },
+          taglia: { type: 'string', description: 'Taglia (facoltativo)' },
+          quantita: { type: ['number', 'string'], description: 'Quante unità eliminare (default 1)' },
+        },
+        required: ['nome'],
+      },
+    },
+  },
 ];
 
 const SYSTEM_PROMPT = `Sei "HQ", l'assistente di HQVault (gestionale per reseller di sneaker/streetwear).
-Aiuti l'utente a: cercare modelli nel catalogo, aggiungere/modificare/vendere prodotti del magazzino, valutarne il prezzo.
+Aiuti l'utente a GESTIRE il suo magazzino: elencare/cercare ciò che ha, riepilogo, aggiungere, modificare, vendere, eliminare prodotti, e valutarne il prezzo.
 Regole:
 - Rispondi SEMPRE in italiano, in modo breve e amichevole.
+- Per ELENCARE/VEDERE cosa ha in magazzino ("cosa ho", "elenca le mie scarpe", "quante X ho") usa "cerca_magazzino". Per i totali ("quanto vale lo stock", "come va") usa "riepilogo_magazzino". HAI ACCESSO a questi dati: non dire mai che non puoi vederli.
+- Per ELIMINARE un prodotto usa "elimina_prodotto" (solo se richiesto esplicitamente).
 - Per INSERIRE un prodotto usa "aggiungi_prodotto" con i dati che ti dà; se manca la taglia o il prezzo va bene (li metterà dopo).
 - Se l'utente aggiunge un articolo IDENTICO a uno che ha già (stessa marca+nome+taglia), aggiungilo lo stesso: il sistema riconosce il duplicato e AUMENTA lo stock (non serve dire che esiste già).
 - Se l'utente dice un numero di unità uguali (es. "aggiungi 4 Jordan 4 uguali"), imposta "quantita".
@@ -276,6 +320,46 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
       return { valore: val.value, fonte: val.source, modello: val.itemName };
     }
 
+    if (name === 'cerca_magazzino') {
+      const stato = String(args.stato || 'in_stock');
+      const where: any = { userId: ctx.userId, deletedAt: null };
+      if (stato === 'in_stock') where.status = 'IN STOCK';
+      else if (stato === 'venduto') where.status = 'VENDUTO';
+      if (args.brand) where.brand = { contains: String(args.brand).trim(), mode: 'insensitive' };
+      if (args.nome) where.name = { contains: String(args.nome).trim(), mode: 'insensitive' };
+      if (args.taglia && String(args.taglia).trim() !== '—') where.size = String(args.taglia).trim();
+      if (args.categoria) where.category = { contains: String(args.categoria).trim(), mode: 'insensitive' };
+      const prods = await prisma.product.findMany({ where, orderBy: { createdAt: 'desc' }, take: 60 });
+      // raggruppa per modello+taglia per non elencare 20 righe uguali
+      const groups = new Map<string, any>();
+      for (const p of prods) {
+        const k = `${p.brand}|${p.name}|${p.size}|${p.status}`;
+        const g = groups.get(k) || { brand: p.brand, nome: p.name, taglia: p.size, stato: p.status, quantita: 0, prezzo: p.purchasePrice, prezzo_vendita: p.salePrice || null };
+        g.quantita++; groups.set(k, g);
+      }
+      const lista = Array.from(groups.values());
+      return { totale_pezzi: prods.length, modelli: lista.length, prodotti: lista.slice(0, 40) };
+    }
+
+    if (name === 'riepilogo_magazzino') {
+      const all = await prisma.product.findMany({ where: { userId: ctx.userId, deletedAt: null }, select: { status: true, purchasePrice: true, salePrice: true, fees: true } });
+      const inStock = all.filter(p => p.status === 'IN STOCK');
+      const sold = all.filter(p => p.status === 'VENDUTO');
+      const valoreStock = inStock.reduce((a, p) => a + (p.purchasePrice || 0), 0);
+      const profitto = sold.reduce((a, p) => a + ((p.salePrice || 0) - (p.purchasePrice || 0) - (p.fees || 0)), 0);
+      const ricavi = sold.reduce((a, p) => a + (p.salePrice || 0), 0);
+      return { pezzi_in_stock: inStock.length, valore_stock: Math.round(valoreStock), venduti: sold.length, ricavi: Math.round(ricavi), profitto: Math.round(profitto) };
+    }
+
+    if (name === 'elimina_prodotto') {
+      const qty = Math.min(Math.max(Math.floor(Number(args.quantita) || 1), 1), 50);
+      const all = await findUserStock(ctx.userId, { brand: args.brand, nome: args.nome, taglia: args.taglia });
+      if (!all.length) return { error: 'Non ho trovato quel prodotto in magazzino.' };
+      const prods = all.slice(0, qty);
+      await prisma.product.updateMany({ where: { id: { in: prods.map(p => p.id) } }, data: { deletedAt: new Date() } });
+      return { ok: true, eliminati: prods.length, prodotto: `${prods[0].brand} ${prods[0].name}`, taglia: prods[0].size };
+    }
+
     return { error: 'Tool sconosciuto.' };
   } catch (e: any) {
     logger.error('executeTool', { name, err: e.message });
@@ -321,6 +405,19 @@ function summarizeToolResult(name: string, result: any): string {
     return `💰 Venduto: ${result.prodotto}${taglia}${n} a ${result.prezzo}€ su ${result.piattaforma}.`;
   }
   if (name === 'valuta_prezzo' && result?.valore != null) return `💶 ${result.modello || 'Valore'}: circa ${result.valore}€ (${result.fonte}).`;
+  if (name === 'cerca_magazzino' && result?.prodotti) {
+    if (!result.prodotti.length) return 'Non hai prodotti che corrispondono.';
+    const righe = result.prodotti.slice(0, 15).map((p: any) =>
+      `• ${p.brand} ${p.nome}${p.taglia && p.taglia !== '—' ? ` (${p.taglia})` : ''}${p.quantita > 1 ? ` ×${p.quantita}` : ''} — ${p.prezzo}€`).join('\n');
+    return `📦 ${result.totale_pezzi} pezzi (${result.modelli} modelli):\n${righe}`;
+  }
+  if (name === 'riepilogo_magazzino' && result?.pezzi_in_stock != null) {
+    return `📊 In stock: ${result.pezzi_in_stock} pezzi (valore ${result.valore_stock}€) · Venduti: ${result.venduti} · Ricavi ${result.ricavi}€ · Profitto ${result.profitto}€.`;
+  }
+  if (name === 'elimina_prodotto' && result?.ok) {
+    const taglia = result.taglia && result.taglia !== '—' ? ` (taglia ${result.taglia})` : '';
+    return `🗑️ Eliminato: ${result.prodotto}${taglia}${result.eliminati > 1 ? ` ×${result.eliminati}` : ''}.`;
+  }
   return '✅ Fatto.';
 }
 
