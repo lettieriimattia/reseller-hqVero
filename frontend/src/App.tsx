@@ -616,15 +616,21 @@ export default function App() {
     const el = bottomNavRef.current;
     const root = document.documentElement;
     const apply = () => {
-      const h = el && getComputedStyle(el).display !== 'none' ? el.offsetHeight : 0;
-      root.style.setProperty('--bottom-nav-h', `${h}px`);
+      const visible = el && getComputedStyle(el).display !== 'none';
+      const h = visible ? el!.offsetHeight : 0;
+      // Se la misura fallisce (0/troppo bassa) su mobile, usa un default sicuro così la
+      // barra-chat NON finisce mai sopra la nav. Su desktop (nav hidden) resta 0.
+      const val = visible ? (h > 24 ? h : 84) : 0;
+      root.style.setProperty('--bottom-nav-h', `${val}px`);
     };
     apply();
+    requestAnimationFrame(apply);            // dopo il primo paint
+    const t = setTimeout(apply, 350);        // dopo che il layout/safe-area si è assestato
     let ro: ResizeObserver | null = null;
     if (el && 'ResizeObserver' in window) { ro = new ResizeObserver(apply); ro.observe(el); }
     window.addEventListener('resize', apply);
     window.addEventListener('orientationchange', apply);
-    return () => { ro?.disconnect(); window.removeEventListener('resize', apply); window.removeEventListener('orientationchange', apply); };
+    return () => { clearTimeout(t); ro?.disconnect(); window.removeEventListener('resize', apply); window.removeEventListener('orientationchange', apply); };
   }, [currentView]);
   const showToast = useCallback((msg: string, type: 'ok' | 'err' | 'warn' = 'ok', action?: { label: string; onClick: () => void }) => {
     if (toastRef.current) clearTimeout(toastRef.current);
@@ -4339,7 +4345,7 @@ export default function App() {
   // Desktop = COCKPIT: altezza fissa, lo scroll avviene SOLO dentro <main> (cruscotto
   // inamovibile). Mobile resta a scroll di pagina normale.
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col bg-[var(--bg)] text-[var(--text)] lg:pl-60 pb-[calc(var(--bottom-nav-h,64px)+72px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif" }}>
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col bg-[var(--bg)] text-[var(--text)] lg:pl-60 pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif" }}>
 
       {/* ========== SIDEBAR (solo desktop) ========== */}
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-60 z-40 bg-[var(--surface)] border-r border-[var(--border)] px-3 pt-6 pb-6">
