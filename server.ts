@@ -283,6 +283,22 @@ if (isProduction) {
 // ==========================================
 // GLOBAL ERROR HANDLER
 // ==========================================
+// ALERT ERRORI: avvisa via email l'admin sugli errori server 500 (throttle: max 1 ogni 10 min
+// per non spammare). Imposta ALERT_EMAIL su Render per attivarlo.
+let lastErrorAlert = 0;
+function alertAdminError(err: any, req: Request) {
+  const to = process.env.ALERT_EMAIL;
+  if (!to) return;
+  const now = Date.now();
+  if (now - lastErrorAlert < 10 * 60 * 1000) return;
+  lastErrorAlert = now;
+  sendEmail({
+    to,
+    subject: `⚠️ HQVault: errore server (${req.method} ${req.path})`,
+    text: `Errore: ${err?.message}\nDove: ${req.method} ${req.path}\nQuando: ${new Date().toISOString()}\n\n${(err?.stack || '').toString().slice(0, 1500)}`,
+  }).catch(() => {});
+}
+
 // NON espone stack trace al client (anti-disclosure)
 app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
   logger.error('Errore non gestito', {
@@ -291,19 +307,21 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     path: req.path,
     method: req.method,
   });
-  
+
   // CORS error
   if (err.message?.includes('Origin')) {
     return res.status(403).json({ error: 'Origin non autorizzata' });
   }
-  
+
   // Payload too large
   if (err.type === 'entity.too.large') {
     return res.status(413).json({ error: 'File troppo grande. Max 15MB.' });
   }
-  
-  // Default
-  res.status(err.status || 500).json({
+
+  // Default (errore vero) → avvisa l'admin
+  const status = err.status || 500;
+  if (status >= 500) alertAdminError(err, req);
+  res.status(status).json({
     error: isProduction ? 'Errore interno del server' : err.message,
   });
 });

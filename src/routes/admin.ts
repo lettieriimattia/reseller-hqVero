@@ -16,11 +16,18 @@ const router = Router();
 export { ADMIN_EMAILS, ADMIN_EMAIL, isAdminEmail } from '../config/admins';
 import { isAdminEmail } from '../config/admins';
 
-// Middleware: solo gli account admin
-function requireAdmin(req: AuthRequest, res: Response, next: any) {
+// Middleware: solo gli account admin + DEVONO avere il 2FA attivo (sicurezza pannello admin).
+async function requireAdmin(req: AuthRequest, res: Response, next: any) {
   if (!isAdminEmail(req.user?.email)) {
     return res.status(403).json({ error: 'Accesso riservato.' });
   }
+  // Il pannello admin esige il 2FA: senza, niente accesso (l'admin lo attiva da Impostazioni → 2FA).
+  try {
+    const u = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { twoFactorEnabled: true } });
+    if (!u?.twoFactorEnabled) {
+      return res.status(403).json({ error: 'Per accedere al pannello admin devi prima attivare il 2FA (Impostazioni → Autenticazione a due fattori).', need2FA: true });
+    }
+  } catch { return res.status(500).json({ error: 'Errore verifica admin.' }); }
   next();
 }
 

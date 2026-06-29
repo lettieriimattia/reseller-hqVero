@@ -1991,6 +1991,17 @@ export default function App() {
     }).catch(() => {});
   }, [isAuthenticated]);
 
+  // Onboarding: messaggio di benvenuto una tantum al primo accesso.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    try {
+      if (!localStorage.getItem('hq_welcomed')) {
+        localStorage.setItem('hq_welcomed', '1');
+        setTimeout(() => showToast('👋 Benvenuto in HQVault! Aggiungi un prodotto col + verde in basso, o chiedi a HQ nella chat. Buon resell!', 'ok'), 1400);
+      }
+    } catch { /* storage non disponibile */ }
+  }, [isAuthenticated]);
+
   // ==========================================
   // HANDLERS AUTH
   // ==========================================
