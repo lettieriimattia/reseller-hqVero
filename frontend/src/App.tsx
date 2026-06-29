@@ -4313,11 +4313,18 @@ export default function App() {
           )}
           
           <div className="mt-6 text-center">
-            <button type="button" 
+            <button type="button"
               onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(null); }}
               className="text-[var(--text-soft)] hover:text-[var(--text)] text-sm transition-colors font-bold">
               {authMode === 'login' ? t('auth.noAccount') : t('auth.haveAccount')}
             </button>
+          </div>
+          {/* Entra nella DEMO senza credenziali (utile per provare / registrare video). */}
+          <div className="mt-3 text-center">
+            <a href="/auth/demo-login"
+              className="inline-flex items-center gap-1.5 text-[var(--text-faint)] hover:text-[var(--text)] text-[13px] transition-colors">
+              👀 Prova la demo senza registrarti
+            </a>
           </div>
           </>)}
         </div>

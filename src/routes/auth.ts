@@ -247,6 +247,71 @@ router.post('/register', authLimiter, validate(registerSchema), async (req, res)
 });
 
 // ==========================================
+// MODALITÀ DEMO — accesso SENZA login (per video/walkthrough, anche con AI).
+// GET /auth/demo-login  → entra nell'account demo (già pieno di dati) e va a /app.
+// GET /auth/demo-login?reset=1 → ripulisce e ri-semina i dati demo (stato pulito).
+// Gated da DEMO_ENABLED (default ON; per spegnerla: DEMO_ENABLED=false). Account isolato,
+// piano "business" = nessun paywall, tutte le sezioni visibili.
+// ==========================================
+const DEMO_EMAIL = process.env.DEMO_EMAIL || 'demo@hqvault.app';
+const DEMO_ENABLED = process.env.DEMO_ENABLED !== 'false';
+
+async function seedDemoProducts(userId: string, warehouseId: string | null) {
+  const daysAgo = (n: number) => new Date(Date.now() - n * 86400000);
+  const items: any[] = [
+    { category: 'Sneakers', brand: 'Nike', name: 'Air Jordan 1 Retro High OG Chicago', size: '42', condition: 'Nuovo', purchasePrice: 180, salePrice: 320, status: 'VENDUTO', platform: 'StockX', fees: 38, soldAt: daysAgo(5), marketPriceAvg: 330 },
+    { category: 'Sneakers', brand: 'Nike', name: 'Dunk Low Retro White Black Panda', size: '43', condition: 'Nuovo', purchasePrice: 110, status: 'IN STOCK', marketPriceAvg: 135 },
+    { category: 'Sneakers', brand: 'adidas', name: 'Yeezy Boost 350 V2 Bone', size: '44', condition: 'Nuovo', purchasePrice: 190, status: 'IN STOCK', marketPriceAvg: 215 },
+    { category: 'Sneakers', brand: 'New Balance', name: '550 White Green', size: '41', condition: 'Nuovo', purchasePrice: 120, salePrice: 160, status: 'VENDUTO', platform: 'Vinted', fees: 8, soldAt: daysAgo(12), marketPriceAvg: 155 },
+    { category: 'Streetwear', brand: 'Supreme', name: 'Box Logo Hooded Sweatshirt Black FW23', size: 'L', condition: 'Nuovo', purchasePrice: 280, status: 'IN STOCK', marketPriceAvg: 420 },
+    { category: 'Streetwear', brand: 'Stüssy', name: '8 Ball Tee White', size: 'M', condition: 'Nuovo', purchasePrice: 35, salePrice: 70, status: 'VENDUTO', platform: 'Wallapop', fees: 3, soldAt: daysAgo(2), marketPriceAvg: 65 },
+    { category: 'Borse', brand: 'Louis Vuitton', name: 'Pochette Accessoires Monogram', size: 'Unica', condition: 'Usato', purchasePrice: 600, status: 'IN STOCK', marketPriceAvg: 760 },
+    { category: 'Carte', brand: 'Pokémon', name: 'Charizard ex 199/165 SV 151', size: 'PSA 10', condition: 'Nuovo', purchasePrice: 90, status: 'IN STOCK', marketPriceAvg: 140 },
+    { category: 'Sneakers', brand: 'Nike', name: 'Travis Scott x Air Jordan 1 Low OG Olive', size: '42.5', condition: 'Nuovo', purchasePrice: 350, status: 'IN STOCK', trackingCarrier: 'BRT', trackingCode: 'DEMO123456IT', trackingDirection: 'INBOUND', trackingStatus: 'IN_TRANSIT', marketPriceAvg: 520 },
+    { category: 'Elettronica', brand: 'Apple', name: 'iPhone 15 Pro 256GB Titanio Naturale', size: 'Unica', condition: 'Nuovo', purchasePrice: 950, salePrice: 1080, status: 'VENDUTO', platform: 'Subito', fees: 0, soldAt: daysAgo(20), marketPriceAvg: 1050 },
+  ];
+  await prisma.product.createMany({
+    data: items.map(it => ({
+      userId, warehouseId,
+      category: it.category, brand: it.brand, name: it.name, size: it.size, condition: it.condition,
+      purchasePrice: it.purchasePrice, salePrice: it.salePrice ?? null, platform: it.platform ?? null, fees: it.fees ?? null,
+      status: it.status, soldAt: it.soldAt ?? null,
+      trackingCarrier: it.trackingCarrier ?? null, trackingCode: it.trackingCode ?? null,
+      trackingDirection: it.trackingDirection ?? null, trackingStatus: it.trackingStatus ?? null,
+      marketPriceAvg: it.marketPriceAvg ?? null,
+    })),
+  });
+}
+
+router.get('/demo-login', authLimiter, async (req: Request, res: Response) => {
+  if (!DEMO_ENABLED) return res.status(404).send('Demo non attiva.');
+  try {
+    let user = await prisma.user.findUnique({ where: { email: DEMO_EMAIL }, include: { memberships: true } });
+    if (!user) {
+      const hashed = await bcrypt.hash('demo-' + Math.random().toString(36).slice(2) + Date.now(), BCRYPT_ROUNDS);
+      user = await prisma.user.create({
+        data: {
+          email: DEMO_EMAIL, password: hashed, name: 'Demo HQVault',
+          plan: 'business', emailVerified: true, marketingConsent: false,
+          memberships: { create: [{ role: 'OWNER', percentage: 100, warehouse: { create: { name: 'Magazzino Demo', inviteCode: generateInviteCode(), inviteCodeExpiresAt: new Date(Date.now() + 30 * 86400000) } } }] },
+        },
+        include: { memberships: true },
+      });
+    }
+    if (user.plan !== 'business') await prisma.user.update({ where: { id: user.id }, data: { plan: 'business' } });
+    const whId = user.memberships?.[0]?.warehouseId || null;
+    if (req.query.reset === '1') await prisma.product.deleteMany({ where: { userId: user.id } });
+    const count = await prisma.product.count({ where: { userId: user.id, deletedAt: null } });
+    if (count === 0) await seedDemoProducts(user.id, whId);
+    await issueTokens(res, user, req);
+    return res.redirect('/app');
+  } catch (e: any) {
+    logger.error('Errore demo-login', { err: e.message });
+    return res.status(500).send('Errore avvio demo.');
+  }
+});
+
+// ==========================================
 // POST /auth/login
 // ==========================================
 router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
