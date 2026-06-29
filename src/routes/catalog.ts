@@ -18,6 +18,32 @@ import { pokemonSearch } from '../services/pokemon.service';
 import { logger } from '../utils/logger';
 
 const router = Router();
+
+// ===== ROTTE PUBBLICHE (per la landing page, senza login): vetrina + proxy immagini. =====
+router.get('/showcase', async (_req: AuthRequest, res: Response) => {
+  try {
+    const items = await prisma.catalogItem.findMany({ where: { image: { not: null } }, orderBy: { createdAt: 'asc' }, take: 80 });
+    const picked = items.sort(() => Math.random() - 0.5).slice(0, 20);
+    res.json(picked.map((i: any) => ({ image: i.image, name: i.name, brand: i.brand })));
+  } catch { res.json([]); }
+});
+router.get('/img-public', async (req: AuthRequest, res: Response) => {
+  try {
+    const u = (req.query.u || '').toString();
+    if (!u) return res.status(400).end();
+    let parsed: URL;
+    try { parsed = new URL(u); } catch { return res.status(400).end(); }
+    const host = parsed.hostname.toLowerCase();
+    if (parsed.protocol !== 'https:' || !IMG_HOSTS.some(h => host === h || host.endsWith('.' + h))) return res.status(400).end();
+    const r = await fetch(parsed.toString(), { headers: { Accept: 'image/*', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', Referer: 'https://stockx.com/' } });
+    if (!r.ok) return res.status(502).end();
+    const buf = Buffer.from(await r.arrayBuffer());
+    res.setHeader('Content-Type', r.headers.get('content-type') || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    res.send(buf);
+  } catch { res.status(502).end(); }
+});
+
 router.use(authenticate, apiLimiter);
 
 // Gate BETA: solo admin per ora.
