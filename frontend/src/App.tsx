@@ -9681,6 +9681,17 @@ export default function App() {
             </div>
             <div className="overflow-y-auto p-5 space-y-5 text-[13px] text-[var(--text-muted)] leading-relaxed">
 
+              {/* Conferma consenso: chi è registrato ha già accettato (in fase di creazione account). */}
+              {isAuthenticated && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3.5 flex items-start gap-2.5">
+                  <Check size={17} className="text-green-400 mt-0.5 shrink-0" />
+                  <div className="text-[12.5px] text-[var(--text)]">
+                    <b>Consensi accettati.</b>{' '}
+                    <span className="text-[var(--text-soft)]">Hai accettato la <b className="text-[var(--text)]">Privacy</b> e la <b className="text-[var(--text)]">Cookie Policy</b> alla creazione del tuo account{user?.email ? ` (${user.email})` : ''}. Qui sotto puoi rileggerle quando vuoi. I <b className="text-[var(--text)]">Termini e Condizioni</b> verranno aggiunti a breve.</span>
+                  </div>
+                </div>
+              )}
+
               <section>
                 <h3 className="text-[var(--text)] font-semibold text-sm mb-2">1. Titolare del Trattamento</h3>
                 <p>Il titolare del trattamento dei dati personali è l'operatore dell'account HQ. Per qualsiasi richiesta relativa ai dati personali, contatta il responsabile della piattaforma.</p>
