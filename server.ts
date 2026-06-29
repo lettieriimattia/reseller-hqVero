@@ -189,6 +189,10 @@ if (isProduction) {
     }
     res.sendFile(path.join(frontendDist, 'landing.html'));
   });
+  // L'app SPA vive sotto /app (e sottopercorsi). Servila SUBITO, PRIMA dei router API:
+  // altrimenti un visitatore SLOGGATO che apre /app (i bottoni della landing!) verrebbe
+  // intercettato da `app.use('/', teamRoutes)` → middleware authenticate → 401 JSON.
+  app.get(/^\/app(\/.*)?$/, (_req, res) => res.sendFile(path.join(frontendDist, 'index.html')));
   app.use(express.static(frontendDist));
 }
 
