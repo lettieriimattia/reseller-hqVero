@@ -449,7 +449,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       {/* Barra flottante (chat chiusa) — solo telefono, sopra la bottom-nav.
           Nascosta quando è attiva la selezione multipla (barra bulk), per non sovrapporsi. */}
       {!open && !hideBar && (
-        <div className="lg:hidden fixed left-3 right-3 z-[45]" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}>
+        <div className="lg:hidden fixed left-3 right-3 z-[45]" style={{ bottom: 'calc(var(--bottom-nav-h, 64px) + 10px)' }}>
           {bar}
         </div>
       )}

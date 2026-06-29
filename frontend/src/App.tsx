@@ -608,6 +608,24 @@ export default function App() {
   const barcodeStreamRef = useRef<MediaStream | null>(null);
   const barcodeLoopRef = useRef<number | null>(null);
   const notifRef = useRef<HTMLDivElement | null>(null);
+  const bottomNavRef = useRef<HTMLElement | null>(null);
+  // Misura l'ALTEZZA REALE della bottom-nav (varia per modello: notch, densità, safe-area)
+  // e la espone come variabile CSS --bottom-nav-h. Barra-chat e contenuti la usano per non
+  // sovrapporsi MAI, su qualsiasi telefono. (Su desktop la nav non c'è → fallback 0.)
+  useEffect(() => {
+    const el = bottomNavRef.current;
+    const root = document.documentElement;
+    const apply = () => {
+      const h = el && getComputedStyle(el).display !== 'none' ? el.offsetHeight : 0;
+      root.style.setProperty('--bottom-nav-h', `${h}px`);
+    };
+    apply();
+    let ro: ResizeObserver | null = null;
+    if (el && 'ResizeObserver' in window) { ro = new ResizeObserver(apply); ro.observe(el); }
+    window.addEventListener('resize', apply);
+    window.addEventListener('orientationchange', apply);
+    return () => { ro?.disconnect(); window.removeEventListener('resize', apply); window.removeEventListener('orientationchange', apply); };
+  }, [currentView]);
   const showToast = useCallback((msg: string, type: 'ok' | 'err' | 'warn' = 'ok', action?: { label: string; onClick: () => void }) => {
     if (toastRef.current) clearTimeout(toastRef.current);
     setToast({ msg, type, action });
@@ -4314,7 +4332,7 @@ export default function App() {
   // Desktop = COCKPIT: altezza fissa, lo scroll avviene SOLO dentro <main> (cruscotto
   // inamovibile). Mobile resta a scroll di pagina normale.
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col bg-[var(--bg)] text-[var(--text)] lg:pl-60 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif" }}>
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col bg-[var(--bg)] text-[var(--text)] lg:pl-60 pb-[calc(var(--bottom-nav-h,64px)+72px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif" }}>
 
       {/* ========== SIDEBAR (solo desktop) ========== */}
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-60 z-40 bg-[var(--surface)] border-r border-[var(--border)] px-3 pt-6 pb-6">
@@ -7651,6 +7669,7 @@ export default function App() {
 
       {/* ========== MOBILE BOTTOM NAV — minimal iOS style ========== */}
       <nav
+        ref={bottomNavRef}
         className="lg:hidden fixed bottom-0 left-0 right-0 z-30"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
