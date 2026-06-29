@@ -5,6 +5,9 @@ import CatalogBrowser from './components/CatalogBrowser';
 import AssistantChat from './components/AssistantChat';
 import SmartLotModal from './components/SmartLotModal';
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
+
+// Face ID (passkey di login) temporaneamente NASCOSTO: il codice resta, si riattiva mettendo true.
+const FACE_ID_ENABLED = false;
 import { getLang, setLangStorage, translate, LANGUAGES, MARKETPLACE_ENABLED, type Lang } from './i18n';
 // xlsx caricato on-demand (import dinamico) dentro gli handler: resta fuori dal bundle iniziale
 // Grafico caricato in lazy: recharts finisce in un chunk separato, fuori dal bundle iniziale
@@ -4201,10 +4204,12 @@ export default function App() {
 
             {authMode === 'login' && !require2FA && (
               <>
+                {FACE_ID_ENABLED && (
                 <button type="button" onClick={loginFaceId}
                   className="w-full mt-3 py-3 rounded-xl border border-[var(--border-2)] text-[var(--text)] font-bold text-sm flex items-center justify-center gap-2 hover:border-[#6b54c6] transition-colors">
                   <ScanFace size={18} className="text-[#6b54c6]" /> Entra con Face ID
                 </button>
+                )}
                 <button type="button"
                   onClick={() => { setForgotEmail(authEmail); setForgotStep('email'); setForgotCode(''); setForgotNewPw(''); setForgotMsg(null); setForgotOpen(true); }}
                   className="w-full text-center text-xs text-[var(--text-soft)] hover:text-[var(--text)] mt-3 transition-colors font-semibold">
@@ -6767,7 +6772,8 @@ export default function App() {
               </div>
             </section>
             
-            {/* SEZIONE: Face ID (Passkey / WebAuthn) */}
+            {/* SEZIONE: Face ID (Passkey / WebAuthn) — NASCOSTA per ora (FACE_ID_ENABLED) */}
+            {FACE_ID_ENABLED && (
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
@@ -6792,6 +6798,7 @@ export default function App() {
                 )}
               </div>
             </section>
+            )}
 
             {/* SEZIONE: CAMBIA PASSWORD */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
