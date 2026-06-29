@@ -13,6 +13,7 @@ import https from 'https';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { prisma } from './src/lib/prisma';
 
@@ -180,7 +181,14 @@ if (isProduction) {
   const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
   // Landing pubblica SEO alla ROOT (statica, indicizzabile); l'app gira sotto /app e ogni altra
   // route SPA. Deve stare PRIMA di express.static (che altrimenti servirebbe index.html su "/").
-  app.get('/', (_req, res) => res.sendFile(path.join(frontendDist, 'landing.html')));
+  // Se l'utente è GIÀ loggato (cookie access valido) → va dritto all'app, niente landing.
+  app.get('/', (req: Request, res: Response) => {
+    const token = (req as any).cookies?.access_token;
+    if (token && process.env.JWT_ACCESS_SECRET) {
+      try { jwt.verify(token, process.env.JWT_ACCESS_SECRET); return res.redirect('/app'); } catch { /* token non valido → landing */ }
+    }
+    res.sendFile(path.join(frontendDist, 'landing.html'));
+  });
   app.use(express.static(frontendDist));
 }
 

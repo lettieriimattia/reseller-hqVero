@@ -288,5 +288,12 @@
       </nav>
     </div>
   </footer>
+
+  <!-- Se sei GIÀ registrato/loggato, vai dritto all'app: la landing non la rivedi. -->
+  <script>
+    fetch('/auth/refresh', { method: 'POST', credentials: 'include' })
+      .then(function (r) { if (r.ok) location.replace('/app'); })
+      .catch(function () {});
+  </script>
 </body>
 </html>
