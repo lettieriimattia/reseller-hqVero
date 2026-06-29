@@ -27,7 +27,7 @@ export default defineConfig({
         background_color: '#111111',
         display: 'standalone',
         orientation: 'portrait-primary',
-        start_url: '/',
+        start_url: '/app',
         scope: '/',
         lang: 'it',
         categories: ['business', 'finance', 'productivity'],
@@ -76,7 +76,8 @@ export default defineConfig({
         // solo quando l'utente attiva la wake-word "Ehy HQ".
         globIgnores: ['**/vosk-*.js', '**/vosk/**'],
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api/, /^\/auth/, /^\/products/, /^\/team/, /^\/notifications/, /^\/tracking/, /^\/health/, /^\/admin/],
+        // /^\/$/ = la ROOT non è gestita dal SW → la landing pubblica arriva sempre dal server.
+        navigateFallbackDenylist: [/^\/$/, /^\/api/, /^\/auth/, /^\/products/, /^\/team/, /^\/notifications/, /^\/tracking/, /^\/health/, /^\/admin/, /^\/landing/, /^\/privacy/, /^\/termini/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.pokemontcg\.io\/.*/i,

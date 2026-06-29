@@ -178,6 +178,9 @@ if (!isProduction) {
 // ==========================================
 if (isProduction) {
   const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+  // Landing pubblica SEO alla ROOT (statica, indicizzabile); l'app gira sotto /app e ogni altra
+  // route SPA. Deve stare PRIMA di express.static (che altrimenti servirebbe index.html su "/").
+  app.get('/', (_req, res) => res.sendFile(path.join(frontendDist, 'landing.html')));
   app.use(express.static(frontendDist));
 }
 
