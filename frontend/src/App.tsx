@@ -17,7 +17,7 @@ import {
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
   KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon, ScanFace,
-  Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal,
+  Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal, Send,
   Footprints, Shirt, Watch, ShoppingBag, Gem, Glasses, SprayCan, Smartphone,
   Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check
 } from 'lucide-react';
@@ -318,6 +318,12 @@ export default function App() {
   const [cookieConsent, setCookieConsent] = useState<boolean>(true);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  // Supporto clienti IA (primo livello) con escalation a operatore umano.
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [supportMsgs, setSupportMsgs] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [supportInput, setSupportInput] = useState('');
+  const [supportLoading, setSupportLoading] = useState(false);
+  const [supportEscalated, setSupportEscalated] = useState(false);
   const [repartiOpen, setRepartiOpen] = useState(false); // lista reparti a tendina nelle impostazioni
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false); // consenso privacy (obbligatorio in registrazione)
@@ -975,6 +981,25 @@ export default function App() {
     } else {
       showToast(data.error || 'Invio non riuscito', 'err');
     }
+  };
+
+  // Supporto IA: invia il messaggio, l'IA risponde; se non può, crea il ticket per l'operatore.
+  const sendSupport = async () => {
+    const text = supportInput.trim();
+    if (!text || supportLoading) return;
+    const next = [...supportMsgs, { role: 'user' as const, content: text }];
+    setSupportMsgs(next); setSupportInput(''); setSupportLoading(true);
+    try {
+      const { ok, data } = await apiCall<any>('/api/support/chat', { method: 'POST', body: JSON.stringify({ messages: next }) });
+      if (ok && data?.reply) {
+        setSupportMsgs(m => [...m, { role: 'assistant', content: data.reply }]);
+        if (data.escalated) setSupportEscalated(true);
+      } else {
+        setSupportMsgs(m => [...m, { role: 'assistant', content: 'Ops, si è verificato un errore. Riprova tra poco.' }]);
+      }
+    } catch {
+      setSupportMsgs(m => [...m, { role: 'assistant', content: 'Ops, errore di rete. Riprova.' }]);
+    } finally { setSupportLoading(false); }
   };
 
   // ===== NOTIFICHE PUSH =====
@@ -1706,6 +1731,7 @@ export default function App() {
       [teamPanelOpen, () => setTeamPanelOpen(false)],
       [adminPanelOpen, () => setAdminPanelOpen(false)],
       [guideOpen, () => setGuideOpen(false)],
+      [supportOpen, () => setSupportOpen(false)],
       [privacyOpen, () => setPrivacyOpen(false)],
     ];
     const closeTop = (): boolean => {
@@ -1721,7 +1747,7 @@ export default function App() {
     window.addEventListener('keydown', onKey);
     window.addEventListener('mousedown', onDown);
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onDown); };
-  }, [cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, privacyOpen]);
+  }, [cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
 
   useEffect(() => {
     if (userCategories.length > 0 && category === '') setCategory(userCategories[0]);
@@ -4407,6 +4433,10 @@ export default function App() {
           <button onClick={() => setGuideOpen(true)}
             className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
             <BookOpen size={17} /> {t('hdr.guide')}
+          </button>
+          <button onClick={() => setSupportOpen(true)}
+            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
+            <HelpCircle size={17} /> Aiuto & supporto
           </button>
           <button onClick={() => setPrivacyOpen(true)}
             className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
@@ -9662,6 +9692,52 @@ export default function App() {
 
       {/* ========== MODALE: PRIVACY POLICY ========== */}
       {/* ===== MODALE GUIDA RAPIDA ===== */}
+      {/* ========== MODALE: SUPPORTO CLIENTI IA (con escalation a operatore) ========== */}
+      {supportOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4" onClick={() => setSupportOpen(false)} {...swipeBack(() => setSupportOpen(false))}>
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-lg h-[85vh] sm:h-[600px] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-[var(--border)] shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#6b54c6]/15 flex items-center justify-center"><HelpCircle size={18} className="text-[#6b54c6]" /></div>
+                <div>
+                  <h2 className="font-semibold text-base leading-tight">Aiuto & supporto</h2>
+                  <p className="text-[11px] text-[var(--text-soft)]">Ti risponde l'assistente. Se serve, passa a un operatore.</p>
+                </div>
+              </div>
+              <button onClick={() => setSupportOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors"><X size={18} className="text-[var(--text-muted)]" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {supportMsgs.length === 0 && (
+                <div className="text-center text-[13px] text-[var(--text-soft)] mt-8 px-6">
+                  👋 Ciao! Chiedimi qualsiasi cosa su HQVault: come aggiungere prodotti, vendere, i piani, il tracking… Se non riesco a risolvere, ti metto in contatto con un operatore.
+                </div>
+              )}
+              {supportMsgs.map((m, i) => (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-[13.5px] leading-relaxed whitespace-pre-wrap ${m.role === 'user' ? 'bg-[#6b54c6] text-white rounded-br-md' : 'bg-[var(--fill)] text-[var(--text)] rounded-bl-md'}`}>{m.content}</div>
+                </div>
+              ))}
+              {supportLoading && <div className="flex justify-start"><div className="bg-[var(--fill)] px-3.5 py-2.5 rounded-2xl rounded-bl-md text-[13px] text-[var(--text-soft)]">sto scrivendo…</div></div>}
+              {supportEscalated && (
+                <div className="mt-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[12.5px] text-[var(--text)]">
+                  ✅ <b>Richiesta passata a un operatore.</b> Ti risponderemo via email{user?.email ? ` a ${user.email}` : ''} al più presto.
+                </div>
+              )}
+            </div>
+            <div className="shrink-0 p-3 border-t border-[var(--border)] flex items-center gap-2" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
+              <input value={supportInput} onChange={e => setSupportInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendSupport(); } }}
+                placeholder="Scrivi la tua domanda…"
+                className="flex-1 bg-[var(--fill)] rounded-xl px-3.5 py-2.5 text-[14px] outline-none focus:ring-2 focus:ring-[#6b54c6]/40" />
+              <button onClick={sendSupport} disabled={supportLoading || !supportInput.trim()}
+                className="w-10 h-10 rounded-xl bg-[#6b54c6] text-white flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0">
+                <Send size={17} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {guideOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4" onClick={() => setGuideOpen(false)} {...swipeBack(() => setGuideOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>

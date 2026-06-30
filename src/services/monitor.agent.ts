@@ -16,27 +16,13 @@ import cron from 'node-cron';
 import { prisma } from '../lib/prisma';
 import { sendEmail } from './email.service';
 import { groqAssistantChat, isGroqConfigured } from './ai.service';
+import { sendTelegram, isTelegramConfigured } from './telegram';
 import { logger } from '../utils/logger';
 
-const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-const TG_CHAT = process.env.TELEGRAM_CHAT_ID || '';
 const REPORT_EMAIL = process.env.MONITOR_REPORT_EMAIL || '';
 
-function telegramConfigured() { return !!(TG_TOKEN && TG_CHAT); }
+function telegramConfigured() { return isTelegramConfigured(); }
 function destinationConfigured() { return telegramConfigured() || !!REPORT_EMAIL; }
-
-async function sendTelegram(text: string): Promise<boolean> {
-  if (!telegramConfigured()) return false;
-  try {
-    const r = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: TG_CHAT, text, parse_mode: 'HTML', disable_web_page_preview: true }),
-    });
-    if (!r.ok) { logger.warn('Telegram non ok', { status: r.status }); return false; }
-    return true;
-  } catch (e: any) { logger.warn('Telegram errore', { err: e.message }); return false; }
-}
 
 interface Stats {
   newUsers24h: number; newUsersPrev: number; totalUsers: number; payingUsers: number;

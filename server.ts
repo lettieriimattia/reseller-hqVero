@@ -29,6 +29,7 @@ import analyticsRoutes from './src/routes/analytics';
 import shippingRoutes from './src/routes/shipping';
 import uploadRoutes from './src/routes/upload';
 import feedbackRoutes from './src/routes/feedback';
+import supportRoutes from './src/routes/support';
 import pushRoutes from './src/routes/push';
 import stockxRoutes from './src/routes/stockx';
 import plansRoutes from './src/routes/plans';
@@ -271,6 +272,7 @@ app.use('/billing', billingRoutes); // abbonamenti Stripe (checkout/portal); web
 app.use('/shipping', shippingRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/support', supportRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/stockx', stockxRoutes);
 app.use('/api/plans', plansRoutes);
