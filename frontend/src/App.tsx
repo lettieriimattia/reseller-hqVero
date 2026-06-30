@@ -395,7 +395,10 @@ export default function App() {
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove('light', 'glass', 'lux', 'vault');
-    if (theme !== 'dark') root.classList.add(theme);
+    // 'vault' è un tema CHIARO premium: applica anche '.light' così eredita i fix dei colori
+    // hardcoded per lo sfondo chiaro, poi '.vault' rifinisce palette e accento.
+    if (theme === 'vault') root.classList.add('light', 'vault');
+    else if (theme !== 'dark') root.classList.add(theme);
     try { localStorage.setItem('hq-theme', theme); } catch { /* storage non disponibile */ }
   }, [theme]);
 
@@ -7185,7 +7188,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  {theme === 'light' ? <Sun className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'lux' ? <Gem className="text-[#1fa89f] mt-0.5" size={22} /> : theme === 'vault' ? <Gem className="text-[#c7a671] mt-0.5" size={22} /> : <Moon className="text-[#6b54c6] mt-0.5" size={22} />}
+                  {theme === 'light' ? <Sun className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'lux' ? <Gem className="text-[#1fa89f] mt-0.5" size={22} /> : theme === 'vault' ? <Gem className="text-[#5b4bff] mt-0.5" size={22} /> : <Moon className="text-[#6b54c6] mt-0.5" size={22} />}
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.appearance')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">{t('set.appearanceDesc')}</p>
@@ -7222,7 +7225,7 @@ export default function App() {
                   {isAdminUser && (
                     <button onClick={() => setTheme('vault')}
                       className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                        theme === 'vault' ? 'bg-[#c7a671] text-[#1a1508]' : 'text-[var(--text-soft)]'
+                        theme === 'vault' ? 'bg-[#5b4bff] text-white' : 'text-[var(--text-soft)]'
                       }`}>
                       <Gem size={13} /> Vault
                     </button>
