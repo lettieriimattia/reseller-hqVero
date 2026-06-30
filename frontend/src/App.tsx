@@ -1649,7 +1649,7 @@ export default function App() {
           runAIScan(compressed, AUTO_CATEGORY);
         }
       } catch { /* ignora */ }
-      window.history.replaceState({}, '', '/');
+      window.history.replaceState({}, '', '/app');
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
@@ -1691,7 +1691,7 @@ export default function App() {
           showToast(t('ts.accountLinked'), 'ok');
         }
       } catch { /* ignora */ }
-      window.history.replaceState({}, '', '/');
+      window.history.replaceState({}, '', '/app');
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);

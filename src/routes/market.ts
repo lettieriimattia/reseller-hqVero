@@ -140,8 +140,8 @@ router.post('/:id/buy', authenticate, async (req: AuthRequest, res: Response) =>
         },
       }],
       metadata: { kind: 'product', productId: product.id, buyerId },
-      success_url: `${base}/?bought=${product.id}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${base}/?buy_cancel=1`,
+      success_url: `${base}/app?bought=${product.id}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${base}/app?buy_cancel=1`,
     });
     res.json({ url: session.url });
   } catch (e: any) { logger.error('POST /market/:id/buy', { err: e.message }); res.status(500).json({ error: 'Errore avvio pagamento' }); }

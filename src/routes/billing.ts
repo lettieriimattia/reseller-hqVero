@@ -89,8 +89,8 @@ router.post('/payout/withdraw', authenticate, async (req: AuthRequest, res: Resp
       const base = appBase(req);
       const link = await s.accountLinks.create({
         account: accountId,
-        refresh_url: `${base}/?connect=refresh`,
-        return_url: `${base}/?connect=done`,
+        refresh_url: `${base}/app?connect=refresh`,
+        return_url: `${base}/app?connect=done`,
         type: 'account_onboarding',
         collection_options: { fields: 'currently_due', future_requirements: 'omit' },
       });
@@ -154,8 +154,8 @@ router.post('/connect/onboard', authenticate, async (req: AuthRequest, res: Resp
     const base = appBase(req);
     const link = await s.accountLinks.create({
       account: accountId,
-      refresh_url: `${base}/?connect=refresh`,
-      return_url: `${base}/?connect=done`,
+      refresh_url: `${base}/app?connect=refresh`,
+      return_url: `${base}/app?connect=done`,
       type: 'account_onboarding',
       // Chiedi SOLO ciò che è strettamente necessario ora; il resto viene rimandato.
       collection_options: { fields: 'currently_due', future_requirements: 'omit' },
@@ -214,8 +214,8 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) =
       }],
       metadata: { userId: user.id, planId },
       subscription_data: { metadata: { userId: user.id, planId } },
-      success_url: `${base}/?upgraded=${planId}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${base}/?upgrade_cancel=1`,
+      success_url: `${base}/app?upgraded=${planId}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${base}/app?upgrade_cancel=1`,
       allow_promotion_codes: true,
     });
     res.json({ url: session.url });
@@ -286,7 +286,7 @@ router.post('/portal', authenticate, async (req: AuthRequest, res: Response) => 
     if (!setting?.value) return res.status(400).json({ error: 'Nessun abbonamento attivo' });
     const portal = await s.billingPortal.sessions.create({
       customer: setting.value,
-      return_url: appBase(req),
+      return_url: `${appBase(req)}/app`,
     });
     res.json({ url: portal.url });
   } catch (err: any) {
