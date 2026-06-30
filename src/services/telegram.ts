@@ -12,14 +12,23 @@ export function isTelegramConfigured(): boolean {
 }
 
 export async function sendTelegram(text: string): Promise<boolean> {
-  if (!isTelegramConfigured()) return false;
+  if (!isTelegramConfigured()) {
+    logger.warn('Telegram NON configurato (TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID mancanti su Render) → fallback email');
+    return false;
+  }
   try {
     const r = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: TG_CHAT, text, parse_mode: 'HTML', disable_web_page_preview: true }),
     });
-    if (!r.ok) { logger.warn('Telegram non ok', { status: r.status }); return false; }
+    // ATTENZIONE: Telegram torna HTTP 200 ANCHE quando rifiuta (es. "chat not found",
+    // "bot was blocked"): il vero esito è nel campo body.ok. Va controllato quello.
+    const data: any = await r.json().catch(() => ({}));
+    if (!r.ok || !data?.ok) {
+      logger.warn('Telegram invio fallito', { status: r.status, errorCode: data?.error_code, desc: data?.description });
+      return false;
+    }
     return true;
-  } catch (e: any) { logger.warn('Telegram errore', { err: e.message }); return false; }
+  } catch (e: any) { logger.warn('Telegram errore di rete', { err: e.message }); return false; }
 }
