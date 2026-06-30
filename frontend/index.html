@@ -47,11 +47,12 @@
         white-space:nowrap; opacity:0; transform-origin:center; animation:hqWord 2.5s cubic-bezier(.7,0,.2,1) forwards;
       }
       @keyframes hqWord{
-        0%{opacity:0; letter-spacing:.52em; transform:scaleX(1.06)}
-        18%{opacity:1}
-        52%{opacity:1; letter-spacing:.42em; transform:scaleX(1)}
-        84%{opacity:0; letter-spacing:-.14em; transform:scaleX(.32)}
-        100%{opacity:0; letter-spacing:-.2em; transform:scaleX(.28)}
+        0%{opacity:0; letter-spacing:.52em; transform:scaleX(1.08)}
+        12%{opacity:1}
+        30%{opacity:1; letter-spacing:.42em; transform:scaleX(1)}
+        /* la scritta si assottiglia e SVANISCE completamente entro il 44% */
+        44%{opacity:0; letter-spacing:-.18em; transform:scaleX(.24)}
+        100%{opacity:0; letter-spacing:-.2em; transform:scaleX(.22)}
       }
       /* Monogramma "HQ" che si compone al posto della parola */
       #hq-splash .hq-mono{
@@ -60,9 +61,10 @@
         opacity:0; transform:scale(.62); animation:hqMono 2.5s cubic-bezier(.2,.7,.2,1) forwards;
       }
       @keyframes hqMono{
-        0%,50%{opacity:0; transform:scale(.62); filter:blur(9px)}
-        70%{opacity:1; transform:scale(1.05); filter:blur(0)}
-        86%{transform:scale(.99)}
+        /* resta nascosto finché la scritta non è SPARITA (46%), poi entra e "diventa" HQ */
+        0%,46%{opacity:0; transform:scale(.58); filter:blur(10px)}
+        66%{opacity:1; transform:scale(1.05); filter:blur(0)}
+        82%{transform:scale(.985)}
         100%{opacity:1; transform:scale(1)}
       }
       /* Logo immagine (foto cromata): se presente copre la "HQ" di testo (fallback). Stessa animazione. */
