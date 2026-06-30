@@ -2297,6 +2297,25 @@ export default function App() {
     if (isTouch) addCameraInputRef.current?.click();
   };
 
+  // Aggiungi dal CATALOGO con DETTAGLI (idea utente): apre il form già precompilato
+  // (categoria, marca, nome, SKU, foto ufficiale) così aggiungi taglia/costo/condizione.
+  const addFromCatalogDetailed = (item: any) => {
+    setDetectedReparto(''); setShowRepartoGrid(false);
+    setScanResult(null); setScanMarket(null); setPriceEstimate(null);
+    setCategory(item.category || AUTO_CATEGORY);
+    setBrand(item.brand || ''); setName(item.name || ''); setSku(item.sku || '');
+    setPrice(''); setQuantity('1'); setCondition('DS'); setSize('');
+    setPokeName(''); setPokeGraded('No'); setPokeGrade(''); setCardNumber(''); setCardGame('pokemon');
+    setWatchBrand(''); setWatchModel(''); setWatchCase(''); setWatchStrap(''); setWatchMaterial('');
+    setDynamicAttrs({});
+    setIsSharedPurchase(false); setProductShares([]);
+    setSelectedWarehouseId('');
+    setIsConsignment(false); setConsignmentName(''); setConsignmentPercent('');
+    setProductPhotos(item.image ? [item.image] : []); // foto ufficiale (URL StockX/Pokémon)
+    setCurrentView('magazzino'); // torna al magazzino: il form si apre sopra
+    setIsFormOpen(true);
+  };
+
   // Avvia l'OAuth StockX: chiede al server l'URL e ci reindirizza (login una tantum).
   const connectStockX = async () => {
     setStockxConnecting(true);
@@ -6672,6 +6691,7 @@ export default function App() {
             warehouses={warehouses.map(w => ({ id: w.id, name: w.name, parentId: w.parentId }))}
             baseWarehouseId={baseWarehouse?.id}
             onAdded={fetchProducts}
+            onAddDetailed={addFromCatalogDetailed}
           />
         )}
 
@@ -7923,7 +7943,7 @@ export default function App() {
                 <div className="grid grid-cols-5 gap-2 mb-3">
                   {productPhotos.map((photo, i) => (
                     <div key={i} className={`relative aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border ${i === 0 ? 'border-[var(--teal)] ring-1 ring-[var(--teal)]' : 'border-violet-500/30'}`}>
-                      <img src={photo} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
+                      <img src={/^https?:\/\//.test(photo) ? proxyImg(photo) : photo} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removePhoto(i)}
                         className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
                         <X size={10} />

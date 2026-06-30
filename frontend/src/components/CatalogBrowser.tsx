@@ -21,6 +21,7 @@ interface Props {
   warehouses: { id: string; name: string; parentId?: string | null }[];
   baseWarehouseId?: string;
   onAdded: () => void;
+  onAddDetailed?: (item: CatalogResult & { category: string }) => void; // apre il form con più info
 }
 
 const TYPES = [
@@ -49,7 +50,7 @@ function Thumb({ src, alt }: { src: string | null; alt: string }) {
     className="w-14 h-14 rounded-lg object-contain bg-white shrink-0" />;
 }
 
-export default function CatalogBrowser({ apiCall, showToast, categories, warehouses, baseWarehouseId, onAdded }: Props) {
+export default function CatalogBrowser({ apiCall, showToast, categories, warehouses, baseWarehouseId, onAdded, onAddDetailed }: Props) {
   const [query, setQuery] = useState('');
   const [type, setType] = useState('');
   const [results, setResults] = useState<CatalogResult[]>([]);
@@ -155,6 +156,13 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
     onAdded();
   };
 
+  // Aggiungi CON DETTAGLI: apre il form precompilato (taglia/costo/condizione) invece dell'add veloce.
+  const detailedAdd = (item: CatalogResult) => {
+    const customLabel = customTypes.find(c => c.toLowerCase() === type);
+    const category = customLabel || pickCategory(item.productType);
+    onAddDetailed?.({ ...item, category });
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-4">
@@ -212,6 +220,13 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
                   <p className="text-xs text-[var(--text-faint)]">{item.brand}</p>
                 </div>
               </div>
+              {onAddDetailed && (
+                <button onClick={() => detailedAdd(item)} disabled={isAdding}
+                  aria-label="Aggiungi con dettagli"
+                  className="px-2.5 h-8 rounded-lg flex items-center shrink-0 text-[11px] font-bold text-[var(--text-soft)] border border-[var(--border-2)] hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors">
+                  + Info
+                </button>
+              )}
               <button onClick={() => quickAdd(item)} disabled={isAdding}
                 aria-label="Aggiungi al magazzino"
                 className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
