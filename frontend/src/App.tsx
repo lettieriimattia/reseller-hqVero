@@ -4422,7 +4422,11 @@ export default function App() {
       {/* ========== HEADER ========== */}
       <header className="lux-underline sticky top-0 z-40 lg:static lg:z-30 lg:flex-none bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)]"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-3.5 flex items-center">
+        {/* Sfumatura sotto lo status bar iOS (notch/orario): tiene sempre leggibili l'orario e
+            il wordmark HQVault, evitando la sovrapposizione col contenuto su iPhone. Solo mobile. */}
+        <div className="lg:hidden pointer-events-none absolute top-0 left-0 right-0 bg-gradient-to-b from-[var(--bg)] via-[var(--bg)]/85 to-transparent"
+          style={{ height: 'calc(env(safe-area-inset-top) + 18px)' }} aria-hidden="true" />
+        <div className="relative w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-3.5 flex items-center">
           {/* Spacer sinistro: centra il logo SOLO su desktop. Su mobile il logo resta a sinistra. */}
           <div className="hidden lg:block flex-1" />
           {/* Wordmark HQVault — su mobile a sinistra, nascosto su desktop (è nella sidebar) */}
