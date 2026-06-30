@@ -266,7 +266,7 @@ async function seedDemoProducts(userId: string, warehouseId: string | null) {
     { category: 'Streetwear', brand: 'Supreme', name: 'Box Logo Hooded Sweatshirt Black FW23', size: 'L', condition: 'Nuovo', purchasePrice: 280, status: 'IN STOCK', marketPriceAvg: 420 },
     { category: 'Streetwear', brand: 'Stüssy', name: '8 Ball Tee White', size: 'M', condition: 'Nuovo', purchasePrice: 35, salePrice: 70, status: 'VENDUTO', platform: 'Wallapop', fees: 3, soldAt: daysAgo(2), marketPriceAvg: 65 },
     { category: 'Borse', brand: 'Louis Vuitton', name: 'Pochette Accessoires Monogram', size: 'Unica', condition: 'Usato', purchasePrice: 600, status: 'IN STOCK', marketPriceAvg: 760 },
-    { category: 'Carte', brand: 'Pokémon', name: 'Charizard ex 199/165 SV 151', size: 'PSA 10', condition: 'Nuovo', purchasePrice: 90, status: 'IN STOCK', marketPriceAvg: 140 },
+    { category: 'Pokemon', brand: 'Pokémon', name: 'Charizard ex 199/165 SV 151', size: 'PSA 10', condition: 'Nuovo', purchasePrice: 90, status: 'IN STOCK', marketPriceAvg: 140 },
     { category: 'Sneakers', brand: 'Nike', name: 'Travis Scott x Air Jordan 1 Low OG Olive', size: '42.5', condition: 'Nuovo', purchasePrice: 350, status: 'IN STOCK', trackingCarrier: 'BRT', trackingCode: 'DEMO123456IT', trackingDirection: 'INBOUND', trackingStatus: 'IN_TRANSIT', marketPriceAvg: 520 },
     { category: 'Elettronica', brand: 'Apple', name: 'iPhone 15 Pro 256GB Titanio Naturale', size: 'Unica', condition: 'Nuovo', purchasePrice: 950, salePrice: 1080, status: 'VENDUTO', platform: 'Subito', fees: 0, soldAt: daysAgo(20), marketPriceAvg: 1050 },
   ];

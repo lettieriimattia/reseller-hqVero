@@ -55,7 +55,7 @@ function adminOnly(req: AuthRequest, res: Response, next: any) {
 // Categorie del catalogo (filtro UI) → product_type StockX/KicksDB per la ricerca.
 const TYPE_TO_PRODUCTTYPE: Record<string, string> = {
   sneakers: 'sneakers', apparel: 'apparel', borse: 'handbag',
-  accessori: 'accessor', carte: 'trading', elettronica: 'electronic',
+  accessori: 'accessor', pokemon: 'trading', elettronica: 'electronic',
 };
 // Le 6 categorie "ufficiali". Tutto il resto è una categoria PERSONALIZZATA dell'utente
 // (scritta nel catalogo): per quelle cerchiamo i prodotti dal vivo usando il nome come query.
@@ -84,7 +84,7 @@ const SEEDS_BY_TYPE: Record<string, string[]> = {
     'Supreme beanie', 'Cartier glasses', 'Chrome Hearts', 'Gucci wallet', 'Dior wallet', 'Goyard wallet', 'Prada sunglasses',
     'Casio', 'Ray-Ban', 'Oakley', 'Apple Watch band', 'Nike socks', 'Gucci scarf', 'Burberry scarf', 'AirPods case',
     'Louis Vuitton cardholder', 'Gucci cap', 'Stussy cap', 'Carhartt beanie'],
-  carte: ['Charizard', 'Pikachu', 'Umbreon', 'Mewtwo', 'Rayquaza', 'Gengar', 'Eevee', 'Lugia', 'Mew', 'Snorlax',
+  pokemon: ['Charizard', 'Pikachu', 'Umbreon', 'Mewtwo', 'Rayquaza', 'Gengar', 'Eevee', 'Lugia', 'Mew', 'Snorlax',
     'Blastoise', 'Venusaur', 'Gardevoir', 'Lucario', 'Gyarados', 'Dragonite', 'Sylveon', 'Greninja', 'Espeon', 'Vaporeon',
     'Jolteon', 'Flareon', 'Glaceon', 'Leafeon', 'Tyranitar', 'Garchomp', 'Pidgeot', 'Alakazam', 'Machamp', 'Zard',
     'Giratina', 'Arceus', 'Darkrai', 'Lucario VSTAR', 'Pikachu VMAX', 'Charizard GX', 'Moonbreon'],
@@ -152,7 +152,7 @@ function normType(pt?: string | null): string | null {
   if (!s) return null;
   if (/sneaker|shoe|footwear/.test(s)) return 'sneakers';
   if (/handbag|\bbag\b|purse|tote/.test(s)) return 'borse';
-  if (/trading|card|collectib|pokemon|funko/.test(s)) return 'carte';
+  if (/trading|card|collectib|pokemon|funko/.test(s)) return 'pokemon';
   if (/electronic|console|gaming|tech/.test(s)) return 'elettronica';
   if (/apparel|cloth|shirt|hoodie|jacket|tee|pant|short|sweat/.test(s)) return 'apparel';
   if (/accessor|hat|cap|belt|wallet|sock|glasses|watch/.test(s)) return 'accessori';
@@ -168,7 +168,7 @@ function inferCategory(title: string, productType?: string | null): string | nul
   const both = pt + ' ' + t;
   // PORTACARTE / wallet / case NON sono carte da gioco: sono accessori (prima della check carte).
   if (/\bholder\b|wallet|portacart|porta ?carte|card ?case|cardholder/.test(t)) return 'accessori';
-  if (/trading|collectib|pokemon|funko|graded|\bpsa\b|\btcg\b|booster|\bcard\b/.test(both)) return 'carte';
+  if (/trading|collectib|pokemon|funko|graded|\bpsa\b|\btcg\b|booster|\bcard\b/.test(both)) return 'pokemon';
   if (/electronic|console|gaming/.test(pt) || /playstation|\bps5\b|\bxbox\b|nintendo|\bswitch\b|airpods|\biphone\b|macbook|\bipad\b|\bgpu\b/.test(t)) return 'elettronica';
   if (/handbag/.test(pt) || /\bbag\b|\btote\b|backpack|duffle|duffel|\bpurse\b|pouch|satchel|crossbody|keepall|speedy|neverfull|\bclutch\b/.test(t)) return 'borse';
   if (/\bbelt\b|wallet|card ?holder|\bcap\b|\bhat\b|beanie|sunglass|eyewear|\bsocks?\b|scarf|keychain|key ?ring|gloves|necklace|bracelet|earring|\bwatch\b/.test(t)) return 'accessori';

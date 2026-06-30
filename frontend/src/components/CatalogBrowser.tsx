@@ -28,7 +28,7 @@ const TYPES = [
   { id: 'sneakers', label: 'Sneakers' },
   { id: 'apparel', label: 'Abbigliamento' },
   { id: 'borse', label: 'Borse' },
-  { id: 'carte', label: 'Carte' },
+  { id: 'pokemon', label: 'Pokémon' },
   { id: 'accessori', label: 'Accessori' },
   { id: 'elettronica', label: 'Elettronica' },
 ];
@@ -94,7 +94,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
     if (productType === 'sneakers') return categories.find(c => /scarp|sneaker|shoe/i.test(c)) || categories[0] || 'Scarpe';
     if (productType === 'apparel') return categories.find(c => /vest|abbig|cloth|appar|maglia|felpa/i.test(c)) || categories[0] || 'Vestiti';
     if (productType === 'borse') return categories.find(c => /bors|bag|hand/i.test(c)) || categories[0] || 'Borse';
-    if (productType === 'carte') return categories.find(c => /cart|pokemon|card|tcg/i.test(c)) || categories[0] || 'Carte';
+    if (productType === 'pokemon') return categories.find(c => /pokemon|cart|card|tcg/i.test(c)) || categories[0] || 'Pokémon';
     if (productType === 'accessori') return categories.find(c => /access/i.test(c)) || categories[0] || 'Accessori';
     if (productType === 'elettronica') return categories.find(c => /elettr|electron|tech/i.test(c)) || categories[0] || 'Elettronica';
     return categories[0] || 'Generico';
