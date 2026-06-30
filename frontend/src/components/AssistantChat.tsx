@@ -242,7 +242,10 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       };
 
       startVoskWakeWord({ modelUrl, triggers, onCommand, onWake: () => showToast('🎙️ Dimmi pure…', 'ok') })
-        .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); setWakeLoading(false); })
+        .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); setWakeLoading(false);
+          // Ricorda che il mic è stato concesso: su iOS (niente Permissions API) serve per ri-armare
+          // da soli alle aperture successive, senza riconnettere a mano.
+          try { localStorage.setItem('hq_mic_granted', '1'); } catch { /* noop */ } })
         .catch((e: any) => {
           setWakeLoading(false); setWakeOn(false);
           const msg = 'Voce non avviata: ' + (e?.message || 'errore modello/mic');
@@ -262,8 +265,13 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       (async () => {
         try {
           const st: any = await (navigator as any).permissions?.query?.({ name: 'microphone' });
-          if (st && st.state === 'granted') begin();
-        } catch { /* Permissions API non supportata: nessun avvio automatico, nessun prompt */ }
+          if (st && st.state === 'granted') { begin(); return; }
+          if (st && st.state === 'denied') return; // negato: non insistere
+        } catch { /* Permissions API non supportata (iOS) */ }
+        // iOS / niente Permissions API: se il mic è GIÀ stato concesso in passato, ri-arma dopo il
+        // primo gesto. getUserMedia non ri-prompta se il permesso è persistito → niente tap manuale,
+        // niente prompt a ogni apertura per chi non l'ha mai concesso.
+        try { if (localStorage.getItem('hq_mic_granted') === '1') begin(); } catch { /* noop */ }
       })();
     }
 
