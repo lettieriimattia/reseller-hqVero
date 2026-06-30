@@ -88,13 +88,12 @@ router.post('/chat', async (req: AuthRequest, res: Response) => {
         data: { userId, userEmail, userName, type: 'domanda', message: fbMessage.slice(0, 4000), status: 'nuova' },
       }).then(() => { ticketCreated = true; }).catch((e) => logger.error('Errore creazione ticket supporto', { err: e.message }));
 
-      // Notifica admin: email (pannello) + Telegram (best-effort).
-      sendEmail({
-        to: ADMIN_EMAIL,
-        subject: `[HQ · SUPPORTO da operatore] ${userEmail}`,
-        text: `Richiesta passata dall'IA a un operatore.\nDa: ${userName || ''} <${userEmail}>\n\n${transcript}`,
-      }).catch(() => {});
-      sendTelegram(`🆘 <b>Supporto: richiesta operatore</b>\nDa: ${userName || ''} (${userEmail})\n\n${lastUser.slice(0, 300)}`).catch(() => {});
+      // Notifica admin: SOLO Telegram (le email Brevo sono poche). Email solo come fallback
+      // se Telegram non è configurato, per non perdere la richiesta.
+      const tgOk = await sendTelegram(`🆘 <b>Supporto: operatore richiesto</b>\nDa: ${userName || ''} (${userEmail})\n\n${transcript.slice(0, 1500)}`).catch(() => false);
+      if (!tgOk) {
+        sendEmail({ to: ADMIN_EMAIL, subject: `[HQ · SUPPORTO] ${userEmail}`, text: `Da: ${userName || ''} <${userEmail}>\n\n${transcript}` }).catch(() => {});
+      }
     }
 
     res.json({ reply, escalated: escalate, ticketCreated });

@@ -7,6 +7,7 @@ import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimit';
 import { sendEmail } from '../services/email.service';
+import { sendTelegram } from '../services/telegram';
 import { logger } from '../utils/logger';
 import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
@@ -39,12 +40,16 @@ router.post('/', async (req: AuthRequest, res: Response) => {
       data: { userId, userEmail, userName, type: kind, message: msg, status: 'nuova' },
     });
 
-    // Notifica all'admin (best-effort, non blocca la risposta)
-    sendEmail({
-      to: ADMIN_EMAIL,
-      subject: `[HQ · nuova richiesta · ${kind}] da ${userEmail}`,
-      text: `Tipo: ${kind}\nDa: ${userName || ''} <${userEmail}>\n\n${msg}`,
-    }).catch(() => {});
+    // Notifica all'admin: SOLO Telegram (le email Brevo sono poche). Email solo come fallback
+    // se Telegram non è configurato.
+    const tgOk = await sendTelegram(`📨 <b>Nuova richiesta · ${kind}</b>\nDa: ${userName || ''} (${userEmail})\n\n${msg.slice(0, 1500)}`).catch(() => false);
+    if (!tgOk) {
+      sendEmail({
+        to: ADMIN_EMAIL,
+        subject: `[HQ · nuova richiesta · ${kind}] da ${userEmail}`,
+        text: `Tipo: ${kind}\nDa: ${userName || ''} <${userEmail}>\n\n${msg}`,
+      }).catch(() => {});
+    }
 
     logger.info('Feedback ricevuto', { from: userEmail, kind });
     res.json({ ok: true });
