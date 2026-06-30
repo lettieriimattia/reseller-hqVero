@@ -22,8 +22,10 @@ const router = Router();
 // ===== ROTTE PUBBLICHE (per la landing page, senza login): vetrina + proxy immagini. =====
 router.get('/showcase', async (_req: AuthRequest, res: Response) => {
   try {
-    const items = await prisma.catalogItem.findMany({ where: { image: { not: null } }, orderBy: { createdAt: 'asc' }, take: 80 });
-    const picked = items.sort(() => Math.random() - 0.5).slice(0, 20);
+    // Mix CASUALE di tutte le categorie (ruota ad ogni caricamento della landing).
+    const picked = await prisma.$queryRaw<any[]>`
+      SELECT "image","name","brand" FROM "CatalogItem"
+      WHERE "image" IS NOT NULL ORDER BY RANDOM() LIMIT 20`;
     res.json(picked.map((i: any) => ({ image: i.image, name: i.name, brand: i.brand })));
   } catch { res.json([]); }
 });
@@ -434,6 +436,24 @@ router.get('/popular', async (req: AuthRequest, res: Response) => {
       seededAt.set(type, Date.now());
       await seedPopular(type);
       items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 90 });
+    }
+    // "Tutti" (nessuna categoria) / scroll dashboard: mix CASUALE e BILANCIATO di TUTTE le categorie,
+    // che RUOTA ad ogni apertura. Per categoria specifica resta l'ordine fisso.
+    if (!type) {
+      // Se in cache ci sono POCHE categorie (es. solo sneaker), semina tutte (una volta ogni 15 min).
+      const catsHave = await prisma.catalogItem.findMany({ where: { image: { not: null } }, distinct: ['productType'], select: { productType: true } });
+      const freshAll = (seededAt.get('') || 0) > Date.now() - 15 * 60_000;
+      if (catsHave.length < 4 && !freshAll && isCatalogConfigured()) {
+        seededAt.set('', Date.now());
+        await seedPopular('');
+      }
+      // Max ~10 per categoria (PARTITION), poi mescola → mix variegato e casuale ogni volta.
+      const rnd = await prisma.$queryRaw<any[]>`
+        SELECT "key","brand","name","sku","image","productType" FROM (
+          SELECT *, ROW_NUMBER() OVER (PARTITION BY "productType" ORDER BY RANDOM()) AS rn
+          FROM "CatalogItem" WHERE "image" IS NOT NULL
+        ) t WHERE rn <= 10 ORDER BY RANDOM() LIMIT 60`;
+      return res.json(rnd.map((r: any) => ({ key: r.key, brand: r.brand, name: r.name, sku: r.sku, image: r.image, productType: r.productType })));
     }
     // PRIORITÀ alle righe CON immagine (le vecchie senza foto vanno in fondo / si escludono).
     const withImg = items.filter(i => i.image);
