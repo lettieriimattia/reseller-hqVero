@@ -28,81 +28,76 @@
       }
       #hq-splash.hq-light { background: #e7e7ec; }
       #hq-splash.hq-hide  { opacity: 0; pointer-events: none; }
-      /* Ambiente: pavimento riflettente (il caveau in una stanza). */
-      /* Ambiente: pavimento riflettente (il caveau in una stanza). */
-      #hq-splash .vl-floor{ position:absolute; left:0; right:0; bottom:0; height:34%; background:linear-gradient(180deg, transparent, rgba(255,255,255,.03) 38%, rgba(0,0,0,.55)); border-top:1px solid rgba(255,255,255,.05); }
-      /* Caveau realistico che si CHIUDE: porta che sbatte, chiavistelli+volantino che girano. */
-      @keyframes vlSlam  { 0%{transform:scale(.88) rotate(-6deg);opacity:0} 24%{opacity:1} 62%{transform:scale(1.02) rotate(1.5deg)} 80%{transform:scale(.994) rotate(-.6deg)} 100%{transform:scale(1) rotate(0)} }
-      @keyframes vlWheel { 0%,26%{transform:rotate(0)} 82%,100%{transform:rotate(135deg)} }
-      @keyframes vlMech  { 0%,26%{transform:rotate(0)} 82%,100%{transform:rotate(-22deg)} }
-      @keyframes vlGlow  { 0%,60%{opacity:.06} 82%{opacity:.42} 100%{opacity:.26} }
-      #hq-splash .vl-wrap{ position:relative; width:min(360px,90vw); height:min(360px,90vw); display:flex; align-items:center; justify-content:center; }
-      #hq-splash .vl-glowdiv{ position:absolute; inset:6%; border-radius:50%; background:radial-gradient(circle,rgba(44,156,142,.8),transparent 60%); filter:blur(26px); animation:vlGlow 3.4s ease infinite; }
-      /* Video caveau: centrato, con ingresso scale-in premium. Su PC più piccolo (tanto nero
-         attorno = respiro/lusso); su mobile riempie di più. */
-      #hq-splash .vl-video{
-        position:absolute; inset:0; margin:auto; width:auto; height:auto;
-        max-width:min(330px,64vw); max-height:60vh; object-fit:contain; z-index:3; pointer-events:none;
-        opacity:0; transform:scale(.96);
-        transition:opacity .5s ease, transform .8s cubic-bezier(.2,.7,.2,1);
+      /* === Splash "HEADQUARTERS → HQ" cromato + barra di caricamento === */
+      #hq-splash .hq-stage{ position:relative; display:flex; flex-direction:column; align-items:center; gap:32px; }
+      #hq-splash .hq-logo-area{ position:relative; display:flex; align-items:center; justify-content:center; min-height:130px; width:min(560px,92vw); }
+      /* Cromo: gradiente argento + lucentezza, clip sul testo */
+      .hq-chrome{
+        background:linear-gradient(177deg,#fbfbfc 0%,#d2d5d9 24%,#83878f 48%,#34373d 58%,#9aa0a8 74%,#eceef0 100%);
+        -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
+        filter:drop-shadow(0 1px 0 rgba(255,255,255,.22)) drop-shadow(0 8px 22px rgba(0,0,0,.65));
       }
-      #hq-splash .vl-video.vl-on{ opacity:1; transform:scale(1); }
-      @media (min-width:1024px){ #hq-splash .vl-video{ max-width:280px; max-height:50vh; } }
-      /* Dissolvenza finale elegante: il caveau sfuma e si allontana di un soffio. */
-      #hq-splash.hq-hide .vl-video{ opacity:0; transform:scale(1.03); }
-      #hq-splash .vl-door{ transform-origin:200px 200px; animation:vlSlam 3.4s cubic-bezier(.3,.72,.2,1) infinite; }
-      #hq-splash .vl-wheel{ transform-origin:200px 200px; animation:vlWheel 3.4s cubic-bezier(.4,0,.2,1) infinite; }
-      #hq-splash .vl-mech{ transform-origin:200px 200px; animation:vlMech 3.4s cubic-bezier(.4,0,.2,1) infinite; }
-      @media (prefers-reduced-motion: reduce) { #hq-splash .vl-door,#hq-splash .vl-wheel,#hq-splash .vl-mech{ animation:none; } }
+      .hq-light .hq-chrome{
+        background:linear-gradient(177deg,#4a4d54,#15171b 52%,#54575e);
+        -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+      }
+      /* "HEADQUARTERS" che entra largo e si COMPRIME svanendo */
+      #hq-splash .hq-word{
+        font-weight:800; font-size:clamp(15px,4.4vw,30px); letter-spacing:.42em; text-indent:.42em;
+        white-space:nowrap; opacity:0; transform-origin:center; animation:hqWord 2.5s cubic-bezier(.7,0,.2,1) forwards;
+      }
+      @keyframes hqWord{
+        0%{opacity:0; letter-spacing:.52em; transform:scaleX(1.06)}
+        18%{opacity:1}
+        52%{opacity:1; letter-spacing:.42em; transform:scaleX(1)}
+        84%{opacity:0; letter-spacing:-.14em; transform:scaleX(.32)}
+        100%{opacity:0; letter-spacing:-.2em; transform:scaleX(.28)}
+      }
+      /* Monogramma "HQ" che si compone al posto della parola */
+      #hq-splash .hq-mono{
+        position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+        font-weight:900; font-size:clamp(70px,18vw,128px); letter-spacing:-.05em;
+        opacity:0; transform:scale(.62); animation:hqMono 2.5s cubic-bezier(.2,.7,.2,1) forwards;
+      }
+      @keyframes hqMono{
+        0%,50%{opacity:0; transform:scale(.62); filter:blur(9px)}
+        70%{opacity:1; transform:scale(1.05); filter:blur(0)}
+        86%{transform:scale(.99)}
+        100%{opacity:1; transform:scale(1)}
+      }
+      /* Logo immagine (foto cromata): se presente copre la "HQ" di testo (fallback). Stessa animazione. */
+      #hq-splash .hq-mono-img{
+        position:absolute; inset:0; margin:auto; height:150px; width:auto; max-width:88%; object-fit:contain;
+        opacity:0; transform:scale(.62); animation:hqMono 2.5s cubic-bezier(.2,.7,.2,1) forwards;
+        /* La foto ha sfondo nero: 'screen' lo fonde col nero dello splash → resta solo il cromo. */
+        mix-blend-mode:screen;
+      }
+      .hq-light #hq-splash .hq-mono-img, #hq-splash.hq-light .hq-mono-img{ mix-blend-mode:normal; }
+      @media (min-width:768px){ #hq-splash .hq-mono-img{ height:152px; } }
+      @media (prefers-reduced-motion: reduce){ #hq-splash .hq-mono-img{ animation:none; opacity:1; transform:scale(1); } }
+      /* Barra di caricamento */
+      #hq-splash .hq-bar{ width:min(190px,54vw); height:3px; border-radius:99px; background:rgba(255,255,255,.10); overflow:hidden; }
+      .hq-light #hq-splash .hq-bar, #hq-splash.hq-light .hq-bar{ background:rgba(0,0,0,.08); }
+      #hq-splash .hq-bar > i{ display:block; height:100%; width:0; border-radius:99px;
+        background:linear-gradient(90deg,#6a6e76,#eceef0,#6a6e76); animation:hqBar 2.5s ease-out forwards; }
+      @keyframes hqBar{ 0%{width:0} 68%{width:76%} 100%{width:100%} }
+      @media (prefers-reduced-motion: reduce){
+        #hq-splash .hq-word{ animation:none; opacity:0; }
+        #hq-splash .hq-mono{ animation:none; opacity:1; transform:scale(1); filter:none; }
+        #hq-splash .hq-bar>i{ animation:none; width:100%; }
+      }
     </style>
   </head>
   <body>
     <!-- Splash istantanea: tema coerente + auto-rimozione dopo ~2s -->
     <div id="hq-splash">
-      <div class="vl-floor"></div>
-      <div class="vl-wrap">
-        <div class="vl-glowdiv"></div>
-        <svg viewBox="0 0 400 400" width="100%" height="100%" style="position:relative;filter:drop-shadow(0 20px 56px rgba(0,0,0,.8))">
-          <defs>
-            <radialGradient id="vSteelS" cx="40%" cy="26%" r="82%"><stop offset="0%" stop-color="#56565f"/><stop offset="46%" stop-color="#26262d"/><stop offset="100%" stop-color="#090a0d"/></radialGradient>
-            <radialGradient id="vDoorS" cx="42%" cy="28%" r="84%"><stop offset="0%" stop-color="#50505b"/><stop offset="50%" stop-color="#212129"/><stop offset="100%" stop-color="#0d0d12"/></radialGradient>
-            <linearGradient id="vRimS" x1="0" y1="0" x2="0.9" y2="1"><stop offset="0%" stop-color="#8e8e9a"/><stop offset="48%" stop-color="#2c2c34"/><stop offset="100%" stop-color="#5e5e68"/></linearGradient>
-            <linearGradient id="vBarS" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a0a0ac"/><stop offset="44%" stop-color="#3a3a44"/><stop offset="56%" stop-color="#56565f"/><stop offset="100%" stop-color="#15151b"/></linearGradient>
-            <radialGradient id="vHubS" cx="40%" cy="34%" r="72%"><stop offset="0%" stop-color="#a0a0ac"/><stop offset="58%" stop-color="#3a3a44"/><stop offset="100%" stop-color="#131319"/></radialGradient>
-            <radialGradient id="vSpecS" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="rgba(255,255,255,.55)"/><stop offset="70%" stop-color="rgba(255,255,255,.06)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
-          </defs>
-          <rect x="8" y="8" width="384" height="384" rx="16" fill="url(#vSteelS)" stroke="#101015" stroke-width="3"/>
-          <rect x="26" y="26" width="348" height="348" rx="9" fill="none" stroke="#0b0b10" stroke-width="2"/>
-          <rect x="38" y="38" width="324" height="324" rx="6" fill="none" stroke="#6a6a74" stroke-width="7" stroke-dasharray="2.5 40" stroke-linecap="round"/>
-          <g fill="url(#vBarS)" stroke="#101015" stroke-width="2"><rect x="34" y="120" width="34" height="64" rx="11"/><rect x="34" y="216" width="34" height="64" rx="11"/><rect x="44" y="150" width="14" height="100" rx="6" fill="#23232a"/></g>
-          <g><rect x="320" y="172" width="44" height="56" rx="6" fill="url(#vBarS)" stroke="#101015" stroke-width="2"/><circle cx="342" cy="200" r="13" fill="url(#vHubS)" stroke="#101015" stroke-width="2"/><circle cx="342" cy="200" r="4" fill="#0c0c11"/></g>
-          <circle cx="200" cy="200" r="172" fill="none" stroke="#0c0c11" stroke-width="3"/>
-          <circle cx="200" cy="200" r="160" fill="none" stroke="url(#vRimS)" stroke-width="22"/>
-          <circle cx="200" cy="200" r="147" fill="none" stroke="#0c0c11" stroke-width="3"/>
-          <circle cx="200" cy="200" r="160" fill="none" stroke="#6c6c76" stroke-width="9.2" stroke-dasharray="2.5 33" stroke-linecap="round"/>
-          <circle cx="200" cy="200" r="138" fill="#000" opacity="0.45"/>
-          <g class="vl-door">
-            <circle cx="200" cy="200" r="134" fill="url(#vDoorS)" stroke="#3c3c46" stroke-width="4"/>
-            <g class="vl-mech">
-              <circle cx="200" cy="200" r="120" fill="none" stroke="#6a6a76" stroke-width="9" stroke-dasharray="3 13"/>
-              <circle cx="200" cy="200" r="104" fill="none" stroke="#3a3a44" stroke-width="2"/>
-              <circle cx="200" cy="200" r="92" fill="none" stroke="#6a6a76" stroke-width="7" stroke-dasharray="2 11"/>
-            </g>
-            <circle cx="200" cy="200" r="78" fill="none" stroke="#0e0e14" stroke-width="2"/>
-            <ellipse cx="150" cy="142" rx="78" ry="50" fill="url(#vSpecS)" opacity="0.5"/>
-            <g class="vl-wheel">
-              <g stroke="url(#vBarS)" stroke-width="22" stroke-linecap="round">
-                <line x1="200" y1="200" x2="350" y2="200"/><line x1="200" y1="200" x2="200" y2="350"/><line x1="200" y1="200" x2="50" y2="200"/><line x1="200" y1="200" x2="200" y2="50"/>
-              </g>
-              <g fill="url(#vHubS)" stroke="#101015" stroke-width="2"><circle cx="350" cy="200" r="14"/><circle cx="200" cy="350" r="14"/><circle cx="50" cy="200" r="14"/><circle cx="200" cy="50" r="14"/></g>
-              <g stroke="url(#vBarS)" stroke-width="9" stroke-linecap="round"><line x1="200" y1="200" x2="259" y2="224"/><line x1="200" y1="200" x2="224" y2="259"/><line x1="200" y1="200" x2="176" y2="259"/><line x1="200" y1="200" x2="141" y2="224"/><line x1="200" y1="200" x2="141" y2="176"/><line x1="200" y1="200" x2="176" y2="141"/><line x1="200" y1="200" x2="224" y2="141"/><line x1="200" y1="200" x2="259" y2="176"/></g>
-              <circle cx="200" cy="200" r="64" fill="none" stroke="url(#vRimS)" stroke-width="6"/>
-              <circle cx="200" cy="200" r="34" fill="url(#vHubS)" stroke="#101015" stroke-width="3"/>
-              <circle cx="200" cy="200" r="26" fill="none" stroke="#7a7a86" stroke-width="1.5"/>
-              <circle cx="200" cy="200" r="11" fill="#0b0b10"/>
-            </g>
-          </g>
-        </svg>
+      <div class="hq-stage">
+        <div class="hq-logo-area">
+          <div class="hq-word hq-chrome">HEADQUARTERS</div>
+          <div class="hq-mono hq-chrome">HQ</div>
+          <img class="hq-mono-img" src="/logo.png" alt="HQVault" onerror="this.style.display='none'" />
+        </div>
+        <div class="hq-bar"><i></i></div>
       </div>
     </div>
     <script>
