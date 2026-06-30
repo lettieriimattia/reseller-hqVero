@@ -40,7 +40,7 @@ export async function pokemonSearch(query: string, limit = 12): Promise<CatalogC
         styleId: c?.id ? String(c.id) : (c?.number ? String(c.number) : null),
         productId: c?.id ? String(c.id) : null,
         image: c?.images?.small || c?.images?.large || null,
-        productType: 'carte',
+        productType: 'pokemon',
       } as CatalogCandidate;
     }).filter(c => c.title);
   } catch (e: any) {

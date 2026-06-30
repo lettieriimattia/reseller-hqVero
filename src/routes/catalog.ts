@@ -152,7 +152,7 @@ function normType(pt?: string | null): string | null {
   if (!s) return null;
   if (/sneaker|shoe|footwear/.test(s)) return 'sneakers';
   if (/handbag|\bbag\b|purse|tote/.test(s)) return 'borse';
-  if (/trading|card|collectib|pokemon|funko/.test(s)) return 'pokemon';
+  if (/trading|card|carte|collectib|pokemon|funko/.test(s)) return 'pokemon';
   if (/electronic|console|gaming|tech/.test(s)) return 'elettronica';
   if (/apparel|cloth|shirt|hoodie|jacket|tee|pant|short|sweat/.test(s)) return 'apparel';
   if (/accessor|hat|cap|belt|wallet|sock|glasses|watch/.test(s)) return 'accessori';

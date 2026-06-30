@@ -75,6 +75,31 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
   };
 
   const updRow = (id: string, patch: Partial<Row>) => setRows(prev => prev.map(r => (r.id === id ? { ...r, ...patch } : r)));
+
+  // Ricerca foto ufficiale per NOME: al blur / quando cambio il nome (es. l'IA ha sbagliato a
+  // leggere la carta), prende il nome che ho scritto, cerca nel catalogo giusto e mette la foto.
+  const lookedUpRef = useRef<Record<string, string>>({});
+  const typeForCategory = (cat: string): string => {
+    const c = (cat || '').toLowerCase();
+    if (/pokemon|carte|carta|tcg/.test(c)) return 'pokemon';
+    if (/scarp|sneaker|shoe/.test(c)) return 'sneakers';
+    if (/vest|abbig|cloth|appar|felp|magl/.test(c)) return 'apparel';
+    if (/bors|bag|hand/.test(c)) return 'borse';
+    if (/access/.test(c)) return 'accessori';
+    if (/elettr|electron|tech/.test(c)) return 'elettronica';
+    return '';
+  };
+  const lookupPhoto = async (id: string, name: string) => {
+    const q = (name || '').trim();
+    if (q.length < 2 || lookedUpRef.current[id] === q) return; // niente doppioni sullo stesso nome
+    lookedUpRef.current[id] = q;
+    try {
+      const t = typeForCategory(category);
+      const { ok, data } = await apiCall<any[]>(`/api/catalog/search?q=${encodeURIComponent(q)}&type=${encodeURIComponent(t)}`);
+      const hit = ok && Array.isArray(data) ? data.find((d: any) => d?.image) : null;
+      if (hit?.image) updRow(id, { photo: hit.image });
+    } catch { /* noop */ }
+  };
   const addRow = () => setRows(prev => { const next = [...prev, newRow()]; setQty(String(next.length)); return next; });
   const removeRow = (id: string) => setRows(prev => { const next = prev.filter(r => r.id !== id); setQty(String(next.length)); return next; });
 
@@ -196,7 +221,7 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
               <div className="w-10 h-10 rounded-lg bg-white overflow-hidden shrink-0 flex items-center justify-center border border-[var(--border)]">
                 {r.photo ? <img src={/^https?:\/\//i.test(r.photo) ? `/api/catalog/img?u=${encodeURIComponent(r.photo)}` : r.photo} alt="" className="w-full h-full object-contain" /> : null}
               </div>
-              <input value={r.name} onChange={e => updRow(r.id, { name: e.target.value })} placeholder="Nome"
+              <input value={r.name} onChange={e => updRow(r.id, { name: e.target.value })} onBlur={() => lookupPhoto(r.id, r.name)} placeholder="Nome"
                 className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2.5 py-2 text-xs outline-none focus:border-[#6b54c6]" />
               <input value={r.size} onChange={e => updRow(r.id, { size: e.target.value })} placeholder="Taglia / codice"
                 className="w-24 shrink-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-2 text-xs outline-none focus:border-[#6b54c6]" />
