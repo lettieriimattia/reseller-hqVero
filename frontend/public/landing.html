@@ -81,49 +81,62 @@
     .btn { display: inline-block; padding: 14px 26px; border-radius: 12px; font-weight: 800; font-size: 15px; transition: transform .15s, box-shadow .2s, background .2s; }
     .btn-primary { background: var(--teal); color: #fff; box-shadow: 0 8px 24px -8px rgba(13,148,136,.5); }
     .btn-primary:hover { transform: translateY(-2px); background: var(--teal-d); }
-    .btn-ghost { border: 1.5px solid var(--line); color: var(--ink); }
-    .btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
+    .btn-ghost { border: 1.5px solid rgba(255,255,255,.22); color: #fff; }
+    .btn-ghost:hover { border-color: #fff; background: rgba(255,255,255,.06); }
 
-    header { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+    header { position: sticky; top: 0; z-index: 50; background: rgba(8,9,11,.72); backdrop-filter: blur(14px) saturate(160%); border-bottom: 1px solid rgba(255,255,255,.07); }
     .nav { display: flex; align-items: center; justify-content: space-between; height: 66px; }
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 19px; letter-spacing: -.02em; color: var(--ink); }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 19px; letter-spacing: -.02em; color: #f4f6f8; }
     .brand img { width: 34px; height: 34px; border-radius: 9px; }
-    .brand b { color: var(--teal); }
-    .nav-links { display: flex; align-items: center; gap: 24px; font-size: 14.5px; color: var(--muted); font-weight: 600; }
-    .nav-links a:hover { color: var(--ink); }
+    .brand b { color: #c2c9d2; }
+    .nav-links { display: flex; align-items: center; gap: 24px; font-size: 14.5px; color: #9aa2ab; font-weight: 600; }
+    .nav-links a:hover { color: #fff; }
     @media (max-width: 760px) { .nav-links a:not(.btn) { display: none; } }
 
-    .hero { text-align: center; padding: 76px 0 40px; position: relative; overflow: hidden; }
-    .hero > .wrap, .hero > .ticker { position: relative; z-index: 1; }
-    /* Aurora che SCORRE dietro l'hero: blob morbidi che fluttuano (vivo, memorabile, leggero). */
-    .aurora { position: absolute; inset: -25% -10% -10% -10%; z-index: 0; pointer-events: none; filter: blur(64px); opacity: .6; }
-    .aurora span { position: absolute; border-radius: 50%; mix-blend-mode: multiply; animation: drift 20s ease-in-out infinite; }
-    .aurora .a1 { width: 46vw; max-width: 540px; aspect-ratio: 1; background: #5fd6c8; top: -8%; left: 2%; }
-    .aurora .a2 { width: 42vw; max-width: 500px; aspect-ratio: 1; background: #aec4ff; top: 6%; right: 4%; animation-delay: -7s; }
-    .aurora .a3 { width: 38vw; max-width: 460px; aspect-ratio: 1; background: #d7c6ff; bottom: -14%; left: 32%; animation-delay: -13s; }
-    @keyframes drift {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      33% { transform: translate(4vw, 3vh) scale(1.14); }
-      66% { transform: translate(-3vw, 2vh) scale(.92); }
-    }
-    @media (prefers-reduced-motion: reduce) { .aurora span { animation: none; } }
-    /* Entrata a cascata del contenuto hero (movimento all'apertura) */
-    .hero .wrap > * { animation: heroUp .7s cubic-bezier(.2,.7,.2,1) both; }
-    .hero .wrap > *:nth-child(2) { animation-delay: .07s; }
-    .hero .wrap > *:nth-child(3) { animation-delay: .14s; }
-    .hero .wrap > *:nth-child(4) { animation-delay: .22s; }
+    /* ===== HERO scuro "Apple": titolo cromato gigante + bloom + riflesso + tendina ===== */
+    .hero { text-align: center; padding: 94px 0 56px; position: relative; overflow: hidden; color: #fff;
+      background: radial-gradient(120% 90% at 50% -8%, #15171c 0%, #0a0b0d 54%, #07080a 100%); }
+    .hero > .wrap, .hero > .ticker { position: relative; z-index: 2; }
+    /* Bloom di luce dietro il titolo (il glow stile Apple) */
+    .hero-bloom { position: absolute; z-index: 1; top: 7%; left: 50%; transform: translateX(-50%); width: min(700px, 82vw); height: 360px; pointer-events: none;
+      background: radial-gradient(closest-side, rgba(185,208,255,.42), rgba(120,160,255,.10) 48%, transparent 72%); filter: blur(20px); }
+    /* Entrata a cascata del contenuto hero */
+    .hero .wrap > * { animation: heroUp .8s cubic-bezier(.2,.7,.2,1) both; }
+    .hero .wrap > *:nth-child(2) { animation-delay: .08s; }
+    .hero .wrap > *:nth-child(3) { animation-delay: .16s; }
+    .hero .wrap > *:nth-child(4) { animation-delay: .24s; }
     .hero .wrap > *:nth-child(5) { animation-delay: .30s; }
-    .hero .wrap > *:nth-child(6) { animation-delay: .36s; }
-    @keyframes heroUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    @keyframes heroUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
     @media (prefers-reduced-motion: reduce) { .hero .wrap > * { animation: none; } }
-    .hero img.logo { width: 84px; height: 84px; border-radius: 20px; margin: 0 auto 24px; box-shadow: 0 18px 50px -18px rgba(15,23,42,.35); }
-    .pill { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: var(--teal-d); background: #e6f5f3; padding: 7px 15px; border-radius: 999px; margin-bottom: 22px; }
-    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
-    h1 { font-size: clamp(32px, 6.2vw, 56px); line-height: 1.06; font-weight: 900; letter-spacing: -.035em; color: var(--ink); max-width: 800px; margin: 0 auto 20px; }
-    h1 .hl { background: linear-gradient(120deg, var(--teal), #14b8a6); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .sub { font-size: clamp(17px, 2.4vw, 21px); color: var(--muted); max-width: 620px; margin: 0 auto 30px; }
+    .pill { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: #c9d0d8; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10); padding: 7px 15px; border-radius: 999px; margin-bottom: 26px; }
+    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #5fb9ae; }
+    /* Titolo cromato gigante */
+    .brand-title { position: relative; display: inline-block; font-size: clamp(60px, 15vw, 168px); line-height: .95; font-weight: 900; letter-spacing: -.045em; margin: 0 auto 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #d4d8dd 36%, #868b92 52%, #eceef1 64%, #b6bbc2 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 1px rgba(0,0,0,.4)); }
+    /* Riflesso cromato che attraversa il titolo (premium) */
+    .brand-title::after { content: attr(data-text); position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,.92) 50%, transparent 62%);
+      -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+      background-size: 250% 100%; animation: chromeSweep 5s ease-in-out infinite; }
+    @keyframes chromeSweep { 0%, 22% { background-position: 170% 0; } 60%, 100% { background-position: -70% 0; } }
+    @media (prefers-reduced-motion: reduce) { .brand-title::after { animation: none; opacity: 0; } }
+    .sub { font-size: clamp(17px, 2.4vw, 22px); color: #aeb6c0; max-width: 600px; margin: 0 auto 30px; line-height: 1.5; }
+    .sub b { color: #e9ecef; font-weight: 700; }
+    /* Tendina: due pannelli che si aprono e rivelano l'hero (effetto scenico) */
+    .curtain { position: fixed; left: 0; right: 0; height: 50vh; z-index: 60; background: #050608; pointer-events: none; }
+    .curtain.top { top: 0; animation: curtainUp 1.05s .45s cubic-bezier(.76,0,.24,1) forwards; }
+    .curtain.bot { bottom: 0; animation: curtainDown 1.05s .45s cubic-bezier(.76,0,.24,1) forwards; }
+    .curtain-seam { position: fixed; left: 0; right: 0; top: 50vh; height: 2px; z-index: 61; pointer-events: none; transform: translateY(-1px);
+      background: linear-gradient(90deg, transparent, rgba(200,210,222,.9) 35%, #fff 50%, rgba(200,210,222,.9) 65%, transparent);
+      box-shadow: 0 0 26px rgba(185,208,255,.85); animation: seamFade 1.5s ease forwards; }
+    @keyframes curtainUp { to { transform: translateY(-100%); } }
+    @keyframes curtainDown { to { transform: translateY(100%); } }
+    @keyframes seamFade { 0%, 26% { opacity: 1; } 100% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .curtain, .curtain-seam { display: none; } }
     .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
-    .micro { margin-top: 16px; font-size: 13.5px; color: var(--muted); }
+    .micro { margin-top: 16px; font-size: 13.5px; color: #7e8893; }
 
     /* Carosello foto reali */
     .ticker { margin-top: 52px; overflow: hidden; position: relative; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
@@ -243,13 +256,17 @@
   </header>
 
   <main>
+    <!-- TENDINA: due pannelli che si aprono rivelando l'hero (effetto scenico all'apertura) -->
+    <div class="curtain top" aria-hidden="true"></div>
+    <div class="curtain bot" aria-hidden="true"></div>
+    <div class="curtain-seam" aria-hidden="true"></div>
+
     <section class="hero">
-      <div class="aurora" aria-hidden="true"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+      <div class="hero-bloom" aria-hidden="true"></div>
       <div class="wrap">
-        <img src="/logo.png" alt="HQVault — app di gestione per reseller" width="84" height="84" class="logo" fetchpriority="high" />
         <span class="pill"><span class="dot"></span> Fatto da reseller, per reseller</span>
-        <h1>Il software gestionale per <span class="hl">reseller</span> che manda l'Excel in pensione.</h1>
-        <p class="sub">HQVault è l'app per la gestione del reselling di sneaker e streetwear: tieni in ordine l'inventario, traccia vendite e profitti, aggiungi un prodotto con una foto. Anche a voce.</p>
+        <h1 class="brand-title" data-text="HQVault">HQVault</h1>
+        <p class="sub">Il <b>software gestionale premium per reseller</b> di sneaker e streetwear: inventario, vendite e profitti in un'unica app. Niente più Excel.</p>
         <div class="cta-row">
           <a href="/app" class="btn btn-primary">Inizia gratis</a>
           <a href="#funzioni" class="btn btn-ghost">Guarda come funziona</a>
