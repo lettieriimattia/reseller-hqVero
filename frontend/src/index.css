@@ -276,6 +276,54 @@
 .cactus .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .cactus .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
 
+/* ===== TEMA "CHROME" — cromo/argento del logo: charcoal + platino + acciaio (PREMIUM, admin) =====
+   Monocromo metallico freddo. Accento = argento platino (pulsanti cromati). Dati in steel-blue
+   tenue, negativi in clay smorzato. Sobrio, professionale, abbinato al logo cromato. */
+.chrome {
+  --accent: #c2c9d2;        /* argento platino (cromo) */
+  --accent-hover: #d6dce3;
+  --gold: #c2c9d2;
+  --gold-soft: rgba(194,201,210,0.12);
+  --gold-line: rgba(194,201,210,0.34);
+  --bg: #0a0b0d;            /* charcoal-black freddo */
+  --surface: #15171b;       /* gunmetal */
+  --surface-2: #1d2025;     /* inset / elevated */
+  --border: rgba(180,195,210,0.09);   /* hairline acciaio */
+  --border-2: rgba(180,195,210,0.15);
+  --border-3: rgba(180,195,210,0.24);
+  --text: #e9ecef;          /* platino brillante */
+  --text-soft: #8a929c;     /* grigio acciaio */
+  --text-muted: #b4bcc4;
+  --text-faint: #565d66;
+  --fill: rgba(180,195,210,0.06);
+  --fill-2: rgba(180,195,210,0.10);
+  --fill-3: rgba(180,195,210,0.17);
+  --bg-blur: rgba(10,11,13,0.95);
+  --bg-overlay: rgba(10,11,13,0.72);
+  --surface-blur: rgba(21,23,27,0.95);
+  /* Cockpit: valore = acciaio freddo-azzurro, negativi = clay desaturato, secondario grigio acciaio. */
+  --teal: #8aa6be;          /* steel-blue (dati / valore) */
+  --teal-soft: rgba(138,166,190,0.12);
+  --teal-line: rgba(138,166,190,0.40);
+  --rust: #b87159;          /* clay desaturato (negativi) */
+  --rust-soft: rgba(184,113,89,0.13);
+  --beige: #9aa2ab;
+}
+.chrome .sys-label { letter-spacing: 0.2em; }
+.chrome .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #0c0e11 !important; }
+.chrome .text-\[\#6b54c6\]   { color: var(--accent) !important; }
+.chrome .border-\[\#6b54c6\] { border-color: var(--accent) !important; }
+.chrome .text-green-400, .chrome .text-emerald-400 { color: #6e9e8a !important; }  /* sage freddo */
+.chrome .text-green-300     { color: #87b3a0 !important; }
+.chrome .text-red-400, .chrome .text-red-300       { color: #b87159 !important; }  /* clay */
+.chrome .text-yellow-400    { color: #c2a15a !important; }                          /* ottone smorzato */
+/* Velatura metallica fredda dall'alto + filo acciaio (look "scolpito nel metallo"). */
+.chrome .bg-\[var\(--surface\)\] {
+  background-image: linear-gradient(180deg, rgba(180,195,210,0.035), rgba(180,195,210,0) 46%);
+}
+.chrome .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.chrome .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
+
 /* ===== TEMA CHIARO: colori semantici accentati =====
    Le tinte -400 di Tailwind sono troppo chiare su sfondo bianco.
    Le scuriamo solo in light mode (override più specifico). */
