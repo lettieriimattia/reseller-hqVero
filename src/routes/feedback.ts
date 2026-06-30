@@ -6,12 +6,10 @@
 import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimit';
-import { sendEmail } from '../services/email.service';
 import { sendTelegram } from '../services/telegram';
 import { logger } from '../utils/logger';
 import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
-import { ADMIN_EMAIL } from './admin';
 
 const router = Router();
 router.use(authenticate);
@@ -40,16 +38,10 @@ router.post('/', async (req: AuthRequest, res: Response) => {
       data: { userId, userEmail, userName, type: kind, message: msg, status: 'nuova' },
     });
 
-    // Notifica all'admin: SOLO Telegram (le email Brevo sono poche). Email solo come fallback
-    // se Telegram non è configurato.
-    const tgOk = await sendTelegram(`📨 <b>Nuova richiesta · ${kind}</b>\nDa: ${userName || ''} (${userEmail})\n\n${msg.slice(0, 1500)}`).catch(() => false);
-    if (!tgOk) {
-      sendEmail({
-        to: ADMIN_EMAIL,
-        subject: `[HQ · nuova richiesta · ${kind}] da ${userEmail}`,
-        text: `Tipo: ${kind}\nDa: ${userName || ''} <${userEmail}>\n\n${msg}`,
-      }).catch(() => {});
-    }
+    // Notifica all'admin SOLO via Telegram. Rispondendo a QUESTO messaggio su Telegram, la
+    // risposta viene inviata via email al cliente (vedi telegram-webhook.ts). La richiesta
+    // resta comunque salvata nel pannello admin (Feedback).
+    sendTelegram(`📨 <b>Nuova richiesta · ${kind}</b>\nDa: ${userName || ''} ✉️ ${userEmail}\n\n${msg.slice(0, 1500)}\n\n↩️ <i>Rispondi a questo messaggio per inviare la risposta via email al cliente.</i>`).catch(() => {});
 
     logger.info('Feedback ricevuto', { from: userEmail, kind });
     res.json({ ok: true });

@@ -10,9 +10,7 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimit';
 import { prisma } from '../lib/prisma';
 import { groqAssistantChat, isGroqConfigured } from '../services/ai.service';
-import { sendEmail } from '../services/email.service';
 import { sendTelegram } from '../services/telegram';
-import { ADMIN_EMAIL } from '../config/admins';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -88,12 +86,9 @@ router.post('/chat', async (req: AuthRequest, res: Response) => {
         data: { userId, userEmail, userName, type: 'domanda', message: fbMessage.slice(0, 4000), status: 'nuova' },
       }).then(() => { ticketCreated = true; }).catch((e) => logger.error('Errore creazione ticket supporto', { err: e.message }));
 
-      // Notifica admin: SOLO Telegram (le email Brevo sono poche). Email solo come fallback
-      // se Telegram non è configurato, per non perdere la richiesta.
-      const tgOk = await sendTelegram(`🆘 <b>Supporto: operatore richiesto</b>\nDa: ${userName || ''} (${userEmail})\n\n${transcript.slice(0, 1500)}`).catch(() => false);
-      if (!tgOk) {
-        sendEmail({ to: ADMIN_EMAIL, subject: `[HQ · SUPPORTO] ${userEmail}`, text: `Da: ${userName || ''} <${userEmail}>\n\n${transcript}` }).catch(() => {});
-      }
+      // Notifica admin SOLO via Telegram (niente email). Rispondendo a QUESTO messaggio su
+      // Telegram, la risposta arriva via email al cliente (telegram-webhook.ts).
+      sendTelegram(`🆘 <b>Supporto: operatore richiesto</b>\nDa: ${userName || ''} ✉️ ${userEmail}\n\n${transcript.slice(0, 1500)}\n\n↩️ <i>Rispondi a questo messaggio per inviare la risposta via email al cliente.</i>`).catch(() => {});
     }
 
     res.json({ reply, escalated: escalate, ticketCreated });

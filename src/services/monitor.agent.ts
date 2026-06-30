@@ -14,15 +14,11 @@
 
 import cron from 'node-cron';
 import { prisma } from '../lib/prisma';
-import { sendEmail } from './email.service';
 import { groqAssistantChat, isGroqConfigured } from './ai.service';
 import { sendTelegram, isTelegramConfigured } from './telegram';
 import { logger } from '../utils/logger';
 
-const REPORT_EMAIL = process.env.MONITOR_REPORT_EMAIL || '';
-
 function telegramConfigured() { return isTelegramConfigured(); }
-function destinationConfigured() { return telegramConfigured() || !!REPORT_EMAIL; }
 
 interface Stats {
   newUsers24h: number; newUsersPrev: number; totalUsers: number; payingUsers: number;
@@ -110,22 +106,17 @@ async function buildReport(): Promise<{ subject: string; tg: string; html: strin
 
 export async function runDailyReport(): Promise<void> {
   try {
-    const { subject, tg, html } = await buildReport();
-    let sent = false;
-    if (telegramConfigured()) sent = await sendTelegram(tg);
-    if (!sent && REPORT_EMAIL) {
-      const r = await sendEmail({ to: REPORT_EMAIL, subject, html, text: tg.replace(/<[^>]+>/g, '') });
-      sent = r.ok;
-    }
-    logger.info(`Report giornaliero ${sent ? 'inviato' : 'NON inviato (destinazione non configurata?)'}`);
+    const { tg } = await buildReport();
+    const sent = await sendTelegram(tg);
+    logger.info(`Report giornaliero ${sent ? 'inviato su Telegram' : 'NON inviato (Telegram non configurato?)'}`);
   } catch (e: any) {
     logger.error('Errore report giornaliero', { err: e.message });
   }
 }
 
 export function startMonitorAgent(): void {
-  if (!destinationConfigured()) {
-    logger.info('📊 Agente report giornaliero IN ATTESA: imposta TELEGRAM_BOT_TOKEN+TELEGRAM_CHAT_ID (o MONITOR_REPORT_EMAIL) per attivarlo.');
+  if (!telegramConfigured()) {
+    logger.info('📊 Agente report giornaliero IN ATTESA: imposta TELEGRAM_BOT_TOKEN+TELEGRAM_CHAT_ID per attivarlo.');
     return;
   }
   const hour = Math.min(Math.max(Number(process.env.MONITOR_HOUR || 8), 0), 23);

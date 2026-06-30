@@ -30,6 +30,8 @@ import shippingRoutes from './src/routes/shipping';
 import uploadRoutes from './src/routes/upload';
 import feedbackRoutes from './src/routes/feedback';
 import supportRoutes from './src/routes/support';
+import telegramWebhookRoutes from './src/routes/telegram-webhook';
+import { setTelegramWebhook } from './src/services/telegram';
 import pushRoutes from './src/routes/push';
 import stockxRoutes from './src/routes/stockx';
 import plansRoutes from './src/routes/plans';
@@ -256,6 +258,9 @@ app.post('/api/test-email', async (req, res) => {
 // ==========================================
 // ROUTES
 // ==========================================
+// Webhook Telegram: niente auth (lo chiama Telegram). PRIMA di teamRoutes('/') che applica
+// authenticate a ogni path → altrimenti la chiamata di Telegram verrebbe respinta con 401.
+app.use('/api/telegram', telegramWebhookRoutes);
 app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
 app.use('/team', teamRoutes);     // monta GET / e PUT /percentage
@@ -403,8 +408,11 @@ serverInstance.listen(PORT, () => {
   void startEmailJobs;
 
   // Agente IA "report giornaliero": una query/giorno (non tiene sveglio Neon). Si attiva solo
-  // se è configurata una destinazione (Telegram o email) — vedi monitor.agent.ts.
+  // se Telegram è configurato — vedi monitor.agent.ts.
   startMonitorAgent();
+
+  // Registra il webhook Telegram (per ricevere le RISPOSTE dell'admin → email al cliente).
+  setTelegramWebhook();
 
   // ──────────────────────────────────────────────────────────────────────────
   // JOB IN BACKGROUND CHE INTERROGANO IL DB
