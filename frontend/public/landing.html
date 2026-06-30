@@ -66,6 +66,7 @@
   }
   </script>
 
+  <script>document.documentElement.classList.add('js');</script>
   <style>
     :root {
       --bg: #ffffff; --soft-bg: #f6f7f9; --card: #ffffff; --line: #e7e9ee;
@@ -111,6 +112,42 @@
     .card .ph { width: 100%; height: 126px; border-radius: 10px; background: var(--soft-bg); overflow: hidden; display: flex; align-items: center; justify-content: center; }
     .card .ph img { width: 100%; height: 100%; object-fit: contain; }
     .card .nm { font-size: 11.5px; color: var(--muted); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+
+    /* Rivelazione allo scroll (più interattiva). Solo con JS → niente contenuto nascosto senza JS. */
+    .reveal { transition: opacity .7s ease, transform .7s ease; }
+    html.js .reveal { opacity: 0; transform: translateY(28px); }
+    html.js .reveal.in { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) { html.js .reveal { opacity: 1 !important; transform: none !important; } }
+
+    /* Mockup browser: anteprima dell'app (interfaccia HQ ricreata + foto reali) */
+    .browser { max-width: 980px; margin: 46px auto 0; border-radius: 16px; overflow: hidden; background: #0d0f12; border: 1px solid #1c2026; box-shadow: 0 44px 100px -44px rgba(15,23,42,.55), 0 0 0 1px rgba(15,23,42,.04); transition: transform .3s ease; }
+    .browser:hover { transform: translateY(-4px); }
+    .bw-bar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; background: #15181d; border-bottom: 1px solid #1c2026; }
+    .bw-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .bw-url { margin: 0 auto; font-size: 12px; color: #6b7480; background: #0d0f12; padding: 5px 16px; border-radius: 8px; }
+    .bw-body { display: flex; min-height: 360px; color: #e8eaec; text-align: left; }
+    .bw-side { width: 56px; background: #0a0b0d; border-right: 1px solid #1a1d22; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 18px 0; }
+    .bw-logo { font-size: 14px; font-weight: 900; } .bw-logo b { color: #9aa6b2; }
+    .bw-nav { color: #3f454c; font-size: 17px; } .bw-nav.on { color: #c2c9d2; }
+    .bw-main { flex: 1; padding: 20px 22px; min-width: 0; }
+    .bw-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .bw-h1 { font-size: 21px; font-weight: 800; letter-spacing: -.02em; color: #f4f6f8; }
+    .bw-sub { font-size: 10px; color: #6b7480; text-transform: uppercase; letter-spacing: .12em; margin-top: 3px; }
+    .bw-add { font-size: 12px; font-weight: 800; color: #0c0e11; background: #c2c9d2; padding: 8px 14px; border-radius: 9px; }
+    .bw-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+    .bw-kpi { background: #15181d; border: 1px solid #1c2026; border-radius: 12px; padding: 13px; }
+    .bw-kpi span { font-size: 8px; letter-spacing: .14em; color: #6b7480; }
+    .bw-kpi b { display: block; font-size: 19px; font-weight: 900; margin-top: 6px; letter-spacing: -.02em; }
+    .bw-kpi b.teal, .bw-kpi em { color: #5fb9ae; font-style: normal; } .bw-kpi i { font-size: 9px; color: #6b7480; font-style: normal; }
+    .bw-gridhead { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #6b7480; margin-bottom: 11px; }
+    .bw-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .bw-card { background: #15181d; border: 1px solid #1c2026; border-radius: 10px; padding: 8px; transition: border-color .2s; }
+    .bw-card:hover { border-color: #2c333b; }
+    .bw-card .ph { height: 76px; background: #fff; border-radius: 7px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .bw-card .ph img { width: 100%; height: 100%; object-fit: contain; }
+    .bw-card .nm { font-size: 9px; color: #8a9298; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bw-card .pr { font-size: 10px; font-weight: 800; color: #c2c9d2; margin-top: 1px; }
+    @media (max-width: 620px) { .bw-grid { grid-template-columns: repeat(3, 1fr); } .bw-side { display: none; } .bw-kpi b { font-size: 16px; } }
 
     section { padding: 70px 0; }
     .eyebrow { color: var(--teal-d); font-weight: 800; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; text-align: center; margin-bottom: 12px; }
@@ -195,12 +232,40 @@
       </div>
     </section>
 
+    <!-- Anteprima dell'app: mockup browser con l'interfaccia HQ ricreata + foto reali dei prodotti -->
+    <section id="anteprima">
+      <div class="wrap">
+        <p class="eyebrow">Dentro l'app</p>
+        <h2>Tutto il tuo magazzino, a colpo d'occhio</h2>
+        <p class="lead">Dashboard, inventario con foto, vendite e profitti: pulito, veloce, sempre sincronizzato su telefono e desktop.</p>
+        <div class="browser reveal">
+          <div class="bw-bar"><span class="bw-dot" style="background:#ff5f57"></span><span class="bw-dot" style="background:#febc2e"></span><span class="bw-dot" style="background:#28c840"></span><span class="bw-url">app.hqvault.com</span></div>
+          <div class="bw-body">
+            <aside class="bw-side">
+              <div class="bw-logo">HQ<b>V</b></div>
+              <span class="bw-nav on">▦</span><span class="bw-nav">▤</span><span class="bw-nav">◳</span><span class="bw-nav">⤴</span><span class="bw-nav">▥</span>
+            </aside>
+            <div class="bw-main">
+              <div class="bw-head"><div><div class="bw-h1">Ciao, Marco</div><div class="bw-sub">Martedì 30 giugno</div></div><span class="bw-add">+ Aggiungi</span></div>
+              <div class="bw-kpis">
+                <div class="bw-kpi"><span>PERSONALE</span><b class="teal">1.219€</b></div>
+                <div class="bw-kpi"><span>STOCK</span><b>24.654€</b><i>63 pezzi</i></div>
+                <div class="bw-kpi"><span>VENDITE</span><b>9 · <em>3.483€</em></b></div>
+              </div>
+              <div class="bw-gridhead">Inventario</div>
+              <div class="bw-grid" id="previewGrid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="perche">
       <div class="wrap">
         <p class="eyebrow">Stop a Excel</p>
         <h2>La migliore alternativa a Excel per i reseller</h2>
         <p class="lead">Liste che si rompono, prezzi a memoria, profitti del reselling impossibili da tracciare. Noi lo sappiamo perché lo abbiamo vissuto: per questo HQVault fa il lavoro noioso al posto tuo.</p>
-        <div class="pain-grid">
+        <div class="pain-grid reveal">
           <article class="pain"><h3><span class="x">✕</span> Prima: Excel e caos</h3><p>Formule che saltano, nessuna foto, e capire il margine reale è un'impresa.</p></article>
           <article class="pain good"><h3><span class="v">✓</span> Con HQVault: tutto in ordine</h3><p>Magazzino chiaro, foto ufficiali in automatico, profitto e margine già calcolati su ogni vendita.</p></article>
           <article class="pain"><h3><span class="x">✕</span> Prima: ore a inserire pezzi</h3><p>Marca, modello, taglia, prezzo per ognuno, uno alla volta.</p></article>
@@ -214,7 +279,7 @@
         <p class="eyebrow">Le funzioni</p>
         <h2>Gestione stock, inventario sneakers e vendite, in un posto solo</h2>
         <p class="lead">Dalla gestione di stock e inventario sneakers alle vendite, fino al tracking automatico dei profitti con l'intelligenza artificiale.</p>
-        <div class="feat-grid">
+        <div class="feat-grid reveal">
           <article class="feat"><div class="ico" aria-hidden="true">📦</div><h3>Magazzino smart</h3><p>Pezzi in stock e venduti, raggruppati, con valore dello stock e stato in tempo reale.</p></article>
           <article class="feat"><div class="ico" aria-hidden="true">🛍️</div><h3>Catalogo automatico</h3><p>Cerchi un modello e lo aggiungi con la foto ufficiale: sneaker, streetwear, borse, carte, elettronica.</p></article>
           <article class="feat"><div class="ico" aria-hidden="true">🤖</div><h3>Assistente IA "HQ"</h3><p>Gli chiedi di aggiungere, modificare, vendere o elencare i prodotti. Anche con la voce.</p></article>
@@ -229,12 +294,12 @@
       <div class="wrap">
         <p class="eyebrow">I numeri</p>
         <h2>Pensato per chi fa sul serio</h2>
-        <div class="stats">
+        <div class="stats reveal">
           <div class="stat"><div class="n">−90%</div><div class="l">tempo per gestire l'inventario</div></div>
           <div class="stat"><div class="n">100%</div><div class="l">profitti tracciati, zero errori</div></div>
           <div class="stat"><div class="n">0€</div><div class="l">per iniziare, oggi</div></div>
         </div>
-        <blockquote>
+        <blockquote class="reveal">
           “Ho spostato 200 paia da Excel a HQVault in un pomeriggio: foto e prezzi caricati da soli. Ora so sempre quanto guadagno davvero, paio per paio.”
           <div class="who"><div class="av">M</div><div class="nm"><b>Marco</b><span>Reseller di sneaker · beta tester</span></div></div>
         </blockquote>
@@ -245,7 +310,7 @@
       <div class="wrap">
         <p class="eyebrow">FAQ</p>
         <h2>Domande frequenti</h2>
-        <div class="faq">
+        <div class="faq reveal">
           <details open><summary>Cos'è un software per reseller?</summary><p>È un gestionale che centralizza inventario, costi, vendite e profitti del tuo business di reselling, sostituendo i fogli Excel e automatizzando schede prodotto e foto.</p></details>
           <details><summary>HQVault è gratis?</summary><p>Sì, puoi iniziare gratis. Aggiungi i prodotti, gestisci magazzino e vendite, e passi a un piano superiore solo se ti serve più capacità.</p></details>
           <details><summary>Posso importare il mio Excel?</summary><p>Sì. Carichi il tuo Excel e abbini le colonne: HQVault riconosce nome e prezzo da solo e aggancia in automatico le foto ufficiali dei prodotti.</p></details>
@@ -260,7 +325,7 @@
 
     <section>
       <div class="wrap">
-        <div class="final">
+        <div class="final reveal">
           <h2>Pronto a organizzare il tuo reselling?</h2>
           <p class="lead">Inizia gratis in meno di un minuto. Il tuo magazzino, finalmente sotto controllo.</p>
           <a href="/app" class="btn btn-white">Inizia gratis con HQVault</a>
@@ -289,19 +354,42 @@
     // Carosello: foto reali di prodotti dal catalogo (endpoint pubblico).
     (function () {
       fetch('/api/catalog/showcase').then(function (r) { return r.ok ? r.json() : []; }).then(function (items) {
-        if (!Array.isArray(items) || items.length < 6) return;
+        if (!Array.isArray(items) || items.length === 0) return;
+        function imgUrl(it) { return '/api/catalog/img-public?u=' + encodeURIComponent(it.image); }
+
+        // Griglia "inventario" nel mockup browser (anteprima dell'app) — foto reali + prezzo demo.
+        var grid = document.getElementById('previewGrid');
+        if (grid) {
+          var g = '';
+          items.slice(0, 8).forEach(function (it) {
+            var price = 80 + Math.floor(Math.random() * 380);
+            g += '<div class="bw-card"><div class="ph"><img loading="lazy" src="' + imgUrl(it) + '" alt="" onerror="this.parentNode.parentNode.style.display=\'none\'"></div><div class="nm">' + (it.name || '') + '</div><div class="pr">' + price + '€</div></div>';
+          });
+          grid.innerHTML = g;
+        }
+
+        // Carosello hero (serve abbastanza per il loop continuo).
+        if (items.length < 6) return;
         var track = document.getElementById('tickerTrack');
         var html = '';
         function card(it) {
-          var src = '/api/catalog/img-public?u=' + encodeURIComponent(it.image);
-          return '<div class="card"><div class="ph"><img loading="lazy" src="' + src + '" alt="' + (it.name || 'Prodotto') + '" width="126" height="126" onerror="this.parentNode.parentNode.style.display=\'none\'"></div><div class="nm">' + (it.name || '') + '</div></div>';
+          return '<div class="card"><div class="ph"><img loading="lazy" src="' + imgUrl(it) + '" alt="' + (it.name || 'Prodotto') + '" width="126" height="126" onerror="this.parentNode.parentNode.style.display=\'none\'"></div><div class="nm">' + (it.name || '') + '</div></div>';
         }
-        // due copie per il loop continuo
         items.forEach(function (it) { html += card(it); });
         items.forEach(function (it) { html += card(it); });
         track.innerHTML = html;
         document.getElementById('ticker').hidden = false;
       }).catch(function () {});
+    })();
+
+    // Rivelazione allo scroll degli elementi .reveal (più dinamica).
+    (function () {
+      var els = document.querySelectorAll('.reveal');
+      if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+      els.forEach(function (e) { io.observe(e); });
     })();
 
     // Se sei già loggato, vai dritto all'app: la landing non la rivedi.
