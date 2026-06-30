@@ -211,9 +211,18 @@ export async function startVoskWakeWord(opts: {
   let ac: AudioContext | null = null;
   let node: ScriptProcessorNode | null = null;
   let source: MediaStreamAudioSourceNode | null = null;
+  // Auto-recupero: su iOS l'AudioContext/lo stream muoiono quando l'app va in background, si
+  // blocca lo schermo o arriva un'interruzione audio. Senza ripristino, la wake-word si "stacca"
+  // e va riattivata a mano. Questi flag + il watchdog la fanno ripartire da sola al rientro.
+  let wantRunning = true;            // true = vogliamo essere in ascolto (false durante pause()/stop())
+  let lastFrameAt = Date.now();      // ultimo frame audio ricevuto: se si ferma, l'audio è morto
+  let restarting = false;
+  let watchdog: any = null;
 
   const startAudio = async () => {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // Se una traccia finisce (iOS la chiude in background) → ricostruisci tutto al rientro.
+    stream.getAudioTracks().forEach(t => { t.onended = () => { if (wantRunning) restartAudio(); }; });
     ac = new (window.AudioContext || (window as any).webkitAudioContext)();
     try { await ac.resume(); } catch { /* iOS: l'AudioContext parte sospeso, va riattivato */ }
     if (!recognizer) {
@@ -235,7 +244,10 @@ export async function startVoskWakeWord(opts: {
       });
     }
     node = ac.createScriptProcessor(4096, 1, 1);
-    node.onaudioprocess = (e: AudioProcessingEvent) => { try { recognizer.acceptWaveform(e.inputBuffer); } catch { /* frame skip */ } };
+    node.onaudioprocess = (e: AudioProcessingEvent) => {
+      lastFrameAt = Date.now(); // segna che l'audio scorre (il watchdog lo usa per capire se è morto)
+      try { recognizer.acceptWaveform(e.inputBuffer); } catch { /* frame skip */ }
+    };
     source = ac.createMediaStreamSource(stream);
     source.connect(node);
     node.connect(ac.destination);
@@ -248,12 +260,51 @@ export async function startVoskWakeWord(opts: {
     stream = null; ac = null; node = null; source = null;
   };
 
+  // Ricostruisce stream + AudioContext senza toccare modello/recognizer (riusati). Idempotente.
+  const restartAudio = async () => {
+    if (!wantRunning || restarting) return;
+    restarting = true;
+    try { stopAudio(); } catch { /* noop */ }
+    try { await startAudio(); } catch { /* il watchdog riproverà al giro dopo */ }
+    lastFrameAt = Date.now();
+    restarting = false;
+  };
+
+  // Rientro in primo piano: riattiva l'AudioContext sospeso e, se lo stream è morto, ricostruiscilo.
+  // Così tornando nell'app la wake-word riparte DA SOLA, senza riconnettere a mano.
+  const onVisible = () => {
+    if (!wantRunning || document.visibilityState !== 'visible') return;
+    if (ac && ac.state === 'suspended') ac.resume().catch(() => {});
+    const dead = !stream || stream.getAudioTracks().every(t => t.readyState === 'ended');
+    if (dead) restartAudio();
+  };
+  const teardown = () => {
+    if (watchdog) { clearInterval(watchdog); watchdog = null; }
+    document.removeEventListener('visibilitychange', onVisible);
+    window.removeEventListener('focus', onVisible);
+    window.removeEventListener('pageshow', onVisible);
+  };
+
   await startAudio();
 
+  document.addEventListener('visibilitychange', onVisible);
+  window.addEventListener('focus', onVisible);
+  window.addEventListener('pageshow', onVisible);
+  // Watchdog (cuore dell'auto-recupero): ogni 2.5s, se siamo in ascolto e l'app è in primo piano
+  // ma l'audio è sospeso/fermo/morto, riattiva o ricostruisce.
+  watchdog = setInterval(() => {
+    if (!wantRunning || document.visibilityState !== 'visible') return;
+    // Sospeso → prova solo a riattivare e dai una chance fino al giro dopo (niente rebuild inutile).
+    if (ac && ac.state === 'suspended') { ac.resume().catch(() => {}); return; }
+    const stale = Date.now() - lastFrameAt > 4000; // running ma nessun frame = pipeline rotta
+    const dead = !stream || stream.getAudioTracks().every(t => t.readyState === 'ended');
+    if (stale || dead) restartAudio();
+  }, 2500);
+
   return {
-    pause: async () => stopAudio(),                 // libera il mic per il comando
-    resume: async () => { try { await startAudio(); } catch { /* riproverà */ } },
-    stop: async () => { stopAudio(); try { recognizer.remove(); } catch { /* noop */ } try { model.terminate(); } catch { /* noop */ } },
+    pause: async () => { wantRunning = false; stopAudio(); },                 // libera il mic per il comando
+    resume: async () => { wantRunning = true; try { await startAudio(); } catch { /* il watchdog riproverà */ } },
+    stop: async () => { wantRunning = false; teardown(); stopAudio(); try { recognizer.remove(); } catch { /* noop */ } try { model.terminate(); } catch { /* noop */ } },
   };
 }
 
