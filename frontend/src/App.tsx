@@ -548,6 +548,11 @@ export default function App() {
   const [editSize, setEditSize] = useState('');
   const [editCondition, setEditCondition] = useState('');
   const [editPrice, setEditPrice] = useState('');
+  // Modifica VENDITA (per prodotti già venduti): prezzo, piattaforma, fee, cliente.
+  const [editSalePrice, setEditSalePrice] = useState('');
+  const [editSalePlatform, setEditSalePlatform] = useState('');
+  const [editSaleFees, setEditSaleFees] = useState('');
+  const [editSaleCustomer, setEditSaleCustomer] = useState('');
   const [editWarehouseId, setEditWarehouseId] = useState(''); // magazzino del prodotto (per spostarlo)
   const [isEditShared, setIsEditShared] = useState(false);
   const [editShares, setEditShares] = useState<{userId: string, name: string, percentage: string | number}[]>([]);
@@ -3172,6 +3177,11 @@ export default function App() {
     setEditBrand(group.brand); setEditName(group.name);
     setEditSize(group.size); setEditCondition(group.condition);
     setEditPrice(group.purchasePrice.toString());
+    // Campi vendita (solo se venduto)
+    setEditSalePrice(group.salePrice != null ? String(group.salePrice) : '');
+    setEditSalePlatform(group.platform || 'Vinted');
+    setEditSaleFees(group.fees != null ? String(group.fees) : '');
+    setEditSaleCustomer(group.customer || '');
     setEditWarehouseId(group.warehouseId || baseWarehouse?.id || '');
     // Quantità pezzi: per un lotto consideriamo TUTTI i pezzi in stock con lo stesso lotName
     // (i pezzi di un lotto non si raggruppano perché hanno nome "lotName #N").
@@ -3355,6 +3365,13 @@ export default function App() {
           customShares: finalEditShares,
           ...(warehouseChanged ? { warehouseId: editWarehouseId } : {}),
           photos: editPhotos.length > 0 ? editPhotos : undefined,
+          // Modifica VENDITA: solo per prodotti già venduti.
+          ...(productToEdit.status === 'VENDUTO' ? {
+            salePrice: editSalePrice.trim() ? parseFloat(editSalePrice) : undefined,
+            platform: editSalePlatform || undefined,
+            fees: editSaleFees.trim() ? parseFloat(editSaleFees) : 0,
+            customer: editSaleCustomer.trim() || null,
+          } : {}),
         }),
       });
       if (!ok) hasError = true;
@@ -5389,8 +5406,12 @@ export default function App() {
                             {g.totalFees > 0 && (
                               <span className="text-[10px] text-gray-700">· {g.totalFees.toFixed(0)}€ fee</span>
                             )}
+                            <button onClick={() => openEditModal(g)}
+                              className="ml-auto flex items-center gap-1.5 bg-[var(--fill)] border border-[var(--border-2)] text-[var(--text-soft)] hover:text-[var(--text)] px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
+                              <Edit size={12} /> Modifica
+                            </button>
                             <button onClick={() => handleReturn(g)}
-                              className="ml-auto flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-blue-400 hover:bg-blue-500/25 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
+                              className="flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-blue-400 hover:bg-blue-500/25 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
                               ↩ Reso
                             </button>
                           </div>
@@ -8676,6 +8697,37 @@ export default function App() {
                   onChange={(e: any) => setEditPrice(e.target.value)}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
               </div>
+
+              {/* Modifica VENDITA — solo per prodotti già venduti (idea utente) */}
+              {productToEdit.status === 'VENDUTO' && (
+                <div className="bg-green-500/[0.06] border border-green-500/20 rounded-xl p-3.5 space-y-3">
+                  <p className="text-[10px] font-bold text-green-400 uppercase tracking-widest flex items-center gap-1.5"><DollarSign size={11} /> Vendita</p>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">Prezzo vendita</label>
+                      <input type="number" step="0.01" value={editSalePrice} onChange={e => setEditSalePrice(e.target.value)}
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-[#6b54c6] outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">Fee</label>
+                      <input type="number" step="0.01" value={editSaleFees} onChange={e => setEditSaleFees(e.target.value)}
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-[#6b54c6] outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">Piattaforma</label>
+                      <select value={editSalePlatform} onChange={e => setEditSalePlatform(e.target.value)}
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-[#6b54c6] outline-none">
+                        <option>Vinted</option><option>Subito</option><option>StockX</option><option>eBay</option><option>Privato</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">Cliente</label>
+                      <input type="text" value={editSaleCustomer} onChange={e => setEditSaleCustomer(e.target.value)} maxLength={120} placeholder="facoltativo"
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-[#6b54c6] outline-none" />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Quantità pezzi: per lotti e gruppi multi-pezzo. Riduci = elimina i pezzi
                   in eccesso (i più recenti); aumenta = aggiunge nuovi pezzi. */}
