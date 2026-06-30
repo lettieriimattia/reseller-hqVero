@@ -4371,7 +4371,7 @@ export default function App() {
   // Desktop = COCKPIT: altezza fissa, lo scroll avviene SOLO dentro <main> (cruscotto
   // inamovibile). Mobile resta a scroll di pagina normale.
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col bg-[var(--bg)] text-[var(--text)] lg:pl-60 pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif" }}>
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col text-[var(--text)] lg:pl-60 pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", background: 'radial-gradient(135% 60% at 50% -10%, var(--gold-soft), transparent 56%), radial-gradient(75% 45% at 100% -6%, rgba(160,178,196,0.06), transparent 52%), var(--bg)' }}>
 
       {/* ========== SIDEBAR (solo desktop) ========== */}
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-60 z-40 bg-[var(--surface)] border-r border-[var(--border)] px-3 pt-6 pb-6">
