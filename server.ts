@@ -42,6 +42,7 @@ import { initPush } from './src/services/push.service';
 import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
 import { startEmailJobs } from './src/services/email-jobs.service';
+import { startMonitorAgent } from './src/services/monitor.agent';
 import { releaseExpiredHolds } from './src/services/dispute.service';
 import { migratePhotosToCloudinary } from './src/services/photo-migration.service';
 
@@ -398,6 +399,10 @@ serverInstance.listen(PORT, () => {
   // le notifiche operative (prodotti fermi, ecc.) vanno via push/in-app, non email.
   // (Job email ricorrente "prodotti fermi" disattivato di proposito.)
   void startEmailJobs;
+
+  // Agente IA "report giornaliero": una query/giorno (non tiene sveglio Neon). Si attiva solo
+  // se è configurata una destinazione (Telegram o email) — vedi monitor.agent.ts.
+  startMonitorAgent();
 
   // ──────────────────────────────────────────────────────────────────────────
   // JOB IN BACKGROUND CHE INTERROGANO IL DB
