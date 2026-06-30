@@ -1763,6 +1763,17 @@ export default function App() {
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onDown); };
   }, [cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
 
+  // BLOCCO SCROLL: quando un modale è aperto, la pagina sotto NON deve muoversi/scrollare.
+  useEffect(() => {
+    const anyModalOpen = cmdOpen || barcodeModalOpen || deleteConfirmOpen || bulkDeleteConfirmOpen || planModalOpen || twoFaDisableOpen || twoFaSetupOpen || changePwdOpen || trackingModalOpen || sourcingOpen || showProfitSharesModal || bulkSellOpen || sellModalOpen || lotOpen || incomingOpen || importOpen || isFormOpen || editModalOpen || notifPrefsOpen || teamPanelOpen || adminPanelOpen || guideOpen || supportOpen || privacyOpen;
+    if (!anyModalOpen) return;
+    const prevBody = document.body.style.overflow;
+    const prevHtml = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prevBody; document.documentElement.style.overflow = prevHtml; };
+  }, [cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
+
   useEffect(() => {
     if (userCategories.length > 0 && category === '') setCategory(userCategories[0]);
     // NB: niente reset di `size` qui. `userCategories` è un array ricreato a ogni render,
