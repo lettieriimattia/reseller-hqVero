@@ -7194,7 +7194,7 @@ export default function App() {
                     <p className="text-xs text-[var(--text-soft)] mt-1">{t('set.appearanceDesc')}</p>
                   </div>
                 </div>
-                <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] shrink-0 self-center sm:self-auto">
+                <div className="flex flex-wrap gap-1 justify-center bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] self-center sm:self-auto">
                   <button onClick={() => setTheme('dark')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
                       theme === 'dark' ? 'bg-[#6b54c6] text-white' : 'text-[var(--text-soft)]'
@@ -7220,30 +7220,6 @@ export default function App() {
                         theme === 'lux' ? 'bg-[#1fa89f] text-[#04100f]' : 'text-[var(--text-soft)]'
                       }`}>
                       <Gem size={13} /> Lux
-                    </button>
-                  )}
-                  {isAdminUser && (
-                    <button onClick={() => setTheme('vault')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                        theme === 'vault' ? 'bg-[#2346d6] text-white' : 'text-[var(--text-soft)]'
-                      }`}>
-                      <Gem size={13} /> Vault
-                    </button>
-                  )}
-                  {isAdminUser && (
-                    <button onClick={() => setTheme('vaultdark')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                        theme === 'vaultdark' ? 'bg-[#2346d6] text-white' : 'text-[var(--text-soft)]'
-                      }`}>
-                      <Gem size={13} /> Vault Dark
-                    </button>
-                  )}
-                  {isAdminUser && (
-                    <button onClick={() => setTheme('cactus')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                        theme === 'cactus' ? 'bg-[#c8a06a] text-[#1c1409]' : 'text-[var(--text-soft)]'
-                      }`}>
-                      <Gem size={13} /> Cactus
                     </button>
                   )}
                   {isAdminUser && (
