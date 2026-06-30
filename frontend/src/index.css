@@ -230,6 +230,52 @@
 .vaultdark .sys-label { letter-spacing: 0.16em; }
 .vaultdark .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
 
+/* ===== TEMA "CACTUS" — Mocha / Cactus Jack: espresso + tan caramello + crema (PREMIUM, admin) =====
+   Palette earthy streetwear (rif. Jordan 1 "Mocha": cioccolato, khaki/tan, sail). Caldo e premium. */
+.cactus {
+  --accent: #c8a06a;        /* tan caramello (accento) */
+  --accent-hover: #d8b585;
+  --gold: #c8a06a;
+  --gold-soft: rgba(200,160,106,0.14);
+  --gold-line: rgba(200,160,106,0.38);
+  --bg: #16110c;            /* espresso near-black caldo */
+  --surface: #211a13;       /* cioccolato scuro */
+  --surface-2: #2a2118;     /* inset / elevated */
+  --border: rgba(201,168,124,0.10);   /* hairline caldo */
+  --border-2: rgba(201,168,124,0.16);
+  --border-3: rgba(201,168,124,0.26);
+  --text: #efe7d6;          /* sail / crema */
+  --text-soft: #a1907a;     /* taupe caldo */
+  --text-muted: #c7b7a0;
+  --text-faint: #6e6052;
+  --fill: rgba(201,168,124,0.06);
+  --fill-2: rgba(201,168,124,0.11);
+  --fill-3: rgba(201,168,124,0.18);
+  --bg-blur: rgba(22,17,12,0.95);
+  --bg-overlay: rgba(22,17,12,0.72);
+  --surface-blur: rgba(33,26,19,0.95);
+  /* Cockpit: valore = tan, negativi = rust, secondario taupe. */
+  --teal: #c8a06a;
+  --teal-soft: rgba(200,160,106,0.12);
+  --teal-line: rgba(200,160,106,0.42);
+  --rust: #c0613a;          /* terracotta / rust */
+  --rust-soft: rgba(192,97,58,0.14);
+  --beige: #a1907a;
+}
+.cactus .sys-label { letter-spacing: 0.18em; }
+.cactus .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #1c1409 !important; }
+.cactus .text-\[\#6b54c6\]   { color: var(--accent) !important; }
+.cactus .border-\[\#6b54c6\] { border-color: var(--accent) !important; }
+.cactus .text-green-400, .cactus .text-emerald-400 { color: #9aa45e !important; }  /* olive */
+.cactus .text-green-300     { color: #b3bd78 !important; }
+.cactus .text-red-400, .cactus .text-red-300       { color: #c0613a !important; }  /* rust */
+.cactus .text-yellow-400    { color: #d08b3a !important; }                          /* amber */
+.cactus .bg-\[var\(--surface\)\] {
+  background-image: linear-gradient(180deg, rgba(201,168,124,0.03), rgba(201,168,124,0) 44%);
+}
+.cactus .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.cactus .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
+
 /* ===== TEMA CHIARO: colori semantici accentati =====
    Le tinte -400 di Tailwind sono troppo chiare su sfondo bianco.
    Le scuriamo solo in light mode (override più specifico). */
