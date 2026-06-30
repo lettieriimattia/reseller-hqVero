@@ -137,6 +137,59 @@
 /* Lux: filo teal sotto i titoli di sezione marcati (gauge bezel discreto). */
 .lux .lux-underline::after { background: linear-gradient(90deg, transparent, var(--teal-line) 25%, var(--teal-line) 75%, transparent); }
 
+/* ===== TEMA "VAULT" — Ink + Bone + Champagne (PREMIUM editoriale, anteprima admin) =====
+   Direzione: monocromo caldo near-black/bone con UN accento champagne sobrio (col contagocce),
+   stati desaturati (sage/terracotta/ocra). Estetica "trading terminal × editoriale fashion". */
+.vault {
+  --accent: #c7a671;        /* champagne/ottone sobrio (accento unico) */
+  --accent-hover: #d8ba88;
+  --gold: #c7a671;
+  --gold-soft: rgba(199,166,113,0.13);
+  --gold-line: rgba(199,166,113,0.36);
+  --bg: #0a0a0b;            /* near-black caldo (non puro) */
+  --surface: #141416;       /* card / pannelli */
+  --surface-2: #1c1c1f;     /* inset / input / elevated */
+  --border: rgba(255,255,255,0.06);    /* hairline neutro */
+  --border-2: rgba(255,255,255,0.10);
+  --border-3: rgba(255,255,255,0.18);
+  --text: #f4f3f0;          /* bone (non bianco puro) */
+  --text-soft: #9e9ea4;     /* grigio neutro */
+  --text-muted: #c4c4c8;
+  --text-faint: #65656b;
+  --fill: rgba(255,255,255,0.045);
+  --fill-2: rgba(255,255,255,0.08);
+  --fill-3: rgba(255,255,255,0.14);
+  --bg-blur: rgba(10,10,11,0.95);
+  --bg-overlay: rgba(10,10,11,0.72);
+  --surface-blur: rgba(20,20,22,0.95);
+  /* Cockpit in chiave Vault: valore/profitto = champagne, negativi = terracotta, secondario grigio. */
+  --teal: #c7a671;          /* "valore" = champagne */
+  --teal-soft: rgba(199,166,113,0.12);
+  --teal-line: rgba(199,166,113,0.40);
+  --rust: #be5a4f;          /* terracotta desaturata (negativi) */
+  --rust-soft: rgba(190,90,79,0.13);
+  --beige: #a8a59c;         /* secondario caldo neutro */
+}
+/* Vault: micro-label rarefatte (kerning editoriale). */
+.vault .sys-label { letter-spacing: 0.2em; }
+/* Vault: viola hardcoded (#6b54c6) → champagne, testo scuro per contrasto sul pieno. */
+.vault .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #1a1508 !important; }
+.vault .text-\[\#6b54c6\]   { color: var(--accent) !important; }
+.vault .border-\[\#6b54c6\] { border-color: var(--accent) !important; }
+/* Vault: stati desaturati (mai fluo). */
+.vault .text-green-400, .vault .text-emerald-400 { color: #5b9a78 !important; }  /* sage */
+.vault .text-green-300     { color: #74b491 !important; }
+.vault .text-red-400, .vault .text-red-300       { color: #be5a4f !important; }  /* terracotta */
+.vault .text-yellow-400    { color: #b8893e !important; }                         /* ocra */
+/* Vault: velatura calda impercettibile dall'alto sui pannelli + bordo a filo (scolpito). */
+.vault .bg-\[var\(--surface\)\] {
+  background-image: linear-gradient(180deg, rgba(199,166,113,0.028), rgba(199,166,113,0) 44%);
+}
+/* Vault: numeri "da terminale" — cifre tabulari, kerning stretto. */
+.vault .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+/* Vault: filo champagne sotto i titoli marcati. */
+.vault .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
+
 /* ===== TEMA CHIARO: colori semantici accentati =====
    Le tinte -400 di Tailwind sono troppo chiare su sfondo bianco.
    Le scuriamo solo in light mode (override più specifico). */
