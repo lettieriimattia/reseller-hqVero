@@ -4106,7 +4106,7 @@ export default function App() {
           {/* Logo HQVault */}
           <div className="flex flex-col items-center gap-3 mb-6">
             <img src="/logo.png" alt="HQVault" width={64} height={64} className="rounded-2xl" />
-            <span className="text-2xl font-black tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
+            <span className="text-2xl font-black tracking-tight txt-chrome">HQVault</span>
           </div>
           {needVerifyEmail ? (
             <div className="space-y-4">
