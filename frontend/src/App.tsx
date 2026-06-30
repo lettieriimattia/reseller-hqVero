@@ -2008,13 +2008,12 @@ export default function App() {
     });
     const grouped = Object.values(base.reduce((acc, p) => {
       const cat = p.category || 'Scarpe';
-      // I lotti collassano in UNA sola card per lotName (poi si aprono per vedere i pezzi).
-      const key = (p as any).lotName
-        ? `lot:${(p as any).lotName}`
-        : `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.condition}`;
+      // I pezzi di un lotto NON collassano più: ogni prodotto è una riga a sé (idea utente).
+      // Il `lotName` resta sul prodotto (lo si vede solo aprendo la modifica). Raggruppo come i
+      // prodotti normali: stesso nome/taglia/condizione = una riga con quantità.
+      const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.condition}`;
       if (!acc[key]) acc[key] = {
         ...p, category: cat, quantity: 0, ids: [], oldestDate: p.createdAt,
-        ...((p as any).lotName ? { isLot: true, lotName: (p as any).lotName, name: (p as any).lotName, size: '—' } : {}),
       };
       acc[key].quantity += 1;
       acc[key].ids.push(p.id);
@@ -3213,18 +3212,10 @@ export default function App() {
     setEditSaleFees(group.fees != null ? String(group.fees) : '');
     setEditSaleCustomer(group.customer || '');
     setEditWarehouseId(group.warehouseId || baseWarehouse?.id || '');
-    // Quantità pezzi: per un lotto consideriamo TUTTI i pezzi in stock con lo stesso lotName
-    // (i pezzi di un lotto non si raggruppano perché hanno nome "lotName #N").
-    if (group.lotName) {
-      const lotIds = products
-        .filter((p: any) => p.lotName === group.lotName && p.status === 'IN STOCK' && (p.category || '') === (group.category || ''))
-        .map((p: any) => p.id);
-      setEditLotIds(lotIds);
-      setEditQuantity(String(lotIds.length || group.ids?.length || 1));
-    } else {
-      setEditLotIds([]);
-      setEditQuantity(String(group.ids?.length || 1));
-    }
+    // I pezzi di un lotto ora sono righe singole: la modifica opera SOLO su questo gruppo
+    // (come un prodotto normale), non su tutto il lotto.
+    setEditLotIds([]);
+    setEditQuantity(String(group.ids?.length || 1));
     const shares = group.customShares && group.customShares !== '[]'
       ? JSON.parse(group.customShares) : [];
     setEditShares(shares);
@@ -8636,12 +8627,20 @@ export default function App() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setEditModalOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-            <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">{t('form.editTitle')}</h2>
-              <button onClick={() => setEditModalOpen(false)}
-                className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors">
-                <X size={20} />
-              </button>
+            <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold shrink-0">{t('form.editTitle')}</h2>
+              <div className="flex items-center gap-2 min-w-0">
+                {/* Etichetta lotto: si vede SOLO qui (in alto a destra) — idea utente */}
+                {productToEdit?.lotName && (
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#6b54c6]/15 text-[#6b54c6] flex items-center gap-1.5 truncate" title={productToEdit.lotName}>
+                    <Layers size={11} className="shrink-0" /> <span className="truncate">Lotto: {productToEdit.lotName}</span>
+                  </span>
+                )}
+                <button onClick={() => setEditModalOpen(false)}
+                  className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors shrink-0">
+                  <X size={20} />
+                </button>
+              </div>
             </div>
             
             <form onSubmit={handleSaveEdit} className="p-5 space-y-4">
