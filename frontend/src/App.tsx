@@ -388,17 +388,14 @@ export default function App() {
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   
   // ----- TEMA (scuro / chiaro / glass) -----
-  // 'lux'/'vault' = temi premium, selezionabili solo dall'admin (anteprima).
-  const [theme, setTheme] = useState<'dark' | 'light' | 'glass' | 'lux' | 'vault' | 'vaultdark' | 'cactus' | 'chrome'>(() => {
-    try { return (localStorage.getItem('hq-theme') as 'dark' | 'light' | 'glass' | 'lux' | 'vault' | 'vaultdark' | 'cactus' | 'chrome') || 'dark'; } catch { return 'dark'; }
+  // 'lux'/'chrome' = temi premium, selezionabili solo dall'admin (anteprima).
+  const [theme, setTheme] = useState<'dark' | 'light' | 'glass' | 'lux' | 'chrome'>(() => {
+    try { return (localStorage.getItem('hq-theme') as 'dark' | 'light' | 'glass' | 'lux' | 'chrome') || 'dark'; } catch { return 'dark'; }
   });
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('light', 'glass', 'lux', 'vault', 'vaultdark', 'cactus', 'chrome');
-    // 'vault' è un tema CHIARO premium: applica anche '.light' così eredita i fix dei colori
-    // hardcoded per lo sfondo chiaro, poi '.vault' rifinisce palette e accento.
-    if (theme === 'vault') root.classList.add('light', 'vault');
-    else if (theme !== 'dark') root.classList.add(theme);
+    root.classList.remove('light', 'glass', 'lux', 'chrome');
+    if (theme !== 'dark') root.classList.add(theme);
     try { localStorage.setItem('hq-theme', theme); } catch { /* storage non disponibile */ }
   }, [theme]);
 
@@ -7188,7 +7185,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  {theme === 'light' ? <Sun className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'lux' ? <Gem className="text-[#1fa89f] mt-0.5" size={22} /> : theme === 'vault' ? <Gem className="text-[#2346d6] mt-0.5" size={22} /> : theme === 'vaultdark' ? <Gem className="text-[#5b4bff] mt-0.5" size={22} /> : theme === 'cactus' ? <Gem className="text-[#c8a06a] mt-0.5" size={22} /> : theme === 'chrome' ? <Gem className="text-[#c2c9d2] mt-0.5" size={22} /> : <Moon className="text-[#6b54c6] mt-0.5" size={22} />}
+                  {theme === 'light' ? <Sun className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'lux' ? <Gem className="text-[#1fa89f] mt-0.5" size={22} /> : theme === 'chrome' ? <Gem className="text-[#c2c9d2] mt-0.5" size={22} /> : <Moon className="text-[#6b54c6] mt-0.5" size={22} />}
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.appearance')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">{t('set.appearanceDesc')}</p>

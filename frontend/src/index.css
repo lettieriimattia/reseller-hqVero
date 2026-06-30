@@ -137,145 +137,6 @@
 /* Lux: filo teal sotto i titoli di sezione marcati (gauge bezel discreto). */
 .lux .lux-underline::after { background: linear-gradient(90deg, transparent, var(--teal-line) 25%, var(--teal-line) 75%, transparent); }
 
-/* ===== TEMA "VAULT" — Light premium (Apple/Linear): bone bg, card bianche, accento VIOLET =====
-   Si applica SOPRA .light (eredita i fix dei colori hardcoded per il chiaro), poi rifinisce
-   palette e accento. Direzione: pulito, enterprise, nessun gradiente, accento #5B4BFF. */
-.vault {
-  --accent: #2346d6;        /* Brand Primary (blu) — pulsanti, azioni, stato attivo */
-  --accent-hover: #3a5ae0;
-  --gold: #5b4bff;          /* Brand Accent (violet) — focus, highlight, grafici */
-  --gold-soft: rgba(91,75,255,0.10);
-  --gold-line: rgba(91,75,255,0.30);
-  --bg: #fafaf9;            /* bone, non bianco puro (filosofia Apple) */
-  --surface: #ffffff;       /* card completamente bianche */
-  --surface-2: #f3f4f6;     /* inset / input */
-  --border: #e5e7eb;        /* bordi quasi invisibili */
-  --border-2: #d1d5db;
-  --border-3: rgba(17,17,17,0.18);
-  --text: #111111;          /* nero morbido */
-  --text-soft: #6b7280;     /* secondario elegante */
-  --text-muted: #374151;
-  --text-faint: #9ca3af;
-  --fill: rgba(17,17,17,0.04);
-  --fill-2: rgba(17,17,17,0.07);
-  --fill-3: rgba(17,17,17,0.12);
-  --bg-blur: rgba(250,250,249,0.85);
-  --bg-overlay: rgba(250,250,249,0.72);
-  --surface-blur: rgba(255,255,255,0.92);
-  /* Cockpit: "valore"/grafici in violet, negativi rosso sobrio, secondario grigio (mai arcobaleno). */
-  --teal: #5b4bff;
-  --teal-soft: rgba(91,75,255,0.10);
-  --teal-line: rgba(91,75,255,0.34);
-  --rust: #dc2626;
-  --rust-soft: rgba(220,38,38,0.10);
-  --beige: #6b7280;
-}
-/* Vault: viola hardcoded (#6b54c6) → accento violet, testo bianco sul pieno. */
-.vault .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #ffffff !important; }
-.vault .text-\[\#6b54c6\]   { color: var(--accent) !important; }
-.vault .border-\[\#6b54c6\] { border-color: var(--accent) !important; }
-/* Vault: stati sobri su sfondo chiaro (verde solo per "success", mai brand). */
-.vault .text-green-400, .vault .text-emerald-400 { color: #16a34a !important; }
-.vault .text-green-300     { color: #15803d !important; }
-.vault .text-red-400, .vault .text-red-300       { color: #dc2626 !important; }
-.vault .text-yellow-400    { color: #d97706 !important; }
-/* Vault: card pulite, FLAT — niente velature/gradienti (look 2024, non 2021). */
-.vault .bg-\[var\(--surface\)\] { background-image: none; }
-/* Vault: numeri tabulari da "terminale". */
-.vault .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-.vault .sys-label { letter-spacing: 0.16em; }
-.vault .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
-
-/* ===== TEMA "VAULT DARK" — versione scura del premium (enterprise, accento VIOLET) =====
-   Sfondo #0F1115, card #171A21, testo bianco, secondario #9CA3AF, accento #5B4BFF. Flat, sobrio. */
-.vaultdark {
-  --accent: #2346d6;        /* Brand Primary (blu) */
-  --accent-hover: #3a5ae0;
-  --gold: #5b4bff;          /* Brand Accent (violet) — focus/highlight/grafici */
-  --gold-soft: rgba(91,75,255,0.14);
-  --gold-line: rgba(91,75,255,0.34);
-  --bg: #0f1115;            /* sfondo */
-  --surface: #171a21;       /* card */
-  --surface-2: #1f232c;     /* inset / input */
-  --border: rgba(255,255,255,0.07);
-  --border-2: rgba(255,255,255,0.12);
-  --border-3: rgba(255,255,255,0.20);
-  --text: #ffffff;          /* testo principale */
-  --text-soft: #9ca3af;     /* secondario */
-  --text-muted: #cbd1d9;
-  --text-faint: #6b7280;
-  --fill: rgba(255,255,255,0.05);
-  --fill-2: rgba(255,255,255,0.09);
-  --fill-3: rgba(255,255,255,0.15);
-  --bg-blur: rgba(15,17,21,0.95);
-  --bg-overlay: rgba(15,17,21,0.72);
-  --surface-blur: rgba(23,26,33,0.95);
-  /* Valore/grafici in violet, negativi rosso, secondario grigio (mai arcobaleno). */
-  --teal: #5b4bff;
-  --teal-soft: rgba(91,75,255,0.12);
-  --teal-line: rgba(91,75,255,0.40);
-  --rust: #f87171;
-  --rust-soft: rgba(248,113,113,0.13);
-  --beige: #9ca3af;
-}
-.vaultdark .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #ffffff !important; }
-.vaultdark .text-\[\#6b54c6\]   { color: var(--accent) !important; }
-.vaultdark .border-\[\#6b54c6\] { border-color: var(--accent) !important; }
-.vaultdark .text-green-400, .vaultdark .text-emerald-400 { color: #22c55e !important; }  /* success sobrio su scuro */
-.vaultdark .text-green-300     { color: #4ade80 !important; }
-.vaultdark .text-red-400, .vaultdark .text-red-300       { color: #f87171 !important; }
-.vaultdark .text-yellow-400    { color: #fbbf24 !important; }
-.vaultdark .bg-\[var\(--surface\)\] { background-image: none; }  /* flat, niente gradienti */
-.vaultdark .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-.vaultdark .sys-label { letter-spacing: 0.16em; }
-.vaultdark .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
-
-/* ===== TEMA "CACTUS" — Mocha / Cactus Jack: espresso + tan caramello + crema (PREMIUM, admin) =====
-   Palette earthy streetwear (rif. Jordan 1 "Mocha": cioccolato, khaki/tan, sail). Caldo e premium. */
-.cactus {
-  --accent: #c8a06a;        /* tan caramello (accento) */
-  --accent-hover: #d8b585;
-  --gold: #c8a06a;
-  --gold-soft: rgba(200,160,106,0.14);
-  --gold-line: rgba(200,160,106,0.38);
-  --bg: #16110c;            /* espresso near-black caldo */
-  --surface: #211a13;       /* cioccolato scuro */
-  --surface-2: #2a2118;     /* inset / elevated */
-  --border: rgba(201,168,124,0.10);   /* hairline caldo */
-  --border-2: rgba(201,168,124,0.16);
-  --border-3: rgba(201,168,124,0.26);
-  --text: #efe7d6;          /* sail / crema */
-  --text-soft: #a1907a;     /* taupe caldo */
-  --text-muted: #c7b7a0;
-  --text-faint: #6e6052;
-  --fill: rgba(201,168,124,0.06);
-  --fill-2: rgba(201,168,124,0.11);
-  --fill-3: rgba(201,168,124,0.18);
-  --bg-blur: rgba(22,17,12,0.95);
-  --bg-overlay: rgba(22,17,12,0.72);
-  --surface-blur: rgba(33,26,19,0.95);
-  /* Cockpit: valore = tan, negativi = rust, secondario taupe. */
-  --teal: #c8a06a;
-  --teal-soft: rgba(200,160,106,0.12);
-  --teal-line: rgba(200,160,106,0.42);
-  --rust: #c0613a;          /* terracotta / rust */
-  --rust-soft: rgba(192,97,58,0.14);
-  --beige: #a1907a;
-}
-.cactus .sys-label { letter-spacing: 0.18em; }
-.cactus .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #1c1409 !important; }
-.cactus .text-\[\#6b54c6\]   { color: var(--accent) !important; }
-.cactus .border-\[\#6b54c6\] { border-color: var(--accent) !important; }
-.cactus .text-green-400, .cactus .text-emerald-400 { color: #9aa45e !important; }  /* olive */
-.cactus .text-green-300     { color: #b3bd78 !important; }
-.cactus .text-red-400, .cactus .text-red-300       { color: #c0613a !important; }  /* rust */
-.cactus .text-yellow-400    { color: #d08b3a !important; }                          /* amber */
-.cactus .bg-\[var\(--surface\)\] {
-  background-image: linear-gradient(180deg, rgba(201,168,124,0.03), rgba(201,168,124,0) 44%);
-}
-.cactus .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-.cactus .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
-
 /* ===== TEMA "CHROME" — cromo/argento del logo: charcoal + platino + acciaio (PREMIUM, admin) =====
    Monocromo metallico freddo. Accento = argento platino (pulsanti cromati). Dati in steel-blue
    tenue, negativi in clay smorzato. Sobrio, professionale, abbinato al logo cromato. */
@@ -317,12 +178,22 @@
 .chrome .text-green-300     { color: #87b3a0 !important; }
 .chrome .text-red-400, .chrome .text-red-300       { color: #b87159 !important; }  /* clay */
 .chrome .text-yellow-400    { color: #c2a15a !important; }                          /* ottone smorzato */
-/* Velatura metallica fredda dall'alto + filo acciaio (look "scolpito nel metallo"). */
+/* Card "fresate nel metallo": velatura fredda dall'alto + bordo raffinato + filo di luce
+   sul bordo superiore (il metallo che cattura la luce) + ombra netta che le stacca dal fondo. */
 .chrome .bg-\[var\(--surface\)\] {
-  background-image: linear-gradient(180deg, rgba(180,195,210,0.035), rgba(180,195,210,0) 46%);
+  background-image: linear-gradient(180deg, rgba(190,202,214,0.05), rgba(190,202,214,0) 46%);
+  border-color: rgba(190,202,214,0.18) !important;
+  box-shadow: inset 0 1px 0 rgba(224,231,238,0.10), 0 2px 14px rgba(0,0,0,0.34);
 }
 .chrome .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .chrome .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
+/* SCRITTE CROMATE: gradiente argento clip sui titoli + wordmark → "lettering in metallo".
+   Solo titoli (h1/h2/h3) e wordmark, non il corpo, per non perdere leggibilità sui dati. */
+.chrome h1, .chrome h2, .chrome h3 {
+  background: linear-gradient(180deg,#ffffff 0%,#e6eaee 32%,#aab1ba 54%,#f2f5f8 100%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.34));
+}
 
 /* ===== TEMA CHIARO: colori semantici accentati =====
    Le tinte -400 di Tailwind sono troppo chiare su sfondo bianco.
