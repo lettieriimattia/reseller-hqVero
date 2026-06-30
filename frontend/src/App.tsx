@@ -86,7 +86,7 @@ async function apiCall<T = any>(
 // ==========================================
 interface Product {
   id: string; category?: string; brand: string; name: string; size: string; condition: string;
-  purchasePrice: number; salePrice?: number; platform?: string; fees?: number; status: string;
+  purchasePrice: number; salePrice?: number; platform?: string; fees?: number; status: string; customer?: string;
   customShares?: string; photos?: string; createdAt?: string; soldAt?: string;
   marketPriceMin?: number; marketPriceMax?: number; marketPriceAvg?: number; authenticityScore?: number;
   trackingCode?: string; trackingCarrier?: string; trackingStatus?: string;
@@ -497,6 +497,7 @@ export default function App() {
   const [sellPrice, setSellPrice] = useState('');
   const [sellPlatform, setSellPlatform] = useState('Vinted');
   const [sellPaymentMethod, setSellPaymentMethod] = useState('Nessuna Fee (Contanti/Bonifico)');
+  const [sellCustomer, setSellCustomer] = useState(''); // identificativo cliente (facoltativo)
   const [sellFees, setSellFees] = useState('0');
   // Costi extra per la vendita (scatola, etichetta spedizione, dogana…): voci modificabili,
   // la loro somma viene SOTTRATTA dal ricavo (aggiunta alle fees del prodotto).
@@ -2022,13 +2023,17 @@ export default function App() {
     const plat = p.platform || 'Privato';
     const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.salePrice}-${plat}`;
     if (!acc[key]) acc[key] = { ...p, category: cat, platform: plat, quantity: 0, totalRevenue: 0, totalProfit: 0, totalFees: 0, ids: [] };
+    // tieni la data di vendita PIÙ RECENTE del gruppo (per ordinare i venduti)
+    if (p.soldAt && (!acc[key].soldAt || new Date(p.soldAt) > new Date(acc[key].soldAt))) acc[key].soldAt = p.soldAt;
     acc[key].quantity += 1;
     acc[key].ids.push(p.id);
     acc[key].totalRevenue += (p.salePrice || 0);
     acc[key].totalFees += (p.fees || 0);
     acc[key].totalProfit += ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0));
     return acc;
-  }, {} as Record<string, any>));
+  }, {} as Record<string, any>))
+    // VENDITA PIÙ RECENTE IN CIMA (idea utente)
+    .sort((a: any, b: any) => new Date(b.soldAt || b.createdAt || 0).getTime() - new Date(a.soldAt || a.createdAt || 0).getTime());
 
   // Da spedire: pagati in-app (PAGATO) + quelli marcati a mano (venduti altrove, toShip).
   const toShipItems = products.filter((p: any) =>
@@ -3116,6 +3121,7 @@ export default function App() {
     });
     setSellQuantity(ids.length.toString());
     setSellPrice('');
+    setSellCustomer('');
     setSellExtraCosts([]); setSellExtraOpen(false);
     setSellTrackingCode(''); setSellTrackingCarrier('Auto');
     setSellModalOpen(true);
@@ -3137,7 +3143,7 @@ export default function App() {
     for (const id of idsToProcess) {
       const { ok } = await apiCall(`/products/${id}`, {
         method: 'PUT',
-        body: JSON.stringify({ salePrice: unitSalePrice, platform: sellPlatform, fees: unitFees }),
+        body: JSON.stringify({ salePrice: unitSalePrice, platform: sellPlatform, fees: unitFees, customer: sellCustomer.trim() || null }),
       });
       if (!ok) hasError = true;
     }
@@ -5360,6 +5366,7 @@ export default function App() {
                                 <span className="text-[10px] text-[var(--text-faint)]">{g.size}</span>
                                 <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border ${platCls}`}>{g.platform}</span>
                                 {soldDate && <span className="text-[10px] text-gray-700">{soldDate}</span>}
+                                {g.customer && <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)] flex items-center gap-1"><Users size={9} /> {g.customer}</span>}
                               </div>
                             </div>
                             <div className="text-right shrink-0 ml-2">
@@ -8461,7 +8468,14 @@ export default function App() {
                   <option value="PayPal Beni e Servizi">{t('sell.paypal')}</option>
                 </select>
               </div>
-              
+
+              {/* Identificativo cliente (facoltativo): nome, @social, codice… — idea utente */}
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><Users size={11} /> Cliente <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">(facoltativo)</span></label>
+                <input type="text" value={sellCustomer} onChange={e => setSellCustomer(e.target.value)} placeholder="Nome, @social o codice cliente…" maxLength={120}
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
+              </div>
+
               {/* Costi extra alla vendita (scatola, etichetta spedizione, dogana…): tendina con
                   voci modificabili; la loro somma viene SOTTRATTA dal ricavo. */}
               <div className="bg-[var(--surface-2)] rounded-xl overflow-hidden">

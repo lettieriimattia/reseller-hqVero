@@ -626,7 +626,8 @@ router.put('/:id', validate(sellProductSchema), async (req: AuthRequest, res: Re
       return res.status(409).json({ error: 'Prodotto riservato da un altro utente.' });
     }
 
-    const { salePrice, platform, fees } = req.body;
+    const { salePrice, platform, fees, customer } = req.body;
+    const cust = typeof customer === 'string' && customer.trim() ? customer.trim().slice(0, 120) : null;
 
     // ACID transaction
     const updated = await prisma.$transaction(async tx => {
@@ -637,7 +638,7 @@ router.put('/:id', validate(sellProductSchema), async (req: AuthRequest, res: Re
       return tx.product.update({
         where: { id: req.params.id },
         data: {
-          salePrice, platform, fees,
+          salePrice, platform, fees, customer: cust,
           status: 'VENDUTO', soldAt: new Date(),
           reservedBy: null, reservedAt: null,
         },

@@ -107,6 +107,7 @@ export const sellProductSchema = z.object({
   salePrice: z.number().positive().max(1000000),
   platform: z.enum(['Vinted', 'Subito', 'StockX', 'eBay', 'Privato']),
   fees: z.number().nonnegative().max(1000000),
+  customer: z.string().max(120).optional().nullable(), // identificativo cliente (facoltativo)
 });
 
 // ==========================================

@@ -154,7 +154,8 @@ model Product {
   salePrice      Float?
   platform       String?
   fees           Float?
-  
+  customer       String?    // identificativo cliente alla vendita (nome/@social/codice) — facoltativo
+
   status         String     @default("IN STOCK") // "IN STOCK" | "RESERVED" | "PAGATO" | "VENDUTO"
   customShares   String?    // JSON string con quote dei soci
 
