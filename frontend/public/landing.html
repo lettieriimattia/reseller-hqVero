@@ -93,7 +93,29 @@
     .nav-links a:hover { color: var(--ink); }
     @media (max-width: 760px) { .nav-links a:not(.btn) { display: none; } }
 
-    .hero { text-align: center; padding: 76px 0 40px; }
+    .hero { text-align: center; padding: 76px 0 40px; position: relative; overflow: hidden; }
+    .hero > .wrap, .hero > .ticker { position: relative; z-index: 1; }
+    /* Aurora che SCORRE dietro l'hero: blob morbidi che fluttuano (vivo, memorabile, leggero). */
+    .aurora { position: absolute; inset: -25% -10% -10% -10%; z-index: 0; pointer-events: none; filter: blur(64px); opacity: .6; }
+    .aurora span { position: absolute; border-radius: 50%; mix-blend-mode: multiply; animation: drift 20s ease-in-out infinite; }
+    .aurora .a1 { width: 46vw; max-width: 540px; aspect-ratio: 1; background: #5fd6c8; top: -8%; left: 2%; }
+    .aurora .a2 { width: 42vw; max-width: 500px; aspect-ratio: 1; background: #aec4ff; top: 6%; right: 4%; animation-delay: -7s; }
+    .aurora .a3 { width: 38vw; max-width: 460px; aspect-ratio: 1; background: #d7c6ff; bottom: -14%; left: 32%; animation-delay: -13s; }
+    @keyframes drift {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(4vw, 3vh) scale(1.14); }
+      66% { transform: translate(-3vw, 2vh) scale(.92); }
+    }
+    @media (prefers-reduced-motion: reduce) { .aurora span { animation: none; } }
+    /* Entrata a cascata del contenuto hero (movimento all'apertura) */
+    .hero .wrap > * { animation: heroUp .7s cubic-bezier(.2,.7,.2,1) both; }
+    .hero .wrap > *:nth-child(2) { animation-delay: .07s; }
+    .hero .wrap > *:nth-child(3) { animation-delay: .14s; }
+    .hero .wrap > *:nth-child(4) { animation-delay: .22s; }
+    .hero .wrap > *:nth-child(5) { animation-delay: .30s; }
+    .hero .wrap > *:nth-child(6) { animation-delay: .36s; }
+    @keyframes heroUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .hero .wrap > * { animation: none; } }
     .hero img.logo { width: 84px; height: 84px; border-radius: 20px; margin: 0 auto 24px; box-shadow: 0 18px 50px -18px rgba(15,23,42,.35); }
     .pill { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: var(--teal-d); background: #e6f5f3; padding: 7px 15px; border-radius: 999px; margin-bottom: 22px; }
     .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
@@ -222,6 +244,7 @@
 
   <main>
     <section class="hero">
+      <div class="aurora" aria-hidden="true"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
       <div class="wrap">
         <img src="/logo.png" alt="HQVault — app di gestione per reseller" width="84" height="84" class="logo" fetchpriority="high" />
         <span class="pill"><span class="dot"></span> Fatto da reseller, per reseller</span>
