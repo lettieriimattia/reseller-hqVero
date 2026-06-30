@@ -141,9 +141,9 @@
    Si applica SOPRA .light (eredita i fix dei colori hardcoded per il chiaro), poi rifinisce
    palette e accento. Direzione: pulito, enterprise, nessun gradiente, accento #5B4BFF. */
 .vault {
-  --accent: #5b4bff;        /* violet (focus/pulsanti/loading/grafici) */
-  --accent-hover: #7c5cff;
-  --gold: #5b4bff;          /* dettagli "premium" in violet, non oro */
+  --accent: #2346d6;        /* Brand Primary (blu) — pulsanti, azioni, stato attivo */
+  --accent-hover: #3a5ae0;
+  --gold: #5b4bff;          /* Brand Accent (violet) — focus, highlight, grafici */
   --gold-soft: rgba(91,75,255,0.10);
   --gold-line: rgba(91,75,255,0.30);
   --bg: #fafaf9;            /* bone, non bianco puro (filosofia Apple) */
@@ -185,6 +185,50 @@
 .vault .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .vault .sys-label { letter-spacing: 0.16em; }
 .vault .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
+
+/* ===== TEMA "VAULT DARK" — versione scura del premium (enterprise, accento VIOLET) =====
+   Sfondo #0F1115, card #171A21, testo bianco, secondario #9CA3AF, accento #5B4BFF. Flat, sobrio. */
+.vaultdark {
+  --accent: #2346d6;        /* Brand Primary (blu) */
+  --accent-hover: #3a5ae0;
+  --gold: #5b4bff;          /* Brand Accent (violet) — focus/highlight/grafici */
+  --gold-soft: rgba(91,75,255,0.14);
+  --gold-line: rgba(91,75,255,0.34);
+  --bg: #0f1115;            /* sfondo */
+  --surface: #171a21;       /* card */
+  --surface-2: #1f232c;     /* inset / input */
+  --border: rgba(255,255,255,0.07);
+  --border-2: rgba(255,255,255,0.12);
+  --border-3: rgba(255,255,255,0.20);
+  --text: #ffffff;          /* testo principale */
+  --text-soft: #9ca3af;     /* secondario */
+  --text-muted: #cbd1d9;
+  --text-faint: #6b7280;
+  --fill: rgba(255,255,255,0.05);
+  --fill-2: rgba(255,255,255,0.09);
+  --fill-3: rgba(255,255,255,0.15);
+  --bg-blur: rgba(15,17,21,0.95);
+  --bg-overlay: rgba(15,17,21,0.72);
+  --surface-blur: rgba(23,26,33,0.95);
+  /* Valore/grafici in violet, negativi rosso, secondario grigio (mai arcobaleno). */
+  --teal: #5b4bff;
+  --teal-soft: rgba(91,75,255,0.12);
+  --teal-line: rgba(91,75,255,0.40);
+  --rust: #f87171;
+  --rust-soft: rgba(248,113,113,0.13);
+  --beige: #9ca3af;
+}
+.vaultdark .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #ffffff !important; }
+.vaultdark .text-\[\#6b54c6\]   { color: var(--accent) !important; }
+.vaultdark .border-\[\#6b54c6\] { border-color: var(--accent) !important; }
+.vaultdark .text-green-400, .vaultdark .text-emerald-400 { color: #22c55e !important; }  /* success sobrio su scuro */
+.vaultdark .text-green-300     { color: #4ade80 !important; }
+.vaultdark .text-red-400, .vaultdark .text-red-300       { color: #f87171 !important; }
+.vaultdark .text-yellow-400    { color: #fbbf24 !important; }
+.vaultdark .bg-\[var\(--surface\)\] { background-image: none; }  /* flat, niente gradienti */
+.vaultdark .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.vaultdark .sys-label { letter-spacing: 0.16em; }
+.vaultdark .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
 
 /* ===== TEMA CHIARO: colori semantici accentati =====
    Le tinte -400 di Tailwind sono troppo chiare su sfondo bianco.
