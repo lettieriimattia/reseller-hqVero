@@ -122,6 +122,13 @@
     /* Mockup browser: anteprima dell'app (interfaccia HQ ricreata + foto reali) */
     .browser { max-width: 980px; margin: 46px auto 0; border-radius: 16px; overflow: hidden; background: #0d0f12; border: 1px solid #1c2026; box-shadow: 0 44px 100px -44px rgba(15,23,42,.55), 0 0 0 1px rgba(15,23,42,.04); transition: transform .3s ease; }
     .browser:hover { transform: translateY(-4px); }
+    /* Anteprima a TAB con screenshot reali */
+    .shots { max-width: 1000px; margin: 42px auto 0; }
+    .shot-tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .shot-tab { padding: 9px 18px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--muted); font-weight: 700; font-size: 14px; cursor: pointer; transition: border-color .2s, color .2s, background .2s; }
+    .shot-tab:hover { border-color: var(--teal); color: var(--teal); }
+    .shot-tab.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .browser .shot-img { width: 100%; height: auto; display: block; }
     .bw-bar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; background: #15181d; border-bottom: 1px solid #1c2026; }
     .bw-dot { width: 11px; height: 11px; border-radius: 50%; }
     .bw-url { margin: 0 auto; font-size: 12px; color: #6b7480; background: #0d0f12; padding: 5px 16px; border-radius: 8px; }
@@ -238,23 +245,17 @@
         <p class="eyebrow">Dentro l'app</p>
         <h2>Tutto il tuo magazzino, a colpo d'occhio</h2>
         <p class="lead">Dashboard, inventario con foto, vendite e profitti: pulito, veloce, sempre sincronizzato su telefono e desktop.</p>
-        <div class="browser reveal">
-          <div class="bw-bar"><span class="bw-dot" style="background:#ff5f57"></span><span class="bw-dot" style="background:#febc2e"></span><span class="bw-dot" style="background:#28c840"></span><span class="bw-url">app.hqvault.com</span></div>
-          <div class="bw-body">
-            <aside class="bw-side">
-              <div class="bw-logo">HQ<b>V</b></div>
-              <span class="bw-nav on">▦</span><span class="bw-nav">▤</span><span class="bw-nav">◳</span><span class="bw-nav">⤴</span><span class="bw-nav">▥</span>
-            </aside>
-            <div class="bw-main">
-              <div class="bw-head"><div><div class="bw-h1">Ciao, Marco</div><div class="bw-sub">Martedì 30 giugno</div></div><span class="bw-add">+ Aggiungi</span></div>
-              <div class="bw-kpis">
-                <div class="bw-kpi"><span>PERSONALE</span><b class="teal">1.219€</b></div>
-                <div class="bw-kpi"><span>STOCK</span><b>24.654€</b><i>63 pezzi</i></div>
-                <div class="bw-kpi"><span>VENDITE</span><b>9 · <em>3.483€</em></b></div>
-              </div>
-              <div class="bw-gridhead">Inventario</div>
-              <div class="bw-grid" id="previewGrid"></div>
-            </div>
+        <div class="shots reveal">
+          <div class="shot-tabs">
+            <button class="shot-tab on" data-shot="/inventoryHQ.png">Inventario</button>
+            <button class="shot-tab" data-shot="/dashboardHQ.png">Dashboard</button>
+            <button class="shot-tab" data-shot="/analyticsHQ.png">Analitiche</button>
+            <button class="shot-tab" data-shot="/settingsHQ.png">Impostazioni</button>
+          </div>
+          <div class="browser">
+            <div class="bw-bar"><span class="bw-dot" style="background:#ff5f57"></span><span class="bw-dot" style="background:#febc2e"></span><span class="bw-dot" style="background:#28c840"></span><span class="bw-url">app.hqvault.com</span></div>
+            <img class="shot-img" id="shotImg" src="/inventoryHQ.png" alt="HQVault — anteprima dell'app"
+              onerror="var s=document.getElementById('anteprima'); if(s) s.style.display='none';" />
           </div>
         </div>
       </div>
@@ -380,6 +381,20 @@
         track.innerHTML = html;
         document.getElementById('ticker').hidden = false;
       }).catch(function () {});
+    })();
+
+    // Anteprima a TAB: cambia lo screenshot al click.
+    (function () {
+      var tabs = document.querySelectorAll('.shot-tab');
+      var img = document.getElementById('shotImg');
+      if (!tabs.length || !img) return;
+      tabs.forEach(function (t) {
+        t.addEventListener('click', function () {
+          tabs.forEach(function (x) { x.classList.remove('on'); });
+          t.classList.add('on');
+          img.src = t.getAttribute('data-shot');
+        });
+      });
     })();
 
     // Rivelazione allo scroll degli elementi .reveal (più dinamica).

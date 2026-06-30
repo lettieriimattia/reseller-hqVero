@@ -388,9 +388,17 @@ export default function App() {
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   
   // ----- TEMA (scuro / chiaro / glass) -----
-  // 'lux'/'chrome' = temi premium, selezionabili solo dall'admin (anteprima).
+  // 'chrome' = tema premium cromato, ora DEFAULT per tutti gli account.
   const [theme, setTheme] = useState<'dark' | 'light' | 'glass' | 'lux' | 'chrome'>(() => {
-    try { return (localStorage.getItem('hq-theme') as 'dark' | 'light' | 'glass' | 'lux' | 'chrome') || 'dark'; } catch { return 'dark'; }
+    try {
+      // Rollout Chrome: porta TUTTI al tema cromato UNA volta (poi resta modificabile dall'utente).
+      if (localStorage.getItem('hq-theme-rollout') !== 'chrome') {
+        localStorage.setItem('hq-theme', 'chrome');
+        localStorage.setItem('hq-theme-rollout', 'chrome');
+        return 'chrome';
+      }
+      return (localStorage.getItem('hq-theme') as 'dark' | 'light' | 'glass' | 'lux' | 'chrome') || 'chrome';
+    } catch { return 'chrome'; }
   });
   useEffect(() => {
     const root = document.documentElement;
@@ -7207,29 +7215,13 @@ export default function App() {
                     }`}>
                     <Sun size={13} /> {t('set.themeLight')}
                   </button>
-                  <button onClick={() => setTheme('glass')}
+                  {/* Tema premium cromato — DEFAULT per tutti */}
+                  <button onClick={() => setTheme('chrome')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'glass' ? 'bg-[#6b54c6] text-white' : 'text-[var(--text-soft)]'
+                      theme === 'chrome' ? 'bg-[#c2c9d2] text-[#0c0e11]' : 'text-[var(--text-soft)]'
                     }`}>
-                    <Sparkles size={13} /> {t('set.themeGlass')}
+                    <Gem size={13} /> Chrome
                   </button>
-                  {/* Temi premium: SOLO admin, per anteprima/feedback */}
-                  {isAdminUser && (
-                    <button onClick={() => setTheme('lux')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                        theme === 'lux' ? 'bg-[#1fa89f] text-[#04100f]' : 'text-[var(--text-soft)]'
-                      }`}>
-                      <Gem size={13} /> Lux
-                    </button>
-                  )}
-                  {isAdminUser && (
-                    <button onClick={() => setTheme('chrome')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                        theme === 'chrome' ? 'bg-[#c2c9d2] text-[#0c0e11]' : 'text-[var(--text-soft)]'
-                      }`}>
-                      <Gem size={13} /> Chrome
-                    </button>
-                  )}
                 </div>
               </div>
             </section>
