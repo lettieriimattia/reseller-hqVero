@@ -69,10 +69,8 @@
       #hq-splash .hq-mono-img{
         position:absolute; inset:0; margin:auto; height:150px; width:auto; max-width:88%; object-fit:contain;
         opacity:0; transform:scale(.62); animation:hqMono 2.5s cubic-bezier(.2,.7,.2,1) forwards;
-        /* La foto ha sfondo nero: 'screen' lo fonde col nero dello splash → resta solo il cromo. */
-        mix-blend-mode:screen;
+        filter:drop-shadow(0 12px 34px rgba(0,0,0,.55));
       }
-      .hq-light #hq-splash .hq-mono-img, #hq-splash.hq-light .hq-mono-img{ mix-blend-mode:normal; }
       @media (min-width:768px){ #hq-splash .hq-mono-img{ height:152px; } }
       @media (prefers-reduced-motion: reduce){ #hq-splash .hq-mono-img{ animation:none; opacity:1; transform:scale(1); } }
       /* Barra di caricamento */
@@ -94,8 +92,7 @@
       <div class="hq-stage">
         <div class="hq-logo-area">
           <div class="hq-word hq-chrome">HEADQUARTERS</div>
-          <div class="hq-mono hq-chrome">HQ</div>
-          <img class="hq-mono-img" src="/logo.png" alt="HQVault" onerror="this.style.display='none'" />
+          <img class="hq-mono-img" src="/logo.png" alt="HQVault" />
         </div>
         <div class="hq-bar"><i></i></div>
       </div>
