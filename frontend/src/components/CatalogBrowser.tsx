@@ -164,7 +164,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
   };
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="w-full">
       <div className="mb-4">
         <h1 className="text-xl font-black text-[var(--text)]">Catalogo</h1>
         <p className="text-sm text-[var(--text-soft)]">Tocca <span className="text-[#6b54c6] font-bold">+</span> per aggiungere al magazzino con la foto ufficiale. <span className="text-[#6b54c6] font-semibold">Beta</span></p>
@@ -203,8 +203,9 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
         </div>
       </div>
 
-      {/* Risultati */}
-      <div className="mt-2 divide-y divide-[var(--border)] lg:divide-y-0 lg:grid lg:grid-cols-2 lg:gap-x-10">
+      {/* Risultati — riempiono TUTTA la larghezza della pagina: più colonne sugli schermi larghi
+          (2 su laptop, 3 su desktop, 4 su schermi molto larghi) invece di lasciare spazio nero a destra. */}
+      <div className="mt-2 divide-y divide-[var(--border)] lg:divide-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 lg:gap-x-8">
         {results.map(item => {
           const isAdding = !!adding[item.key];
           const isAdded = !!addedFlash[item.key];

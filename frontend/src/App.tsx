@@ -4698,8 +4698,8 @@ export default function App() {
               <div className="hidden sm:block sm:flex-1" />
               {/* Centro: saluto + data */}
               <div className="sm:flex-1 sm:text-center min-w-0">
-                <h2 className="text-3xl lg:text-4xl font-bold">
-                  {t('dash.hello')}, <span className="text-[var(--text)]">{user.name.split(' ')[0]}</span>
+                <h2 className="text-3xl lg:text-4xl font-black">
+                  {t('dash.hello')}, <span className="text-[var(--text)] font-black">{user.name.split(' ')[0]}</span>
                 </h2>
                 <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1.5 capitalize">{new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
               </div>
@@ -5236,7 +5236,7 @@ export default function App() {
                         )}
                         <div className="flex items-center gap-3 p-3.5">
                           {photoUrl
-                            ? <div onClick={(e) => { e.stopPropagation(); setZoomPhoto(photoUrl); }} className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)] bg-white cursor-zoom-in"><img src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain" /></div>
+                            ? <div onClick={!bulkMode ? () => openEditModal(g) : undefined} className={`w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)] bg-white ${!bulkMode ? 'cursor-pointer' : ''}`}><img src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain" /></div>
                             : <span className="text-2xl shrink-0 w-16 text-center">{getCategoryIcon(g.category)}</span>}
                           <div className={`flex-1 min-w-0 ${!bulkMode ? 'cursor-pointer' : ''}`}
                             onClick={!bulkMode ? () => openEditModal(g) : undefined}>
@@ -5293,7 +5293,7 @@ export default function App() {
                           className={`relative aspect-square bg-white flex items-center justify-center overflow-hidden ${!bulkMode ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                           {photoUrl
-                            ? <img onClick={(e) => { e.stopPropagation(); setZoomPhoto(photoUrl); }} src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain cursor-zoom-in" />
+                            ? <img src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain" />
                             : <span className="text-4xl opacity-80">{getCategoryIcon(g.category)}</span>}
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                             {g.quantity > 1 && <span className="text-[10px] bg-[#6b54c6] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}

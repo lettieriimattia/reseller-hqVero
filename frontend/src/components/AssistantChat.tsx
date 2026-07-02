@@ -375,7 +375,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       {open && (
         <div className="fixed inset-0 z-[44] flex flex-col justify-end lg:inset-auto lg:bottom-6 lg:right-6 lg:left-auto lg:top-auto">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setOpen(false)} />
-          <div className="relative flex flex-col h-[86vh] rounded-t-[28px] border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_-24px_80px_-24px_rgba(107,84,198,0.55)] lg:h-[600px] lg:max-h-[82vh] lg:w-[400px] lg:rounded-[24px] lg:border lg:border-white/10">
+          <div className="relative flex flex-col h-[86vh] rounded-t-[28px] border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_-24px_80px_-24px_rgba(107,84,198,0.55)] lg:h-[720px] lg:max-h-[88vh] lg:w-[480px] lg:rounded-[24px] lg:border lg:border-white/10">
             {/* Grab handle */}
             <div className="mx-auto mt-3 mb-1.5 h-1.5 w-10 rounded-full bg-white/15 shrink-0" />
 
@@ -466,8 +466,8 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
           il pannello si apre come card sopra di esso solo quando lo clicchi). */}
       {!open && (
         <button onClick={() => setOpen(true)} aria-label="Apri assistente HQ"
-          className="hidden lg:flex fixed bottom-6 right-6 z-[45] w-14 h-14 rounded-full items-center justify-center bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-[0_10px_40px_-8px_rgba(107,84,198,0.7)] ring-1 ring-white/10 hover:from-violet-400 hover:to-violet-500 transition-all active:scale-95">
-          {wakeOn ? <Radio size={22} className="animate-pulse" /> : <Sparkles size={22} />}
+          className="hidden lg:flex fixed bottom-6 right-6 z-[45] w-20 h-20 rounded-full items-center justify-center bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-[0_10px_40px_-8px_rgba(107,84,198,0.7)] ring-1 ring-white/10 hover:from-violet-400 hover:to-violet-500 transition-all active:scale-95">
+          {wakeOn ? <Radio size={30} className="animate-pulse" /> : <Sparkles size={30} />}
         </button>
       )}
     </>
