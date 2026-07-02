@@ -1964,15 +1964,13 @@ export default function App() {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (periodPickerOpen || contactsPage || taskPanelOpen) return;
-      if (e.key === 'ArrowLeft') { e.preventDefault(); setReportMonth(({ y, m }) => { const nm = m - 4; return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 }; }); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); setReportMonth(({ y, m }) => { const nm = m - 1; return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 }; }); }
       else if (e.key === 'ArrowRight') {
         e.preventDefault();
         const now = new Date();
         setReportMonth(({ y, m }) => {
           if (y === now.getFullYear() && m === now.getMonth()) return { y, m };
-          const nm = m + 4; let ny = y + Math.floor(nm / 12); let nmm = ((nm % 12) + 12) % 12;
-          if (ny > now.getFullYear() || (ny === now.getFullYear() && nmm > now.getMonth())) { ny = now.getFullYear(); nmm = now.getMonth(); }
-          return { y: ny, m: nmm };
+          const nm = m + 1; return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 };
         });
       }
     };
@@ -5829,10 +5827,10 @@ export default function App() {
                         ))}
                       </div>
                     </div>
-                    {/* Frecce per scorrere i set di mesi (anche coi tasti ← → su PC) */}
+                    {/* Frecce: scorrono di UN mese alla volta (anche coi tasti ← → su PC) */}
                     <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => shiftSet(-4)} aria-label="Mesi precedenti" className="w-10 h-10 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-2xl flex items-center justify-center">‹</button>
-                      <button onClick={() => shiftSet(4)} disabled={isCurrent} aria-label="Mesi successivi" className="w-10 h-10 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-2xl disabled:opacity-30 flex items-center justify-center">›</button>
+                      <button onClick={() => shiftSet(-1)} aria-label="Mese precedente" className="w-10 h-10 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-2xl flex items-center justify-center">‹</button>
+                      <button onClick={() => shiftSet(1)} disabled={isCurrent} aria-label="Mese successivo" className="w-10 h-10 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-2xl disabled:opacity-30 flex items-center justify-center">›</button>
                     </div>
                   </div>
                   {/* Barre — più grandi e visibili */}
