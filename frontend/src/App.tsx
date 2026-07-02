@@ -522,6 +522,7 @@ export default function App() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<any>(null);
   const [lotDetail, setLotDetail] = useState<any>(null); // dettaglio lotto: lista dei pezzi
+  const [zoomPhoto, setZoomPhoto] = useState<string | null>(null); // foto ingrandita (lightbox magazzino)
   // Pubblicazione nel marketplace dalla modale di modifica
   const [editIsPublic, setEditIsPublic] = useState(false);
   const [editPublicPrice, setEditPublicPrice] = useState('');
@@ -3052,7 +3053,10 @@ export default function App() {
     
     setIsSaving(true);
     const qty = parseInt(quantity) || 1;
-    const unitPrice = parseFloat(price);
+    // Il costo inserito è il TOTALE dell'acquisto (es. 12 scarpe uguali): il costo per pezzo
+    // = totale / quantità. Per quantità 1 coincide col totale.
+    const totalPaid = parseFloat(price);
+    const unitPrice = (isNaN(totalPaid) ? NaN : totalPaid / qty);
     
     let finalBrand = brand, finalName = name, finalSize = size, finalCondition = condition;
     // Categoria effettiva: se non è selezionata ma l'IA ha rilevato un reparto, lo creo al volo e lo uso.
@@ -5192,7 +5196,7 @@ export default function App() {
                         )}
                         <div className="flex items-center gap-3 p-3.5">
                           {photoUrl
-                            ? <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)] bg-white"><img src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain" /></div>
+                            ? <div onClick={(e) => { e.stopPropagation(); setZoomPhoto(photoUrl); }} className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)] bg-white cursor-zoom-in"><img src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain" /></div>
                             : <span className="text-2xl shrink-0 w-16 text-center">{getCategoryIcon(g.category)}</span>}
                           <div className={`flex-1 min-w-0 ${!bulkMode ? 'cursor-pointer' : ''}`}
                             onClick={!bulkMode ? () => openEditModal(g) : undefined}>
@@ -5249,7 +5253,7 @@ export default function App() {
                           className={`relative aspect-square bg-white flex items-center justify-center overflow-hidden ${!bulkMode ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                           {photoUrl
-                            ? <img src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain" />
+                            ? <img onClick={(e) => { e.stopPropagation(); setZoomPhoto(photoUrl); }} src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain cursor-zoom-in" />
                             : <span className="text-4xl opacity-80">{getCategoryIcon(g.category)}</span>}
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                             {g.quantity > 1 && <span className="text-[10px] bg-[#6b54c6] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
@@ -8342,10 +8346,13 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.purchasePrice')}</label>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.purchasePrice')}{(parseInt(quantity) || 1) > 1 ? ' (totale)' : ''}</label>
                   <input type="number" step="0.01" required value={price}
                     onChange={(e: any) => setPrice(e.target.value)}
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
+                  {(parseInt(quantity) || 1) > 1 && parseFloat(price) > 0 && (
+                    <p className="text-[10px] text-[var(--text-faint)] mt-1 num">= {(parseFloat(price) / (parseInt(quantity) || 1)).toFixed(2)}€ a pezzo</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.quantity')}</label>
@@ -8458,6 +8465,17 @@ export default function App() {
         </div>
       )}
       
+      {/* ========== LIGHTBOX FOTO (tap su una foto del magazzino) ========== */}
+      {zoomPhoto && (
+        <div className="fixed inset-0 z-[120] bg-black/95 flex items-center justify-center p-4" onClick={() => setZoomPhoto(null)}>
+          <button onClick={() => setZoomPhoto(null)} aria-label="Chiudi"
+            className="absolute right-4 p-2 bg-white/10 rounded-full text-white hover:bg-white/20 z-10" style={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}>
+            <X size={22} />
+          </button>
+          <img src={/^https?:\/\//.test(zoomPhoto) ? (proxyImg(zoomPhoto) || zoomPhoto) : zoomPhoto} alt="" className="max-w-full max-h-full object-contain rounded-2xl" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
+
       {/* ========== MODALE: VENDI ========== */}
       {sellModalOpen && productToSell && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setSellModalOpen(false))}>
