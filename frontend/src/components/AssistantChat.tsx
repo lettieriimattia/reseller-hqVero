@@ -482,7 +482,8 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
           il pannello si apre come card sopra di esso solo quando lo clicchi). */}
       {!open && (
         <button onClick={() => setOpen(true)} aria-label="Apri assistente HQ"
-          className="hidden lg:flex fixed bottom-6 right-6 z-[45] w-20 h-20 rounded-full items-center justify-center bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-[0_10px_40px_-8px_rgba(107,84,198,0.7)] ring-1 ring-white/10 hover:from-violet-400 hover:to-violet-500 transition-all active:scale-95">
+          className="hidden lg:flex fixed bottom-6 right-6 z-[45] w-20 h-20 rounded-full items-center justify-center text-[#23262b] ring-1 ring-white/40 shadow-[0_12px_44px_-8px_rgba(0,0,0,0.6)] hover:brightness-105 transition-all active:scale-95"
+          style={{ background: 'linear-gradient(150deg, #fbfbfc 0%, #d2d5d9 26%, #8b9099 52%, #3a3d42 60%, #9aa0a8 76%, #eceef0 100%)' }}>
           {wakeOn ? <Radio size={30} className="animate-pulse" /> : <Sparkles size={30} />}
         </button>
       )}

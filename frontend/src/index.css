@@ -273,8 +273,9 @@ html, body {
 /* DESKTOP: su schermi grandi il testo mobile-size è troppo piccolo. Scaliamo il font-size
    di base (rem) → tutte le utility Tailwind (testo, padding, gap) crescono in proporzione,
    riempiendo meglio lo schermo e migliorando la leggibilità. */
-@media (min-width: 1280px) { :root { font-size: 16.5px; } }
-@media (min-width: 1680px) { :root { font-size: 17px; } }
+@media (min-width: 1280px) { :root { font-size: 17.5px; } }
+@media (min-width: 1536px) { :root { font-size: 18.5px; } }
+@media (min-width: 1920px) { :root { font-size: 19.5px; } }
 
 body {
   margin: 0;
@@ -387,7 +388,8 @@ button:active { opacity: 0.75; }
 .bg-teal-soft { background-color: var(--teal-soft); }
 .ring-teal  { box-shadow: inset 0 0 0 1px var(--teal-line); }
 /* Etichetta di sistema (IN STOCK, ROI...): minuscola, uppercase, kerning largo */
-.sys-label { font-size: 10px; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.14em; font-weight: 700; color: var(--text-faint); }
+.sys-label { font-size: 11px; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.14em; font-weight: 700; color: var(--text-faint); }
+@media (min-width: 1280px) { .sys-label { font-size: 12.5px; } }
 /* Feedback meccanico: i componenti si sollevano come interruttori scolpiti dal pieno */
 .mech { transition: transform .2s ease-out, box-shadow .2s ease-out, border-color .2s ease-out, background-color .2s ease-out; }
 .mech:hover { transform: translateY(-2px); }

@@ -5762,21 +5762,29 @@ export default function App() {
                 { k: 'Investimenti', c: COL.Investimenti, lbl: t('bub.invest'), val: bubbleMonth.investiti },
               ];
               const maxTot = Math.max(...barMonths.map(mm => mm.ricavi + mm.uscite + mm.investiti), 1);
-              const H = 150;
+              const H = 200;
+              // Frecce: scorri il set di 6 mesi (sposta il mese selezionato di ±6).
+              const shiftSet = (dd: number) => setReportMonth(({ y, m }) => { const nm = m + dd; return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 }; });
+              const now = new Date(); const isCurrent = reportMonth.y === now.getFullYear() && reportMonth.m === now.getMonth();
               return (
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-5">
                   <div className="flex items-start justify-between gap-2 mb-4 flex-wrap">
                     <div>
-                      <h3 className="font-bold">{t('bub.analysis')}</h3>
+                      <h3 className="font-bold text-lg">{t('bub.analysis')}</h3>
                       <div className="flex items-center gap-3.5 mt-1.5 flex-wrap">
                         {legend.map(l => (
-                          <div key={l.k} className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{ background: l.c }} />{l.lbl}</div>
+                          <div key={l.k} className="flex items-center gap-1.5 text-[11px] lg:text-xs text-[var(--text-soft)]"><span className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{ background: l.c }} />{l.lbl}</div>
                         ))}
                       </div>
                     </div>
+                    {/* Frecce per scorrere i set di mesi */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button onClick={() => shiftSet(-6)} aria-label="Mesi precedenti" className="w-9 h-9 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-xl flex items-center justify-center">‹</button>
+                      <button onClick={() => shiftSet(6)} disabled={isCurrent} aria-label="Mesi successivi" className="w-9 h-9 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-xl disabled:opacity-30 flex items-center justify-center">›</button>
+                    </div>
                   </div>
-                  {/* Barre */}
-                  <div className="flex items-end justify-between gap-2" style={{ height: H + 22 }}>
+                  {/* Barre — più grandi e visibili */}
+                  <div className="flex items-end justify-between gap-2 sm:gap-3" style={{ height: H + 26 }}>
                     {barMonths.map(mm => {
                       const sum = mm.ricavi + mm.uscite + mm.investiti;
                       const h = maxTot > 0 ? (sum / maxTot) * H : 0;
@@ -5784,15 +5792,15 @@ export default function App() {
                       const active = mm.y === reportMonth.y && mm.m === reportMonth.m;
                       return (
                         <button key={`${mm.y}-${mm.m}`} onClick={() => setReportMonth({ y: mm.y, m: mm.m })}
-                          className="flex-1 flex flex-col items-center gap-1.5 group min-w-0">
+                          className="flex-1 flex flex-col items-center gap-2 group min-w-0">
                           <div className="w-full flex flex-col justify-end" style={{ height: H }}>
-                            <div className={`w-full max-w-[42px] mx-auto rounded-t-md overflow-hidden flex flex-col-reverse transition-all ${active ? 'ring-2 ring-white/25' : 'opacity-80 group-hover:opacity-100'}`} style={{ height: h || 2 }}>
+                            <div className={`w-full max-w-[64px] mx-auto rounded-t-lg overflow-hidden flex flex-col-reverse transition-all ${active ? 'ring-2 ring-white/30 brightness-110' : 'opacity-85 group-hover:opacity-100'}`} style={{ height: h || 3 }}>
                               <div style={{ height: seg(mm.ricavi), background: COL.Entrate }} />
                               <div style={{ height: seg(mm.uscite), background: COL.Uscite }} />
                               <div style={{ height: seg(mm.investiti), background: COL.Investimenti }} />
                             </div>
                           </div>
-                          <span className={`text-[10px] capitalize truncate max-w-full ${active ? 'text-[var(--text)] font-black' : 'text-[var(--text-faint)]'}`}>{mm.label}</span>
+                          <span className={`text-[11.5px] lg:text-[13px] capitalize truncate max-w-full ${active ? 'text-[var(--text)] font-black' : 'text-[var(--text-faint)]'}`}>{mm.label}</span>
                         </button>
                       );
                     })}
