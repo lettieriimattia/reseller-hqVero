@@ -107,6 +107,8 @@ export const editProductSchema = z.object({
   fees: z.number().nonnegative().max(1000000).nullable().optional(),
   customer: z.string().max(120).nullable().optional(),
   quickSalePrice: z.number().nonnegative().max(1000000).nullable().optional(), // sell panic
+  purchaseDate: z.string().max(40).nullable().optional(), // data acquisto (ISO), facoltativa
+  soldDate: z.string().max(40).nullable().optional(),     // data vendita (ISO), facoltativa
 });
 
 export const sellProductSchema = z.object({

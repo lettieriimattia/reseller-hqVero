@@ -753,7 +753,15 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
     }
     if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
 
-    const { category, brand, name, size, condition, purchasePrice, customShares, photos, notes, attributes, consignmentName, consignmentPercent, warehouseId: newWarehouseId, salePrice, platform, fees, customer, quickSalePrice } = req.body;
+    const { category, brand, name, size, condition, purchasePrice, customShares, photos, notes, attributes, consignmentName, consignmentPercent, warehouseId: newWarehouseId, salePrice, platform, fees, customer, quickSalePrice, purchaseDate, soldDate } = req.body;
+    // Date facoltative: parse sicuro (ISO/yyyy-mm-dd). Ignora se non valide.
+    const parseDate = (v: any): Date | null | undefined => {
+      if (v === undefined) return undefined;      // non toccare
+      if (v === null || v === '') return null;    // azzera
+      const d = new Date(v); return isNaN(d.getTime()) ? undefined : d;
+    };
+    const purchaseAt = parseDate(purchaseDate);
+    const soldAtDate = parseDate(soldDate);
 
     // Spostamento in un altro magazzino: consentito solo se l'utente ne è membro.
     let warehouseMove: string | undefined = undefined;
@@ -824,6 +832,9 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
         fees: fees !== undefined ? (typeof fees === 'number' ? fees : null) : undefined,
         customer: customer !== undefined ? ((customer || '').toString().trim() || null) : undefined,
         quickSalePrice: quickSalePrice !== undefined ? (typeof quickSalePrice === 'number' ? quickSalePrice : null) : undefined,
+        // Date facoltative: acquisto = createdAt, vendita = soldAt (solo se valide).
+        ...(purchaseAt !== undefined ? { createdAt: purchaseAt ?? undefined } : {}),
+        ...(soldAtDate !== undefined ? { soldAt: soldAtDate } : {}),
       },
     });
 

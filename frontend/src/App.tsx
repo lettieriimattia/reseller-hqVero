@@ -555,6 +555,8 @@ export default function App() {
   const [editSaleFees, setEditSaleFees] = useState('');
   const [editSaleCustomer, setEditSaleCustomer] = useState('');
   const [editQuickSale, setEditQuickSale] = useState(''); // sell panic: prezzo svendita rapida
+  const [editPurchaseDate, setEditPurchaseDate] = useState(''); // data acquisto (facoltativa)
+  const [editSoldDate, setEditSoldDate] = useState('');         // data vendita (facoltativa)
   const [editWarehouseId, setEditWarehouseId] = useState(''); // magazzino del prodotto (per spostarlo)
   const [isEditShared, setIsEditShared] = useState(false);
   const [editShares, setEditShares] = useState<{userId: string, name: string, percentage: string | number}[]>([]);
@@ -3224,6 +3226,9 @@ export default function App() {
     setEditSaleFees(group.fees != null ? String(group.fees) : '');
     setEditSaleCustomer(group.customer || '');
     setEditQuickSale(group.quickSalePrice != null ? String(group.quickSalePrice) : '');
+    const toDateInput = (v: any) => { if (!v) return ''; try { return new Date(v).toISOString().slice(0, 10); } catch { return ''; } };
+    setEditPurchaseDate(toDateInput(group.createdAt));
+    setEditSoldDate(toDateInput(group.soldAt));
     setEditWarehouseId(group.warehouseId || baseWarehouse?.id || '');
     // I pezzi di un lotto ora sono righe singole: la modifica opera SOLO su questo gruppo
     // (come un prodotto normale), non su tutto il lotto.
@@ -3401,6 +3406,9 @@ export default function App() {
           photos: editPhotos.length > 0 ? editPhotos : undefined,
           // Sell panic: prezzo di svendita rapida (facoltativo, per il valore di liquidazione).
           quickSalePrice: editQuickSale.trim() ? parseFloat(editQuickSale) : null,
+          // Date facoltative: acquisto sempre, vendita solo se venduto.
+          purchaseDate: editPurchaseDate || null,
+          ...(productToEdit.status === 'VENDUTO' ? { soldDate: editSoldDate || null } : {}),
           // Modifica VENDITA: solo per prodotti già venduti.
           ...(productToEdit.status === 'VENDUTO' ? {
             salePrice: editSalePrice.trim() ? parseFloat(editSalePrice) : undefined,
@@ -8761,6 +8769,22 @@ export default function App() {
                 <input type="number" step="0.01" required value={editPrice}
                   onChange={(e: any) => setEditPrice(e.target.value)}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
+              </div>
+
+              {/* Date (facoltative): acquisto sempre, vendita solo se venduto */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Data acquisto</label>
+                  <input type="date" value={editPurchaseDate} onChange={e => setEditPurchaseDate(e.target.value)}
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
+                </div>
+                {productToEdit.status === 'VENDUTO' && (
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Data vendita</label>
+                    <input type="date" value={editSoldDate} onChange={e => setEditSoldDate(e.target.value)}
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
+                  </div>
+                )}
               </div>
 
               {/* Sell panic — prezzo di svendita rapida (solo articoli IN STOCK) */}
