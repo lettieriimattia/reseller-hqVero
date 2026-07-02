@@ -5,6 +5,16 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/logo.png" />
+    <!-- LAUNCH IMAGE iOS: iOS mostra QUESTA immagine ISTANTANEA all'apertura della PWA (invece
+         dello schermo bianco/vuoto durante il cold-start del web-view). Una per formato iPhone. -->
+    <link rel="apple-touch-startup-image" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2)" href="/splash/splash-750x1334.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2)" href="/splash/splash-828x1792.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3)" href="/splash/splash-1125x2436.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3)" href="/splash/splash-1170x2532.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3)" href="/splash/splash-1179x2556.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3)" href="/splash/splash-1242x2688.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:428px) and (device-height:926px) and (-webkit-device-pixel-ratio:3)" href="/splash/splash-1284x2778.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3)" href="/splash/splash-1290x2796.png" />
     <!-- viewport-fit=cover per il notch iPhone, user-scalable=no previene zoom accidentale -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
@@ -46,7 +56,7 @@
       #hq-splash .hq-word{
         font-weight:800; font-size:clamp(24px,7vw,48px); letter-spacing:.04em;
         white-space:nowrap; opacity:0; transform-origin:center;
-        animation:hqWord 2.5s cubic-bezier(.5,.1,.2,1) forwards;
+        animation:hqWord 1.2s cubic-bezier(.5,.1,.2,1) forwards;
         filter:drop-shadow(0 3px 16px rgba(0,0,0,.55));
       }
       /* ogni lettera è cromata singolarmente (così le filler possono collassare) */
@@ -56,7 +66,7 @@
       }
       .hq-light #hq-splash .hq-word span{ background:linear-gradient(177deg,#4a4d54,#15171b 52%,#54575e); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
       /* le filler (EAD / UARTERS) si chiudono a larghezza zero → H e Q si uniscono in "HQ" */
-      #hq-splash .hq-word .fl{ display:inline-block; overflow:hidden; vertical-align:bottom; max-width:12ch; animation:hqFill 2.5s cubic-bezier(.7,0,.2,1) forwards; }
+      #hq-splash .hq-word .fl{ display:inline-block; overflow:hidden; vertical-align:bottom; max-width:12ch; animation:hqFill 1.2s cubic-bezier(.7,0,.2,1) forwards; }
       @keyframes hqWord{
         0%{opacity:0; transform:scale(.96)}
         12%{opacity:1; transform:scale(1)}
@@ -73,7 +83,7 @@
       #hq-splash .hq-bar{ width:min(190px,54vw); height:3px; border-radius:99px; background:rgba(255,255,255,.10); overflow:hidden; }
       .hq-light #hq-splash .hq-bar, #hq-splash.hq-light .hq-bar{ background:rgba(0,0,0,.08); }
       #hq-splash .hq-bar > i{ display:block; height:100%; width:0; border-radius:99px;
-        background:linear-gradient(90deg,#6a6e76,#eceef0,#6a6e76); animation:hqBar 2.5s ease-out forwards; }
+        background:linear-gradient(90deg,#6a6e76,#eceef0,#6a6e76); animation:hqBar 1.2s ease-out forwards; }
       @keyframes hqBar{ 0%{width:0} 68%{width:76%} 100%{width:100%} }
       @media (prefers-reduced-motion: reduce){
         #hq-splash .hq-word{ animation:none; opacity:0; }
@@ -103,6 +113,8 @@
           s.classList.add('hq-hide');
           setTimeout(function () { if (s && s.parentNode) s.parentNode.removeChild(s); }, 680);
         }
+        // React chiama questo appena l'app è montata → lo splash sparisce SUBITO (non a timer fisso).
+        window.__hqHideSplash = hide;
         // Video AI (se presente): mostralo sopra l'SVG, e chiudi lo splash quando finisce.
         var v = document.getElementById('hq-vault-video');
         var hasVideo = false;
@@ -113,8 +125,8 @@
         }
         // Senza video: nascondi dopo ~2.7s (animazione SVG). Col video: lascia finire ('ended'),
         // con un tetto di sicurezza a 4s perché lo splash non resti mai bloccato.
-        setTimeout(function () { if (!hasVideo) hide(); }, 2700);
-        setTimeout(hide, 4000);
+        setTimeout(function () { if (!hasVideo) hide(); }, 1500);
+        setTimeout(hide, 3500);
       })();
     </script>
     <div id="root"></div>

@@ -32,3 +32,8 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 )
+
+// App montata → chiudi lo splash SUBITO (al prossimo frame dipinto), senza aspettare il timer.
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => { (window as any).__hqHideSplash?.(); });
+});

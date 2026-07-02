@@ -273,9 +273,8 @@ html, body {
 /* DESKTOP: su schermi grandi il testo mobile-size è troppo piccolo. Scaliamo il font-size
    di base (rem) → tutte le utility Tailwind (testo, padding, gap) crescono in proporzione,
    riempiendo meglio lo schermo e migliorando la leggibilità. */
-@media (min-width: 1280px) { :root { font-size: 17px; } }
-@media (min-width: 1600px) { :root { font-size: 18px; } }
-@media (min-width: 1920px) { :root { font-size: 19px; } }
+@media (min-width: 1280px) { :root { font-size: 16.5px; } }
+@media (min-width: 1680px) { :root { font-size: 17px; } }
 
 body {
   margin: 0;
