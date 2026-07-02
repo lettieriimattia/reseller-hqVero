@@ -220,14 +220,9 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
                   <p className="text-xs text-[var(--text-faint)]">{item.brand}</p>
                 </div>
               </div>
-              {onAddDetailed && (
-                <button onClick={() => detailedAdd(item)} disabled={isAdding}
-                  aria-label="Aggiungi con dettagli"
-                  className="px-2.5 h-8 rounded-lg flex items-center shrink-0 text-[11px] font-bold text-[var(--text-soft)] border border-[var(--border-2)] hover:text-[var(--text)] hover:border-[var(--border-3)] transition-colors">
-                  + Info
-                </button>
-              )}
-              <button onClick={() => quickAdd(item)} disabled={isAdding}
+              {/* Il "+" apre il form PRE-COMPILATO (categoria/marca/nome/SKU/foto): aggiungi con
+                  taglia/costo/condizione — niente più aggiunta a costo 0. */}
+              <button onClick={() => (onAddDetailed ? detailedAdd(item) : quickAdd(item))} disabled={isAdding}
                 aria-label="Aggiungi al magazzino"
                 className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                   isAdded ? 'bg-green-500/15 text-green-500' : 'text-[#6b54c6] hover:bg-[#6b54c6]/10'
