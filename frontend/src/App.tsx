@@ -602,6 +602,7 @@ export default function App() {
   const [buyersOpen, setBuyersOpen] = useState(false);   // accordion tabella "Compratori" (chiuso di default)
   const [sellersOpen, setSellersOpen] = useState(false); // accordion tabella "Fornitori" (chiuso di default)
   const [expandedContact, setExpandedContact] = useState<string | null>(null); // riga contatto aperta (mostra i suoi pezzi)
+  const [bubbleFocus, setBubbleFocus] = useState<null | 'Entrate' | 'Uscite' | 'Investimenti'>(null); // drill-down bolle analytics
   // Mesi STORICI (prima dell'apertura del conto)
   const [manualMonths, setManualMonths] = useState<any[]>([]);
   const [manualOpen, setManualOpen] = useState(false);
@@ -5574,6 +5575,81 @@ export default function App() {
               </button>
             </div>
 
+            {/* ===== BOLLE INTERATTIVE (stile Trade Republic, colori soffusi, drift lento).
+                Tocca una bolla → le altre spariscono ed escono le sotto-bolle del dettaglio. ===== */}
+            {(() => {
+              const inM = (d: any) => { const x = new Date(d); return x.getFullYear() === reportMonth.y && x.getMonth() === reportMonth.m; };
+              const sold = products.filter((p: any) => p.status === 'VENDUTO' && p.soldAt && inM(p.soldAt));
+              const bought = products.filter((p: any) => p.createdAt && inM(p.createdAt));
+              const ricavi = sold.reduce((a: number, p: any) => a + (p.salePrice || 0), 0);
+              const merce = sold.reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0);
+              const feeTot = sold.reduce((a: number, p: any) => a + (p.fees || 0), 0);
+              const speseM = expenses.filter((e: any) => inM(e.date)).reduce((a: number, e: any) => a + (e.amount || 0), 0);
+              const uscite = merce + feeTot + speseM;
+              const investiti = bought.reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0);
+              const label = new Date(reportMonth.y, reportMonth.m, 1).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+              const shiftM = (dd: number) => { setBubbleFocus(null); setReportMonth(({ y, m }) => { const nm = m + dd; return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 }; }); };
+              const now = new Date(); const isCur = reportMonth.y === now.getFullYear() && reportMonth.m === now.getMonth();
+              const BASE: Record<string, string> = { Entrate: '#3fae82', Uscite: '#8878d6', Investimenti: '#5b86c9' };
+              const mains = [{ label: 'Entrate', val: ricavi }, { label: 'Uscite', val: uscite }, { label: 'Investimenti', val: investiti }];
+              const groupSum = (arr: any[], keyFn: (x: any) => string) => {
+                const m: Record<string, number> = {};
+                for (const x of arr) { const k = keyFn(x) || 'Altro'; m[k] = (m[k] || 0) + (x.__v || 0); }
+                return Object.entries(m).map(([l, v]) => ({ label: l, val: v })).sort((a, b) => b.val - a.val);
+              };
+              let breakdown: { label: string; val: number }[] = [];
+              if (bubbleFocus === 'Entrate') breakdown = groupSum(sold.map((p: any) => ({ ...p, __v: p.salePrice || 0 })), (p) => p.platform || 'Privato');
+              else if (bubbleFocus === 'Investimenti') breakdown = groupSum(bought.map((p: any) => ({ ...p, __v: p.purchasePrice || 0 })), (p) => p.category || 'Altro');
+              else if (bubbleFocus === 'Uscite') breakdown = [{ label: 'Merce', val: merce }, { label: 'Fee', val: feeTot }, { label: 'Spese extra', val: speseM }].filter(b => b.val > 0);
+              const focusColor = bubbleFocus ? BASE[bubbleFocus] : '#5b86c9';
+              const visible = bubbleFocus ? breakdown : mains;
+              const maxV = Math.max(...visible.map(b => b.val), 1);
+              const dia = (v: number) => Math.round(70 + 150 * Math.sqrt(Math.max(v, 0) / maxV));
+              const bg = (base: string) => ({ background: `radial-gradient(circle at 32% 26%, ${base}f2, ${base}b0 52%, ${base}70)`, boxShadow: `0 14px 46px -12px ${base}66, inset 0 1px 0 rgba(255,255,255,0.14)` });
+              return (
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-5 overflow-hidden">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {bubbleFocus && <button onClick={() => setBubbleFocus(null)} className="flex items-center gap-1 text-[var(--text-soft)] hover:text-[var(--text)] text-sm font-bold shrink-0"><ChevronDown size={18} className="rotate-90" /> Indietro</button>}
+                      <h3 className="font-bold truncate">{bubbleFocus ? `${bubbleFocus} · dettaglio` : 'Analisi'}</h3>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button onClick={() => shiftM(-1)} className="w-8 h-8 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg">‹</button>
+                      <span className="text-xs font-bold capitalize min-w-[88px] text-center">{label}</span>
+                      <button onClick={() => shiftM(1)} disabled={isCur} className="w-8 h-8 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg disabled:opacity-30">›</button>
+                    </div>
+                  </div>
+                  <div className="relative flex flex-wrap items-center justify-center gap-4 sm:gap-7 py-6 min-h-[230px]">
+                    {visible.every(b => b.val <= 0) && <p className="text-sm text-[var(--text-faint)]">Nessun dato per questo mese.</p>}
+                    {visible.filter(b => b.val > 0).map((b, i) => {
+                      const d = dia(b.val);
+                      const base = bubbleFocus ? focusColor : (BASE[b.label] || '#5b86c9');
+                      const clickable = !bubbleFocus;
+                      return (
+                        <button key={b.label + i} disabled={!clickable} onClick={() => clickable && setBubbleFocus(b.label as any)}
+                          className={`rounded-full flex flex-col items-center justify-center shrink-0 text-white bubble-float ${bubbleFocus ? 'bubble-pop' : ''} ${clickable ? 'cursor-pointer hover:brightness-110' : 'cursor-default'} transition-[filter]`}
+                          style={{ width: d, height: d, animationDelay: `${i * 0.8}s`, ...bg(base) }}>
+                          <span className="font-extrabold num leading-none drop-shadow-sm" style={{ fontSize: Math.max(15, d / 6.5) }}>{b.val.toFixed(0)}€</span>
+                          <span className="opacity-90 mt-1 font-semibold px-1 text-center leading-tight" style={{ fontSize: Math.max(10, d / 13) }}>{b.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="space-y-2 border-t border-[var(--border)] pt-3">
+                    <p className="sys-label mb-1">{bubbleFocus ? 'Dettaglio' : 'Categorie'}</p>
+                    {(bubbleFocus ? breakdown : mains).map(c => (
+                      <div key={c.label} className="flex items-center gap-3">
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ background: bubbleFocus ? focusColor : (BASE[c.label] || '#5b86c9') }} />
+                        <span className="text-sm font-bold flex-1 truncate">{c.label}</span>
+                        <span className="text-sm font-bold num text-[var(--text-soft)]">{c.val.toFixed(2)}€</span>
+                      </div>
+                    ))}
+                    {!bubbleFocus && <p className="text-[11px] text-[var(--text-faint)] pt-1">Tocca una bolla per il dettaglio (dove sono gli investimenti, entrate per piattaforma…).</p>}
+                  </div>
+                </section>
+              );
+            })()}
+
             {/* ===== SMART INSIGHTS (spostati qui dalla dashboard) ===== */}
             {(staleCount > 0 || weekSales.length > 0 || bestCategoryEntry?.profit > 0 || sellThroughRate > 0) && (
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
@@ -5945,39 +6021,6 @@ export default function App() {
                     <p className="text-center py-8 text-sm text-[var(--text-soft)] capitalize">{t('an.noSalesIn')} {label}</p>
                   ) : (
                     <>
-                    {/* Grafico a BOLLE (stile Trade Republic): area ∝ valore + legenda "Categorie". */}
-                    {(() => {
-                      const cats = [
-                        { label: 'Entrate', val: ricavi, circle: 'bg-emerald-500 text-black', dot: 'bg-emerald-500' },
-                        { label: 'Uscite', val: usciteTot, circle: 'bg-[#7c5cff] text-white', dot: 'bg-[#7c5cff]' },
-                        { label: 'Investimenti', val: investiti, circle: 'bg-blue-500 text-white', dot: 'bg-blue-500' },
-                      ];
-                      return (
-                        <div className="mb-4 rounded-2xl bg-[var(--surface-2)]/40 border border-[var(--border)] p-5">
-                          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 py-2 min-h-[150px]">
-                            {[...cats].sort((a, b) => b.val - a.val).map(b => {
-                              const d = bubbleR(b.val);
-                              return (
-                                <div key={b.label} className={`rounded-full flex flex-col items-center justify-center shrink-0 shadow-lg ${b.circle}`} style={{ width: d, height: d }}>
-                                  <span className="font-extrabold num leading-none" style={{ fontSize: Math.max(13, d / 7) }}>{b.val.toFixed(0)}€</span>
-                                  <span className="opacity-80 mt-0.5" style={{ fontSize: Math.max(9, d / 13) }}>{b.label}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <div className="mt-4 space-y-2">
-                            <p className="sys-label mb-1">Categorie</p>
-                            {cats.map(c => (
-                              <div key={c.label} className="flex items-center gap-3">
-                                <span className={`w-3 h-3 rounded-full shrink-0 ${c.dot}`} />
-                                <span className="text-sm font-bold flex-1">{c.label}</span>
-                                <span className="text-sm font-bold num text-[var(--text-soft)]">{c.val.toFixed(2)}€</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                       <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
                         <p className="sys-label mb-1">{t('an.revenue')}</p>
