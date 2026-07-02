@@ -2133,6 +2133,19 @@ export default function App() {
     });
   }, [searchedProducts, filterCondition, filterPriceMin, filterPriceMax, sortField, sortDir, staleOnly, lang]);
 
+  // Aggregati del mese per le BOLLE (memoizzati): così cliccare una bolla NON ricalcola i filtri
+  // pesanti — la nuova sotto-bolla appare all'istante.
+  const bubbleMonth = useMemo(() => {
+    const inM = (d: any) => { const x = new Date(d); return x.getFullYear() === reportMonth.y && x.getMonth() === reportMonth.m; };
+    const sold = products.filter((p: any) => p.status === 'VENDUTO' && p.soldAt && inM(p.soldAt));
+    const bought = products.filter((p: any) => p.createdAt && inM(p.createdAt));
+    const ricavi = sold.reduce((a: number, p: any) => a + (p.salePrice || 0), 0);
+    const merce = sold.reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0);
+    const feeTot = sold.reduce((a: number, p: any) => a + (p.fees || 0), 0);
+    const speseM = expenses.filter((e: any) => inM(e.date)).reduce((a: number, e: any) => a + (e.amount || 0), 0);
+    return { sold, bought, ricavi, merce, feeTot, speseM, uscite: merce + feeTot + speseM, investiti: bought.reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0) };
+  }, [products, reportMonth, expenses]);
+
   // Venduti: SOLO gli articoli realmente venduti (i PAGATI in attesa stanno in "Da spedire").
   const groupedSoldArray = Object.values(searchedProducts.filter(p => p.status === 'VENDUTO').reduce((acc, p) => {
     const cat = p.category || 'Scarpe';
@@ -5631,16 +5644,8 @@ export default function App() {
             {/* ===== BOLLE INTERATTIVE (stile Trade Republic, colori soffusi, drift lento).
                 Tocca una bolla → le altre spariscono ed escono le sotto-bolle del dettaglio. ===== */}
             {(() => {
-              const inM = (d: any) => { const x = new Date(d); return x.getFullYear() === reportMonth.y && x.getMonth() === reportMonth.m; };
-              const sold = products.filter((p: any) => p.status === 'VENDUTO' && p.soldAt && inM(p.soldAt));
-              const bought = products.filter((p: any) => p.createdAt && inM(p.createdAt));
-              const ricavi = sold.reduce((a: number, p: any) => a + (p.salePrice || 0), 0);
-              const merce = sold.reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0);
-              const feeTot = sold.reduce((a: number, p: any) => a + (p.fees || 0), 0);
-              const speseM = expenses.filter((e: any) => inM(e.date)).reduce((a: number, e: any) => a + (e.amount || 0), 0);
-              const uscite = merce + feeTot + speseM;
-              const investiti = bought.reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0);
-              const label = new Date(reportMonth.y, reportMonth.m, 1).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+              const { sold, bought, ricavi, merce, feeTot, speseM, uscite, investiti } = bubbleMonth;
+              const label = new Date(reportMonth.y, reportMonth.m, 1).toLocaleDateString(dateLocale, { month: 'long', year: 'numeric' });
               const shiftM = (dd: number) => { setBubbleFocus(null); setReportMonth(({ y, m }) => { const nm = m + dd; return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 }; }); };
               const now = new Date(); const isCur = reportMonth.y === now.getFullYear() && reportMonth.m === now.getMonth();
               const BASE: Record<string, string> = { Entrate: '#3fae82', Uscite: '#8878d6', Investimenti: '#5b86c9' };
@@ -5686,7 +5691,7 @@ export default function App() {
                       return (
                         <button key={b.label + i} disabled={!clickable} onClick={() => clickable && setBubbleFocus(b.label as any)}
                           className={`rounded-full flex flex-col items-center justify-center shrink-0 text-white bubble-float ${bubbleFocus ? 'bubble-pop' : ''} ${clickable ? 'cursor-pointer hover:brightness-110' : 'cursor-default'} transition-[filter]`}
-                          style={{ width: d, height: d, animationDelay: `${i * 0.8}s`, ...bg(base) }}>
+                          style={{ width: d, height: d, animationDelay: bubbleFocus ? `${i * 0.03}s` : `${i * 0.8}s`, ...bg(base) }}>
                           <span className="font-extrabold num leading-none drop-shadow-sm" style={{ fontSize: Math.max(15, d / 6.5) }}>{b.val.toFixed(0)}€</span>
                           <span className="opacity-90 mt-1 font-semibold px-1 text-center leading-tight" style={{ fontSize: Math.max(10, d / 13) }}>{bubName(b.label)}</span>
                         </button>
