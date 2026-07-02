@@ -2071,11 +2071,21 @@ export default function App() {
     });
     const grouped = Object.values(base.reduce((acc, p) => {
       const cat = p.category || 'Scarpe';
-      // I pezzi di un lotto NON collassano più: ogni prodotto è una riga a sé (idea utente).
-      // Il `lotName` resta sul prodotto (lo si vede solo aprendo la modifica). Raggruppo come i
-      // prodotti normali: stesso nome/taglia/condizione = una riga con quantità.
-      // Raggruppa SOLO se davvero identici: stesso nome/taglia/condizione + STESSO COSTO + stesso
-      // venditore. Prezzi d'acquisto diversi (es. 1300 e 1100) → righe SEPARATE (idea utente).
+      // LOTTO = UNA card "prodotto" (che è il lotto): tutti i pezzi con lo stesso lotName
+      // collassano in un'unica card; cliccandola si entra nel sotto-inventario del lotto.
+      if ((p as any).lotName) {
+        const key = `lot:${(p as any).lotName}`;
+        if (!acc[key]) acc[key] = {
+          ...p, category: cat, isLot: true, name: (p as any).lotName, brand: 'Lotto',
+          quantity: 0, ids: [], purchasePrice: 0, oldestDate: p.createdAt,
+        };
+        acc[key].quantity += 1;
+        acc[key].ids.push(p.id);
+        acc[key].purchasePrice += (p.purchasePrice || 0); // costo TOTALE del lotto
+        if (p.createdAt && (!acc[key].oldestDate || p.createdAt < acc[key].oldestDate)) acc[key].oldestDate = p.createdAt;
+        return acc;
+      }
+      // Prodotti normali: stesso nome/taglia/condizione + STESSO COSTO + stesso venditore = una riga.
       const seller = `${(p as any).userId || ''}|${(p as any).consignmentName || ''}`;
       const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.condition}-${p.purchasePrice}-${seller}`;
       if (!acc[key]) acc[key] = {
@@ -6809,10 +6819,14 @@ export default function App() {
         {lotDetail && createPortal((
           <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setLotDetail(null)} {...swipeBack(() => setLotDetail(null))}>
             <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0"
+              <div className="flex items-center gap-2 p-3 border-b border-[var(--border)] shrink-0"
                 style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
-                <div className="min-w-0">
-                  <p className="font-bold truncate flex items-center gap-1.5"><Layers size={16} className="text-[#6b54c6]" /> {lotDetail.lotName}</p>
+                <button onClick={() => setLotDetail(null)} aria-label="Indietro"
+                  className="flex items-center gap-1 px-2 py-2 -ml-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform text-[var(--text-soft)] hover:text-[var(--text)]">
+                  <ChevronDown size={20} className="rotate-90" /> <span className="text-sm font-bold">Indietro</span>
+                </button>
+                <div className="min-w-0 flex-1 text-center">
+                  <p className="font-bold truncate flex items-center justify-center gap-1.5"><Layers size={16} className="text-[#6b54c6]" /> {lotDetail.lotName}</p>
                   <p className="text-[11px] text-[var(--text-soft)]">{lotDetail.category}</p>
                 </div>
                 <button onClick={() => setLotDetail(null)} aria-label="Chiudi"

@@ -62,6 +62,34 @@ const TOOLS = [
   {
     type: 'function',
     function: {
+      name: 'crea_lotto',
+      description: 'Crea un LOTTO d\'acquisto (più articoli comprati insieme a un prezzo totale). Il lotto diventa una card nel magazzino; dentro ci sono i singoli pezzi. Usalo quando l\'utente dice "crea un lotto", "ho comprato uno stock", "bundle", ecc.',
+      parameters: {
+        type: 'object',
+        properties: {
+          nome_lotto: { type: 'string', description: 'Nome del lotto, es. "Stock Milano 12/06"' },
+          categoria: { type: 'string', description: 'Reparto/categoria dei pezzi (facoltativo, es. "Scarpe")' },
+          prezzo_totale: { type: ['number', 'string'], description: 'Prezzo TOTALE pagato per tutto il lotto in euro (facoltativo). Solo cifre.' },
+          articoli: {
+            type: 'array',
+            description: 'Elenco dei pezzi del lotto. Ogni pezzo: {nome, taglia?}. Il costo si divide in parti uguali.',
+            items: {
+              type: 'object',
+              properties: {
+                nome: { type: 'string', description: 'Nome/modello del pezzo' },
+                taglia: { type: 'string', description: 'Taglia (facoltativo)' },
+              },
+              required: ['nome'],
+            },
+          },
+        },
+        required: ['nome_lotto', 'articoli'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'valuta_prezzo',
       description: 'Stima il valore di mercato di un prodotto su StockX per nome/SKU e taglia.',
       parameters: {
@@ -304,6 +332,37 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
         },
       });
       return { ok: true, aggiunto: `${brand} ${nome}`, taglia: size, prezzo: purchasePrice, foto: !!photo, quantita: qty, stock_totale: stockTotale, raggruppato: !!twin };
+    }
+
+    if (name === 'crea_lotto') {
+      const lotName = String(args.nome_lotto || '').trim();
+      const items: any[] = Array.isArray(args.articoli) ? args.articoli : [];
+      const valid = items.filter(it => it && String(it.nome || '').trim());
+      if (!lotName) return { error: 'Serve il nome del lotto.' };
+      if (!valid.length) return { error: 'Serve almeno un articolo nel lotto.' };
+      const quotaErr = await checkProductQuota(ctx.userId, valid.length);
+      if (quotaErr) return { error: 'Hai raggiunto il limite di prodotti del tuo piano.' };
+      const warehouseId = await findTargetWarehouse(ctx.userId);
+      if (!warehouseId) return { error: 'Nessun magazzino trovato per l\'utente.' };
+      const category = await defaultCategory(ctx.userId, args.categoria);
+      const total = Math.max(Number(args.prezzo_totale) || 0, 0);
+      const unit = Math.round((total / valid.length) * 100) / 100; // costo diviso in parti uguali
+      let withPhoto = 0;
+      for (const it of valid) {
+        const nome = String(it.nome).trim();
+        const size = (it.taglia ? String(it.taglia) : '').trim() || '—';
+        const found = await findCatalogPhoto(nome).catch(() => ({ image: null as string | null }));
+        if (found.image) withPhoto++;
+        await prisma.product.create({
+          data: {
+            category, brand: '', name: nome, size, condition: '—',
+            purchasePrice: unit, status: 'IN STOCK', userId: ctx.userId, warehouseId,
+            lotName, notes: `Lotto "${lotName}"`,
+            photos: found.image ? JSON.stringify([found.image]) : null,
+          },
+        });
+      }
+      return { ok: true, lotto: lotName, pezzi: valid.length, prezzo_totale: total, costo_cad: unit, foto_trovate: withPhoto };
     }
 
     if (name === 'modifica_prodotto') {
