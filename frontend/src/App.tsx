@@ -1929,6 +1929,29 @@ export default function App() {
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onDown); };
   }, [contactsPage, taskPanelOpen, periodPickerOpen, swipeDelete, cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
 
+  // Tasti FRECCIA ← → su PC: scorrono i set di 4 mesi del grafico a barre (solo in Analytics).
+  useEffect(() => {
+    if (currentView !== 'analytics') return;
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (periodPickerOpen || contactsPage || taskPanelOpen) return;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); setReportMonth(({ y, m }) => { const nm = m - 4; return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 }; }); }
+      else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const now = new Date();
+        setReportMonth(({ y, m }) => {
+          if (y === now.getFullYear() && m === now.getMonth()) return { y, m };
+          const nm = m + 4; let ny = y + Math.floor(nm / 12); let nmm = ((nm % 12) + 12) % 12;
+          if (ny > now.getFullYear() || (ny === now.getFullYear() && nmm > now.getMonth())) { ny = now.getFullYear(); nmm = now.getMonth(); }
+          return { y: ny, m: nmm };
+        });
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [currentView, periodPickerOpen, contactsPage, taskPanelOpen]);
+
   // BLOCCO SCROLL: quando un modale è aperto, la pagina sotto NON deve muoversi/scrollare.
   useEffect(() => {
     const anyModalOpen = cmdOpen || barcodeModalOpen || deleteConfirmOpen || bulkDeleteConfirmOpen || planModalOpen || twoFaDisableOpen || twoFaSetupOpen || changePwdOpen || trackingModalOpen || sourcingOpen || showProfitSharesModal || bulkSellOpen || sellModalOpen || lotOpen || incomingOpen || importOpen || isFormOpen || editModalOpen || notifPrefsOpen || teamPanelOpen || adminPanelOpen || guideOpen || supportOpen || privacyOpen;
@@ -2251,7 +2274,8 @@ export default function App() {
   // Serie ULTIMI 6 MESI (fino al mese selezionato) per il grafico a BARRE SOVRAPPOSTE.
   const barMonths = useMemo(() => {
     const arr: { y: number; m: number; label: string; ricavi: number; uscite: number; investiti: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
+    // 4 mesi per vista (barre grosse e leggibili) → si scorre coi tasti freccia/‹›.
+    for (let i = 3; i >= 0; i--) {
       const raw = reportMonth.m - i;
       const y = reportMonth.y + Math.floor(raw / 12);
       const m = ((raw % 12) + 12) % 12;
@@ -4716,13 +4740,13 @@ export default function App() {
           {[
             { id: 'dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
             { id: 'magazzino', label: t('nav.magazzino'), icon: Package },
+            { id: 'catalog', label: t('nav.catalog'), icon: Layers },
             ...(MARKETPLACE_ENABLED ? [
               { id: 'market', label: t('nav.market'), icon: Store },
               { id: 'chat', label: t('nav.messages'), icon: Mail },
             ] : []),
             { id: 'analytics', label: t('nav.analytics'), icon: BarChart3 },
             { id: 'tracking', label: t('nav.tracking'), icon: Truck },
-            { id: 'catalog', label: t('nav.catalog'), icon: Layers },
           ].map(tab => {
             const Icon = tab.icon;
             const active = currentView === tab.id;
@@ -5777,10 +5801,10 @@ export default function App() {
                         ))}
                       </div>
                     </div>
-                    {/* Frecce per scorrere i set di mesi */}
+                    {/* Frecce per scorrere i set di mesi (anche coi tasti ← → su PC) */}
                     <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => shiftSet(-6)} aria-label="Mesi precedenti" className="w-9 h-9 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-xl flex items-center justify-center">‹</button>
-                      <button onClick={() => shiftSet(6)} disabled={isCurrent} aria-label="Mesi successivi" className="w-9 h-9 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-xl disabled:opacity-30 flex items-center justify-center">›</button>
+                      <button onClick={() => shiftSet(-4)} aria-label="Mesi precedenti" className="w-10 h-10 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-2xl flex items-center justify-center">‹</button>
+                      <button onClick={() => shiftSet(4)} disabled={isCurrent} aria-label="Mesi successivi" className="w-10 h-10 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-2xl disabled:opacity-30 flex items-center justify-center">›</button>
                     </div>
                   </div>
                   {/* Barre — più grandi e visibili */}
@@ -5794,7 +5818,7 @@ export default function App() {
                         <button key={`${mm.y}-${mm.m}`} onClick={() => setReportMonth({ y: mm.y, m: mm.m })}
                           className="flex-1 flex flex-col items-center gap-2 group min-w-0">
                           <div className="w-full flex flex-col justify-end" style={{ height: H }}>
-                            <div className={`w-full max-w-[64px] mx-auto rounded-t-lg overflow-hidden flex flex-col-reverse transition-all ${active ? 'ring-2 ring-white/30 brightness-110' : 'opacity-85 group-hover:opacity-100'}`} style={{ height: h || 3 }}>
+                            <div className={`w-full max-w-[96px] mx-auto rounded-t-xl overflow-hidden flex flex-col-reverse transition-all ${active ? 'ring-2 ring-white/30 brightness-110' : 'opacity-85 group-hover:opacity-100'}`} style={{ height: h || 3 }}>
                               <div style={{ height: seg(mm.ricavi), background: COL.Entrate }} />
                               <div style={{ height: seg(mm.uscite), background: COL.Uscite }} />
                               <div style={{ height: seg(mm.investiti), background: COL.Investimenti }} />

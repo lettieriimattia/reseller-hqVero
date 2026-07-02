@@ -390,6 +390,18 @@ button:active { opacity: 0.75; }
 /* Etichetta di sistema (IN STOCK, ROI...): minuscola, uppercase, kerning largo */
 .sys-label { font-size: 11px; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.14em; font-weight: 700; color: var(--text-faint); }
 @media (min-width: 1280px) { .sys-label { font-size: 12.5px; } }
+/* FAB assistente: viola premium con sfumatura che "si muove" (gradiente animato). */
+.fab-violet {
+  background: linear-gradient(120deg, #8b6dff 0%, #6b54c6 28%, #a488ff 50%, #6b54c6 72%, #8b6dff 100%);
+  background-size: 300% 300%;
+  animation: fabMove 7s ease infinite;
+}
+@keyframes fabMove {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@media (prefers-reduced-motion: reduce) { .fab-violet { animation: none; } }
 /* Feedback meccanico: i componenti si sollevano come interruttori scolpiti dal pieno */
 .mech { transition: transform .2s ease-out, box-shadow .2s ease-out, border-color .2s ease-out, background-color .2s ease-out; }
 .mech:hover { transform: translateY(-2px); }
