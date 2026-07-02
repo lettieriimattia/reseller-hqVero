@@ -47,6 +47,7 @@ import { sendEmail } from './src/services/email.service';
 import { pollAllActiveTrackings } from './src/services/tracking.service';
 import { startEmailJobs } from './src/services/email-jobs.service';
 import { startMonitorAgent } from './src/services/monitor.agent';
+import { startMaintenance } from './src/services/maintenance';
 import { releaseExpiredHolds } from './src/services/dispute.service';
 import { migratePhotosToCloudinary } from './src/services/photo-migration.service';
 
@@ -412,6 +413,9 @@ serverInstance.listen(PORT, () => {
   // Agente IA "report giornaliero": una query/giorno (non tiene sveglio Neon). Si attiva solo
   // se Telegram è configurato — vedi monitor.agent.ts.
   startMonitorAgent();
+
+  // Manutenzione DB settimanale (prune cache catalogo + retention log). Solo pulizia, zero logica app.
+  startMaintenance();
 
   // Registra il webhook Telegram (per ricevere le RISPOSTE dell'admin → email al cliente).
   setTelegramWebhook();
