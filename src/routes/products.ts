@@ -369,6 +369,27 @@ router.post('/lot-smart', async (req: AuthRequest, res: Response) => {
 // ==========================================
 // POST /products — crea prodotto singolo
 // ==========================================
+// POST /products/merge-category — { from, to } → sposta TUTTI i prodotti dell'utente dal reparto
+// "from" al reparto "to" (unione di reparti sinonimi/duplicati, es. Vestiario → Abbigliamento).
+router.post('/merge-category', async (req: AuthRequest, res: Response) => {
+  try {
+    const from = (req.body?.from ?? '').toString().trim();
+    const to = (req.body?.to ?? '').toString().trim();
+    if (!from || !to || from.toLowerCase() === to.toLowerCase()) {
+      return res.status(400).json({ error: 'Reparti non validi.' });
+    }
+    const r = await prisma.product.updateMany({
+      where: { userId: req.user!.userId, deletedAt: null, category: { equals: from, mode: 'insensitive' } },
+      data: { category: to },
+    });
+    await audit({ action: 'PRODUCT_EDIT', userId: req.user!.userId, req, metadata: { mergeCategory: { from, to, count: r.count } } });
+    res.json({ ok: true, moved: r.count, to });
+  } catch (err: any) {
+    logger.error('POST /products/merge-category', { err: err.message });
+    res.status(500).json({ error: 'Errore unione reparti' });
+  }
+});
+
 // POST /products/enrich-photos — { ids? } → aggancia la foto dal catalogo ai prodotti SENZA
 // immagine. Se 'ids' manca, processa tutti i prodotti IN STOCK dell'utente senza foto.
 router.post('/enrich-photos', async (req: AuthRequest, res: Response) => {

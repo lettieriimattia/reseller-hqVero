@@ -1346,7 +1346,7 @@ export default function App() {
   // Così se un reparto esiste già, il prodotto ci finisce dentro invece di crearne un duplicato.
   const REPARTO_SYNONYMS: Record<string, string> = {
     scarpe: 'scarpe', scarpa: 'scarpe', sneakers: 'scarpe', sneaker: 'scarpe', calzature: 'scarpe', calzatura: 'scarpe', shoes: 'scarpe', shoe: 'scarpe', ginnastica: 'scarpe',
-    vestiti: 'vestiti', vestito: 'vestiti', abbigliamento: 'vestiti', clothes: 'vestiti', clothing: 'vestiti', felpa: 'vestiti', felpe: 'vestiti', maglia: 'vestiti', maglietta: 'vestiti', magliette: 'vestiti', tshirt: 'vestiti', pantaloni: 'vestiti', giacca: 'vestiti', giacche: 'vestiti',
+    vestiti: 'vestiti', vestito: 'vestiti', vestiario: 'vestiti', abbigliamento: 'vestiti', apparel: 'vestiti', clothes: 'vestiti', clothing: 'vestiti', felpa: 'vestiti', felpe: 'vestiti', hoodie: 'vestiti', maglia: 'vestiti', maglietta: 'vestiti', magliette: 'vestiti', tshirt: 'vestiti', tee: 'vestiti', pantaloni: 'vestiti', giacca: 'vestiti', giacche: 'vestiti', streetwear: 'vestiti',
     orologi: 'orologi', orologio: 'orologi', watch: 'orologi', watches: 'orologi',
     pokemon: 'pokemon', carte: 'pokemon', carta: 'pokemon', tcg: 'pokemon',
     borse: 'borse', borsa: 'borse', bag: 'borse', bags: 'borse',
@@ -1359,6 +1359,28 @@ export default function App() {
     if (direct) return direct;
     const g = canonGroup(detected);
     return userCategories.find((uc: string) => canonGroup(uc) === g) || null;
+  };
+  // Reparti DUPLICATI (stesso significato, nome diverso: es. Vestiti/Vestiario/Abbigliamento).
+  // Ognuno è un gruppo di 2+ nomi che andrebbero uniti in uno solo.
+  const dupCategoryGroups = useMemo(() => {
+    const byGroup: Record<string, string[]> = {};
+    for (const c of userCategories) { const g = canonGroup(c); (byGroup[g] ||= []).push(c); }
+    return Object.values(byGroup).filter(arr => arr.length > 1);
+  }, [userCategories]);
+  const [mergingCat, setMergingCat] = useState(false);
+  const [dismissedMerge, setDismissedMerge] = useState(false);
+  // Unisce tutti i reparti del gruppo nel nome scelto (riassegna i prodotti sul server).
+  const mergeCategoryGroup = async (group: string[], target: string) => {
+    setMergingCat(true);
+    let moved = 0;
+    for (const from of group) {
+      if (from === target) continue;
+      const { ok, data } = await apiCall<any>('/products/merge-category', { method: 'POST', body: JSON.stringify({ from, to: target }) });
+      if (ok) moved += data?.moved || 0;
+    }
+    await fetchProducts();
+    setMergingCat(false);
+    showToast(`✓ Reparti uniti in "${target}" (${moved} prodotti)`, 'ok');
   };
   const userInviteCodes = user?.warehouses?.filter(w => w.role === 'OWNER' && w.inviteCode) || [];
   // Piano dell'utente → gating feature. 'advanced_analytics' è incluso da Pro in su.
@@ -5016,6 +5038,35 @@ export default function App() {
         {/* ========== MAGAZZINO ========== */}
         {currentView === 'magazzino' && (
           <div className="space-y-3 lg:space-y-5">
+            {/* Banner UNIONE REPARTI: rileva reparti sinonimi (Vestiti/Vestiario/Abbigliamento) e
+                propone di unirli in uno solo. Riassegna i prodotti sul server. */}
+            {!dismissedMerge && dupCategoryGroups.length > 0 && (
+              <div className="bg-[#6b54c6]/10 border border-[#6b54c6]/30 rounded-2xl p-4">
+                <div className="flex items-start gap-2">
+                  <Layers size={16} className="text-[#6b54c6] shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[var(--text)]">Reparti simili da unire</p>
+                    <p className="text-[11px] text-[var(--text-soft)] mb-2">Questi reparti sembrano la stessa cosa: unendoli, i prodotti finiscono in un unico reparto.</p>
+                    <div className="space-y-2">
+                      {dupCategoryGroups.map((group, gi) => (
+                        <div key={gi} className="flex items-center gap-2 flex-wrap bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-2">
+                          <span className="text-xs text-[var(--text-soft)] min-w-0">{group.join(' · ')}</span>
+                          <span className="text-[11px] text-[var(--text-faint)]">→ unisci in</span>
+                          {group.map(target => (
+                            <button key={target} disabled={mergingCat} onClick={() => mergeCategoryGroup(group, target)}
+                              className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#6b54c6]/15 text-[#6b54c6] hover:bg-[#6b54c6]/25 disabled:opacity-50 transition-colors">
+                              {mergingCat ? '…' : target}
+                            </button>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <button onClick={() => setDismissedMerge(true)} className="text-[var(--text-faint)] hover:text-[var(--text)] shrink-0"><X size={16} /></button>
+                </div>
+              </div>
+            )}
+
             {/* Banner riprezzamento: prodotti fermi da oltre 30 giorni → apre lo strumento Pro */}
             {magazzinoView === 'instock' && (() => {
               const staleCount = products.filter((p: any) => p.status === 'IN STOCK' && (p.oldestDate || p.createdAt) && (Date.now() - new Date(p.oldestDate || p.createdAt).getTime()) / 86400000 > 30).length;
