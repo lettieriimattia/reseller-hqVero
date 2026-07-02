@@ -305,6 +305,34 @@ router.get('/_diag', adminOnly, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// GET /api/catalog/_diagraw?q=Jordan 1 — risposta GREZZA delle fonti: serve a vedere ESATTAMENTE
+// dov'è (o se manca) l'URL immagine in KicksDB, e cosa restituisce StockX. Solo admin.
+router.get('/_diagraw', adminOnly, async (req: AuthRequest, res: Response) => {
+  const q = (req.query.q || 'Jordan 1 Travis Scott').toString();
+  const out: any = { query: q };
+  // KicksDB grezzo
+  try {
+    const key = process.env.KICKSDB_API_KEY || '';
+    const url = `https://api.kicks.dev/v3/stockx/products?query=${encodeURIComponent(q)}&limit=2`;
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' } });
+    const body: any = await r.json().catch(() => null);
+    const arr = Array.isArray(body?.data) ? body.data : (Array.isArray(body?.products) ? body.products : []);
+    out.kicks = {
+      httpStatus: r.status,
+      topLevelKeys: body && typeof body === 'object' ? Object.keys(body) : [],
+      count: arr.length,
+      firstProductKeys: arr[0] ? Object.keys(arr[0]) : [],
+      firstProduct: arr[0] || null,
+    };
+  } catch (e: any) { out.kicks = { error: e.message }; }
+  // StockX (già mappato dal nostro service)
+  try {
+    const s = await searchStockXCandidates(q, { limit: 3 }).catch((e: any) => { out.stockxErr = e?.message; return []; });
+    out.stockx = { count: s.length, items: s.map(c => ({ title: c.title, image: c.image, sku: c.styleId })) };
+  } catch (e: any) { out.stockx = { error: e.message }; }
+  res.json(out);
+});
+
 // GET /api/catalog/_reset — svuota la cache catalogo (CatalogItem). È SOLO una cache:
 // si ricostruisce dalla fonte con categorie/immagini corrette. Una tantum dopo i fix.
 router.get('/_reset', adminOnly, async (_req: AuthRequest, res: Response) => {
