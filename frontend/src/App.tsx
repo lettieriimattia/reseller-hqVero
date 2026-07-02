@@ -603,11 +603,10 @@ export default function App() {
   const [expWarehouse, setExpWarehouse] = useState('');
   const [isAddingExp, setIsAddingExp] = useState(false);
   const [expensesOpen, setExpensesOpen] = useState(false); // accordion costi extra (chiuso = non invade le analytics)
-  const [buyersOpen, setBuyersOpen] = useState(false);   // accordion tabella "Compratori" (chiuso di default)
-  const [sellersOpen, setSellersOpen] = useState(false); // accordion tabella "Fornitori" (chiuso di default)
   const [expandedContact, setExpandedContact] = useState<string | null>(null); // riga contatto aperta (mostra i suoi pezzi)
-  const [contactsPage, setContactsPage] = useState<null | 'buyers' | 'sellers'>(null); // pagina intera tutti i compratori/fornitori
+  const [contactsPage, setContactsPage] = useState<null | 'buyers' | 'sellers'>(null); // popup tutti i compratori/fornitori
   const [contactPageExpanded, setContactPageExpanded] = useState<string | null>(null);
+  const [contactSearch, setContactSearch] = useState(''); // ricerca nel popup compratori/fornitori
   // TASK / NOTE (widget promemoria, sincronizzate sul server, riassunte dall'IA)
   const [tasks, setTasks] = useState<any[]>([]);
   const [taskInput, setTaskInput] = useState('');
@@ -1886,6 +1885,10 @@ export default function App() {
   // inset-0": se il target del click è proprio lo sfondo (classe inset-0) = click fuori dal box.
   useEffect(() => {
     const stack: Array<[boolean, () => void]> = [
+      [!!contactsPage, () => { setContactsPage(null); setContactSearch(''); }],
+      [taskPanelOpen, () => setTaskPanelOpen(false)],
+      [periodPickerOpen, () => setPeriodPickerOpen(false)],
+      [!!swipeDelete, () => setSwipeDelete(null)],
       [cmdOpen, () => setCmdOpen(false)],
       [barcodeModalOpen, () => setBarcodeModalOpen(false)],
       [deleteConfirmOpen, () => setDeleteConfirmOpen(false)],
@@ -1924,7 +1927,7 @@ export default function App() {
     window.addEventListener('keydown', onKey);
     window.addEventListener('mousedown', onDown);
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onDown); };
-  }, [cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
+  }, [contactsPage, taskPanelOpen, periodPickerOpen, swipeDelete, cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
 
   // BLOCCO SCROLL: quando un modale è aperto, la pagina sotto NON deve muoversi/scrollare.
   useEffect(() => {
@@ -5027,7 +5030,7 @@ export default function App() {
                     <p className="text-[var(--text-soft)] text-sm">{t('an.noDataPeriod')}</p>
                   </div>
                 ) : (
-                  <div className="h-[220px] lg:h-[340px] lg:flex-1">
+                  <div className="h-[240px] lg:h-[360px]">
                     <Suspense fallback={<div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-[var(--text-faint)]" size={28} /></div>}>
                       <TrendChart trendData={trendData} />
                     </Suspense>
@@ -6029,14 +6032,14 @@ export default function App() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                   {/* COMPRATORI */}
                   <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                    <button type="button" onClick={() => setBuyersOpen(o => !o)} className="w-full flex items-center gap-2">
+                    <button type="button" onClick={() => { setContactSearch(''); setContactsPage('buyers'); }} className="w-full flex items-center gap-2">
                       <Users size={18} className="text-emerald-400" />
                       <h3 className="text-lg font-bold tracking-tighter">{t('ct.buyers')}</h3>
                       <span className="text-[11px] text-[var(--text-faint)] ml-auto num">{buyerStats.length > 0 ? `${buyerStats.length} · ${buyerStats.reduce((a, b) => a + b.revenue, 0).toFixed(0)}€` : t('ct.none')}</span>
-                      <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${buyersOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown size={18} className="text-[var(--text-soft)] -rotate-90" />
                     </button>
-                    {!buyersOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('ct.buyersHint')}</p>}
-                    {buyersOpen && (
+                    <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('ct.buyersHint')}</p>
+                    {false && (
                       <div className="mt-3 space-y-1.5 max-h-96 overflow-y-auto">
                         {buyerStats.length === 0 && <p className="text-sm text-[var(--text-faint)] py-3 text-center">{t('ct.noBuyers')}</p>}
                         {buyerStats.map((b, i) => {
@@ -6069,14 +6072,14 @@ export default function App() {
 
                   {/* FORNITORI */}
                   <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                    <button type="button" onClick={() => setSellersOpen(o => !o)} className="w-full flex items-center gap-2">
+                    <button type="button" onClick={() => { setContactSearch(''); setContactsPage('sellers'); }} className="w-full flex items-center gap-2">
                       <Package size={18} className="text-[#6b54c6]" />
                       <h3 className="text-lg font-bold tracking-tighter">{t('ct.sellers')}</h3>
                       <span className="text-[11px] text-[var(--text-faint)] ml-auto num">{sellerStats.length > 0 ? `${sellerStats.length} · ${sellerStats.reduce((a, b) => a + b.spent, 0).toFixed(0)}€` : t('ct.none')}</span>
-                      <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${sellersOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown size={18} className="text-[var(--text-soft)] -rotate-90" />
                     </button>
-                    {!sellersOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('ct.sellersHint')}</p>}
-                    {sellersOpen && (
+                    <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('ct.sellersHint')}</p>
+                    {false && (
                       <div className="mt-3 space-y-1.5 max-h-96 overflow-y-auto">
                         {sellerStats.length === 0 && <p className="text-sm text-[var(--text-faint)] py-3 text-center">{t('ct.noSellers')}</p>}
                         {sellerStats.map((s, i) => {
@@ -7105,10 +7108,10 @@ export default function App() {
           </div>
         ), document.body)}
 
-        {/* ========== PAGINA INTERA: TUTTI I COMPRATORI / FORNITORI ========== */}
+        {/* ========== POPUP: TUTTI I COMPRATORI / FORNITORI (con ricerca) ========== */}
         {contactsPage && createPortal((() => {
           const isBuyers = contactsPage === 'buyers';
-          const stats: any[] = Object.values(
+          const all: any[] = Object.values(
             (isBuyers
               ? products.filter((p: any) => p.status === 'VENDUTO' && (p.customer || '').trim())
               : products.filter((p: any) => (p.supplier || '').trim())
@@ -7121,25 +7124,38 @@ export default function App() {
               return acc;
             }, {})
           ).sort((a: any, b: any) => b.amount - a.amount);
+          const q = contactSearch.trim().toLowerCase();
+          const stats = q ? all.filter((s: any) => s.name.toLowerCase().includes(q)) : all;
           const accent = isBuyers ? 'text-emerald-400' : 'text-[#6b54c6]';
           const dfmt = (v: any) => v ? new Date(v).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
+          const close = () => { setContactsPage(null); setContactSearch(''); };
           return (
-            <div className="fixed inset-0 z-[200] bg-[var(--bg)] flex flex-col" {...swipeBack(() => setContactsPage(null))}>
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)] shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
-                <button onClick={() => setContactsPage(null)} aria-label={t('common.back')}
-                  className="w-9 h-9 rounded-full flex items-center justify-center bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)] shrink-0 active:scale-95 transition-transform">
-                  <ChevronDown size={18} className="rotate-90" />
-                </button>
-                <div className="min-w-0">
-                  <h2 className="text-lg font-black truncate flex items-center gap-1.5">
-                    {isBuyers ? <Users size={16} className="text-emerald-400" /> : <Package size={16} className="text-[#6b54c6]" />}
-                    {isBuyers ? t('ct.buyers') : t('ct.sellers')}
-                  </h2>
-                  <p className="text-[11px] text-[var(--text-soft)]">{stats.length} · {stats.reduce((a, s) => a + s.amount, 0).toFixed(0)}€</p>
+            <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col sm:items-center sm:justify-center sm:p-4"
+              onClick={e => { if (e.target === e.currentTarget) close(); }} {...swipeBack(close)}>
+              <div className="bg-[var(--surface)] w-full h-full sm:h-auto sm:max-h-[85vh] sm:max-w-lg sm:rounded-3xl border-t sm:border border-[var(--border-2)] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+                {/* Header con X (chiude su PC e mobile) */}
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)] shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-lg font-black truncate flex items-center gap-1.5">
+                      {isBuyers ? <Users size={16} className="text-emerald-400" /> : <Package size={16} className="text-[#6b54c6]" />}
+                      {isBuyers ? t('ct.buyers') : t('ct.sellers')}
+                    </h2>
+                    <p className="text-[11px] text-[var(--text-soft)]">{all.length} · {all.reduce((a, s) => a + s.amount, 0).toFixed(0)}€</p>
+                  </div>
+                  <button onClick={close} aria-label={t('common.close')}
+                    className="p-2 -mr-1 rounded-full text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5 shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
                 </div>
-              </div>
-              <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
-                {stats.length === 0 && <p className="text-center text-sm text-[var(--text-faint)] py-10">{isBuyers ? t('ct.noBuyers') : t('ct.noSellers')}</p>}
+                {/* Ricerca */}
+                <div className="px-4 py-2.5 border-b border-[var(--border)] shrink-0">
+                  <div className="flex items-center gap-2 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2">
+                    <Search size={16} className="text-[var(--text-faint)] shrink-0" />
+                    <input value={contactSearch} onChange={e => setContactSearch(e.target.value)} autoFocus
+                      placeholder={`${t('mag.search')}…`} className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[var(--text)] placeholder:text-[var(--text-faint)]" />
+                    {contactSearch && <button onClick={() => setContactSearch('')} className="text-[var(--text-faint)] hover:text-[var(--text)] shrink-0"><X size={15} /></button>}
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
+                {stats.length === 0 && <p className="text-center text-sm text-[var(--text-faint)] py-10">{q ? '—' : (isBuyers ? t('ct.noBuyers') : t('ct.noSellers'))}</p>}
                 {stats.map((s, i) => {
                   const open = contactPageExpanded === s.name;
                   return (
@@ -7164,6 +7180,7 @@ export default function App() {
                     </div>
                   );
                 })}
+                </div>
               </div>
             </div>
           );
