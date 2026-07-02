@@ -25,11 +25,21 @@ const empty = (): CardValuation => ({
   configured: true, value: null, low: null, currency: 'EUR', source: 'Pokémon TCG', sample: 0,
 });
 
-// Costruisce la query Lucene di pokemontcg.io
+// Parole "collab/serie" che NON sono nel NOME della carta ma nel SET/promo (es. la Pikachu
+// "Van Gogh" è promo SVP, non si chiama così): le togliamo dalla query name: e le usiamo dopo
+// per lo scoring sul set, così non svuotano la ricerca.
+const SET_HINT_WORDS = ['van', 'gogh', 'museum', 'promo', 'special', 'delivery', 'collab', 'collaboration'];
+
+// Costruisce la query Lucene di pokemontcg.io. Il NOME va cercato per PAROLE in wildcard
+// (name:pikachu*) invece che come stringa esatta: "Pikachu Van Gogh" come stringa esatta non
+// esiste e svuoterebbe la ricerca. Il numero, se c'è, resta il vincolo più forte.
 function buildQuery(opts: { name?: string; number?: string; setName?: string }): string {
   const parts: string[] = [];
-  const clean = (s: string) => s.replace(/["\\]/g, '').trim();
-  if (opts.name) parts.push(`name:"${clean(opts.name)}"`);
+  const clean = (s: string) => s.replace(/["\\:]/g, ' ').trim();
+  if (opts.name) {
+    const words = clean(opts.name).split(/\s+/).filter(w => w.length >= 2 && !SET_HINT_WORDS.includes(w.toLowerCase()));
+    for (const w of words) parts.push(`name:${w}*`);
+  }
   if (opts.number) parts.push(`number:"${clean(opts.number)}"`);
   if (opts.setName) parts.push(`set.name:"${clean(opts.setName)}"`);
   return parts.join(' ');
@@ -55,11 +65,27 @@ export async function getPokemonCardValue(opts: { name?: string; number?: string
     const withPrice = cards.filter(c => c?.cardmarket?.prices);
     const pool = withPrice.length > 0 ? withPrice : cards;
 
-    // Se è stato passato il numero, prova un match esatto sul numero.
+    // SCELTA DEL MATCH: punteggio per parole del nome originale (INCLUSE quelle di set/collab
+    // come "van gogh") presenti in nome+set della carta → prende la variante giusta, non una
+    // Pikachu a caso. Il numero esatto, se c'è, vince su tutto.
+    const qWords = (opts.name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length >= 2);
+    const scoreOf = (c: any) => {
+      const hay = `${c?.name || ''} ${c?.set?.name || ''} ${c?.set?.series || ''}`.toLowerCase();
+      return qWords.reduce((s, w) => s + (hay.includes(w) ? 1 : 0), 0);
+    };
     let best = pool[0];
     if (opts.number) {
       const exact = pool.find(c => (c.number || '').toString() === opts.number!.toString());
       if (exact) best = exact;
+    }
+    if (!opts.number && qWords.length > 0) {
+      // ordina per: punteggio parole desc, poi prezzo presente, poi set più recente (già ordinato)
+      const ranked = [...pool].sort((a, b) => {
+        const d = scoreOf(b) - scoreOf(a);
+        if (d !== 0) return d;
+        return (b?.cardmarket?.prices ? 1 : 0) - (a?.cardmarket?.prices ? 1 : 0);
+      });
+      if (ranked[0] && scoreOf(ranked[0]) > 0) best = ranked[0];
     }
 
     const cm = best?.cardmarket?.prices || {};
