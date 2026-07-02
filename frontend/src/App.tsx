@@ -4982,19 +4982,24 @@ export default function App() {
               {/* NOTE / TASK — desktop: colonna ALTA a destra (row-span-2). */}
               <button onClick={() => setTaskPanelOpen(true)}
                 className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group flex flex-col lg:row-span-2 lg:h-full">
-                <p className="sys-label mb-1.5 flex items-center gap-1.5"><StickyNote size={10} /> {t('task.title')}
-                  {tasks.filter(x => !x.done).length > 0 && <span className="ml-auto text-[9px] font-bold bg-[#6b54c6]/20 text-[#6b54c6] px-1.5 rounded-full num">{tasks.filter(x => !x.done).length}</span>}
+                {/* Etichetta NOTE — più grande su desktop (prima si leggeva male sulla card alta). */}
+                <p className="text-[10px] lg:text-[13px] uppercase tracking-[0.14em] font-bold text-[var(--text-faint)] mb-1.5 lg:mb-2.5 flex items-center gap-1.5"><StickyNote size={13} className="lg:hidden" /><StickyNote size={16} className="hidden lg:block" /> {t('task.title')}
+                  {tasks.filter(x => !x.done).length > 0 && <span className="ml-auto text-[9px] lg:text-[11px] font-bold bg-[#6b54c6]/20 text-[#6b54c6] px-1.5 rounded-full num">{tasks.filter(x => !x.done).length}</span>}
                 </p>
                 {tasks.filter(x => !x.done).length === 0 ? (
-                  <p className="text-[11px] text-[var(--text-faint)] leading-snug flex-1">{t('task.empty')}</p>
+                  <p className="text-[11px] lg:text-sm text-[var(--text-faint)] leading-snug flex-1">{t('task.empty')}</p>
                 ) : (
-                  <div className="space-y-1 flex-1">
+                  <div className="space-y-1 lg:space-y-2.5 flex-1">
+                    {/* 2 note su mobile, fino a 7 su desktop (la card è alta). Testo più grande su PC. */}
                     {tasks.filter(x => !x.done).slice(0, 2).map(tk => (
-                      <p key={tk.id} className="text-[12px] text-[var(--text-soft)] truncate flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#6b54c6] shrink-0" />{tk.summary || tk.text}</p>
+                      <p key={tk.id} className="text-[12px] lg:text-[15px] text-[var(--text-soft)] truncate flex items-center gap-2"><span className="w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full bg-[#6b54c6] shrink-0" />{tk.summary || tk.text}</p>
+                    ))}
+                    {tasks.filter(x => !x.done).slice(2, 7).map(tk => (
+                      <p key={tk.id} className="hidden lg:flex text-[15px] text-[var(--text-soft)] truncate items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#6b54c6] shrink-0" />{tk.summary || tk.text}</p>
                     ))}
                   </div>
                 )}
-                <p className="text-[10px] text-[#6b54c6] font-bold mt-1.5 group-hover:opacity-80">{t('dash.see')} →</p>
+                <p className="text-[10px] lg:text-[13px] text-[#6b54c6] font-bold mt-1.5 lg:mt-3 group-hover:opacity-80">{t('dash.see')} →</p>
               </button>
 
               {/* Grafico Andamento Vendite — nella STESSA griglia: mobile a tutta larghezza sotto,
@@ -5022,9 +5027,11 @@ export default function App() {
                     <p className="text-[var(--text-soft)] text-sm">{t('an.noDataPeriod')}</p>
                   </div>
                 ) : (
-                  <Suspense fallback={<div className="h-[300px] flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-[var(--text-faint)]" size={28} /></div>}>
-                    <TrendChart trendData={trendData} />
-                  </Suspense>
+                  <div className="h-[220px] lg:h-[340px] lg:flex-1">
+                    <Suspense fallback={<div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-[var(--text-faint)]" size={28} /></div>}>
+                      <TrendChart trendData={trendData} />
+                    </Suspense>
+                  </div>
                 )}
               </section>
               ) : (
