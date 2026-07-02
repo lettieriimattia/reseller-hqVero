@@ -4826,11 +4826,12 @@ export default function App() {
               </div>
             </div>
 
-            {/* Andamento (desktop) + Insights — 2/3 + 1/3 su desktop per riempire la fascia */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:items-start">
-              {/* Grafico Andamento Vendite — solo desktop, Pro+ (altrimenti teaser) */}
+            {/* Andamento vendite — ora ANCHE su mobile (come desktop), a tutta larghezza.
+                Insights e Libro Paga spostati in Analytics (dashboard più pulita). */}
+            <div className="grid grid-cols-1 gap-5">
+              {/* Grafico Andamento Vendite — Pro+ (altrimenti teaser) */}
               {hasAdvancedAnalytics ? (
-              <section className="hidden lg:flex lg:flex-col lg:col-span-2 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+              <section className="flex flex-col bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold">{t('an.salesTrend')}</h3>
                   <div className="flex gap-1 bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)]">
@@ -4858,113 +4859,54 @@ export default function App() {
                 </div>
               </section>
               ) : (
-              <section className="hidden lg:flex lg:flex-col lg:col-span-2 items-center justify-center text-center bg-[var(--surface)] border border-[#6b54c6]/30 rounded-2xl p-5">
+              <section className="flex flex-col items-center justify-center text-center bg-[var(--surface)] border border-[#6b54c6]/30 rounded-2xl p-5">
                 <div className="w-12 h-12 rounded-2xl bg-[#6b54c6]/15 flex items-center justify-center mb-3"><BarChart3 size={22} className="text-[#6b54c6]" /></div>
                 <h3 className="font-bold mb-1">Andamento e analisi avanzate</h3>
                 <p className="text-sm text-[var(--text-soft)] mb-4 max-w-xs">ROI, trend storico e performance per categoria/piattaforma sono inclusi nel piano Pro.</p>
                 <button onClick={() => openPlanModal()} className="bg-[#6b54c6] hover:bg-[#5d44b0] text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-colors">Sblocca con Pro</button>
               </section>
               )}
-
-              {/* Smart Insights */}
-              {(staleCount > 0 || weekSales.length > 0 || bestCategoryEntry?.profit > 0) && (
-              <section className="lg:col-span-1 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                <p className="text-[9px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.12em] mb-4 flex items-center gap-2">
-                  <Sparkles size={10} /> Insights
-                </p>
-                <div className="space-y-3">
-                  {staleCount > 0 && (
-                    <div className="flex items-center gap-3 p-3 bg-red-900/15 border border-red-900/30 rounded-xl cursor-pointer hover:bg-red-900/25 transition-colors"
-                      onClick={() => { setCurrentView('magazzino'); setSortField('date'); setSortDir('asc'); }}>
-                      <AlertTriangle size={16} className="text-red-400 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-red-300">{staleCount} {staleCount === 1 ? t('home.staleOne') : t('home.staleMany')} {t('home.over30')}</p>
-                        <p className="text-[10px] text-[var(--text-soft)]">{t('home.staleHint')}</p>
-                      </div>
-                      <span className="text-[10px] text-[var(--text-soft)] shrink-0">{t('dash.see')} →</span>
-                    </div>
-                  )}
-                  {weekSales.length > 0 && (
-                    <div className="flex items-center gap-3 p-3 bg-green-900/15 border border-green-900/30 rounded-xl">
-                      <TrendingUp size={16} className="text-green-400 shrink-0" />
-                      <div>
-                        <p className="text-sm font-bold text-green-300">
-                          {weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')} {t('home.thisWeek')}
-                          {weekProfit > 0 && ` · +${weekProfit.toFixed(0)}€`}
-                        </p>
-                        <p className="text-[10px] text-[var(--text-soft)]">{t('home.goodPace')}</p>
-                      </div>
-                    </div>
-                  )}
-                  {bestCategoryEntry?.profit > 0 && (
-                    <div className="flex items-center gap-3 p-3 bg-[#6b54c6]/10 border border-[#6b54c6]/20 rounded-xl">
-                      <span className="text-xl shrink-0">{getCategoryIcon(bestCategoryEntry.cat)}</span>
-                      <div>
-                        <p className="text-sm font-bold">{bestCategoryEntry.cat} {t('home.bestDeptSuffix')}</p>
-                        <p className="text-[10px] text-[var(--text-soft)]">+{bestCategoryEntry.profit.toFixed(0)}€ · {bestCategoryEntry.count} {t('dash.salesPlural')}</p>
-                      </div>
-                    </div>
-                  )}
-                  {sellThroughRate > 0 && (
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <p className="text-xs text-[var(--text-muted)] font-semibold">{t('home.sellThrough')}</p>
-                          <p className="text-xs font-bold text-[var(--text)] num">{sellThroughRate}%</p>
-                        </div>
-                        <div className="h-1.5 bg-black/40 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${
-                            sellThroughRate >= 60 ? 'bg-green-500' : sellThroughRate >= 30 ? 'bg-yellow-500' : 'bg-gray-600'
-                          }`} style={{ width: `${sellThroughRate}%` }} />
-                        </div>
-                        <p className="text-[10px] text-[var(--text-faint)] mt-1">{globalSold.length} {t('home.soldOf')} {totalItems} {t('home.totalWord')}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </section>
-              )}
             </div>
 
-            {/* Libro Paga Soci */}
-            {Object.keys(sociProfits).length > 1 && (
-              <section className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30"
-                onClick={() => setTeamPanelOpen(true)}>
-                <div className="flex items-center justify-between mb-4">
-                  <p className="sys-label flex items-center gap-1.5"><Trophy size={10} /> {t('home.payroll')}</p>
-                  <span className="text-[9px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">{t('home.detail')}</span>
-                </div>
-                <div className="space-y-1.5">
-                  {Object.values(sociProfits)
-                    .sort((a: any, b: any) => b.profit - a.profit)
-                    .map((socio: any, idx: number) => {
-                      const maxP = Math.max(...Object.values(sociProfits).map((s: any) => s.profit), 1);
-                      return (
-                        <div key={idx} className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
-                          socio.name === user.name ? 'bg-[var(--fill)] border border-[var(--border)]' : ''
-                        }`}>
-                          <div className="w-7 h-7 rounded-full bg-[var(--fill)] flex items-center justify-center text-xs font-semibold text-[var(--text-muted)] shrink-0">
-                            {socio.name[0]?.toUpperCase()}
+            {/* MOBILE: al posto del Libro Paga, due tabelle affiancate — migliori Buyer e Seller.
+                Tocca "Vedi tutti" per l'elenco completo con il numero di operazioni. Su desktop
+                queste (+ Insights + Libro Paga) vivono in Analytics. */}
+            <div className="grid grid-cols-2 gap-3 lg:hidden">
+              {(() => {
+                const buyerAgg: any[] = Object.values(products.filter((p: any) => p.status === 'VENDUTO' && (p.customer || '').trim()).reduce((acc: any, p: any) => {
+                  const n = (p.customer || '').trim(); if (!acc[n]) acc[n] = { name: n, count: 0, revenue: 0 };
+                  acc[n].count++; acc[n].revenue += (p.salePrice || 0); return acc;
+                }, {})).sort((a: any, b: any) => b.revenue - a.revenue);
+                const sellerAgg: any[] = Object.values(products.filter((p: any) => (p.supplier || '').trim()).reduce((acc: any, p: any) => {
+                  const n = (p.supplier || '').trim(); if (!acc[n]) acc[n] = { name: n, count: 0, spent: 0 };
+                  acc[n].count++; acc[n].spent += (p.purchasePrice || 0); return acc;
+                }, {})).sort((a: any, b: any) => b.spent - a.spent);
+                const Card = ({ title, icon, rows, accent, onAll }: any) => (
+                  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3">
+                    <div className="flex items-center gap-1.5 mb-2">{icon}<p className="text-[11px] font-bold truncate">{title}</p></div>
+                    {rows.length === 0 ? <p className="text-[10px] text-[var(--text-faint)] py-2">Nessuno ancora</p> : (
+                      <div className="space-y-1">
+                        {rows.slice(0, 3).map((r: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between gap-1 text-[11px]">
+                            <span className="truncate text-[var(--text-soft)]">{r.name}</span>
+                            <span className={`shrink-0 font-bold num ${accent}`}>×{r.count}</span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1.5">
-                              <span className="font-semibold text-sm truncate">{socio.name}</span>
-                              {socio.name === user.name && (
-                                <span className="text-[9px] bg-[var(--fill)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full shrink-0">{t('home.you')}</span>
-                              )}
-                            </div>
-                            <div className="h-0.5 bg-[var(--fill)] rounded-full overflow-hidden">
-                              <div className="h-full bg-[var(--fill-3)] rounded-full transition-all"
-                                style={{ width: `${(socio.profit / maxP) * 100}%` }} />
-                            </div>
-                          </div>
-                          <span className="font-extrabold text-[var(--teal)] shrink-0 text-sm num">{socio.profit.toFixed(0)}€</span>
-                        </div>
-                      );
-                    })}
-                </div>
-              </section>
-            )}
+                        ))}
+                      </div>
+                    )}
+                    {rows.length > 0 && (
+                      <button onClick={onAll} className="mt-2 text-[10px] font-bold text-[#6b54c6]">Vedi tutti →</button>
+                    )}
+                  </div>
+                );
+                return (<>
+                  <Card title="Migliori compratori" icon={<Users size={12} className="text-emerald-400" />} rows={buyerAgg} accent="text-emerald-400"
+                    onAll={() => { navigateTo('analytics'); setBuyersOpen(true); setTimeout(() => setSellersOpen(false), 0); }} />
+                  <Card title="Migliori fornitori" icon={<Package size={12} className="text-[#6b54c6]" />} rows={sellerAgg} accent="text-[#6b54c6]"
+                    onAll={() => { navigateTo('analytics'); setSellersOpen(true); setTimeout(() => setBuyersOpen(false), 0); }} />
+                </>);
+              })()}
+            </div>
 
             {/* Catalogo che scorre — scopri prodotti e aggiungili (al posto dei reparti) */}
             {dashPopular.length > 0 && (
@@ -5594,6 +5536,86 @@ export default function App() {
                 <Download size={15} /> {t('an.accountantCsv')}
               </button>
             </div>
+
+            {/* ===== SMART INSIGHTS (spostati qui dalla dashboard) ===== */}
+            {(staleCount > 0 || weekSales.length > 0 || bestCategoryEntry?.profit > 0 || sellThroughRate > 0) && (
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+              <p className="text-[9px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.12em] mb-4 flex items-center gap-2"><Sparkles size={10} /> Insights</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {staleCount > 0 && (
+                  <div className="flex items-center gap-3 p-3 bg-red-900/15 border border-red-900/30 rounded-xl cursor-pointer hover:bg-red-900/25 transition-colors"
+                    onClick={() => { setCurrentView('magazzino'); setSortField('date'); setSortDir('asc'); }}>
+                    <AlertTriangle size={16} className="text-red-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-red-300">{staleCount} {staleCount === 1 ? t('home.staleOne') : t('home.staleMany')} {t('home.over30')}</p>
+                      <p className="text-[10px] text-[var(--text-soft)]">{t('home.staleHint')}</p>
+                    </div>
+                    <span className="text-[10px] text-[var(--text-soft)] shrink-0">{t('dash.see')} →</span>
+                  </div>
+                )}
+                {weekSales.length > 0 && (
+                  <div className="flex items-center gap-3 p-3 bg-green-900/15 border border-green-900/30 rounded-xl">
+                    <TrendingUp size={16} className="text-green-400 shrink-0" />
+                    <div>
+                      <p className="text-sm font-bold text-green-300">{weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')} {t('home.thisWeek')}{weekProfit > 0 && ` · +${weekProfit.toFixed(0)}€`}</p>
+                      <p className="text-[10px] text-[var(--text-soft)]">{t('home.goodPace')}</p>
+                    </div>
+                  </div>
+                )}
+                {bestCategoryEntry?.profit > 0 && (
+                  <div className="flex items-center gap-3 p-3 bg-[#6b54c6]/10 border border-[#6b54c6]/20 rounded-xl">
+                    <span className="text-xl shrink-0">{getCategoryIcon(bestCategoryEntry.cat)}</span>
+                    <div>
+                      <p className="text-sm font-bold">{bestCategoryEntry.cat} {t('home.bestDeptSuffix')}</p>
+                      <p className="text-[10px] text-[var(--text-soft)]">+{bestCategoryEntry.profit.toFixed(0)}€ · {bestCategoryEntry.count} {t('dash.salesPlural')}</p>
+                    </div>
+                  </div>
+                )}
+                {sellThroughRate > 0 && (
+                  <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-xs text-[var(--text-muted)] font-semibold">{t('home.sellThrough')}</p>
+                        <p className="text-xs font-bold text-[var(--text)] num">{sellThroughRate}%</p>
+                      </div>
+                      <div className="h-1.5 bg-black/40 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${sellThroughRate >= 60 ? 'bg-green-500' : sellThroughRate >= 30 ? 'bg-yellow-500' : 'bg-gray-600'}`} style={{ width: `${sellThroughRate}%` }} />
+                      </div>
+                      <p className="text-[10px] text-[var(--text-faint)] mt-1">{globalSold.length} {t('home.soldOf')} {totalItems} {t('home.totalWord')}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+            )}
+
+            {/* ===== LIBRO PAGA SOCI (spostato qui dalla dashboard) ===== */}
+            {Object.keys(sociProfits).length > 1 && (
+              <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="sys-label flex items-center gap-1.5"><Trophy size={10} /> {t('home.payroll')}</p>
+                  <button onClick={() => setTeamPanelOpen(true)} className="text-[9px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">{t('home.detail')} →</button>
+                </div>
+                <div className="space-y-1.5">
+                  {Object.values(sociProfits).sort((a: any, b: any) => b.profit - a.profit).map((socio: any, idx: number) => {
+                    const maxP = Math.max(...Object.values(sociProfits).map((s: any) => s.profit), 1);
+                    return (
+                      <div key={idx} className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${socio.name === user.name ? 'bg-[var(--fill)] border border-[var(--border)]' : ''}`}>
+                        <div className="w-7 h-7 rounded-full bg-[var(--fill)] flex items-center justify-center text-xs font-semibold text-[var(--text-muted)] shrink-0">{socio.name[0]?.toUpperCase()}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="font-semibold text-sm truncate">{socio.name}</span>
+                            {socio.name === user.name && <span className="text-[9px] bg-[var(--fill)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full shrink-0">{t('home.you')}</span>}
+                          </div>
+                          <div className="h-0.5 bg-[var(--fill)] rounded-full overflow-hidden"><div className="h-full bg-[var(--fill-3)] rounded-full transition-all" style={{ width: `${(socio.profit / maxP) * 100}%` }} /></div>
+                        </div>
+                        <span className="font-extrabold text-[var(--teal)] shrink-0 text-sm num">{socio.profit.toFixed(0)}€</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
             {/* ===== COSTI EXTRA (accordion, chiuso di default per non invadere le analytics) ===== */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
