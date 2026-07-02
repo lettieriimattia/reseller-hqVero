@@ -4,6 +4,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Camera, Loader2, Trash2, Plus, Wand2, Check } from 'lucide-react';
+import { translate, getLang } from '../i18n';
+const t = (k: string) => translate(getLang(), k);
 
 type ApiCall = <T = any>(path: string, opts?: RequestInit) => Promise<{ ok: boolean; data: T; status: number }>;
 
@@ -118,11 +120,11 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
     let photo: string | null = null;
     try { photo = await compress(files[0]); } catch { return; }
     setScanning(true);
-    showToast('🔍 Riconosco i prodotti…', 'ok');
+    showToast(t('slot.recognizing'), 'ok');
     try {
       const { ok, data } = await apiCall<any>('/api/ai/scan-items', { method: 'POST', body: JSON.stringify({ imageBase64: photo }) });
       const items = (ok && Array.isArray(data?.items)) ? data.items : [];
-      if (!items.length) { showToast('Nessun prodotto riconosciuto nella foto', 'warn'); setScanning(false); return; }
+      if (!items.length) { showToast(t('slot.noItems'), 'warn'); setScanning(false); return; }
       setRows(prev => {
         const next = [...prev];
         let idx = 0;
@@ -136,8 +138,8 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
         setQty(String(next.length));
         return next;
       });
-      showToast(`✅ ${items.length} prodotti inseriti nelle righe`, 'ok');
-    } catch { showToast('Errore riconoscimento prodotti', 'err'); }
+      showToast(`✅ ${items.length} ${t('slot.itemsInserted')}`, 'ok');
+    } catch { showToast(t('slot.recogError'), 'err'); }
     setScanning(false);
     if (cardsRef.current) cardsRef.current.value = '';
   };
@@ -147,9 +149,9 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
   const perRow = total > 0 && rows.length ? total / rows.length : 0;
 
   const create = async () => {
-    if (!lotName.trim()) { showToast('Dai un nome al lotto', 'warn'); return; }
+    if (!lotName.trim()) { showToast(t('slot.giveName'), 'warn'); return; }
     const valid = rows.filter(r => r.name.trim());
-    if (!valid.length) { showToast('Compila almeno una riga (nome)', 'warn'); return; }
+    if (!valid.length) { showToast(t('slot.fillOne'), 'warn'); return; }
     setBusy(true);
     const { ok, data } = await apiCall<any>('/products/lot-smart', {
       method: 'POST',
@@ -160,8 +162,8 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
       }),
     });
     setBusy(false);
-    if (!ok) { showToast(data?.error || 'Errore creazione lotto', 'err'); return; }
-    showToast(`✅ Lotto "${lotName.trim()}" creato: ${data.created} pezzi`, 'ok');
+    if (!ok) { showToast(data?.error || t('slot.createError'), 'err'); return; }
+    showToast(`✅ ${t('slot.title')} "${lotName.trim()}" ${t('slot.created')}: ${data.created} ${t('slot.piecesWord')}`, 'ok');
     onDone();
     onClose();
   };
@@ -174,8 +176,8 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
           <div className="flex items-center gap-2.5">
             <span className="w-9 h-9 rounded-xl bg-[#6b54c6]/15 text-[#6b54c6] flex items-center justify-center"><Wand2 size={18} /></span>
             <div className="leading-tight">
-              <h3 className="font-extrabold text-[var(--text)]">Crea lotto</h3>
-              <p className="text-[11px] text-[var(--text-soft)]">N pezzi + costo totale → righe a cascata</p>
+              <h3 className="font-extrabold text-[var(--text)]">{t('slot.title')}</h3>
+              <p className="text-[11px] text-[var(--text-soft)]">{t('slot.subtitle')}</p>
             </div>
           </div>
           <button onClick={() => { if (!busy) onClose(); }} className="p-1.5 rounded-full text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5"><X size={22} /></button>
@@ -183,13 +185,13 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
 
         {/* Corpo scrollabile */}
         <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-3">
-          <input value={lotName} onChange={e => setLotName(e.target.value)} placeholder="Nome del lotto (es. Carte amico 12/06)"
+          <input value={lotName} onChange={e => setLotName(e.target.value)} placeholder={t('slot.namePlaceholder')}
             className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3.5 py-3 text-sm outline-none focus:border-[#6b54c6]" />
 
           {/* Magazzino / socio del lotto: scegli DOVE finiscono i pezzi (sempre visibile). */}
           {warehouses.length >= 1 && (
             <div>
-              <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">Magazzino</label>
+              <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{t('slot.warehouse')}</label>
               <select value={lotWarehouseId} onChange={e => setLotWarehouseId(e.target.value)}
                 className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#6b54c6]">
                 {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
@@ -199,39 +201,39 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
 
           <div className="grid grid-cols-3 gap-2.5">
             <div>
-              <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">Reparto</label>
+              <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{t('slot.department')}</label>
               <select value={category} onChange={e => setCategory(e.target.value)}
                 className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-2 py-2.5 text-sm outline-none focus:border-[#6b54c6]">
                 {(categories.length ? categories : ['Carte']).map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">Pezzi (N)</label>
+              <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{t('slot.pieces')}</label>
               <input type="number" min={0} max={200} value={qty} onChange={e => setCount(e.target.value)} placeholder="20"
                 className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#6b54c6] num" />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">Pagato tot. €</label>
+              <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{t('slot.paidTotal')}</label>
               <input type="number" step="0.01" value={totalCost} onChange={e => setTotalCost(e.target.value)} placeholder="105"
                 className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#6b54c6] num" />
             </div>
           </div>
           {total > 0 && rows.length > 0 && (
-            <p className="text-xs text-[var(--text-soft)]">= <b className="text-[var(--teal)] num">{perRow.toFixed(2)}€</b> a pezzo ({rows.length} righe)</p>
+            <p className="text-xs text-[var(--text-soft)]">= <b className="text-[var(--teal)] num">{perRow.toFixed(2)}€</b> {t('slot.perPiece')} ({rows.length} {t('slot.rows')})</p>
           )}
 
           {/* Riempi con foto di più carte (IA) */}
           <input ref={cardsRef} type="file" accept="image/*" className="hidden" onChange={e => onCardsPhoto(e.target.files)} />
           <button onClick={() => cardsRef.current?.click()} disabled={scanning}
             className="w-full py-2.5 rounded-2xl border border-dashed border-teal-500/40 text-teal-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-teal-500/10 disabled:opacity-50">
-            {scanning ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />} Foto con più prodotti → riempi le righe (IA)
+            {scanning ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />} {t('slot.photoAI')}
           </button>
 
           {/* Righe */}
           {rows.length === 0 && (
             <div className="text-center text-sm text-[var(--text-soft)] py-6 leading-relaxed">
-              Inserisci <b className="text-[var(--text)]">N pezzi</b> sopra per generare le righe,<br />
-              <span className="text-[var(--text-faint)]">poi compilale a mano o con la foto.</span>
+              <b className="text-[var(--text)]">{t('slot.pieces')}</b> {t('slot.emptyHint1')}<br />
+              <span className="text-[var(--text-faint)]">{t('slot.emptyHint2')}</span>
             </div>
           )}
           {rows.map((r, i) => (
@@ -240,16 +242,16 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
               <div className="w-10 h-10 rounded-lg bg-white overflow-hidden shrink-0 flex items-center justify-center border border-[var(--border)]">
                 {r.photo ? <img src={/^https?:\/\//i.test(r.photo) ? `/api/catalog/img?u=${encodeURIComponent(r.photo)}` : r.photo} alt="" className="w-full h-full object-contain" /> : null}
               </div>
-              <input value={r.name} onChange={e => updRow(r.id, { name: e.target.value })} onBlur={() => lookupPhoto(r.id, r.name)} placeholder="Nome"
+              <input value={r.name} onChange={e => updRow(r.id, { name: e.target.value })} onBlur={() => lookupPhoto(r.id, r.name)} placeholder={t('slot.namePh')}
                 className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2.5 py-2 text-xs outline-none focus:border-[#6b54c6]" />
-              <input value={r.size} onChange={e => updRow(r.id, { size: e.target.value })} placeholder="Taglia / codice"
+              <input value={r.size} onChange={e => updRow(r.id, { size: e.target.value })} placeholder={t('slot.sizePh')}
                 className="w-24 shrink-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-2 text-xs outline-none focus:border-[#6b54c6]" />
               <button onClick={() => removeRow(r.id)} className="p-1 text-red-400/80 hover:text-red-400 shrink-0"><Trash2 size={14} /></button>
             </div>
           ))}
           {rows.length > 0 && (
             <button onClick={addRow} className="w-full py-2 rounded-xl border border-dashed border-[var(--border-2)] text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] flex items-center justify-center gap-1.5">
-              <Plus size={13} /> Aggiungi riga
+              <Plus size={13} /> {t('slot.addRow')}
             </button>
           )}
         </div>
@@ -259,7 +261,7 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
           <button onClick={create} disabled={busy || scanning || filled === 0 || !lotName.trim()}
             className="w-full py-3.5 rounded-2xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
             {busy ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-            {busy ? 'Creo il lotto…' : `Crea lotto (${filled} pezzi)`}
+            {busy ? t('slot.creating') : `${t('slot.create')} (${filled} ${t('slot.piecesWord')})`}
           </button>
         </div>
       </div>

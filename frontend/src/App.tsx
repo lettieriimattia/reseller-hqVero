@@ -1380,7 +1380,7 @@ export default function App() {
     }
     await fetchProducts();
     setMergingCat(false);
-    showToast(`✓ Reparti uniti in "${target}" (${moved} prodotti)`, 'ok');
+    showToast(t('cat.merged').replace('{name}', target).replace('{n}', String(moved)), 'ok');
   };
   const userInviteCodes = user?.warehouses?.filter(w => w.role === 'OWNER' && w.inviteCode) || [];
   // Piano dell'utente → gating feature. 'advanced_analytics' è incluso da Pro in su.
@@ -1481,14 +1481,14 @@ export default function App() {
   const addManualMonth = async () => {
     const rev = parseFloat(mmRevenue) || 0;
     const cst = parseFloat(mmCost) || 0;
-    if (rev <= 0 && cst <= 0) { showToast('Inserisci fatturato o costi del mese', 'warn'); return; }
+    if (rev <= 0 && cst <= 0) { showToast(t('mm.enterData'), 'warn'); return; }
     setIsAddingMM(true);
     const { ok, data } = await apiCall('/analytics/manual-months', {
       method: 'POST',
       body: JSON.stringify({ year: parseInt(mmYear), month: parseInt(mmMonth), revenue: rev, cost: cst }),
     });
     setIsAddingMM(false);
-    if (ok) { setMmRevenue(''); setMmCost(''); await fetchManualMonths(); showToast('✓ Mese storico salvato'); }
+    if (ok) { setMmRevenue(''); setMmCost(''); await fetchManualMonths(); showToast(t('mm.saved')); }
     else showToast(data?.error || 'Errore', 'err');
   };
 
@@ -2099,7 +2099,7 @@ export default function App() {
       if ((p as any).lotName) {
         const key = `lot:${(p as any).lotName}`;
         if (!acc[key]) acc[key] = {
-          ...p, category: cat, isLot: true, name: (p as any).lotName, brand: 'Lotto',
+          ...p, category: cat, isLot: true, name: (p as any).lotName, brand: t('lot.lot'),
           quantity: 0, ids: [], purchasePrice: 0, oldestDate: p.createdAt,
         };
         acc[key].quantity += 1;
@@ -2129,7 +2129,7 @@ export default function App() {
       if (sortDir === 'asc') return av > bv ? 1 : -1;
       return av < bv ? 1 : -1;
     });
-  }, [searchedProducts, filterCondition, filterPriceMin, filterPriceMax, sortField, sortDir, staleOnly]);
+  }, [searchedProducts, filterCondition, filterPriceMin, filterPriceMax, sortField, sortDir, staleOnly, lang]);
 
   // Venduti: SOLO gli articoli realmente venduti (i PAGATI in attesa stanno in "Da spedire").
   const groupedSoldArray = Object.values(searchedProducts.filter(p => p.status === 'VENDUTO').reduce((acc, p) => {
@@ -3781,7 +3781,7 @@ export default function App() {
     const results = await Promise.allSettled(ids.map(id => apiCall(`/products/${id}/return`, { method: 'POST' })));
     const okCount = results.filter(r => r.status === 'fulfilled' && (r.value as any).ok).length;
     await fetchProducts();
-    if (okCount > 0) showToast(label ? `↩ Reso: ${label}` : t('ts.returnRecorded'), 'ok');
+    if (okCount > 0) showToast(label ? `↩ ${t('mag.return')}: ${label}` : t('ts.returnRecorded'), 'ok');
     else showToast(t('ts.returnError'), 'err');
   };
 
@@ -4944,7 +4944,7 @@ export default function App() {
                 const Card = ({ title, icon, rows, accent, onAll }: any) => (
                   <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3">
                     <div className="flex items-center gap-1.5 mb-2">{icon}<p className="text-[11px] font-bold truncate">{title}</p></div>
-                    {rows.length === 0 ? <p className="text-[10px] text-[var(--text-faint)] py-2">Nessuno ancora</p> : (
+                    {rows.length === 0 ? <p className="text-[10px] text-[var(--text-faint)] py-2">{t('ct.noneYet')}</p> : (
                       <div className="space-y-1">
                         {rows.slice(0, 3).map((r: any, i: number) => (
                           <div key={i} className="flex items-center justify-between gap-1 text-[11px]">
@@ -4955,14 +4955,14 @@ export default function App() {
                       </div>
                     )}
                     {rows.length > 0 && (
-                      <button onClick={onAll} className="mt-2 text-[10px] font-bold text-[#6b54c6]">Vedi tutti →</button>
+                      <button onClick={onAll} className="mt-2 text-[10px] font-bold text-[#6b54c6]">{t('ct.seeAll')}</button>
                     )}
                   </div>
                 );
                 return (<>
-                  <Card title="Migliori compratori" icon={<Users size={12} className="text-emerald-400" />} rows={buyerAgg} accent="text-emerald-400"
+                  <Card title={t('ct.topBuyers')} icon={<Users size={12} className="text-emerald-400" />} rows={buyerAgg} accent="text-emerald-400"
                     onAll={() => { navigateTo('analytics'); setBuyersOpen(true); setTimeout(() => setSellersOpen(false), 0); }} />
-                  <Card title="Migliori fornitori" icon={<Package size={12} className="text-[#6b54c6]" />} rows={sellerAgg} accent="text-[#6b54c6]"
+                  <Card title={t('ct.topSellers')} icon={<Package size={12} className="text-[#6b54c6]" />} rows={sellerAgg} accent="text-[#6b54c6]"
                     onAll={() => { navigateTo('analytics'); setSellersOpen(true); setTimeout(() => setBuyersOpen(false), 0); }} />
                 </>);
               })()}
@@ -5045,13 +5045,13 @@ export default function App() {
                 <div className="flex items-start gap-2">
                   <Layers size={16} className="text-[#6b54c6] shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-[var(--text)]">Reparti simili da unire</p>
-                    <p className="text-[11px] text-[var(--text-soft)] mb-2">Questi reparti sembrano la stessa cosa: unendoli, i prodotti finiscono in un unico reparto.</p>
+                    <p className="text-sm font-bold text-[var(--text)]">{t('cat.mergeTitle')}</p>
+                    <p className="text-[11px] text-[var(--text-soft)] mb-2">{t('cat.mergeHint')}</p>
                     <div className="space-y-2">
                       {dupCategoryGroups.map((group, gi) => (
                         <div key={gi} className="flex items-center gap-2 flex-wrap bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-2">
                           <span className="text-xs text-[var(--text-soft)] min-w-0">{group.join(' · ')}</span>
-                          <span className="text-[11px] text-[var(--text-faint)]">→ unisci in</span>
+                          <span className="text-[11px] text-[var(--text-faint)]">{t('cat.mergeInto')}</span>
                           {group.map(target => (
                             <button key={target} disabled={mergingCat} onClick={() => mergeCategoryGroup(group, target)}
                               className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#6b54c6]/15 text-[#6b54c6] hover:bg-[#6b54c6]/25 disabled:opacity-50 transition-colors">
@@ -5524,7 +5524,7 @@ export default function App() {
                                   <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)] flex items-center gap-1"><Users size={9} /> {buyers[0].name}</span>
                                 )}
                                 {buyers.length > 1 && (
-                                  <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[#6b54c6]/15 text-[#6b54c6] flex items-center gap-1"><Users size={9} /> {buyers.length} compratori {isExpanded ? '▲' : '▼'}</span>
+                                  <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[#6b54c6]/15 text-[#6b54c6] flex items-center gap-1"><Users size={9} /> {buyers.length} {t('ct.buyersWord')} {isExpanded ? '▲' : '▼'}</span>
                                 )}
                               </div>
                             </div>
@@ -5554,7 +5554,7 @@ export default function App() {
                             </button>
                             <button onClick={() => g.quantity > 1 ? setExpandedSoldKey(isExpanded ? null : soldKey) : handleReturn(g)}
                               className="flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-blue-400 hover:bg-blue-500/25 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
-                              ↩ Reso
+                              ↩ {t('mag.return')}
                             </button>
                           </div>
                           {/* Tendina compratori: nome a sinistra, quantità a destra; sotto ogni compratore
@@ -5564,7 +5564,7 @@ export default function App() {
                               {buyers.map((b, bi) => (
                                 <div key={bi} className="rounded-xl bg-[var(--fill)] border border-[var(--border)] px-3 py-2">
                                   <div className="flex items-center justify-between gap-2">
-                                    <span className="text-xs font-bold text-[var(--text)] flex items-center gap-1.5 min-w-0"><Users size={11} className="shrink-0 text-[#6b54c6]" /> <span className="truncate">{b.name === '—' ? 'Senza nome' : b.name}</span></span>
+                                    <span className="text-xs font-bold text-[var(--text)] flex items-center gap-1.5 min-w-0"><Users size={11} className="shrink-0 text-[#6b54c6]" /> <span className="truncate">{b.name === '—' ? t('ct.noName') : b.name}</span></span>
                                     <span className="text-[11px] font-bold text-[var(--text-soft)] shrink-0">×{b.qty}</span>
                                   </div>
                                   <div className="mt-1.5 space-y-1">
@@ -5575,7 +5575,7 @@ export default function App() {
                                         </span>
                                         <button onClick={(e) => { e.stopPropagation(); handleReturnIds([s.id], `${g.brand} ${g.name}`); }}
                                           className="flex items-center gap-1 text-blue-400 hover:text-blue-300 font-semibold px-2 py-0.5 rounded-lg hover:bg-blue-500/10 transition-colors">
-                                          ↩ Reso
+                                          ↩ {t('mag.return')}
                                         </button>
                                       </div>
                                     ))}
@@ -5643,6 +5643,8 @@ export default function App() {
               const now = new Date(); const isCur = reportMonth.y === now.getFullYear() && reportMonth.m === now.getMonth();
               const BASE: Record<string, string> = { Entrate: '#3fae82', Uscite: '#8878d6', Investimenti: '#5b86c9' };
               const mains = [{ label: 'Entrate', val: ricavi }, { label: 'Uscite', val: uscite }, { label: 'Investimenti', val: investiti }];
+              // Nome tradotto per i 3 id fissi (Entrate/Uscite/Investimenti); gli altri (piattaforme/reparti) restano.
+              const bubName = (id: string) => id === 'Entrate' ? t('bub.income') : id === 'Uscite' ? t('bub.expenses') : id === 'Investimenti' ? t('bub.invest') : id;
               const groupSum = (arr: any[], keyFn: (x: any) => string) => {
                 const m: Record<string, number> = {};
                 for (const x of arr) { const k = keyFn(x) || 'Altro'; m[k] = (m[k] || 0) + (x.__v || 0); }
@@ -5651,7 +5653,7 @@ export default function App() {
               let breakdown: { label: string; val: number }[] = [];
               if (bubbleFocus === 'Entrate') breakdown = groupSum(sold.map((p: any) => ({ ...p, __v: p.salePrice || 0 })), (p) => p.platform || 'Privato');
               else if (bubbleFocus === 'Investimenti') breakdown = groupSum(bought.map((p: any) => ({ ...p, __v: p.purchasePrice || 0 })), (p) => p.category || 'Altro');
-              else if (bubbleFocus === 'Uscite') breakdown = [{ label: 'Merce', val: merce }, { label: 'Fee', val: feeTot }, { label: 'Spese extra', val: speseM }].filter(b => b.val > 0);
+              else if (bubbleFocus === 'Uscite') breakdown = [{ label: t('bub.goods'), val: merce }, { label: t('bub.fee'), val: feeTot }, { label: t('bub.extra'), val: speseM }].filter(b => b.val > 0);
               const focusColor = bubbleFocus ? BASE[bubbleFocus] : '#5b86c9';
               const visible = bubbleFocus ? breakdown : mains;
               const maxV = Math.max(...visible.map(b => b.val), 1);
@@ -5661,8 +5663,8 @@ export default function App() {
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-5 overflow-hidden">
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2 min-w-0">
-                      {bubbleFocus && <button onClick={() => setBubbleFocus(null)} className="flex items-center gap-1 text-[var(--text-soft)] hover:text-[var(--text)] text-sm font-bold shrink-0"><ChevronDown size={18} className="rotate-90" /> Indietro</button>}
-                      <h3 className="font-bold truncate">{bubbleFocus ? `${bubbleFocus} · dettaglio` : 'Analisi'}</h3>
+                      {bubbleFocus && <button onClick={() => setBubbleFocus(null)} className="flex items-center gap-1 text-[var(--text-soft)] hover:text-[var(--text)] text-sm font-bold shrink-0"><ChevronDown size={18} className="rotate-90" /> {t('common.back')}</button>}
+                      <h3 className="font-bold truncate">{bubbleFocus ? `${bubName(bubbleFocus)} · ${t('bub.detailSuffix')}` : t('bub.analysis')}</h3>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button onClick={() => shiftM(-1)} className="w-8 h-8 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg">‹</button>
@@ -5671,7 +5673,7 @@ export default function App() {
                     </div>
                   </div>
                   <div className="relative flex flex-wrap items-center justify-center gap-4 sm:gap-7 py-6 min-h-[230px]">
-                    {visible.every(b => b.val <= 0) && <p className="text-sm text-[var(--text-faint)]">Nessun dato per questo mese.</p>}
+                    {visible.every(b => b.val <= 0) && <p className="text-sm text-[var(--text-faint)]">{t('bub.noData')}</p>}
                     {visible.filter(b => b.val > 0).map((b, i) => {
                       const d = dia(b.val);
                       const base = bubbleFocus ? focusColor : (BASE[b.label] || '#5b86c9');
@@ -5681,21 +5683,21 @@ export default function App() {
                           className={`rounded-full flex flex-col items-center justify-center shrink-0 text-white bubble-float ${bubbleFocus ? 'bubble-pop' : ''} ${clickable ? 'cursor-pointer hover:brightness-110' : 'cursor-default'} transition-[filter]`}
                           style={{ width: d, height: d, animationDelay: `${i * 0.8}s`, ...bg(base) }}>
                           <span className="font-extrabold num leading-none drop-shadow-sm" style={{ fontSize: Math.max(15, d / 6.5) }}>{b.val.toFixed(0)}€</span>
-                          <span className="opacity-90 mt-1 font-semibold px-1 text-center leading-tight" style={{ fontSize: Math.max(10, d / 13) }}>{b.label}</span>
+                          <span className="opacity-90 mt-1 font-semibold px-1 text-center leading-tight" style={{ fontSize: Math.max(10, d / 13) }}>{bubName(b.label)}</span>
                         </button>
                       );
                     })}
                   </div>
                   <div className="space-y-2 border-t border-[var(--border)] pt-3">
-                    <p className="sys-label mb-1">{bubbleFocus ? 'Dettaglio' : 'Categorie'}</p>
+                    <p className="sys-label mb-1">{bubbleFocus ? t('bub.detail') : t('bub.categories')}</p>
                     {(bubbleFocus ? breakdown : mains).map(c => (
                       <div key={c.label} className="flex items-center gap-3">
                         <span className="w-3 h-3 rounded-full shrink-0" style={{ background: bubbleFocus ? focusColor : (BASE[c.label] || '#5b86c9') }} />
-                        <span className="text-sm font-bold flex-1 truncate">{c.label}</span>
+                        <span className="text-sm font-bold flex-1 truncate">{bubName(c.label)}</span>
                         <span className="text-sm font-bold num text-[var(--text-soft)]">{c.val.toFixed(2)}€</span>
                       </div>
                     ))}
-                    {!bubbleFocus && <p className="text-[11px] text-[var(--text-faint)] pt-1">Tocca una bolla per il dettaglio (dove sono gli investimenti, entrate per piattaforma…).</p>}
+                    {!bubbleFocus && <p className="text-[11px] text-[var(--text-faint)] pt-1">{t('bub.hint')}</p>}
                   </div>
                 </section>
               );
@@ -5837,35 +5839,35 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
               <button type="button" onClick={() => setManualOpen(o => !o)} className="w-full flex items-center gap-2">
                 <BarChart3 size={18} className="text-[var(--teal)]" />
-                <h3 className="text-lg font-bold tracking-tighter">Mesi precedenti (storico)</h3>
+                <h3 className="text-lg font-bold tracking-tighter">{t('mm.title')}</h3>
                 <span className="text-[11px] text-[var(--text-faint)] ml-auto num">
-                  {manualMonths.length > 0 ? `${manualMonths.length} · +${manualMonths.reduce((a, m) => a + ((m.revenue || 0) - (m.cost || 0)), 0).toFixed(0)}€` : 'nessuno'}
+                  {manualMonths.length > 0 ? `${manualMonths.length} · +${manualMonths.reduce((a, m) => a + ((m.revenue || 0) - (m.cost || 0)), 0).toFixed(0)}€` : t('ct.none')}
                 </span>
                 <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${manualOpen ? 'rotate-180' : ''}`} />
               </button>
-              {!manualOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">Inserisci fatturato e costi dei mesi prima di usare HQ, così lo storico è completo.</p>}
+              {!manualOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('mm.hint')}</p>}
               {manualOpen && (<>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 mb-3">
                   <select value={mmMonth} onChange={e => setMmMonth(e.target.value)}
                     className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6]">
-                    {['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'].map((mn, i) => <option key={i} value={i}>{mn}</option>)}
+                    {Array.from({ length: 12 }, (_, i) => <option key={i} value={i} className="capitalize">{new Date(2000, i, 1).toLocaleDateString(dateLocale, { month: 'long' })}</option>)}
                   </select>
-                  <input type="number" value={mmYear} onChange={e => setMmYear(e.target.value)} placeholder="Anno"
+                  <input type="number" value={mmYear} onChange={e => setMmYear(e.target.value)} placeholder={t('mm.year')}
                     className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6] num" />
-                  <input type="number" step="0.01" min="0" value={mmRevenue} onChange={e => setMmRevenue(e.target.value)} placeholder="Fatturato €"
+                  <input type="number" step="0.01" min="0" value={mmRevenue} onChange={e => setMmRevenue(e.target.value)} placeholder={t('mm.revenue')}
                     className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6] num" />
-                  <input type="number" step="0.01" min="0" value={mmCost} onChange={e => setMmCost(e.target.value)} placeholder="Costi €"
+                  <input type="number" step="0.01" min="0" value={mmCost} onChange={e => setMmCost(e.target.value)} placeholder={t('mm.cost')}
                     className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6] num" />
                 </div>
                 <button onClick={addManualMonth} disabled={isAddingMM}
                   className="w-full sm:w-auto px-5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 text-black text-sm font-bold transition-opacity disabled:opacity-50 mb-3">
-                  {isAddingMM ? <Loader2 className="animate-spin inline" size={16} /> : 'Salva mese'}
+                  {isAddingMM ? <Loader2 className="animate-spin inline" size={16} /> : t('mm.save')}
                 </button>
                 {manualMonths.length > 0 && (
                   <div className="space-y-1.5 max-h-64 overflow-y-auto">
                     {manualMonths.map((m: any) => {
                       const prof = (m.revenue || 0) - (m.cost || 0);
-                      const mn = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'][m.month] || '';
+                      const mn = new Date(2000, m.month, 1).toLocaleDateString(dateLocale, { month: 'short' });
                       return (
                         <div key={m.id} className="flex items-center justify-between gap-2 bg-[var(--surface-2)] rounded-lg px-3 py-2">
                           <span className="text-sm font-bold text-[var(--text)] w-20 shrink-0">{mn} {m.year}</span>
@@ -5907,14 +5909,14 @@ export default function App() {
                   <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                     <button type="button" onClick={() => setBuyersOpen(o => !o)} className="w-full flex items-center gap-2">
                       <Users size={18} className="text-emerald-400" />
-                      <h3 className="text-lg font-bold tracking-tighter">Compratori</h3>
-                      <span className="text-[11px] text-[var(--text-faint)] ml-auto num">{buyerStats.length > 0 ? `${buyerStats.length} · ${buyerStats.reduce((a, b) => a + b.revenue, 0).toFixed(0)}€` : 'nessuno'}</span>
+                      <h3 className="text-lg font-bold tracking-tighter">{t('ct.buyers')}</h3>
+                      <span className="text-[11px] text-[var(--text-faint)] ml-auto num">{buyerStats.length > 0 ? `${buyerStats.length} · ${buyerStats.reduce((a, b) => a + b.revenue, 0).toFixed(0)}€` : t('ct.none')}</span>
                       <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${buyersOpen ? 'rotate-180' : ''}`} />
                     </button>
-                    {!buyersOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">I tuoi migliori clienti — tocca per vedere cosa hanno comprato.</p>}
+                    {!buyersOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('ct.buyersHint')}</p>}
                     {buyersOpen && (
                       <div className="mt-3 space-y-1.5 max-h-96 overflow-y-auto">
-                        {buyerStats.length === 0 && <p className="text-sm text-[var(--text-faint)] py-3 text-center">Nessun compratore registrato. Inserisci il nome cliente quando vendi.</p>}
+                        {buyerStats.length === 0 && <p className="text-sm text-[var(--text-faint)] py-3 text-center">{t('ct.noBuyers')}</p>}
                         {buyerStats.map((b, i) => {
                           const ck = `buyer:${b.name}`; const open = expandedContact === ck;
                           return (
@@ -5947,14 +5949,14 @@ export default function App() {
                   <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                     <button type="button" onClick={() => setSellersOpen(o => !o)} className="w-full flex items-center gap-2">
                       <Package size={18} className="text-[#6b54c6]" />
-                      <h3 className="text-lg font-bold tracking-tighter">Fornitori</h3>
-                      <span className="text-[11px] text-[var(--text-faint)] ml-auto num">{sellerStats.length > 0 ? `${sellerStats.length} · ${sellerStats.reduce((a, b) => a + b.spent, 0).toFixed(0)}€` : 'nessuno'}</span>
+                      <h3 className="text-lg font-bold tracking-tighter">{t('ct.sellers')}</h3>
+                      <span className="text-[11px] text-[var(--text-faint)] ml-auto num">{sellerStats.length > 0 ? `${sellerStats.length} · ${sellerStats.reduce((a, b) => a + b.spent, 0).toFixed(0)}€` : t('ct.none')}</span>
                       <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${sellersOpen ? 'rotate-180' : ''}`} />
                     </button>
-                    {!sellersOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">Da chi acquisti — tocca per vedere cosa hai preso.</p>}
+                    {!sellersOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('ct.sellersHint')}</p>}
                     {sellersOpen && (
                       <div className="mt-3 space-y-1.5 max-h-96 overflow-y-auto">
-                        {sellerStats.length === 0 && <p className="text-sm text-[var(--text-faint)] py-3 text-center">Nessun fornitore registrato. Compila "Acquistato da" nella modifica di un prodotto.</p>}
+                        {sellerStats.length === 0 && <p className="text-sm text-[var(--text-faint)] py-3 text-center">{t('ct.noSellers')}</p>}
                         {sellerStats.map((s, i) => {
                           const ck = `seller:${s.name}`; const open = expandedContact === ck;
                           return (
@@ -6917,7 +6919,7 @@ export default function App() {
                 style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
                 <button onClick={() => setLotDetail(null)} aria-label="Indietro"
                   className="flex items-center gap-1 px-2 py-2 -ml-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform text-[var(--text-soft)] hover:text-[var(--text)]">
-                  <ChevronDown size={20} className="rotate-90" /> <span className="text-sm font-bold">Indietro</span>
+                  <ChevronDown size={20} className="rotate-90" /> <span className="text-sm font-bold">{t('common.back')}</span>
                 </button>
                 <div className="min-w-0 flex-1 text-center">
                   <p className="font-bold truncate flex items-center justify-center gap-1.5"><Layers size={16} className="text-[#6b54c6]" /> {lotDetail.lotName}</p>
@@ -8826,8 +8828,8 @@ export default function App() {
 
               {/* Fornitore: da CHI ho acquistato (facoltativo) → tabella "Fornitori" nelle analytics. */}
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Acquistato da <span className="text-[var(--text-faint)] normal-case font-normal">(fornitore, facoltativo)</span></label>
-                <input type="text" value={productSupplier} onChange={(e: any) => setProductSupplier(e.target.value)} maxLength={120} placeholder="Nome, @social o negozio…"
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sup.label')} <span className="text-[var(--text-faint)] normal-case font-normal">{t('sup.hint')}</span></label>
+                <input type="text" value={productSupplier} onChange={(e: any) => setProductSupplier(e.target.value)} maxLength={120} placeholder={t('sup.placeholder')}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
               </div>
 
@@ -9158,7 +9160,7 @@ export default function App() {
                   </select>
                   {productToEdit?.lotName && (
                     <p className="text-[11px] text-[#6b54c6] font-semibold mt-1.5 flex items-center gap-1">
-                      <Layers size={11} className="shrink-0" /> Sposta TUTTO il lotto "{productToEdit.lotName}" nel magazzino scelto
+                      <Layers size={11} className="shrink-0" /> {t('sup.moveWholeLot').replace('{name}', productToEdit.lotName)}
                     </p>
                   )}
                 </div>
@@ -9222,8 +9224,8 @@ export default function App() {
 
               {/* Fornitore: da CHI ho acquistato il pezzo (facoltativo) → alimenta la tabella "Fornitori". */}
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Acquistato da <span className="text-[var(--text-faint)] normal-case font-normal">(fornitore, facoltativo)</span></label>
-                <input type="text" value={editSupplier} onChange={e => setEditSupplier(e.target.value)} maxLength={120} placeholder="Nome, @social o negozio…"
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sup.label')} <span className="text-[var(--text-faint)] normal-case font-normal">{t('sup.hint')}</span></label>
+                <input type="text" value={editSupplier} onChange={e => setEditSupplier(e.target.value)} maxLength={120} placeholder={t('sup.placeholder')}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
               </div>
 
