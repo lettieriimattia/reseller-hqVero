@@ -164,7 +164,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <div className="mb-4">
         <h1 className="text-xl font-black text-[var(--text)]">Catalogo</h1>
         <p className="text-sm text-[var(--text-soft)]">Tocca <span className="text-[#6b54c6] font-bold">+</span> per aggiungere al magazzino con la foto ufficiale. <span className="text-[#6b54c6] font-semibold">Beta</span></p>
@@ -204,12 +204,12 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
       </div>
 
       {/* Risultati */}
-      <div className="mt-2 divide-y divide-[var(--border)]">
+      <div className="mt-2 divide-y divide-[var(--border)] lg:divide-y-0 lg:grid lg:grid-cols-2 lg:gap-x-10">
         {results.map(item => {
           const isAdding = !!adding[item.key];
           const isAdded = !!addedFlash[item.key];
           return (
-            <div key={item.key} className="flex items-center gap-3 py-3">
+            <div key={item.key} className="flex items-center gap-3 py-3 lg:border-b lg:border-[var(--border)]">
               {/* Tap su foto/nome = anteprima ingrandita */}
               <div role="button" tabIndex={0} onClick={() => setPreview(item)}
                 className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer active:opacity-70">

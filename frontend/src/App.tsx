@@ -2012,7 +2012,10 @@ export default function App() {
       // I pezzi di un lotto NON collassano più: ogni prodotto è una riga a sé (idea utente).
       // Il `lotName` resta sul prodotto (lo si vede solo aprendo la modifica). Raggruppo come i
       // prodotti normali: stesso nome/taglia/condizione = una riga con quantità.
-      const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.condition}`;
+      // Raggruppa SOLO se davvero identici: stesso nome/taglia/condizione + STESSO COSTO + stesso
+      // venditore. Prezzi d'acquisto diversi (es. 1300 e 1100) → righe SEPARATE (idea utente).
+      const seller = `${(p as any).userId || ''}|${(p as any).consignmentName || ''}`;
+      const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.condition}-${p.purchasePrice}-${seller}`;
       if (!acc[key]) acc[key] = {
         ...p, category: cat, quantity: 0, ids: [], oldestDate: p.createdAt,
       };
