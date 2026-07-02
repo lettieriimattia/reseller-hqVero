@@ -1,7 +1,27 @@
-import { StrictMode } from 'react'
+import { StrictMode, Component, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+
+// Rete di sicurezza: se l'app crasha in render, NON lasciamo schermo nero (lo splash è già sparito).
+// Mostriamo un messaggio con "Ricarica" e chiudiamo lo splash comunque.
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(err: any) { try { (window as any).__hqHideSplash?.(); } catch {} console.error('App crash:', err); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, textAlign: 'center', color: '#e9ecef', background: '#0a0b0d', fontFamily: '-apple-system, system-ui, sans-serif' }}>
+          <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: '0.04em' }}>HQ</div>
+          <p style={{ color: '#9aa0a8', fontSize: 15, maxWidth: 320 }}>Qualcosa è andato storto nel caricamento. Riprova.</p>
+          <button onClick={() => window.location.reload()} style={{ padding: '12px 22px', borderRadius: 14, background: '#6b54c6', color: '#fff', fontWeight: 700, border: 'none', fontSize: 15 }}>Ricarica</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // PWA: aggiornamento automatico del service worker
 if ('serviceWorker' in navigator) {
@@ -29,7 +49,9 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )
 

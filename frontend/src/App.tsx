@@ -2068,7 +2068,29 @@ export default function App() {
   
   const globalSold = products.filter(p => p.status === 'VENDUTO');
   const globalProfitto = globalSold.reduce((acc, p) => acc + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)), 0);
-  
+
+  // Rientra nel PERIODO scelto in "Personal"? (7g / 30g / anno corrente / sempre / intervallo custom)
+  // DEVE stare PRIMA di periodProfit/trendData che la usano (const in TDZ → altrimenti crash/schermo nero).
+  const inPersonalPeriod = (dateString?: string) => {
+    if (!dateString) return true;
+    const d = new Date(dateString);
+    const now = new Date();
+    const days = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
+    switch (personalPeriod.kind) {
+      case '7d': return days <= 7;
+      case '30d': return days <= 30;
+      case 'year': return d.getFullYear() === now.getFullYear();
+      case 'custom': {
+        const from = personalPeriod.from ? new Date(personalPeriod.from) : null;
+        const to = personalPeriod.to ? new Date(personalPeriod.to + 'T23:59:59') : null;
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+      }
+      default: return true; // 'all'
+    }
+  };
+
   const mioProfitto = globalSold.reduce((acc, p) => {
     const profit = (p.salePrice || 0) - p.purchasePrice - (p.fees || 0);
     return acc + (profit * myProfitFactor(p));
@@ -2105,27 +2127,6 @@ export default function App() {
     }
   });
   
-  // Rientra nel PERIODO scelto in "Personal"? (7g / 30g / anno corrente / sempre / intervallo custom)
-  const inPersonalPeriod = (dateString?: string) => {
-    if (!dateString) return true;
-    const d = new Date(dateString);
-    const now = new Date();
-    const days = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
-    switch (personalPeriod.kind) {
-      case '7d': return days <= 7;
-      case '30d': return days <= 30;
-      case 'year': return d.getFullYear() === now.getFullYear();
-      case 'custom': {
-        const from = personalPeriod.from ? new Date(personalPeriod.from) : null;
-        const to = personalPeriod.to ? new Date(personalPeriod.to + 'T23:59:59') : null;
-        if (from && d < from) return false;
-        if (to && d > to) return false;
-        return true;
-      }
-      default: return true; // 'all'
-    }
-  };
-
   const trendData = useMemo(() => Object.values(
     soldItemsTotal.filter(p => inPersonalPeriod(p.soldAt || p.createdAt)).reduce((acc, p) => {
       const dateKey = (p.soldAt ? new Date(p.soldAt) : new Date())
