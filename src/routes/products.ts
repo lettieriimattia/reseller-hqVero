@@ -398,7 +398,7 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
     const {
       category, warehouseId: bodyWarehouseId, brand, name, size, condition, price, customShares, photos,
       marketPriceMin, marketPriceMax, marketPriceAvg, authenticityScore, notes,
-      attributes, consignmentName, consignmentPercent, lotName, sku,
+      attributes, consignmentName, consignmentPercent, lotName, sku, supplier,
     } = req.body;
 
     // Gating piano: verifica il limite prodotti prima di crearne uno nuovo.
@@ -488,6 +488,7 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
         attributes: attributes && typeof attributes === 'object' ? JSON.stringify(attributes) : null,
         consignmentName: (consignmentName || '').trim() || null,
         consignmentPercent: typeof consignmentPercent === 'number' ? consignmentPercent : null,
+        supplier: (typeof supplier === 'string' && supplier.trim()) ? supplier.trim() : null,
         lotName: (typeof lotName === 'string' && lotName.trim()) ? lotName.trim() : null,
         sku: (typeof sku === 'string' && sku.trim()) ? sku.trim() : null,
         // Magazzino pubblico attivo → in vetrina automaticamente.
@@ -761,7 +762,7 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
     }
     if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
 
-    const { category, brand, name, size, condition, purchasePrice, customShares, photos, notes, attributes, consignmentName, consignmentPercent, warehouseId: newWarehouseId, salePrice, platform, fees, customer, quickSalePrice, purchaseDate, soldDate } = req.body;
+    const { category, brand, name, size, condition, purchasePrice, customShares, photos, notes, attributes, consignmentName, consignmentPercent, warehouseId: newWarehouseId, salePrice, platform, fees, customer, supplier, quickSalePrice, purchaseDate, soldDate } = req.body;
     // Date facoltative: parse sicuro (ISO/yyyy-mm-dd). Ignora se non valide.
     const parseDate = (v: any): Date | null | undefined => {
       if (v === undefined) return undefined;      // non toccare
@@ -839,6 +840,7 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
         platform: platform !== undefined ? ((platform || '').toString().trim() || null) : undefined,
         fees: fees !== undefined ? (typeof fees === 'number' ? fees : null) : undefined,
         customer: customer !== undefined ? ((customer || '').toString().trim() || null) : undefined,
+        supplier: supplier !== undefined ? ((supplier || '').toString().trim() || null) : undefined,
         quickSalePrice: quickSalePrice !== undefined ? (typeof quickSalePrice === 'number' ? quickSalePrice : null) : undefined,
         // Date facoltative: acquisto = createdAt, vendita = soldAt (solo se valide).
         ...(purchaseAt !== undefined ? { createdAt: purchaseAt ?? undefined } : {}),

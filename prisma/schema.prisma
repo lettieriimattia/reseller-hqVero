@@ -155,6 +155,7 @@ model Product {
   platform       String?
   fees           Float?
   customer       String?    // identificativo cliente alla vendita (nome/@social/codice) — facoltativo
+  supplier       String?    // da CHI ho acquistato il pezzo (fornitore/venditore) — facoltativo
   quickSalePrice Float?     // "sell panic": prezzo di svendita rapida stimato (per valore liquidazione)
 
   status         String     @default("IN STOCK") // "IN STOCK" | "RESERVED" | "PAGATO" | "VENDUTO"

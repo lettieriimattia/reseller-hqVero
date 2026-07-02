@@ -79,6 +79,8 @@ export const createProductSchema = z.object({
   // Conto vendita: nome del conto vendita (obbligatorio se attivo) + % facoltativa
   consignmentName: z.string().max(120).optional(),
   consignmentPercent: z.number().min(0).max(100).optional(),
+  // Fornitore: da CHI ho acquistato il pezzo (facoltativo)
+  supplier: z.string().max(120).nullable().optional(),
   // Override divisione profitti per questo prodotto specifico
   profitShareOverride: sharesSchema,
   // Campi opzionali dall'IA
@@ -106,6 +108,7 @@ export const editProductSchema = z.object({
   platform: z.string().max(60).nullable().optional(),
   fees: z.number().nonnegative().max(1000000).nullable().optional(),
   customer: z.string().max(120).nullable().optional(),
+  supplier: z.string().max(120).nullable().optional(),    // da chi ho acquistato (fornitore)
   quickSalePrice: z.number().nonnegative().max(1000000).nullable().optional(), // sell panic
   purchaseDate: z.string().max(40).nullable().optional(), // data acquisto (ISO), facoltativa
   soldDate: z.string().max(40).nullable().optional(),     // data vendita (ISO), facoltativa

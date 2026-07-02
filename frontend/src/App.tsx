@@ -38,6 +38,21 @@ function proxyImg(url?: string | null): string | undefined {
   return url;
 }
 
+// Raggruppa le singole vendite di un gruppo per COMPRATORE (nome). Ogni buyer: quantità totale
+// + l'elenco delle singole vendite (con id e data) per mostrarle nella tendina e fare il reso del
+// pezzo esatto. La stessa persona può aver comprato lo stesso paio in date diverse → più righe.
+function buyersFromSales(sales: any[]): { name: string; qty: number; sales: any[] }[] {
+  const map: Record<string, { name: string; qty: number; sales: any[] }> = {};
+  for (const s of (sales || [])) {
+    const name = (s.customer || '').trim() || '—';
+    if (!map[name]) map[name] = { name, qty: 0, sales: [] };
+    map[name].qty += 1;
+    map[name].sales.push(s);
+  }
+  for (const b of Object.values(map)) b.sales.sort((a: any, c: any) => new Date(c.soldAt || 0).getTime() - new Date(a.soldAt || 0).getTime());
+  return Object.values(map).sort((a, b) => b.qty - a.qty);
+}
+
 // Tutte le chiamate API usano credentials: 'include' per inviare i cookies httpOnly
 // Single-flight del refresh: se più chiamate scadono insieme all'avvio, parte UN SOLO
 // /auth/refresh e tutte aspettano lo stesso esito (niente race che sloggava l'utente).
@@ -86,7 +101,7 @@ async function apiCall<T = any>(
 // ==========================================
 interface Product {
   id: string; category?: string; brand: string; name: string; size: string; condition: string;
-  purchasePrice: number; salePrice?: number; platform?: string; fees?: number; status: string; customer?: string; quickSalePrice?: number;
+  purchasePrice: number; salePrice?: number; platform?: string; fees?: number; status: string; customer?: string; supplier?: string; quickSalePrice?: number;
   customShares?: string; photos?: string; createdAt?: string; soldAt?: string;
   marketPriceMin?: number; marketPriceMax?: number; marketPriceAvg?: number; authenticityScore?: number;
   trackingCode?: string; trackingCarrier?: string; trackingStatus?: string;
@@ -430,6 +445,7 @@ export default function App() {
   // In modalità Automatica foto-first: mostra la griglia reparti solo su richiesta
   const [showRepartoGrid, setShowRepartoGrid] = useState(false);
   const [price, setPrice] = useState('');
+  const [productSupplier, setProductSupplier] = useState(''); // da chi ho acquistato (fornitore, facoltativo)
   const [quantity, setQuantity] = useState('1');
   const [brand, setBrand] = useState('');
   const [name, setName] = useState('');
@@ -523,6 +539,7 @@ export default function App() {
   const [productToEdit, setProductToEdit] = useState<any>(null);
   const [lotDetail, setLotDetail] = useState<any>(null); // dettaglio lotto: lista dei pezzi
   const [zoomPhoto, setZoomPhoto] = useState<string | null>(null); // foto ingrandita (lightbox magazzino)
+  const [expandedSoldKey, setExpandedSoldKey] = useState<string | null>(null); // card venduto aperta (tendina compratori)
   // Pubblicazione nel marketplace dalla modale di modifica
   const [editIsPublic, setEditIsPublic] = useState(false);
   const [editPublicPrice, setEditPublicPrice] = useState('');
@@ -555,6 +572,7 @@ export default function App() {
   const [editSaleFees, setEditSaleFees] = useState('');
   const [editSaleCustomer, setEditSaleCustomer] = useState('');
   const [editQuickSale, setEditQuickSale] = useState(''); // sell panic: prezzo svendita rapida
+  const [editSupplier, setEditSupplier] = useState('');   // da chi ho acquistato (fornitore, facoltativo)
   const [editPurchaseDate, setEditPurchaseDate] = useState(''); // data acquisto (facoltativa)
   const [editSoldDate, setEditSoldDate] = useState('');         // data vendita (facoltativa)
   const [editWarehouseId, setEditWarehouseId] = useState(''); // magazzino del prodotto (per spostarlo)
@@ -581,6 +599,9 @@ export default function App() {
   const [expWarehouse, setExpWarehouse] = useState('');
   const [isAddingExp, setIsAddingExp] = useState(false);
   const [expensesOpen, setExpensesOpen] = useState(false); // accordion costi extra (chiuso = non invade le analytics)
+  const [buyersOpen, setBuyersOpen] = useState(false);   // accordion tabella "Compratori" (chiuso di default)
+  const [sellersOpen, setSellersOpen] = useState(false); // accordion tabella "Fornitori" (chiuso di default)
+  const [expandedContact, setExpandedContact] = useState<string | null>(null); // riga contatto aperta (mostra i suoi pezzi)
   // ----- MARKETPLACE + CHAT -----
   // Pagina pubblica (senza login): attiva se si arriva su /market
   const [publicMarket, setPublicMarket] = useState(() => {
@@ -2048,11 +2069,14 @@ export default function App() {
     const cat = p.category || 'Scarpe';
     const plat = p.platform || 'Privato';
     const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.salePrice}-${plat}`;
-    if (!acc[key]) acc[key] = { ...p, category: cat, platform: plat, quantity: 0, totalRevenue: 0, totalProfit: 0, totalFees: 0, ids: [] };
+    if (!acc[key]) acc[key] = { ...p, category: cat, platform: plat, quantity: 0, totalRevenue: 0, totalProfit: 0, totalFees: 0, ids: [], sales: [] };
     // tieni la data di vendita PIÙ RECENTE del gruppo (per ordinare i venduti)
     if (p.soldAt && (!acc[key].soldAt || new Date(p.soldAt) > new Date(acc[key].soldAt))) acc[key].soldAt = p.soldAt;
     acc[key].quantity += 1;
     acc[key].ids.push(p.id);
+    // Ogni singola vendita del gruppo (per la tendina compratori + reso del pezzo GIUSTO):
+    // stesso paio/prezzo può essere venduto a persone diverse o in date diverse.
+    acc[key].sales.push({ id: p.id, customer: (p.customer || '').trim() || null, soldAt: p.soldAt || null, salePrice: p.salePrice || 0, fees: p.fees || 0, purchasePrice: p.purchasePrice });
     acc[key].totalRevenue += (p.salePrice || 0);
     acc[key].totalFees += (p.fees || 0);
     acc[key].totalProfit += ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0));
@@ -2302,7 +2326,7 @@ export default function App() {
     setPriceEstimate(null);
     // Reset COMPLETO dei campi: evita che restino dati del prodotto precedente
     // (bug: scansionavi un nuovo paio e teneva brand/nome di quello prima).
-    setBrand(''); setName(''); setSku(''); setPrice(''); setQuantity('1');
+    setBrand(''); setName(''); setSku(''); setPrice(''); setQuantity('1'); setProductSupplier('');
     setCondition('DS'); setSize(''); // taglia vuota: la riempie l'IA o l'utente (niente piu' "42" imposto)
     setPokeName(''); setPokeGraded('No'); setPokeGrade(''); setCardNumber(''); setCardGame('pokemon');
     setWatchBrand(''); setWatchModel(''); setWatchCase(''); setWatchStrap(''); setWatchMaterial('');
@@ -3124,6 +3148,7 @@ export default function App() {
             category: effCategory, brand: finalBrand, name: finalName,
             size: finalSize, condition: finalCondition, price: unitPrice,
             sku: sku.trim() || undefined,
+            supplier: productSupplier.trim() || undefined, // fornitore (da chi ho comprato)
             warehouseId: selectedWarehouseId || baseWarehouse?.id || undefined, // magazzino scelto (default: base)
             customShares: finalShares,
             ...(isConsignment && consignmentName.trim() ? {
@@ -3225,6 +3250,7 @@ export default function App() {
     setEditSalePlatform(group.platform || 'Vinted');
     setEditSaleFees(group.fees != null ? String(group.fees) : '');
     setEditSaleCustomer(group.customer || '');
+    setEditSupplier(group.supplier || '');
     setEditQuickSale(group.quickSalePrice != null ? String(group.quickSalePrice) : '');
     const toDateInput = (v: any) => { if (!v) return ''; try { return new Date(v).toISOString().slice(0, 10); } catch { return ''; } };
     setEditPurchaseDate(toDateInput(group.createdAt));
@@ -3406,6 +3432,8 @@ export default function App() {
           photos: editPhotos.length > 0 ? editPhotos : undefined,
           // Sell panic: prezzo di svendita rapida (facoltativo, per il valore di liquidazione).
           quickSalePrice: editQuickSale.trim() ? parseFloat(editQuickSale) : null,
+          // Fornitore: da chi ho acquistato (facoltativo).
+          supplier: editSupplier.trim() || null,
           // Date facoltative: acquisto sempre, vendita solo se venduto.
           purchaseDate: editPurchaseDate || null,
           ...(productToEdit.status === 'VENDUTO' ? { soldDate: editSoldDate || null } : {}),
@@ -3677,8 +3705,16 @@ export default function App() {
   const handleReturn = async (group: any) => {
     const id = group.ids?.[0];
     if (!id) return;
-    const { ok } = await apiCall(`/products/${id}/return`, { method: 'POST' });
-    if (ok) { await fetchProducts(); showToast(t('ts.returnRecorded')); }
+    await handleReturnIds([id], `${group.brand} ${group.name}`);
+  };
+
+  // Reso di UNO o più pezzi SPECIFICI (per id) — così si rende il paio giusto, non l'ultimo/primo.
+  const handleReturnIds = async (ids: string[], label?: string) => {
+    if (!ids.length) return;
+    const results = await Promise.allSettled(ids.map(id => apiCall(`/products/${id}/return`, { method: 'POST' })));
+    const okCount = results.filter(r => r.status === 'fulfilled' && (r.value as any).ok).length;
+    await fetchProducts();
+    if (okCount > 0) showToast(label ? `↩ Reso: ${label}` : t('ts.returnRecorded'), 'ok');
     else showToast(t('ts.returnError'), 'err');
   };
 
@@ -5376,6 +5412,9 @@ export default function App() {
                       let photos: string[] = [];
                       try { photos = g.photos ? JSON.parse(g.photos) : []; } catch {}
                       const platCls = platColors[g.platform] || 'text-[var(--text-muted)] bg-[var(--fill)] border-[var(--border-2)]';
+                      const soldKey = g.ids.join(',');
+                      const buyers = buyersFromSales(g.sales || []); // compratori del gruppo (nome + pezzi)
+                      const isExpanded = expandedSoldKey === soldKey;
 
                       // PAGATO in attesa: pagato dal compratore, soldi in attesa di consegna.
                       if (g.isHeld) {
@@ -5432,8 +5471,9 @@ export default function App() {
                       }
 
                       return (
-                        <div key={g.ids.join(',')} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:border-[var(--border-2)] transition-all group">
-                          <div className="flex items-center gap-3 p-4">
+                        <div key={soldKey} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:border-[var(--border-2)] transition-all group">
+                          <div className={`flex items-center gap-3 p-4 ${g.quantity > 1 || buyers.some(b => b.name !== '—') ? 'cursor-pointer' : ''}`}
+                            onClick={() => setExpandedSoldKey(isExpanded ? null : soldKey)}>
                             {photos.length > 0
                               ? <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[var(--border)] group-hover:border-[var(--border-2)] transition-colors"><img src={photos[0]} alt="" className="w-full h-full object-cover" /></div>
                               : <span className="text-2xl shrink-0 opacity-40">{getCategoryIcon(g.category)}</span>}
@@ -5448,7 +5488,13 @@ export default function App() {
                                 <span className="text-[10px] text-[var(--text-faint)]">{g.size}</span>
                                 <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border ${platCls}`}>{g.platform}</span>
                                 {soldDate && <span className="text-[10px] text-gray-700">{soldDate}</span>}
-                                {g.customer && <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)] flex items-center gap-1"><Users size={9} /> {g.customer}</span>}
+                                {/* Compratori: un nome se unico, "N compratori" se diversi (apri la tendina per vederli). */}
+                                {buyers.length === 1 && buyers[0].name !== '—' && (
+                                  <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)] flex items-center gap-1"><Users size={9} /> {buyers[0].name}</span>
+                                )}
+                                {buyers.length > 1 && (
+                                  <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[#6b54c6]/15 text-[#6b54c6] flex items-center gap-1"><Users size={9} /> {buyers.length} compratori {isExpanded ? '▲' : '▼'}</span>
+                                )}
                               </div>
                             </div>
                             <div className="text-right shrink-0 ml-2">
@@ -5475,11 +5521,38 @@ export default function App() {
                               className="ml-auto flex items-center gap-1.5 bg-[var(--fill)] border border-[var(--border-2)] text-[var(--text-soft)] hover:text-[var(--text)] px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
                               <Edit size={12} /> Modifica
                             </button>
-                            <button onClick={() => handleReturn(g)}
+                            <button onClick={() => g.quantity > 1 ? setExpandedSoldKey(isExpanded ? null : soldKey) : handleReturn(g)}
                               className="flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-blue-400 hover:bg-blue-500/25 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
                               ↩ Reso
                             </button>
                           </div>
+                          {/* Tendina compratori: nome a sinistra, quantità a destra; sotto ogni compratore
+                              le singole vendite (con data) e il RESO del pezzo esatto (non dell'ultimo). */}
+                          {isExpanded && (
+                            <div className="px-4 pb-3 pt-1 border-t border-[var(--border)] space-y-2 bg-[var(--surface-2)]/40">
+                              {buyers.map((b, bi) => (
+                                <div key={bi} className="rounded-xl bg-[var(--fill)] border border-[var(--border)] px-3 py-2">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs font-bold text-[var(--text)] flex items-center gap-1.5 min-w-0"><Users size={11} className="shrink-0 text-[#6b54c6]" /> <span className="truncate">{b.name === '—' ? 'Senza nome' : b.name}</span></span>
+                                    <span className="text-[11px] font-bold text-[var(--text-soft)] shrink-0">×{b.qty}</span>
+                                  </div>
+                                  <div className="mt-1.5 space-y-1">
+                                    {b.sales.map((s: any) => (
+                                      <div key={s.id} className="flex items-center justify-between gap-2 text-[11px]">
+                                        <span className="text-[var(--text-faint)]">
+                                          {s.soldAt ? new Date(s.soldAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' }) : '—'} · {s.salePrice.toFixed(0)}€
+                                        </span>
+                                        <button onClick={(e) => { e.stopPropagation(); handleReturnIds([s.id], `${g.brand} ${g.name}`); }}
+                                          className="flex items-center gap-1 text-blue-400 hover:text-blue-300 font-semibold px-2 py-0.5 rounded-lg hover:bg-blue-500/10 transition-colors">
+                                          ↩ Reso
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}</div>;
@@ -5573,6 +5646,112 @@ export default function App() {
               )}
               </>)}
             </section>
+
+            {/* ===== COMPRATORI & FORNITORI (accordion, chiusi di default) ===== */}
+            {(() => {
+              // Migliori COMPRATORI: da chi mi ha comprato (VENDUTO con nome cliente).
+              const buyerStats: any[] = Object.values(products.filter((p: any) => p.status === 'VENDUTO' && (p.customer || '').trim()).reduce((acc: any, p: any) => {
+                const name = (p.customer || '').trim();
+                if (!acc[name]) acc[name] = { name, count: 0, revenue: 0, profit: 0, items: [] };
+                acc[name].count++; acc[name].revenue += (p.salePrice || 0);
+                acc[name].profit += ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0));
+                acc[name].items.push(p);
+                return acc;
+              }, {})).sort((a: any, b: any) => b.revenue - a.revenue);
+              // Migliori FORNITORI: da chi ho acquistato (qualsiasi stato, campo supplier).
+              const sellerStats: any[] = Object.values(products.filter((p: any) => (p.supplier || '').trim()).reduce((acc: any, p: any) => {
+                const name = (p.supplier || '').trim();
+                if (!acc[name]) acc[name] = { name, count: 0, spent: 0, items: [] };
+                acc[name].count++; acc[name].spent += (p.purchasePrice || 0);
+                acc[name].items.push(p);
+                return acc;
+              }, {})).sort((a: any, b: any) => b.spent - a.spent);
+              const dfmt = (v: any) => v ? new Date(v).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
+
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  {/* COMPRATORI */}
+                  <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                    <button type="button" onClick={() => setBuyersOpen(o => !o)} className="w-full flex items-center gap-2">
+                      <Users size={18} className="text-emerald-400" />
+                      <h3 className="text-lg font-bold tracking-tighter">Compratori</h3>
+                      <span className="text-[11px] text-[var(--text-faint)] ml-auto num">{buyerStats.length > 0 ? `${buyerStats.length} · ${buyerStats.reduce((a, b) => a + b.revenue, 0).toFixed(0)}€` : 'nessuno'}</span>
+                      <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${buyersOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {!buyersOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">I tuoi migliori clienti — tocca per vedere cosa hanno comprato.</p>}
+                    {buyersOpen && (
+                      <div className="mt-3 space-y-1.5 max-h-96 overflow-y-auto">
+                        {buyerStats.length === 0 && <p className="text-sm text-[var(--text-faint)] py-3 text-center">Nessun compratore registrato. Inserisci il nome cliente quando vendi.</p>}
+                        {buyerStats.map((b, i) => {
+                          const ck = `buyer:${b.name}`; const open = expandedContact === ck;
+                          return (
+                            <div key={ck} className="rounded-xl bg-[var(--surface-2)] border border-[var(--border)]">
+                              <button onClick={() => setExpandedContact(open ? null : ck)} className="w-full flex items-center gap-2 px-3 py-2.5 text-left">
+                                <span className="w-6 text-[11px] font-black text-[var(--text-faint)] shrink-0">{i + 1}</span>
+                                <span className="text-sm font-bold text-[var(--text)] truncate flex-1">{b.name}</span>
+                                <span className="text-[11px] font-bold text-emerald-400 shrink-0 num">{b.revenue.toFixed(0)}€</span>
+                                <span className="text-[10px] text-[var(--text-faint)] shrink-0 num">×{b.count}</span>
+                                <ChevronDown size={14} className={`text-[var(--text-faint)] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+                              </button>
+                              {open && (
+                                <div className="px-3 pb-2.5 space-y-1 border-t border-[var(--border)] pt-2">
+                                  {b.items.map((p: any) => (
+                                    <div key={p.id} className="flex items-center justify-between gap-2 text-[11px]">
+                                      <span className="text-[var(--text-soft)] truncate">{p.brand} {p.name} <span className="text-[var(--text-faint)]">· {p.size}</span></span>
+                                      <span className="text-[var(--text-faint)] shrink-0 num">{dfmt(p.soldAt)} · {(p.salePrice || 0).toFixed(0)}€</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </section>
+
+                  {/* FORNITORI */}
+                  <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                    <button type="button" onClick={() => setSellersOpen(o => !o)} className="w-full flex items-center gap-2">
+                      <Package size={18} className="text-[#6b54c6]" />
+                      <h3 className="text-lg font-bold tracking-tighter">Fornitori</h3>
+                      <span className="text-[11px] text-[var(--text-faint)] ml-auto num">{sellerStats.length > 0 ? `${sellerStats.length} · ${sellerStats.reduce((a, b) => a + b.spent, 0).toFixed(0)}€` : 'nessuno'}</span>
+                      <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${sellersOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {!sellersOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">Da chi acquisti — tocca per vedere cosa hai preso.</p>}
+                    {sellersOpen && (
+                      <div className="mt-3 space-y-1.5 max-h-96 overflow-y-auto">
+                        {sellerStats.length === 0 && <p className="text-sm text-[var(--text-faint)] py-3 text-center">Nessun fornitore registrato. Compila "Acquistato da" nella modifica di un prodotto.</p>}
+                        {sellerStats.map((s, i) => {
+                          const ck = `seller:${s.name}`; const open = expandedContact === ck;
+                          return (
+                            <div key={ck} className="rounded-xl bg-[var(--surface-2)] border border-[var(--border)]">
+                              <button onClick={() => setExpandedContact(open ? null : ck)} className="w-full flex items-center gap-2 px-3 py-2.5 text-left">
+                                <span className="w-6 text-[11px] font-black text-[var(--text-faint)] shrink-0">{i + 1}</span>
+                                <span className="text-sm font-bold text-[var(--text)] truncate flex-1">{s.name}</span>
+                                <span className="text-[11px] font-bold text-[#6b54c6] shrink-0 num">{s.spent.toFixed(0)}€</span>
+                                <span className="text-[10px] text-[var(--text-faint)] shrink-0 num">×{s.count}</span>
+                                <ChevronDown size={14} className={`text-[var(--text-faint)] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+                              </button>
+                              {open && (
+                                <div className="px-3 pb-2.5 space-y-1 border-t border-[var(--border)] pt-2">
+                                  {s.items.map((p: any) => (
+                                    <div key={p.id} className="flex items-center justify-between gap-2 text-[11px]">
+                                      <span className="text-[var(--text-soft)] truncate">{p.brand} {p.name} <span className="text-[var(--text-faint)]">· {p.size}</span></span>
+                                      <span className="text-[var(--text-faint)] shrink-0 num">{dfmt(p.createdAt)} · {(p.purchasePrice || 0).toFixed(0)}€</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </section>
+                </div>
+              );
+            })()}
 
             {/* ===== CONTO ECONOMICO MENSILE ===== */}
             {(() => {
@@ -8402,6 +8581,13 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Fornitore: da CHI ho acquistato (facoltativo) → tabella "Fornitori" nelle analytics. */}
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Acquistato da <span className="text-[var(--text-faint)] normal-case font-normal">(fornitore, facoltativo)</span></label>
+                <input type="text" value={productSupplier} onChange={(e: any) => setProductSupplier(e.target.value)} maxLength={120} placeholder="Nome, @social o negozio…"
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
+              </div>
+
               {/* Conto vendita — prodotto di un terzo */}
               <div className="border-t border-[var(--border-2)] pt-4">
                 <div className="flex items-center justify-between">
@@ -8788,6 +8974,13 @@ export default function App() {
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.purchasePrice')}</label>
                 <input type="number" step="0.01" required value={editPrice}
                   onChange={(e: any) => setEditPrice(e.target.value)}
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
+              </div>
+
+              {/* Fornitore: da CHI ho acquistato il pezzo (facoltativo) → alimenta la tabella "Fornitori". */}
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Acquistato da <span className="text-[var(--text-faint)] normal-case font-normal">(fornitore, facoltativo)</span></label>
+                <input type="text" value={editSupplier} onChange={e => setEditSupplier(e.target.value)} maxLength={120} placeholder="Nome, @social o negozio…"
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
               </div>
 
