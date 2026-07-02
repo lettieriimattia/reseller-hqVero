@@ -237,6 +237,23 @@ function dedupKey(c: { sku?: string | null; stockxProductId?: string | null; tit
     .toString().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 120);
 }
 
+// Quanto un risultato COMBACIA con la query (parole in comune su brand+nome+sku, COLORE incluso):
+// serve a ordinare per pertinenza → cercando "jordan 1 canary" la Canary sta in cima, non una
+// Off-White gialla a caso. Bonus se contiene TUTTE le parole della query.
+function queryScore(q: string, r: { brand?: string | null; name?: string | null; sku?: string | null }): number {
+  const words = q.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 1);
+  if (!words.length) return 0;
+  const hay = `${r.brand || ''} ${r.name || ''} ${r.sku || ''}`.toLowerCase();
+  let s = 0;
+  for (const w of words) if (hay.includes(w)) s++;
+  if (s === words.length) s += 2; // match completo → in cima
+  return s;
+}
+// Ordina per pertinenza (score desc), poi mette prima quelli CON foto.
+function byRelevance(q: string) {
+  return (a: CatalogResult, b: CatalogResult) => (queryScore(q, b) - queryScore(q, a)) || ((b.image ? 1 : 0) - (a.image ? 1 : 0));
+}
+
 // Mappa un candidato della fonte DIRETTAMENTE in risultato UI (per le categorie personalizzate,
 // dove non possiamo affidarci al filtro productType della cache). Dedup sulla key.
 function candsToResults(cands: CatalogCandidate[]): CatalogResult[] {
@@ -366,7 +383,7 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
       for (const c of cands) await upsertCandidate(c, undefined, type).catch(() => {});
       const out = candsToResults(cands);
       const withImg = out.filter(r => r.image);
-      return res.json((withImg.length >= 3 ? withImg : out).slice(0, 20));
+      return res.json((withImg.length >= 3 ? withImg : out).sort(byRelevance(q)).slice(0, 20));
     }
 
     const byKey = new Map<string, CatalogResult>();
@@ -409,7 +426,8 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
     const all = Array.from(byKey.values());
     const inCat = type ? all.filter(r => r.productType === type) : all;
     const withImg = inCat.filter(r => r.image);
-    res.json((withImg.length >= 3 ? withImg : inCat).slice(0, 20));
+    // Ordina per PERTINENZA (colore incluso): "jordan 1 canary" → la Canary in cima, non una gialla a caso.
+    res.json((withImg.length >= 3 ? withImg : inCat).sort(byRelevance(q)).slice(0, 20));
   } catch (e: any) {
     logger.error('GET /catalog/search', { err: e.message });
     res.status(500).json({ error: 'Errore ricerca catalogo' });

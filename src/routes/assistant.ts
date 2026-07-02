@@ -250,8 +250,8 @@ async function findCatalogPhoto(query: string): Promise<{ image: string | null; 
   } catch { /* foto facoltativa */ }
   if (!cands.length) return { image: null, styleId: null };
   // Scelgo quello che combacia MEGLIO col nome (colore incluso), anche se la ricerca non ha portato la foto.
-  const words = q.toLowerCase().split(/\s+/).filter(w => w.length > 1);
-  const score = (t: string) => { const n = (t || '').toLowerCase(); return words.reduce((s, w) => s + (n.includes(w) ? 1 : 0), 0); };
+  const words = q.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 1);
+  const score = (t: string) => { const n = (t || '').toLowerCase(); let s = words.reduce((acc, w) => acc + (n.includes(w) ? 1 : 0), 0); if (s === words.length) s += 2; return s; };
   cands.sort((a, b) => score(b.title) - score(a.title));
   const best = cands[0];
   let image = best.image;
@@ -265,10 +265,16 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
   try {
     if (name === 'cerca_catalogo') {
       if (!isStockXConfigured()) return { error: 'Catalogo non disponibile (StockX non configurato).' };
-      const cands = await searchStockXCandidates(String(args.query || ''), {
-        sneakersOnly: args.tipo === 'sneakers', limit: 6,
+      const query = String(args.query || '');
+      const cands = await searchStockXCandidates(query, {
+        sneakersOnly: args.tipo === 'sneakers', limit: 10,
       }).catch(() => []);
-      return { risultati: cands.map(c => ({ nome: c.title, sku: c.styleId, foto: c.image })) };
+      // Ordina per PERTINENZA (parole della query, colore incluso) → "jordan 1 canary" propone la
+      // Canary in cima, non una gialla a caso.
+      const words = query.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 1);
+      const score = (t: string) => { const n = (t || '').toLowerCase(); let s = words.reduce((acc, w) => acc + (n.includes(w) ? 1 : 0), 0); if (words.length && s === words.length) s += 2; return s; };
+      const ranked = [...cands].sort((a, b) => score(b.title || '') - score(a.title || ''));
+      return { risultati: ranked.slice(0, 6).map(c => ({ nome: c.title, sku: c.styleId, foto: c.image })) };
     }
 
     if (name === 'aggiungi_prodotto') {
