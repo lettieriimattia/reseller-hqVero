@@ -37,14 +37,14 @@ export default function TrendChart({ trendData }: { trendData: any[] }) {
         {/* Linea media (tratteggiata, tenue) */}
         <ReferenceLine y={avg} stroke="#6b54c6" strokeOpacity={0.35} strokeDasharray="4 4" />
 
-        {/* Ricavi: velo secondario di sfondo */}
-        <Area type="linear" dataKey="Ricavi" stroke="#8a78d9" strokeOpacity={0.3} strokeWidth={1}
+        {/* Ricavi: velo secondario di sfondo (linea un po' più marcata per leggibilità) */}
+        <Area type="linear" dataKey="Ricavi" stroke="#8a78d9" strokeOpacity={0.45} strokeWidth={2}
           fill="url(#ricaGrad)" dot={false} isAnimationActive={false} />
 
-        {/* Profitto: spezzata viola in primo piano con i puntini (stile foto) */}
-        <Area type="linear" dataKey="Profitto" stroke="#6b54c6" strokeWidth={2} fill="url(#profGrad)"
+        {/* Profitto: spezzata viola in primo piano — linea PIÙ SPESSA (leggibile su schermi HiDPI) */}
+        <Area type="linear" dataKey="Profitto" stroke="#6b54c6" strokeWidth={3.25} fill="url(#profGrad)"
           dot={{ r: 2.5, fill: '#6b54c6', strokeWidth: 0 }}
-          activeDot={{ r: 4, fill: '#c4b5fd', stroke: '#6b54c6', strokeWidth: 2 }} />
+          activeDot={{ r: 5, fill: '#c4b5fd', stroke: '#6b54c6', strokeWidth: 2 }} />
       </AreaChart>
     </ResponsiveContainer>
   );

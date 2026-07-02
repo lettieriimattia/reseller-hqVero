@@ -950,6 +950,12 @@ const it: Dict = {
   'sw.confirmTitle': 'Rimuovere il prodotto?',
   'sw.confirmBody': 'Puoi annullare subito (notifica in basso) o reintegrarlo in seguito dalle Importazioni.',
   'sw.confirmDelete': 'Rimuovi',
+  'edit.purchaseDate': 'Data acquisto',
+  'edit.saleDate': 'Data vendita',
+  'nav.catalog': 'Catalogo',
+  'hdr.support': 'Aiuto & supporto',
+  'dash.fromCatalog': 'Dal catalogo',
+  'dash.openCatalog': 'Apri catalogo →',
 };
 
 const en: Dict = {
@@ -1955,6 +1961,12 @@ const enExtra: Dict = {
   'sw.confirmTitle': 'Remove this product?',
   'sw.confirmBody': 'You can undo right away (bottom toast) or re-add it later from Imports.',
   'sw.confirmDelete': 'Remove',
+  'edit.purchaseDate': 'Purchase date',
+  'edit.saleDate': 'Sale date',
+  'nav.catalog': 'Catalog',
+  'hdr.support': 'Help & support',
+  'dash.fromCatalog': 'From the catalog',
+  'dash.openCatalog': 'Open catalog →',
 };
 Object.assign(en, enExtra);
 

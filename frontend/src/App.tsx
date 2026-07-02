@@ -4648,7 +4648,7 @@ export default function App() {
             ] : []),
             { id: 'analytics', label: t('nav.analytics'), icon: BarChart3 },
             { id: 'tracking', label: t('nav.tracking'), icon: Truck },
-            { id: 'catalog', label: 'Catalogo', icon: Layers },
+            { id: 'catalog', label: t('nav.catalog'), icon: Layers },
           ].map(tab => {
             const Icon = tab.icon;
             const active = currentView === tab.id;
@@ -4694,7 +4694,7 @@ export default function App() {
           </button>
           <button onClick={() => setSupportOpen(true)}
             className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
-            <HelpCircle size={17} /> Aiuto & supporto
+            <HelpCircle size={17} /> {t('hdr.support')}
           </button>
           <button onClick={() => setPrivacyOpen(true)}
             className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
@@ -4954,8 +4954,15 @@ export default function App() {
               {/* Grafico Andamento Vendite — Pro+ (altrimenti teaser) */}
               {hasAdvancedAnalytics ? (
               <section className="flex flex-col bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
-                <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-                  <h3 className="font-semibold shrink-0">{t('an.salesTrend')}</h3>
+                <div className="flex items-start justify-between gap-2 mb-3 flex-wrap">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold">{t('an.salesTrend')}</h3>
+                    {/* Legenda subito sotto il titolo (colori allineati al grafico). */}
+                    <div className="flex items-center gap-4 mt-1">
+                      <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-[3px] rounded-full inline-block" style={{ background: '#8a78d9' }} />{t('an.revenue')}</div>
+                      <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-[3px] rounded-full inline-block" style={{ background: '#6b54c6' }} />{t('dash.profit')}</div>
+                    </div>
+                  </div>
                   <div className="flex gap-0.5 bg-[var(--surface-2)] p-0.5 rounded-xl border border-[var(--border-2)] shrink-0">
                     {(['1D', '1W', '1M', '1Y', 'MAX'] as const).map(tf => (
                       <button key={tf} onClick={() => setChartTimeframe(tf)}
@@ -4975,10 +4982,6 @@ export default function App() {
                     <TrendChart trendData={trendData} />
                   </Suspense>
                 )}
-                <div className="flex items-center gap-5 mt-3 justify-end">
-                  <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-green-500 rounded-full inline-block" />Ricavi</div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#6b54c6] rounded-full inline-block" />Profitto</div>
-                </div>
               </section>
               ) : (
               <section className="flex flex-col items-center justify-center text-center bg-[var(--surface)] border border-[#6b54c6]/30 rounded-2xl p-5">
@@ -5034,18 +5037,20 @@ export default function App() {
             {dashPopular.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="sys-label">Dal catalogo</p>
-                  <button onClick={() => navigateTo('catalog')} className="text-xs font-bold text-[#6b54c6] hover:text-[#8a78d9] transition-colors">Apri catalogo →</button>
+                  <p className="sys-label">{t('dash.fromCatalog')}</p>
+                  <button onClick={() => navigateTo('catalog')} className="text-xs font-bold text-[#6b54c6] hover:text-[#8a78d9] transition-colors">{t('dash.openCatalog')}</button>
                 </div>
                 <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 cursor-pointer"
                   onClick={() => navigateTo('catalog')}>
-                  <div className="flex gap-3 px-3 animate-marquee" style={{ width: 'max-content' }}>
+                  <div className="flex gap-3.5 px-3 animate-marquee" style={{ width: 'max-content' }}>
                     {[...dashPopular, ...dashPopular].map((it, i) => (
-                      <div key={i} className="w-24 shrink-0">
-                        <div className="w-24 h-24 rounded-xl bg-white overflow-hidden flex items-center justify-center border border-[var(--border)]">
+                      <div key={i} className="w-28 shrink-0">
+                        {/* Le foto StockX hanno lo sfondo bianco "cotto" nell'immagine: un tile grigio
+                            CHIARO morbido (non bianco puro) smorza il contrasto violento col tema scuro. */}
+                        <div className="w-28 h-28 rounded-xl bg-[#ededf1] overflow-hidden flex items-center justify-center border border-[var(--border-2)] p-1.5">
                           {it.image ? <img src={proxyImg(it.image)} alt="" loading="lazy" className="w-full h-full object-contain" /> : null}
                         </div>
-                        <p className="text-[10px] text-[var(--text-soft)] mt-1 truncate">{it.name}</p>
+                        <p className="text-[11.5px] text-[var(--text-soft)] mt-1.5 truncate leading-tight">{it.name}</p>
                       </div>
                     ))}
                   </div>
@@ -9373,18 +9378,19 @@ export default function App() {
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
               </div>
 
-              {/* Date (facoltative): acquisto sempre, vendita solo se venduto */}
+              {/* Date (facoltative): acquisto sempre, vendita solo se venduto. min-w-0 = le input
+                  date non "sforano" la colonna su iOS (prima si sovrapponevano). */}
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Data acquisto</label>
+                <div className="min-w-0">
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('edit.purchaseDate')}</label>
                   <input type="date" value={editPurchaseDate} onChange={e => setEditPurchaseDate(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
+                    className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none appearance-none" />
                 </div>
                 {productToEdit.status === 'VENDUTO' && (
-                  <div>
-                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Data vendita</label>
+                  <div className="min-w-0">
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('edit.saleDate')}</label>
                     <input type="date" value={editSoldDate} onChange={e => setEditSoldDate(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
+                      className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none appearance-none" />
                   </div>
                 )}
               </div>
@@ -10468,7 +10474,7 @@ export default function App() {
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-[#6b54c6]/15 flex items-center justify-center"><HelpCircle size={18} className="text-[#6b54c6]" /></div>
                 <div>
-                  <h2 className="font-semibold text-base leading-tight">Aiuto & supporto</h2>
+                  <h2 className="font-semibold text-base leading-tight">{t('hdr.support')}</h2>
                   <p className="text-[11px] text-[var(--text-soft)]">Ti risponde l'assistente. Se serve, passa a un operatore.</p>
                 </div>
               </div>
