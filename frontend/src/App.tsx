@@ -5661,15 +5661,18 @@ export default function App() {
               const bg = (base: string) => ({ background: `radial-gradient(circle at 32% 26%, ${base}f2, ${base}b0 52%, ${base}70)`, boxShadow: `0 14px 46px -12px ${base}66, inset 0 1px 0 rgba(255,255,255,0.14)` });
               return (
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-5 overflow-hidden">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {bubbleFocus && <button onClick={() => setBubbleFocus(null)} className="flex items-center gap-1 text-[var(--text-soft)] hover:text-[var(--text)] text-sm font-bold shrink-0"><ChevronDown size={18} className="rotate-90" /> {t('common.back')}</button>}
-                      <h3 className="font-bold truncate">{bubbleFocus ? `${bubName(bubbleFocus)} · ${t('bub.detailSuffix')}` : t('bub.analysis')}</h3>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => shiftM(-1)} className="w-8 h-8 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg">‹</button>
-                      <span className="text-xs font-bold capitalize min-w-[88px] text-center">{label}</span>
-                      <button onClick={() => shiftM(1)} disabled={isCur} className="w-8 h-8 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg disabled:opacity-30">›</button>
+                  <div className="flex items-center gap-2 mb-1">
+                    {bubbleFocus && (
+                      <button onClick={() => setBubbleFocus(null)} aria-label={t('common.back')}
+                        className="w-7 h-7 rounded-full flex items-center justify-center bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)] shrink-0 active:scale-95 transition-transform">
+                        <ChevronDown size={16} className="rotate-90" />
+                      </button>
+                    )}
+                    <h3 className="font-bold truncate flex-1 min-w-0">{bubbleFocus ? bubName(bubbleFocus) : t('bub.analysis')}</h3>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <button onClick={() => shiftM(-1)} className="w-7 h-7 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg flex items-center justify-center">‹</button>
+                      <span className="text-[11px] font-bold capitalize w-[72px] text-center truncate">{label}</span>
+                      <button onClick={() => shiftM(1)} disabled={isCur} className="w-7 h-7 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg disabled:opacity-30 flex items-center justify-center">›</button>
                     </div>
                   </div>
                   <div className="relative flex flex-wrap items-center justify-center gap-4 sm:gap-7 py-6 min-h-[230px]">
