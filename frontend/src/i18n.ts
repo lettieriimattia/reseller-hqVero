@@ -945,6 +945,11 @@ const it: Dict = {
   'slot.created': 'creato',
   'slot.createError': 'Errore creazione lotto',
   'slot.piecesWord': 'pezzi',
+  // Swipe sulle card (→ Vendi · ← Elimina)
+  'sw.delete': 'Elimina',
+  'sw.confirmTitle': 'Rimuovere il prodotto?',
+  'sw.confirmBody': 'Puoi annullare subito (notifica in basso) o reintegrarlo in seguito dalle Importazioni.',
+  'sw.confirmDelete': 'Rimuovi',
 };
 
 const en: Dict = {
@@ -1946,6 +1951,10 @@ const enExtra: Dict = {
   'slot.created': 'created',
   'slot.createError': 'Error creating lot',
   'slot.piecesWord': 'pieces',
+  'sw.delete': 'Delete',
+  'sw.confirmTitle': 'Remove this product?',
+  'sw.confirmBody': 'You can undo right away (bottom toast) or re-add it later from Imports.',
+  'sw.confirmDelete': 'Remove',
 };
 Object.assign(en, enExtra);
 

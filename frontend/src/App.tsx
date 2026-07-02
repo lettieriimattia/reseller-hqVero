@@ -783,8 +783,54 @@ export default function App() {
     onTouchEnd: cancelLongPress,
   } : {});
   const cardClick = (groupKey: string) => {
+    if (swipeActed.current) { swipeActed.current = false; return; } // dopo una swipe niente click
     if (longPressFired.current) { longPressFired.current = false; return; }
     if (bulkMode) toggleGroupSelection(groupKey);
+  };
+
+  // ===== SWIPE sulle card magazzino (mobile): destra = Vendi, sinistra = Elimina (con conferma) =====
+  const [swipe, setSwipe] = useState<{ key: string; dx: number } | null>(null);
+  const [swipeDelete, setSwipeDelete] = useState<any>(null); // prodotto da eliminare (popup conferma)
+  const swipeRef = useRef<{ x: number; y: number; axis: '' | 'h' | 'v'; key: string }>({ x: 0, y: 0, axis: '', key: '' });
+  const swipeActed = useRef(false);
+  const SWIPE_SELL = 82, SWIPE_DEL = 100; // soglie px (elimina un po' più "marcata")
+  const swipeStart = (key: string, e: any) => {
+    const t = e.touches?.[0]; if (!t) return;
+    swipeRef.current = { x: t.clientX, y: t.clientY, axis: '', key };
+  };
+  const swipeMove = (key: string, e: any) => {
+    if (swipeRef.current.key !== key || bulkMode) return;
+    const t = e.touches?.[0]; if (!t) return;
+    const dx = t.clientX - swipeRef.current.x, dy = t.clientY - swipeRef.current.y;
+    if (!swipeRef.current.axis && (Math.abs(dx) > 12 || Math.abs(dy) > 12)) swipeRef.current.axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+    if (swipeRef.current.axis === 'h') setSwipe({ key, dx: Math.max(-150, Math.min(150, dx)) });
+  };
+  const swipeEnd = (key: string, g: any) => {
+    if (swipeRef.current.key === key && swipeRef.current.axis === 'h' && swipe && swipe.key === key) {
+      const dx = swipe.dx;
+      if (dx >= SWIPE_SELL) { swipeActed.current = true; openSellModal(g.ids, `${g.brand} ${g.name}`, g); }
+      else if (dx <= -SWIPE_DEL) { swipeActed.current = true; setSwipeDelete(g); }
+    }
+    setSwipe(null); swipeRef.current = { x: 0, y: 0, axis: '', key: '' };
+  };
+  // Props card: long-press (bulk) + swipe insieme.
+  const cardTouchProps = (groupKey: string, g: any) => (!bulkMode ? {
+    onMouseDown: (e: any) => startLongPress(groupKey, e),
+    onMouseUp: cancelLongPress,
+    onMouseLeave: cancelLongPress,
+    onTouchStart: (e: any) => { startLongPress(groupKey, e); swipeStart(groupKey, e); },
+    onTouchMove: (e: any) => { moveLongPress(e); swipeMove(groupKey, e); },
+    onTouchEnd: () => { cancelLongPress(); swipeEnd(groupKey, g); },
+  } : {});
+  // Elimina il prodotto/gruppo (soft-delete): toast con Annulla + reintegrabile via Importazioni.
+  const deleteProductGroup = async (g: any) => {
+    const ids: string[] = g.ids || [];
+    setSwipeDelete(null);
+    const results = await Promise.allSettled(ids.map(id => apiCall(`/products/${id}`, { method: 'DELETE' })));
+    const ok = results.filter(r => r.status === 'fulfilled' && (r.value as any).ok).length;
+    await fetchProducts();
+    if (ok > 0) showToast(`🗑️ ${g.brand} ${g.name} rimosso — puoi reintegrarlo dalle Importazioni`, 'ok', { label: t('common.cancel'), onClick: () => undoDeleteIds(ids) });
+    else showToast(t('ts.error'), 'err');
   };
   const [bulkSellOpen, setBulkSellOpen] = useState(false);
   const [bulkSellPrice, setBulkSellPrice] = useState('');
@@ -3321,6 +3367,7 @@ export default function App() {
   };
   
   const openEditModal = (group: any) => {
+    if (swipeActed.current) { swipeActed.current = false; return; } // tap subito dopo una swipe → ignora
     // I lotti aprono il dettaglio (lista pezzi), non la modifica diretta.
     if (group?.isLot) { setLotDetail(group); return; }
     setProductToEdit(group);
@@ -5304,11 +5351,17 @@ export default function App() {
                     return (
                     <React.Fragment key={groupKey}>
 
-                      {/* ===== MOBILE/TABLET: card a riga ===== */}
+                      {/* ===== MOBILE/TABLET: card a riga (SWIPE: → Vendi · ← Elimina) ===== */}
+                      <div className="lg:hidden relative overflow-hidden rounded-2xl">
+                        {!bulkMode && (<>
+                          <div className="absolute inset-0 flex items-center pl-5 rounded-2xl bg-green-600/25 text-green-200 font-bold pointer-events-none" style={{ opacity: swipe?.key === groupKey && swipe.dx > 8 ? 1 : 0 }}><DollarSign size={18} className="mr-1.5" /> {t('mag.sell')}</div>
+                          <div className="absolute inset-0 flex items-center justify-end pr-5 rounded-2xl bg-red-600/25 text-red-200 font-bold pointer-events-none" style={{ opacity: swipe?.key === groupKey && swipe.dx < -8 ? 1 : 0 }}>{t('sw.delete')} <Trash2 size={18} className="ml-1.5" /></div>
+                        </>)}
                       <div
                         onClick={() => cardClick(groupKey)}
-                        {...cardPressProps(groupKey)}
-                        className={`lg:hidden bg-[var(--surface)] border ring-1 ring-white/[0.02] rounded-2xl overflow-hidden transition-all duration-200 ease-out active:scale-[0.99] relative ${
+                        {...cardTouchProps(groupKey, g)}
+                        style={{ transform: swipe?.key === groupKey ? `translateX(${swipe.dx}px)` : undefined, transition: swipe?.key === groupKey ? 'none' : 'transform .22s ease', touchAction: 'pan-y' }}
+                        className={`bg-[var(--surface)] border ring-1 ring-white/[0.02] rounded-2xl overflow-hidden ease-out active:scale-[0.99] relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
                         } ${isSelected ? 'border-[#6b54c6] shadow-sm' : 'border-[var(--border)]'}`}>
                         {bulkMode && (
@@ -5362,6 +5415,7 @@ export default function App() {
                             <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> {t('mag.sell')}</button>
                           </div>
                         )}
+                      </div>
                       </div>
 
                       {/* ===== DESKTOP: card a cubetto ===== */}
@@ -6917,6 +6971,22 @@ export default function App() {
               <p className="text-[11px] text-gray-500 mt-3">Etichetta dimostrativa — non valida per la spedizione reale.</p>
               <button onClick={() => setLabelData(null)}
                 className="mt-4 w-full py-3 rounded-xl bg-[#6b54c6] text-white font-bold">Chiudi</button>
+            </div>
+          </div>
+        ), document.body)}
+
+        {/* ========== POPUP CONFERMA ELIMINA (da swipe ← sinistra) ========== */}
+        {swipeDelete && createPortal((
+          <div className="fixed inset-0 z-[210] bg-black/60 backdrop-blur-sm flex items-center justify-center p-5" onClick={() => setSwipeDelete(null)}>
+            <div className="bg-[var(--surface)] border border-[var(--border-2)] rounded-3xl p-5 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+              <div className="w-11 h-11 rounded-2xl bg-red-500/15 text-red-400 flex items-center justify-center mb-3"><Trash2 size={20} /></div>
+              <h3 className="text-lg font-black">{t('sw.confirmTitle')}</h3>
+              <p className="text-sm text-[var(--text-soft)] mt-1">{swipeDelete.brand} {swipeDelete.name} · {swipeDelete.size}</p>
+              <p className="text-[12px] text-[var(--text-faint)] mt-2">{t('sw.confirmBody')}</p>
+              <div className="flex gap-2 mt-4">
+                <button onClick={() => setSwipeDelete(null)} className="flex-1 py-2.5 rounded-xl border border-[var(--border-2)] text-sm font-bold text-[var(--text-soft)] hover:text-[var(--text)]">{t('common.cancel')}</button>
+                <button onClick={() => deleteProductGroup(swipeDelete)} className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold">{t('sw.confirmDelete')}</button>
+              </div>
             </div>
           </div>
         ), document.body)}
