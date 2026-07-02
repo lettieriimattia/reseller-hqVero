@@ -389,7 +389,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
     <>
       {/* Pannello chat (slide-up) — solo telefono. Conversazione scrollabile + input ancorato. */}
       {open && (
-        <div className="fixed inset-0 z-[44] flex flex-col justify-end lg:inset-auto lg:bottom-6 lg:right-6 lg:left-auto lg:top-auto">
+        <div className="fixed inset-0 z-[44] flex flex-col justify-end lg:inset-auto lg:bottom-[92px] lg:left-60 lg:right-0 lg:top-auto lg:items-center lg:px-6">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setOpen(false)} />
           <div className="relative flex flex-col h-[86vh] rounded-t-[28px] border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_-24px_80px_-24px_rgba(107,84,198,0.55)] lg:h-[720px] lg:max-h-[88vh] lg:w-[480px] lg:rounded-[24px] lg:border lg:border-white/10">
             {/* Grab handle */}
