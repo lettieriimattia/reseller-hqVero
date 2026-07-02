@@ -67,6 +67,21 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
   const wakeRef = useRef<WakeWordHandle | null>(null);
   const voiceBusyRef = useRef(false);
   const convoRef = useRef(false);
+  // Altezza tastiera (iOS/Android) via VisualViewport: alza la barra/input sopra la tastiera
+  // così vedi sempre quello che scrivi.
+  const [kbInset, setKbInset] = useState(0);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKbInset(inset > 90 ? inset : 0); // ignora piccoli scostamenti (barre del browser)
+    };
+    vv.addEventListener('resize', onResize);
+    vv.addEventListener('scroll', onResize);
+    onResize();
+    return () => { vv.removeEventListener('resize', onResize); vv.removeEventListener('scroll', onResize); };
+  }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recSupported = isRecordingSupported();
 
@@ -350,7 +365,8 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
             : wakeOn ? 'Chiedi a HQVault…  o di’ "Ehy HQ"'
             : 'Chiedi a HQVault...'}
           disabled={convo}
-          className="flex-1 bg-transparent outline-none text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] min-w-0 disabled:opacity-70" />
+          style={{ WebkitAppearance: 'none', appearance: 'none' }}
+          className="flex-1 bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] min-w-0 disabled:opacity-70" />
         <button
           onPointerDown={startPtt} onPointerMove={movePtt} onPointerUp={endPtt}
           onPointerCancel={() => finishPtt('cancel')} onContextMenu={e => e.preventDefault()}
@@ -446,8 +462,8 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
               )}
             </div>
 
-            {/* Input ancorato in fondo al pannello */}
-            <div className="shrink-0 px-3 pt-2 border-t border-white/5" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
+            {/* Input ancorato in fondo al pannello — quando la tastiera è aperta lo alziamo sopra di essa. */}
+            <div className="shrink-0 px-3 pt-2 border-t border-white/5" style={{ paddingBottom: kbInset > 0 ? kbInset + 10 : 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
               {bar}
             </div>
           </div>
@@ -457,7 +473,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       {/* Barra flottante (chat chiusa) — solo telefono, sopra la bottom-nav.
           Nascosta quando è attiva la selezione multipla (barra bulk), per non sovrapporsi. */}
       {!open && !hideBar && (
-        <div className="lg:hidden fixed left-3 right-3 z-[45]" style={{ bottom: 'calc(var(--bottom-nav-h, 84px) + 14px)' }}>
+        <div className="lg:hidden fixed left-3 right-3 z-[45]" style={{ bottom: kbInset > 0 ? kbInset + 10 : 'calc(var(--bottom-nav-h, 84px) + 14px)' }}>
           {bar}
         </div>
       )}

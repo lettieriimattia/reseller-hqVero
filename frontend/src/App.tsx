@@ -9642,10 +9642,9 @@ export default function App() {
 
       {/* ========== BARRA BULK ACTIONS ========== */}
       {bulkMode && (
-        <div className="fixed left-0 right-0 z-40 px-4 transition-all"
-          style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom) + 8px)' }}>
+        <div className="fixed left-0 right-0 z-40 px-4 transition-all bottom-[calc(5rem+env(safe-area-inset-bottom)+8px)] lg:bottom-6">
           {(() => { const selCount = getBulkSelectedIds().length; return (
-          <div className={`bg-[#1a1a1a] border rounded-2xl p-3 flex items-center gap-2 shadow-2xl transition-all ${
+          <div className={`bg-[#1a1a1a] border rounded-2xl p-3 flex items-center gap-2 shadow-2xl transition-all max-w-md mx-auto ${
             selCount > 0 ? 'border-[#6b54c6]/50' : 'border-gray-700'
           }`}>
             <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); setSelectedPieceIds(new Set()); }}
