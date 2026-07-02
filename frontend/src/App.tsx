@@ -3715,10 +3715,13 @@ export default function App() {
   const handleExcelFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Limite dimensione (anti-DoS del parser nel browser): max 5MB.
+    if (file.size > 5 * 1024 * 1024) { showToast('File troppo grande (max 5MB).', 'err'); e.target.value = ''; return; }
     try {
       const data = await file.arrayBuffer();
       const XLSX = await import('xlsx');
-      const workbook = XLSX.read(data, { type: 'array' });
+      // Parsing sicuro: niente macro/VBA/HTML/link esterni (mitiga contenuti attivi/XXE).
+      const workbook = XLSX.read(data, { type: 'array', bookVBA: false, cellHTML: false, cellFormula: false });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const raw: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       if (raw.length === 0) { showToast(t('ts.emptyFile'), 'err'); return; }

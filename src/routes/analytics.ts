@@ -301,7 +301,11 @@ router.get('/export.csv', requireFeature('accounting'), async (req: AuthRequest,
     ]);
 
     const esc = (v: any) => {
-      const s = (v ?? '').toString().replace(/"/g, '""');
+      let s = (v ?? '').toString();
+      // ANTI CSV-INJECTION: se la cella inizia con = + - @ (o tab/CR), la neutralizziamo con un
+      // apice iniziale, così Excel/Sheets non la interpreta come formula/comando.
+      if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+      s = s.replace(/"/g, '""');
       return `"${s}"`;
     };
     const d = (x?: Date | null) => (x ? new Date(x).toISOString().slice(0, 10) : '');
