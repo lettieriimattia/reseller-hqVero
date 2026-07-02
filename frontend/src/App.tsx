@@ -801,34 +801,6 @@ export default function App() {
   const [swipeDelete, setSwipeDelete] = useState<any>(null); // prodotto da eliminare (popup conferma)
   const swipeRef = useRef<{ x: number; y: number; axis: '' | 'h' | 'v'; key: string }>({ x: 0, y: 0, axis: '', key: '' });
   const swipeActed = useRef(false);
-  // PAGE-SWIPE (mobile): scorri col dito FUORI da un prodotto → cambi pagina. Sul prodotto restano
-  // gli swipe Vendi/Elimina (le card hanno data-cardswipe → il page-swipe le ignora).
-  const pageSwipeRef = useRef<{ x: number; y: number; skip: boolean; axis: '' | 'h' | 'v' }>({ x: 0, y: 0, skip: false, axis: '' });
-  const PAGE_VIEWS = ['dashboard', 'magazzino', 'catalog', 'analytics', 'tracking'] as const;
-  const pageSwipeProps = {
-    onTouchStart: (e: any) => {
-      const t = e.touches?.[0]; if (!t) return;
-      const skip = !!(e.target as HTMLElement)?.closest?.('[data-cardswipe],[data-noswipe],input,textarea,select');
-      pageSwipeRef.current = { x: t.clientX, y: t.clientY, skip, axis: '' };
-    },
-    onTouchMove: (e: any) => {
-      if (pageSwipeRef.current.skip) return;
-      const t = e.touches?.[0]; if (!t) return;
-      const dx = t.clientX - pageSwipeRef.current.x, dy = t.clientY - pageSwipeRef.current.y;
-      if (!pageSwipeRef.current.axis && (Math.abs(dx) > 14 || Math.abs(dy) > 14)) pageSwipeRef.current.axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
-    },
-    onTouchEnd: (e: any) => {
-      const s = pageSwipeRef.current;
-      if (s.skip || s.axis !== 'h') return;
-      const t = e.changedTouches?.[0]; if (!t) return;
-      const dx = t.clientX - s.x, dy = t.clientY - s.y;
-      if (Math.abs(dx) < 75 || Math.abs(dy) > 55) return;
-      const idx = (PAGE_VIEWS as readonly string[]).indexOf(currentView);
-      if (idx < 0) return;
-      const next = dx < 0 ? idx + 1 : idx - 1;
-      if (next >= 0 && next < PAGE_VIEWS.length) navigateTo(PAGE_VIEWS[next] as any);
-    },
-  };
   const SWIPE_SELL = 82, SWIPE_DEL = 100; // soglie px (elimina un po' più "marcata")
   const swipeStart = (key: string, e: any) => {
     const t = e.touches?.[0]; if (!t) return;
@@ -4975,7 +4947,7 @@ export default function App() {
         </nav>
       </header>
       
-      <main key={currentView} {...pageSwipeProps} className="w-full max-w-[1440px] 2xl:max-w-[1760px] mx-auto px-4 lg:px-10 py-5 lg:py-10 pb-28 lg:pb-16 animate-fade-in lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+      <main key={currentView} className="w-full max-w-[1440px] 2xl:max-w-[1760px] mx-auto px-4 lg:px-10 py-5 lg:py-10 pb-28 lg:pb-16 animate-fade-in lg:flex-1 lg:overflow-y-auto lg:min-h-0">
 
         {/* ========== DASHBOARD ========== */}
         {currentView === 'dashboard' && (
