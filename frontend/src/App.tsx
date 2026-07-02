@@ -4928,28 +4928,12 @@ export default function App() {
         {currentView === 'dashboard' && (
           <div className="space-y-5 lg:space-y-7">
 
-            {/* Header: saluto a SINISTRA (allineato alle card, lettura a "F") + metriche RAGGRUPPATE
-                a destra in un container con divisori (This week / To ship). "Stale" rimosso. */}
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black truncate">
-                  {t('dash.hello')}, <span className="text-[var(--text)] font-black">{user.name.split(' ')[0]}</span>
-                </h2>
-                <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1 capitalize truncate">{new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-              </div>
-              <div className="flex items-stretch gap-2 sm:gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-2xl px-2.5 sm:px-3.5 py-2 shrink-0">
-                <div className="flex flex-col items-end justify-center px-1">
-                  <p className="sys-label text-[9px]">{t('dash.week')}</p>
-                  <p className={`text-base sm:text-xl lg:text-2xl font-extrabold num leading-tight ${weekProfit >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>{weekProfit >= 0 ? '+' : ''}{weekProfit.toFixed(0)}€</p>
-                  <p className="text-[10px] text-[var(--text-faint)] leading-tight">{weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')}</p>
-                </div>
-                <div className="w-px bg-[var(--border-2)]" />
-                <div className="flex flex-col items-end justify-center px-1">
-                  <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">{t('dash.toShip')}</p>
-                  <p className="text-base sm:text-xl lg:text-2xl font-bold num text-blue-400 leading-tight">{products.filter(p => p.trackingCode && ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING')).length}</p>
-                  <p className="text-[10px] text-[var(--text-faint)] leading-tight">{t('dash.inTransit')}</p>
-                </div>
-              </div>
+            {/* Header: solo saluto a SINISTRA. "This week / To ship / Stale" rimossi. */}
+            <div className="min-w-0">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black truncate">
+                {t('dash.hello')}, <span className="text-[var(--text)] font-black">{user.name.split(' ')[0]}</span>
+              </h2>
+              <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1 capitalize truncate">{new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
             </div>
 
             {/* Quanto lo pago? — strumento sourcing (prezzo max d'acquisto). DISATTIVATO finché
@@ -4984,20 +4968,20 @@ export default function App() {
               </section>
             )}
 
-            {/* KPI + NOTE — Personal (profitto mio) + widget Note. Lo "Stock" è stato spostato in
-                Analytics (dashboard più pulita). Le Note si riassumono con l'IA. */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* KPI + NOTE + GRAFICO — mobile: Personal+Note in riga, poi grafico. Desktop:
+                Personal in alto-sx, GRAFICO grande in basso-sx, NOTE alte a destra (coprono il lato). */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-5 lg:items-stretch">
               {/* Mio profitto — tap per scegliere il PERIODO (pilota grafico + buyer/seller). */}
               <button onClick={() => { setPpFrom(personalPeriod.from || ''); setPpTo(personalPeriod.to || ''); setPeriodPickerOpen(true); }}
-                className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group">
+                className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group lg:col-span-2">
                 <p className="sys-label mb-1.5 flex items-center gap-1.5"><Wallet size={10} /> {t('dash.personal')} <ChevronDown size={11} className="text-[var(--text-faint)] group-hover:text-[var(--text-soft)]" /></p>
                 <p className="text-xl lg:text-2xl font-extrabold num text-[var(--teal)]">{periodProfit.toFixed(0)}€</p>
                 <p className="text-[10px] text-[var(--text-faint)] mt-1 truncate capitalize">{periodLabel}</p>
               </button>
 
-              {/* NOTE / TASK — tap per aprire il pannello (aggiungi/segna/elimina). */}
+              {/* NOTE / TASK — desktop: colonna ALTA a destra (row-span-2). */}
               <button onClick={() => setTaskPanelOpen(true)}
-                className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group flex flex-col">
+                className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group flex flex-col lg:row-span-2 lg:h-full">
                 <p className="sys-label mb-1.5 flex items-center gap-1.5"><StickyNote size={10} /> {t('task.title')}
                   {tasks.filter(x => !x.done).length > 0 && <span className="ml-auto text-[9px] font-bold bg-[#6b54c6]/20 text-[#6b54c6] px-1.5 rounded-full num">{tasks.filter(x => !x.done).length}</span>}
                 </p>
@@ -5012,14 +4996,11 @@ export default function App() {
                 )}
                 <p className="text-[10px] text-[#6b54c6] font-bold mt-1.5 group-hover:opacity-80">{t('dash.see')} →</p>
               </button>
-            </div>
 
-            {/* Andamento vendite — ora ANCHE su mobile (come desktop), a tutta larghezza.
-                Insights e Libro Paga spostati in Analytics (dashboard più pulita). */}
-            <div className="grid grid-cols-1 gap-5">
-              {/* Grafico Andamento Vendite — Pro+ (altrimenti teaser) */}
+              {/* Grafico Andamento Vendite — nella STESSA griglia: mobile a tutta larghezza sotto,
+                  desktop grande in basso-sinistra (col-span-2) accanto alle Note alte. */}
               {hasAdvancedAnalytics ? (
-              <section className="flex flex-col bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+              <section className="col-span-2 lg:col-span-2 flex flex-col bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
                 <div className="flex items-start justify-between gap-2 mb-3 flex-wrap">
                   <div className="min-w-0">
                     <h3 className="font-semibold">{t('an.salesTrend')}</h3>
@@ -5041,13 +5022,13 @@ export default function App() {
                     <p className="text-[var(--text-soft)] text-sm">{t('an.noDataPeriod')}</p>
                   </div>
                 ) : (
-                  <Suspense fallback={<div className="h-[220px] flex items-center justify-center"><Loader2 className="animate-spin text-[var(--text-faint)]" size={28} /></div>}>
+                  <Suspense fallback={<div className="h-[300px] flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-[var(--text-faint)]" size={28} /></div>}>
                     <TrendChart trendData={trendData} />
                   </Suspense>
                 )}
               </section>
               ) : (
-              <section className="flex flex-col items-center justify-center text-center bg-[var(--surface)] border border-[#6b54c6]/30 rounded-2xl p-5">
+              <section className="col-span-2 lg:col-span-2 flex flex-col items-center justify-center text-center bg-[var(--surface)] border border-[#6b54c6]/30 rounded-2xl p-5">
                 <div className="w-12 h-12 rounded-2xl bg-[#6b54c6]/15 flex items-center justify-center mb-3"><BarChart3 size={22} className="text-[#6b54c6]" /></div>
                 <h3 className="font-bold mb-1">Andamento e analisi avanzate</h3>
                 <p className="text-sm text-[var(--text-soft)] mb-4 max-w-xs">ROI, trend storico e performance per categoria/piattaforma sono inclusi nel piano Pro.</p>
@@ -5097,34 +5078,6 @@ export default function App() {
               })()}
             </div>
 
-            {/* Catalogo che scorre — scopri prodotti e aggiungili (al posto dei reparti) */}
-            {dashPopular.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="sys-label">{t('dash.fromCatalog')}</p>
-                  <button onClick={() => navigateTo('catalog')} className="text-xs font-bold text-[#6b54c6] hover:text-[#8a78d9] transition-colors">{t('dash.openCatalog')}</button>
-                </div>
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 cursor-pointer"
-                  onClick={() => navigateTo('catalog')}>
-                  <div className="flex gap-3.5 px-3 animate-marquee" style={{ width: 'max-content' }}>
-                    {[...dashPopular, ...dashPopular].map((it, i) => (
-                      <div key={i} className="w-28 shrink-0">
-                        {/* Le foto StockX hanno lo sfondo bianco "cotto" nell'immagine: un tile grigio
-                            CHIARO morbido (non bianco puro) smorza il contrasto violento col tema scuro. */}
-                        <div className="w-28 h-28 rounded-xl bg-[#ededf1] overflow-hidden flex items-center justify-center border border-[var(--border-2)] p-1.5">
-                          {it.image ? <img src={proxyImg(it.image)} alt="" loading="lazy" className="w-full h-full object-contain" /> : null}
-                        </div>
-                        <p className="text-[11.5px] text-[var(--text-soft)] mt-1.5 truncate leading-tight">{it.name}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[var(--surface)] to-transparent" />
-                  <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[var(--surface)] to-transparent" />
-                </div>
-              </section>
-            )}
-
-
             {/* Spedizioni in corso */}
             {(() => {
               const active = products.filter((p: any) => p.trackingCode && ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING'));
@@ -5163,6 +5116,31 @@ export default function App() {
                 </section>
               );
             })()}
+
+            {/* Catalogo che scorre — SOTTO tutto (scambiato con le spedizioni). */}
+            {dashPopular.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="sys-label">{t('dash.fromCatalog')}</p>
+                  <button onClick={() => navigateTo('catalog')} className="text-xs font-bold text-[#6b54c6] hover:text-[#8a78d9] transition-colors">{t('dash.openCatalog')}</button>
+                </div>
+                <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 cursor-pointer"
+                  onClick={() => navigateTo('catalog')}>
+                  <div className="flex gap-3.5 px-3 animate-marquee" style={{ width: 'max-content' }}>
+                    {[...dashPopular, ...dashPopular].map((it, i) => (
+                      <div key={i} className="w-28 shrink-0">
+                        <div className="w-28 h-28 rounded-xl bg-[#ededf1] overflow-hidden flex items-center justify-center border border-[var(--border-2)] p-1.5">
+                          {it.image ? <img src={proxyImg(it.image)} alt="" loading="lazy" className="w-full h-full object-contain" /> : null}
+                        </div>
+                        <p className="text-[11.5px] text-[var(--text-soft)] mt-1.5 truncate leading-tight">{it.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[var(--surface)] to-transparent" />
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[var(--surface)] to-transparent" />
+                </div>
+              </section>
+            )}
           </div>
         )}
 

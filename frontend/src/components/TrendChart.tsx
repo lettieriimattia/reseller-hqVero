@@ -9,7 +9,7 @@ export default function TrendChart({ trendData }: { trendData: any[] }) {
   const avg = profits.length ? profits.reduce((a, b) => a + b, 0) / profits.length : 0;
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="100%" height={300}>
       <AreaChart data={trendData} margin={{ top: 12, right: 6, left: 6, bottom: 0 }}>
         <defs>
           {/* Sfumatura viola sotto la linea principale (Profitto) */}
