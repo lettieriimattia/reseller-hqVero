@@ -186,8 +186,8 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
           <input value={lotName} onChange={e => setLotName(e.target.value)} placeholder="Nome del lotto (es. Carte amico 12/06)"
             className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3.5 py-3 text-sm outline-none focus:border-[#6b54c6]" />
 
-          {/* Magazzino / socio del lotto (team): scegli dove finiscono i pezzi. */}
-          {warehouses.length > 1 && (
+          {/* Magazzino / socio del lotto: scegli DOVE finiscono i pezzi (sempre visibile). */}
+          {warehouses.length >= 1 && (
             <div>
               <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">Magazzino</label>
               <select value={lotWarehouseId} onChange={e => setLotWarehouseId(e.target.value)}

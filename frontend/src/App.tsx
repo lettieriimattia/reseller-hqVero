@@ -3421,6 +3421,28 @@ export default function App() {
       if (!ok) hasError = true;
     }
 
+    // ----- Spostamento magazzino di un intero LOTTO -----
+    // Se sposto in un altro magazzino un pezzo che appartiene a un lotto, sposto TUTTI gli altri
+    // pezzi in stock dello stesso lotto (il lotto "appartiene" al nuovo magazzino/socio).
+    if (warehouseChanged && productToEdit.lotName) {
+      const already = new Set(productToEdit.ids as string[]);
+      const otherLotPieces = products.filter((p: any) =>
+        p.lotName === productToEdit.lotName && p.status === 'IN STOCK' && !already.has(p.id) && (p.purchasePrice || 0) > 0);
+      for (const p of otherLotPieces) {
+        const { ok } = await apiCall(`/products/${p.id}/edit`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            category: p.category, brand: p.brand || p.name || 'Articolo', name: p.name,
+            size: p.size || undefined, condition: p.condition || undefined,
+            purchasePrice: p.purchasePrice,
+            warehouseId: editWarehouseId,
+            customShares: editSnapshotShares,
+          }),
+        });
+        if (!ok) hasError = true;
+      }
+    }
+
     // ----- Riconciliazione quantità pezzi (lotti e gruppi multi-pezzo) -----
     // Per i lotti opera su tutti i pezzi in stock dello stesso lotName; altrimenti sul gruppo.
     const targetProducts = (productToEdit.lotName && editLotIds.length > 0)
@@ -3439,14 +3461,7 @@ export default function App() {
       if (results.some(r => r.status === 'rejected' || (r.status === 'fulfilled' && !(r.value as any).ok))) hasError = true;
     } else if (desiredCount > currentCount) {
       const toAdd = desiredCount - currentCount;
-      // Per i lotti continuiamo la numerazione "#N"; per i gruppi normali cloniamo il prodotto.
-      let startNum = currentCount;
-      if (productToEdit.lotName) {
-        const nums = products
-          .filter((p: any) => p.lotName === productToEdit.lotName)
-          .map((p: any) => { const m = /#(\d+)\s*$/.exec(p.name || ''); return m ? parseInt(m[1]) : 0; });
-        startNum = nums.length ? Math.max(...nums) : currentCount;
-      }
+      // Cloniamo il prodotto/pezzo del lotto mantenendo il suo nome (niente più numerazione "#N").
       for (let i = 0; i < toAdd; i++) {
         const { ok } = await apiCall('/products', {
           method: 'POST',
@@ -3454,7 +3469,7 @@ export default function App() {
             category: productToEdit.category,
             warehouseId: productToEdit.warehouseId || undefined,
             brand: editBrand,
-            name: productToEdit.lotName ? `${productToEdit.lotName} #${startNum + i + 1}` : editName,
+            name: editName,
             size: editSize, condition: editCondition,
             price: parseFloat(editPrice),
             lotName: productToEdit.lotName || undefined,
@@ -8712,6 +8727,11 @@ export default function App() {
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none">
                     {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                   </select>
+                  {productToEdit?.lotName && (
+                    <p className="text-[11px] text-[#6b54c6] font-semibold mt-1.5 flex items-center gap-1">
+                      <Layers size={11} className="shrink-0" /> Sposta TUTTO il lotto "{productToEdit.lotName}" nel magazzino scelto
+                    </p>
+                  )}
                 </div>
               )}
               <div className="grid grid-cols-2 gap-3">

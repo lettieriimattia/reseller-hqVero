@@ -159,8 +159,16 @@ async function visionComplete(opts: {
 // voce per ciascuno con nome, tipo e codice. Per i "lotti": ogni prodotto = una riga.
 export async function scanLotItems(imageBase64: string): Promise<{ name: string; type: string; code: string | null }[]> {
   const prompt = `Nell'immagine ci sono PIÙ prodotti, anche di tipo DIVERSO (sneaker/scarpe, carte Pokémon, vestiti, borse, accessori, elettronica).
-Elenca OGNI singolo prodotto visibile, uno per uno (es. se vedi 2 scarpe e 4 carte → 6 voci).
-Per ciascuno indica:
+Elenca OGNI singolo prodotto REALE, uno per uno.
+
+REGOLE DI CONTEGGIO (IMPORTANTISSIME — non gonfiare il numero):
+- Un PAIO di scarpe = UN SOLO prodotto. Se vedi una sola scarpa o due scarpe dello stesso modello vicine, è comunque 1 prodotto (1 paio).
+- La SCATOLA (shoebox) NON è un prodotto: le scarpe sono spesso appoggiate SOPRA la loro scatola. La scatola sotto/dietro una scarpa appartiene a quella scarpa → conta 1 solo prodotto, NON contare la scatola separatamente.
+- NON contare due volte lo stesso oggetto (scarpa + la sua scatola = 1).
+- Conta solo prodotti distinti e riconoscibili; ignora sfondo, mobili, pavimento, mani, telefoni, schermi.
+- Se in una griglia ci sono N scarpe, ciascuna appoggiata sulla propria scatola, il numero di prodotti è N (il numero di paia di scarpe), NON N×2.
+
+Per ciascun prodotto indica:
 - "name": nome/modello (es. "Jordan 4 Bred", "Charizard V", "Supreme Box Logo Hoodie")
 - "type": UNA tra "sneaker", "card", "apparel", "bag", "accessory", "electronic", "other"
 - "code": codice se leggibile (SKU scarpa, oppure numero carta tipo "020/192"), altrimenti null

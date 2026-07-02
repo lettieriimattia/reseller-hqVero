@@ -211,19 +211,19 @@ router.post('/lot', async (req: AuthRequest, res: Response) => {
     const pricePerUnit = Math.round((totalPrice / quantity) * 100) / 100;
     const lotNote = `Lotto: "${lotName}" — ${quantity} pezzi × ${pricePerUnit.toFixed(2)}€`;
 
-    // Se il lotto esiste già (stesso nome + reparto), continuo la numerazione (#11, #12…):
-    // così si possono AGGIUNGERE pezzi a un lotto esistente usando lo stesso nome.
-    const existingInLot = await prisma.product.count({
-      where: { warehouseId: targetMembership.warehouseId, lotName, deletedAt: null },
-    });
+    // Il NOME del prodotto NON contiene più il nome del lotto (era ridondante: il lotto si vede
+    // già nella scheda, chip "Lotto: …" in alto a destra). Usiamo il brand come nome; se manca,
+    // ripieghiamo sul nome del lotto solo perché serve un'etichetta. Niente più numerazione "#N":
+    // i pezzi identici si raggruppano in un'unica riga con quantità.
+    const itemName = (brand && String(brand).trim()) ? String(brand).trim() : lotName;
 
     const created = await prisma.$transaction(
-      Array.from({ length: quantity }, (_, i) =>
+      Array.from({ length: quantity }, (_, _i) =>
         prisma.product.create({
           data: {
             category,
             brand: brand || lotName,
-            name: `${lotName} #${existingInLot + i + 1}`,
+            name: itemName,
             size: size || '-',
             condition: condition || 'N/D',
             purchasePrice: pricePerUnit,
@@ -320,7 +320,9 @@ router.post('/lot-smart', async (req: AuthRequest, res: Response) => {
       items.map((it: any, i: number) => prisma.product.create({
         data: {
           category: (it.category || 'Generico').toString(),
-          brand: (it.brand || lotName).toString(),
+          // brand NON eredita più il nome del lotto (era ridondante col chip "Lotto: …"): resta
+          // vuoto se non specificato. Il nome del pezzo è quello scritto nella riga.
+          brand: (it.brand || '').toString(),
           name: (it.name || it.brand || 'Articolo').toString(),
           size: (it.size || '-').toString(),
           condition: (it.condition || 'N/D').toString(),
