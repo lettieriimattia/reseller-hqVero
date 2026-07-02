@@ -16,7 +16,7 @@ import { audit } from '../services/audit.service';
 import { logInventory } from '../services/inventory-log.service';
 import { notifyWarehouseMembers } from '../services/notification.service';
 import { getMarketValuation } from '../services/price.service';
-import { getStockXValuation, isStockXConfigured, searchStockXCandidates } from '../services/stockx.service';
+import { getStockXValuation, isStockXConfigured, searchStockXCandidates, getStockXImage } from '../services/stockx.service';
 import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
 import { normalizeProductName } from '../services/ai.service';
 import { checkProductQuota, requireFeature } from '../middleware/plan';
@@ -60,9 +60,15 @@ async function findCatalogImage(brand?: string | null, name?: string | null, dee
     const cands: any[] = [];
     if (isKicksConfigured()) cands.push(...await kicksSearch(q, { limit: 10 }).catch(() => []));
     if (isStockXConfigured()) cands.push(...(await searchStockXCandidates(q, { limit: 10 }).catch(() => [])));
+    // Scelgo il candidato che combacia MEGLIO col nome (anche se la ricerca non ha portato la foto).
     let best: any = null, bestS = 0;
-    for (const c of cands) { if (!c.image) continue; const s = imgMatchScore(q, c.title || ''); if (s > bestS) { bestS = s; best = c; } }
-    if (best && bestS >= 0.34) return { image: best.image, sku: best.styleId || null };
+    for (const c of cands) { const s = imgMatchScore(q, c.title || ''); if (s > bestS) { bestS = s; best = c; } }
+    if (best && bestS >= 0.34) {
+      let image = best.image;
+      // La ricerca StockX NON include la foto: la recupero dal DETTAGLIO col productId del match.
+      if (!image && best.productId) image = await getStockXImage(best.productId).catch(() => null);
+      if (image) return { image, sku: best.styleId || null };
+    }
   } catch { /* fonte non disponibile */ }
   // 3) DEEP (es. pulsante "Trova foto"): l'IA normalizza il nome al nome ufficiale e ri-cerca.
   if (deep) {

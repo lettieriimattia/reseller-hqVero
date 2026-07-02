@@ -169,6 +169,24 @@ export async function searchStockXCandidates(query: string, opts?: { sneakersOnl
   } catch { return []; }
 }
 
+// Recupera l'URL immagine di un prodotto dal DETTAGLIO StockX (/v2/catalog/products/{id}).
+// La ricerca (/catalog/search) NON include le foto: stanno solo nel dettaglio. Difensivo: null su errore.
+export async function getStockXImage(productId?: string | null): Promise<string | null> {
+  const id = (productId || '').toString().trim();
+  if (!id) return null;
+  if (!isStockXConfigured()) return null;
+  const token = await getStockXAccessToken();
+  if (!token) return null;
+  const headers = { Authorization: `Bearer ${token}`, 'x-api-key': process.env.STOCKX_API_KEY || '', Accept: 'application/json' };
+  try {
+    const r = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(id)}`, { headers });
+    if (!r.ok) return null;
+    const p = await r.json() as any;
+    return p?.media?.imageUrl || p?.media?.thumbUrl || p?.media?.smallImageUrl
+      || p?.image || p?.thumbUrl || p?.productAttributes?.image || null;
+  } catch { return null; }
+}
+
 // Trova il prodotto StockX il cui style code combacia ESATTAMENTE col codice letto
 // dall'IA (es. "DH4692-003"). È il match più affidabile in assoluto: il codice articolo
 // identifica univocamente il modello, quindi batte qualsiasi riconoscimento "a vista".

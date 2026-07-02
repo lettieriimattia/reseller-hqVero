@@ -10,7 +10,7 @@ import { prisma } from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimit';
 import { groqAssistantChat, isGroqConfigured, groqTranscribe } from '../services/ai.service';
-import { searchStockXCandidates, getStockXValuation, isStockXConfigured } from '../services/stockx.service';
+import { searchStockXCandidates, getStockXValuation, isStockXConfigured, getStockXImage } from '../services/stockx.service';
 import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
 import { checkProductQuota } from '../middleware/plan';
 import { logger } from '../utils/logger';
@@ -209,22 +209,27 @@ async function findUserStock(userId: string, q: { brand?: any; nome?: any; tagli
 async function findCatalogPhoto(query: string): Promise<{ image: string | null; styleId: string | null }> {
   const q = (query || '').trim();
   if (q.length < 2) return { image: null, styleId: null };
-  const withImg: { title: string; image: string; styleId: string | null }[] = [];
+  const cands: { title: string; image: string | null; styleId: string | null; productId: string | null }[] = [];
   try {
     if (isKicksConfigured()) {
       const k = await kicksSearch(q, { limit: 8 });
-      for (const c of k) if (c.image) withImg.push({ title: c.title, image: c.image, styleId: c.styleId });
+      for (const c of k) cands.push({ title: c.title, image: c.image, styleId: c.styleId, productId: c.productId });
     }
-    if (withImg.length < 3 && isStockXConfigured()) {
+    if (isStockXConfigured()) {
       const s = await searchStockXCandidates(q, { limit: 8 });
-      for (const c of s) if (c.image) withImg.push({ title: c.title, image: c.image!, styleId: c.styleId });
+      for (const c of s) cands.push({ title: c.title, image: c.image, styleId: c.styleId, productId: c.productId });
     }
   } catch { /* foto facoltativa */ }
-  if (!withImg.length) return { image: null, styleId: null };
+  if (!cands.length) return { image: null, styleId: null };
+  // Scelgo quello che combacia MEGLIO col nome (colore incluso), anche se la ricerca non ha portato la foto.
   const words = q.toLowerCase().split(/\s+/).filter(w => w.length > 1);
   const score = (t: string) => { const n = (t || '').toLowerCase(); return words.reduce((s, w) => s + (n.includes(w) ? 1 : 0), 0); };
-  withImg.sort((a, b) => score(b.title) - score(a.title));
-  return { image: withImg[0].image, styleId: withImg[0].styleId };
+  cands.sort((a, b) => score(b.title) - score(a.title));
+  const best = cands[0];
+  let image = best.image;
+  // La ricerca StockX non include la foto: la recupero dal DETTAGLIO col productId.
+  if (!image && best.productId) image = await getStockXImage(best.productId).catch(() => null);
+  return { image: image || null, styleId: best.styleId };
 }
 
 // ---- Esecuzione di un singolo tool ----
