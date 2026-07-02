@@ -4831,32 +4831,25 @@ export default function App() {
               </section>
             )}
 
-            {/* KPI principali — "quadranti" del cruscotto: feedback meccanico, profitto in ottanio */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* KPI principali — box compatti (Personale + Stock). "Vendite" rimosso (i ricavi
+                si vedono nel grafico e nei Venduti). */}
+            <div className="grid grid-cols-2 gap-3">
               {/* Mio profitto (dato critico → ottanio) */}
-              <div className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30">
-                <p className="sys-label mb-4 flex items-center gap-1.5"><Wallet size={10} /> {t('dash.personal')}</p>
-                <p className="text-2xl lg:text-3xl font-extrabold num text-[var(--teal)]">{mioProfitto.toFixed(0)}€</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('dash.personalQuotas')}</p>
+              <div className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30">
+                <p className="sys-label mb-1.5 flex items-center gap-1.5"><Wallet size={10} /> {t('dash.personal')}</p>
+                <p className="text-xl lg:text-2xl font-extrabold num text-[var(--teal)]">{mioProfitto.toFixed(0)}€</p>
+                <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('dash.personalQuotas')}</p>
               </div>
 
               {/* Stock */}
-              <div className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group"
+              <div className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 cursor-pointer hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group"
                 onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); }}>
-                <p className="sys-label mb-4 flex items-center gap-1.5"><Layers size={10} /> {t('dash.stock')}</p>
-                <p className="text-2xl lg:text-3xl font-extrabold num">{stockValore.toFixed(0)}€</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{inStockItems.length} {t('dash.pieces')} · <span className="group-hover:text-[var(--text-muted)] transition-colors">{t('dash.see')} →</span></p>
+                <p className="sys-label mb-1.5 flex items-center gap-1.5"><Layers size={10} /> {t('dash.stock')}</p>
+                <p className="text-xl lg:text-2xl font-extrabold num">{stockValore.toFixed(0)}€</p>
+                <p className="text-[10px] text-[var(--text-faint)] mt-1">{inStockItems.length} {t('dash.pieces')} · <span className="group-hover:text-[var(--text-muted)] transition-colors">{t('dash.see')} →</span></p>
                 {liquidationValue > 0 && (
-                  <p className="text-[10px] text-amber-400/90 mt-1 flex items-center gap-1"><TrendingDown size={10} /> Svendita rapida: <b className="num">{liquidationValue.toFixed(0)}€</b></p>
+                  <p className="text-[10px] text-amber-400/90 mt-1 flex items-center gap-1"><TrendingDown size={10} /> Svendita: <b className="num">{liquidationValue.toFixed(0)}€</b></p>
                 )}
-              </div>
-
-              {/* Vendite (ricavi = ottanio) */}
-              <div className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-5 cursor-pointer hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group"
-                onClick={() => { setCurrentView('magazzino'); setMagazzinoView('sold'); }}>
-                <p className="sys-label mb-4 flex items-center gap-1.5"><TrendingUp size={10} /> {t('dash.sales')}</p>
-                <p className="text-2xl lg:text-3xl font-extrabold num text-[var(--teal)]">{soldItemsTotal.length}</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{ricaviTotali.toFixed(0)}€ {t('dash.revenue')} · <span className="group-hover:text-[var(--text-muted)] transition-colors">{t('dash.see')} →</span></p>
               </div>
             </div>
 
@@ -4865,13 +4858,13 @@ export default function App() {
             <div className="grid grid-cols-1 gap-5">
               {/* Grafico Andamento Vendite — Pro+ (altrimenti teaser) */}
               {hasAdvancedAnalytics ? (
-              <section className="flex flex-col bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold">{t('an.salesTrend')}</h3>
-                  <div className="flex gap-1 bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)]">
+              <section className="flex flex-col bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                  <h3 className="font-semibold shrink-0">{t('an.salesTrend')}</h3>
+                  <div className="flex gap-0.5 bg-[var(--surface-2)] p-0.5 rounded-xl border border-[var(--border-2)] shrink-0">
                     {(['1D', '1W', '1M', '1Y', 'MAX'] as const).map(tf => (
                       <button key={tf} onClick={() => setChartTimeframe(tf)}
-                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
+                        className={`px-2 py-1 text-[11px] font-bold rounded-lg transition-colors ${
                           chartTimeframe === tf ? 'bg-[#6b54c6] text-white' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
                         }`}>{tf}</button>
                     ))}
@@ -4883,7 +4876,7 @@ export default function App() {
                     <p className="text-[var(--text-soft)] text-sm">{t('an.noDataPeriod')}</p>
                   </div>
                 ) : (
-                  <Suspense fallback={<div className="h-[280px] flex items-center justify-center"><Loader2 className="animate-spin text-[var(--text-faint)]" size={28} /></div>}>
+                  <Suspense fallback={<div className="h-[220px] flex items-center justify-center"><Loader2 className="animate-spin text-[var(--text-faint)]" size={28} /></div>}>
                     <TrendChart trendData={trendData} />
                   </Suspense>
                 )}
