@@ -961,6 +961,15 @@ const it: Dict = {
   'task.add': 'Aggiungi',
   'task.empty': 'Nessuna nota. Scrivine una o chiedila alla chat.',
   'task.done': 'Fatte',
+  'per.title': 'Periodo',
+  'per.7d': 'Ultimi 7 giorni',
+  'per.30d': 'Ultimi 30 giorni',
+  'per.year': 'Anno corrente',
+  'per.all': 'Sempre',
+  'per.custom': 'Personalizzato',
+  'per.from': 'Da',
+  'per.to': 'A',
+  'per.apply': 'Applica',
 };
 
 const en: Dict = {
@@ -1977,6 +1986,15 @@ const enExtra: Dict = {
   'task.add': 'Add',
   'task.empty': 'No notes. Write one or ask the chat.',
   'task.done': 'Done',
+  'per.title': 'Period',
+  'per.7d': 'Last 7 days',
+  'per.30d': 'Last 30 days',
+  'per.year': 'This year',
+  'per.all': 'All time',
+  'per.custom': 'Custom',
+  'per.from': 'From',
+  'per.to': 'To',
+  'per.apply': 'Apply',
 };
 Object.assign(en, enExtra);
 

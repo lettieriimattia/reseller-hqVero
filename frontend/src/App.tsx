@@ -427,7 +427,11 @@ export default function App() {
   const [magazzinoView, setMagazzinoView] = useState<'instock' | 'sold' | 'toship'>('instock');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
-  const [chartTimeframe, setChartTimeframe] = useState<'1D' | '1W' | '1M' | '1Y' | 'MAX'>('MAX');
+  // PERIODO "Personal": pilota profitto personale + grafico dashboard + buyer/seller del periodo.
+  const [personalPeriod, setPersonalPeriod] = useState<{ kind: '7d' | '30d' | 'year' | 'all' | 'custom'; from?: string; to?: string }>({ kind: 'all' });
+  const [periodPickerOpen, setPeriodPickerOpen] = useState(false);
+  const [ppFrom, setPpFrom] = useState('');
+  const [ppTo, setPpTo] = useState('');
   // Report mensile (conto economico) — mese selezionato
   const [reportMonth, setReportMonth] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   // ----- COMMAND PALETTE (Ctrl/Cmd+K) -----
@@ -2069,7 +2073,18 @@ export default function App() {
     const profit = (p.salePrice || 0) - p.purchasePrice - (p.fees || 0);
     return acc + (profit * myProfitFactor(p));
   }, 0);
-  
+  // Profitto personale limitato al PERIODO scelto in "Personal" (per il valore mostrato nella card).
+  const periodProfit = globalSold.filter(p => inPersonalPeriod(p.soldAt || p.createdAt)).reduce((acc, p) => {
+    const profit = (p.salePrice || 0) - p.purchasePrice - (p.fees || 0);
+    return acc + (profit * myProfitFactor(p));
+  }, 0);
+  // Etichetta del periodo attivo (mostrata su Personal e sul grafico).
+  const periodLabel = personalPeriod.kind === '7d' ? t('per.7d')
+    : personalPeriod.kind === '30d' ? t('per.30d')
+    : personalPeriod.kind === 'year' ? t('per.year')
+    : personalPeriod.kind === 'custom' ? `${personalPeriod.from || '…'} → ${personalPeriod.to || '…'}`
+    : t('per.all');
+
   const sociProfits: Record<string, { name: string, profit: number }> = {};
   globalSold.forEach(p => {
     const profit = (p.salePrice || 0) - p.purchasePrice - (p.fees || 0);
@@ -2090,22 +2105,29 @@ export default function App() {
     }
   });
   
-  const filterByTimeframe = (dateString?: string) => {
+  // Rientra nel PERIODO scelto in "Personal"? (7g / 30g / anno corrente / sempre / intervallo custom)
+  const inPersonalPeriod = (dateString?: string) => {
     if (!dateString) return true;
-    const date = new Date(dateString);
+    const d = new Date(dateString);
     const now = new Date();
-    const diffDays = Math.ceil(Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    switch (chartTimeframe) {
-      case '1D': return diffDays <= 1;
-      case '1W': return diffDays <= 7;
-      case '1M': return diffDays <= 30;
-      case '1Y': return diffDays <= 365;
-      default: return true;
+    const days = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
+    switch (personalPeriod.kind) {
+      case '7d': return days <= 7;
+      case '30d': return days <= 30;
+      case 'year': return d.getFullYear() === now.getFullYear();
+      case 'custom': {
+        const from = personalPeriod.from ? new Date(personalPeriod.from) : null;
+        const to = personalPeriod.to ? new Date(personalPeriod.to + 'T23:59:59') : null;
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+      }
+      default: return true; // 'all'
     }
   };
-  
+
   const trendData = useMemo(() => Object.values(
-    soldItemsTotal.filter(p => filterByTimeframe(p.soldAt || p.createdAt)).reduce((acc, p) => {
+    soldItemsTotal.filter(p => inPersonalPeriod(p.soldAt || p.createdAt)).reduce((acc, p) => {
       const dateKey = (p.soldAt ? new Date(p.soldAt) : new Date())
         .toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
       if (!acc[dateKey]) acc[dateKey] = { date: dateKey, Ricavi: 0, Profitto: 0 };
@@ -2113,7 +2135,8 @@ export default function App() {
       acc[dateKey].Profitto += ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0));
       return acc;
     }, {} as Record<string, any>)
-  ), [soldItemsTotal, chartTimeframe]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [soldItemsTotal, personalPeriod]);
 
   const platformBreakdown = useMemo(() => {
     const bd: Record<string, { revenue: number; profit: number; count: number; fees: number }> = {};
@@ -4976,12 +4999,13 @@ export default function App() {
             {/* KPI + NOTE — Personal (profitto mio) + widget Note. Lo "Stock" è stato spostato in
                 Analytics (dashboard più pulita). Le Note si riassumono con l'IA. */}
             <div className="grid grid-cols-2 gap-3">
-              {/* Mio profitto (dato critico → ottanio) */}
-              <div className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30">
-                <p className="sys-label mb-1.5 flex items-center gap-1.5"><Wallet size={10} /> {t('dash.personal')}</p>
-                <p className="text-xl lg:text-2xl font-extrabold num text-[var(--teal)]">{mioProfitto.toFixed(0)}€</p>
-                <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('dash.personalQuotas')}</p>
-              </div>
+              {/* Mio profitto — tap per scegliere il PERIODO (pilota grafico + buyer/seller). */}
+              <button onClick={() => { setPpFrom(personalPeriod.from || ''); setPpTo(personalPeriod.to || ''); setPeriodPickerOpen(true); }}
+                className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group">
+                <p className="sys-label mb-1.5 flex items-center gap-1.5"><Wallet size={10} /> {t('dash.personal')} <ChevronDown size={11} className="text-[var(--text-faint)] group-hover:text-[var(--text-soft)]" /></p>
+                <p className="text-xl lg:text-2xl font-extrabold num text-[var(--teal)]">{periodProfit.toFixed(0)}€</p>
+                <p className="text-[10px] text-[var(--text-faint)] mt-1 truncate capitalize">{periodLabel}</p>
+              </button>
 
               {/* NOTE / TASK — tap per aprire il pannello (aggiungi/segna/elimina). */}
               <button onClick={() => setTaskPanelOpen(true)}
@@ -5017,14 +5041,11 @@ export default function App() {
                       <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-[3px] rounded-full inline-block" style={{ background: '#6b54c6' }} />{t('dash.profit')}</div>
                     </div>
                   </div>
-                  <div className="flex gap-0.5 bg-[var(--surface-2)] p-0.5 rounded-xl border border-[var(--border-2)] shrink-0">
-                    {(['1D', '1W', '1M', '1Y', 'MAX'] as const).map(tf => (
-                      <button key={tf} onClick={() => setChartTimeframe(tf)}
-                        className={`px-2 py-1 text-[11px] font-bold rounded-lg transition-colors ${
-                          chartTimeframe === tf ? 'bg-[#6b54c6] text-white' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
-                        }`}>{tf}</button>
-                    ))}
-                  </div>
+                  {/* Il periodo si sceglie dalla card "Personal": qui mostro solo l'etichetta (tap → selettore). */}
+                  <button onClick={() => { setPpFrom(personalPeriod.from || ''); setPpTo(personalPeriod.to || ''); setPeriodPickerOpen(true); }}
+                    className="flex items-center gap-1.5 bg-[var(--surface-2)] px-3 py-1.5 rounded-xl border border-[var(--border-2)] text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] shrink-0 capitalize">
+                    {periodLabel} <ChevronDown size={13} />
+                  </button>
                 </div>
                 {trendData.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
@@ -5052,11 +5073,12 @@ export default function App() {
                 queste (+ Insights + Libro Paga) vivono in Analytics. */}
             <div className="grid grid-cols-2 gap-3 lg:hidden">
               {(() => {
-                const buyerAgg: any[] = Object.values(products.filter((p: any) => p.status === 'VENDUTO' && (p.customer || '').trim()).reduce((acc: any, p: any) => {
+                // Buyer/seller del PERIODO scelto in Personal (vendite per soldAt, acquisti per createdAt).
+                const buyerAgg: any[] = Object.values(products.filter((p: any) => p.status === 'VENDUTO' && (p.customer || '').trim() && inPersonalPeriod(p.soldAt || p.createdAt)).reduce((acc: any, p: any) => {
                   const n = (p.customer || '').trim(); if (!acc[n]) acc[n] = { name: n, count: 0, revenue: 0 };
                   acc[n].count++; acc[n].revenue += (p.salePrice || 0); return acc;
                 }, {})).sort((a: any, b: any) => b.revenue - a.revenue);
-                const sellerAgg: any[] = Object.values(products.filter((p: any) => (p.supplier || '').trim()).reduce((acc: any, p: any) => {
+                const sellerAgg: any[] = Object.values(products.filter((p: any) => (p.supplier || '').trim() && inPersonalPeriod(p.createdAt)).reduce((acc: any, p: any) => {
                   const n = (p.supplier || '').trim(); if (!acc[n]) acc[n] = { name: n, count: 0, spent: 0 };
                   acc[n].count++; acc[n].spent += (p.purchasePrice || 0); return acc;
                 }, {})).sort((a: any, b: any) => b.spent - a.spent);
@@ -6304,34 +6326,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Grafico */}
-            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-                <h3 className="font-semibold">{t('an.salesTrend')}</h3>
-                <div className="flex gap-1 bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)]">
-                  {(['1D', '1W', '1M', '1Y', 'MAX'] as const).map(tf => (
-                    <button key={tf} onClick={() => setChartTimeframe(tf)}
-                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                        chartTimeframe === tf ? 'bg-[#6b54c6] text-[var(--text)]' : 'text-[var(--text-soft)] hover:text-[var(--text)]'
-                      }`}>{tf}</button>
-                  ))}
-                </div>
-              </div>
-              {trendData.length === 0 ? (
-                <div className="text-center py-10">
-                  <BarChart3 className="mx-auto text-gray-800 mb-3" size={36} />
-                  <p className="text-[var(--text-soft)] text-sm">{t('an.noDataPeriod')}</p>
-                </div>
-              ) : (
-                <Suspense fallback={<div className="h-[280px] flex items-center justify-center"><Loader2 className="animate-spin text-gray-700" size={28} /></div>}>
-                  <TrendChart trendData={trendData} />
-                </Suspense>
-              )}
-              <div className="flex items-center gap-5 mt-3 justify-end">
-                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-green-500 rounded-full inline-block" />{t('an.revenue')}</div>
-                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-0.5 bg-[#6b54c6] rounded-full inline-block" />{t('dash.profit')}</div>
-              </div>
-            </section>
+            {/* Grafico Andamento rimosso da Analytics: è già in Dashboard (niente duplicati). */}
 
             {/* Piattaforme + Soci — 2 colonne su desktop */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -7034,6 +7029,44 @@ export default function App() {
               <p className="text-[11px] text-gray-500 mt-3">Etichetta dimostrativa — non valida per la spedizione reale.</p>
               <button onClick={() => setLabelData(null)}
                 className="mt-4 w-full py-3 rounded-xl bg-[#6b54c6] text-white font-bold">Chiudi</button>
+            </div>
+          </div>
+        ), document.body)}
+
+        {/* ========== SELETTORE PERIODO (da card Personal / grafico) ========== */}
+        {periodPickerOpen && createPortal((
+          <div className="fixed inset-0 z-[205] bg-black/60 backdrop-blur-sm flex flex-col justify-end sm:items-center sm:justify-center sm:p-4" onClick={() => setPeriodPickerOpen(false)}>
+            <div className="bg-[var(--surface)] w-full sm:max-w-sm sm:rounded-3xl rounded-t-3xl border-t sm:border border-[var(--border-2)] overflow-hidden" onClick={e => e.stopPropagation()}
+              style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
+                <h3 className="font-extrabold">{t('per.title')}</h3>
+                <button onClick={() => setPeriodPickerOpen(false)} className="p-1.5 rounded-full text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5"><X size={22} /></button>
+              </div>
+              <div className="p-4 space-y-2">
+                {([['7d', t('per.7d')], ['30d', t('per.30d')], ['year', t('per.year')], ['all', t('per.all')]] as const).map(([k, lbl]) => (
+                  <button key={k} onClick={() => { setPersonalPeriod({ kind: k as any }); setPeriodPickerOpen(false); }}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-colors ${personalPeriod.kind === k ? 'bg-[#6b54c6] text-white' : 'bg-[var(--surface-2)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
+                    {lbl} {personalPeriod.kind === k && <Check size={16} />}
+                  </button>
+                ))}
+                {/* Intervallo personalizzato */}
+                <div className="rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] p-3 space-y-2">
+                  <p className="text-[11px] font-bold text-[var(--text-soft)] uppercase tracking-widest">{t('per.custom')}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="min-w-0">
+                      <label className="text-[10px] text-[var(--text-faint)]">{t('per.from')}</label>
+                      <input type="date" value={ppFrom} onChange={e => setPpFrom(e.target.value)} className="w-full min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2 py-2 text-sm outline-none focus:border-[#6b54c6] appearance-none" />
+                    </div>
+                    <div className="min-w-0">
+                      <label className="text-[10px] text-[var(--text-faint)]">{t('per.to')}</label>
+                      <input type="date" value={ppTo} onChange={e => setPpTo(e.target.value)} className="w-full min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2 py-2 text-sm outline-none focus:border-[#6b54c6] appearance-none" />
+                    </div>
+                  </div>
+                  <button onClick={() => { if (ppFrom || ppTo) { setPersonalPeriod({ kind: 'custom', from: ppFrom || undefined, to: ppTo || undefined }); setPeriodPickerOpen(false); } }}
+                    disabled={!ppFrom && !ppTo}
+                    className="w-full py-2 rounded-lg bg-[#6b54c6] hover:bg-[#5d44b0] text-white text-sm font-bold disabled:opacity-40">{t('per.apply')}</button>
+                </div>
+              </div>
             </div>
           </div>
         ), document.body)}
