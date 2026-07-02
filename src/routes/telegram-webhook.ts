@@ -9,11 +9,10 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { sendEmail } from '../services/email.service';
-import { sendTelegram, webhookSecret } from '../services/telegram';
+import { sendTelegram, webhookSecret, isAdminChat } from '../services/telegram';
 import { logger } from '../utils/logger';
 
 const router = Router();
-const ADMIN_CHAT = process.env.TELEGRAM_CHAT_ID || '';
 
 router.post('/webhook', async (req: Request, res: Response) => {
   // Verifica che la chiamata venga davvero da Telegram (secret impostato in setWebhook).
@@ -25,7 +24,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
   try {
     const msg = req.body?.message;
     if (!msg || !msg.text || !msg.reply_to_message) return;          // solo RISPOSTE a un messaggio
-    if (String(msg.chat?.id) !== String(ADMIN_CHAT)) return;          // solo dall'admin
+    if (!isAdminChat(msg.chat?.id)) return;                           // solo dalle chat autorizzate (tu/socio)
 
     const original = (msg.reply_to_message.text || '').toString();
     const email = (original.match(/[\w.+-]+@[\w-]+\.[\w.-]+/) || [])[0];

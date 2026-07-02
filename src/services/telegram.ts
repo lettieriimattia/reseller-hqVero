@@ -6,10 +6,18 @@ import crypto from 'crypto';
 import { logger } from '../utils/logger';
 
 const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-const TG_CHAT = process.env.TELEGRAM_CHAT_ID || '';
+// PIÙ destinatari: TELEGRAM_CHAT_ID può contenere più chat_id separati da virgola (es. tu + socio),
+// oppure l'id di un GRUPPO Telegram (id negativo) con dentro tutti. Il messaggio va a ognuno.
+const TG_CHATS = (process.env.TELEGRAM_CHAT_ID || '').split(',').map(s => s.trim()).filter(Boolean);
+
+export function getChatIds(): string[] { return TG_CHATS; }
+// Il webhook accetta le risposte solo dalle chat autorizzate (tu e/o il socio).
+export function isAdminChat(id: string | number | undefined | null): boolean {
+  return TG_CHATS.includes(String(id ?? ''));
+}
 
 export function isTelegramConfigured(): boolean {
-  return !!(TG_TOKEN && TG_CHAT);
+  return !!(TG_TOKEN && TG_CHATS.length > 0);
 }
 
 // Segreto del webhook derivato dal token (niente env extra). Telegram lo rimanda nell'header
@@ -41,19 +49,22 @@ export async function sendTelegram(text: string): Promise<boolean> {
     logger.warn('Telegram NON configurato (TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID mancanti su Render) → fallback email');
     return false;
   }
-  try {
-    const r = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: TG_CHAT, text, parse_mode: 'HTML', disable_web_page_preview: true }),
-    });
-    // ATTENZIONE: Telegram torna HTTP 200 ANCHE quando rifiuta (es. "chat not found",
-    // "bot was blocked"): il vero esito è nel campo body.ok. Va controllato quello.
-    const data: any = await r.json().catch(() => ({}));
-    if (!r.ok || !data?.ok) {
-      logger.warn('Telegram invio fallito', { status: r.status, errorCode: data?.error_code, desc: data?.description });
-      return false;
-    }
-    return true;
-  } catch (e: any) { logger.warn('Telegram errore di rete', { err: e.message }); return false; }
+  // Invia a TUTTI i destinatari configurati. Basta che UNO vada a buon fine per considerarlo ok.
+  let anyOk = false;
+  for (const chat of TG_CHATS) {
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chat, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+      });
+      // ATTENZIONE: Telegram torna HTTP 200 ANCHE quando rifiuta (es. "chat not found",
+      // "bot was blocked"): il vero esito è nel campo body.ok. Va controllato quello.
+      const data: any = await r.json().catch(() => ({}));
+      if (!r.ok || !data?.ok) {
+        logger.warn('Telegram invio fallito', { chat, status: r.status, errorCode: data?.error_code, desc: data?.description });
+      } else { anyOk = true; }
+    } catch (e: any) { logger.warn('Telegram errore di rete', { chat, err: e.message }); }
+  }
+  return anyOk;
 }
