@@ -210,6 +210,9 @@ function inferCategory(title: string, productType?: string | null): string | nul
 // scarpe sia t-shirt: ognuna nella sua categoria). forceCategory è solo un fallback
 // quando il product_type manca (es. la query è sotto una scheda specifica).
 async function upsertCandidate(c: CatalogCandidate, byKey?: Map<string, CatalogResult>, forceCategory?: string): Promise<void> {
+  // MAI salvare in cache un item SENZA foto: nel catalogo apparirebbe come immagine rotta.
+  // Meglio non averlo che averlo rotto (le fonti a volte tornano colorway senza immagine).
+  if (!c.image) return;
   const key = dedupKey({ sku: c.styleId, stockxProductId: c.productId, title: c.title });
   if (!key) return;
   const split = splitBrandName(c.title);
@@ -334,7 +337,7 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
       for (const c of cands) await upsertCandidate(c, undefined, type).catch(() => {});
       const out = candsToResults(cands);
       const withImg = out.filter(r => r.image);
-      return res.json((withImg.length >= 3 ? withImg : out).slice(0, 20));
+      return res.json(withImg.slice(0, 20)); // solo item CON foto (mai immagini rotte)
     }
 
     const byKey = new Map<string, CatalogResult>();
@@ -377,7 +380,7 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
     const all = Array.from(byKey.values());
     const inCat = type ? all.filter(r => r.productType === type) : all;
     const withImg = inCat.filter(r => r.image);
-    res.json((withImg.length >= 3 ? withImg : inCat).slice(0, 20));
+    res.json(withImg.slice(0, 20)); // solo item CON foto (mai immagini rotte)
   } catch (e: any) {
     logger.error('GET /catalog/search', { err: e.message });
     res.status(500).json({ error: 'Errore ricerca catalogo' });
@@ -389,7 +392,7 @@ const seededAt = new Map<string, number>(); // ultimo refresh per categoria (thr
 
 // Versione della logica di categorizzazione/cache. Quando la cambio (bump qui), la cache
 // CatalogItem si svuota DA SOLA al primo accesso dopo il deploy → niente _reset a mano.
-const CATALOG_VERSION = '7-dualsrc';
+const CATALOG_VERSION = '8-photosafe';
 let versionChecked = false;
 async function ensureCatalogVersion(): Promise<void> {
   if (versionChecked) return;
@@ -446,7 +449,7 @@ router.get('/popular', async (req: AuthRequest, res: Response) => {
       for (const c of cands) await upsertCandidate(c, undefined, type).catch(() => {});
       const out = candsToResults(cands);
       const withImg = out.filter(r => r.image);
-      return res.json((withImg.length >= 6 ? withImg : out).slice(0, 60));
+      return res.json(withImg.slice(0, 60)); // solo item CON foto (mai immagini rotte)
     }
 
     // Ordine FISSO: per data di inserimento (createdAt non cambia ai re-seed) → il catalogo
@@ -481,9 +484,9 @@ router.get('/popular', async (req: AuthRequest, res: Response) => {
         ) t WHERE rn <= 10 ORDER BY RANDOM() LIMIT 60`;
       return res.json(rnd.map((r: any) => ({ key: r.key, brand: r.brand, name: r.name, sku: r.sku, image: r.image, productType: r.productType })));
     }
-    // PRIORITÀ alle righe CON immagine (le vecchie senza foto vanno in fondo / si escludono).
+    // SOLO righe CON immagine (mai immagini rotte nel catalogo).
     const withImg = items.filter(i => i.image);
-    const out = (withImg.length >= 8 ? withImg : items).slice(0, 60);
+    const out = withImg.slice(0, 60);
     res.json(out.map(it => ({
       key: it.key, brand: it.brand, name: it.name, sku: it.sku,
       image: it.image, productType: it.productType,
