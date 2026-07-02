@@ -753,7 +753,7 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
     }
     if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
 
-    const { category, brand, name, size, condition, purchasePrice, customShares, photos, notes, attributes, consignmentName, consignmentPercent, warehouseId: newWarehouseId, salePrice, platform, fees, customer } = req.body;
+    const { category, brand, name, size, condition, purchasePrice, customShares, photos, notes, attributes, consignmentName, consignmentPercent, warehouseId: newWarehouseId, salePrice, platform, fees, customer, quickSalePrice } = req.body;
 
     // Spostamento in un altro magazzino: consentito solo se l'utente ne è membro.
     let warehouseMove: string | undefined = undefined;
@@ -823,6 +823,7 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
         platform: platform !== undefined ? ((platform || '').toString().trim() || null) : undefined,
         fees: fees !== undefined ? (typeof fees === 'number' ? fees : null) : undefined,
         customer: customer !== undefined ? ((customer || '').toString().trim() || null) : undefined,
+        quickSalePrice: quickSalePrice !== undefined ? (typeof quickSalePrice === 'number' ? quickSalePrice : null) : undefined,
       },
     });
 

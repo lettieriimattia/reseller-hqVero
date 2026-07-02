@@ -106,6 +106,7 @@ export const editProductSchema = z.object({
   platform: z.string().max(60).nullable().optional(),
   fees: z.number().nonnegative().max(1000000).nullable().optional(),
   customer: z.string().max(120).nullable().optional(),
+  quickSalePrice: z.number().nonnegative().max(1000000).nullable().optional(), // sell panic
 });
 
 export const sellProductSchema = z.object({

@@ -86,7 +86,7 @@ async function apiCall<T = any>(
 // ==========================================
 interface Product {
   id: string; category?: string; brand: string; name: string; size: string; condition: string;
-  purchasePrice: number; salePrice?: number; platform?: string; fees?: number; status: string; customer?: string;
+  purchasePrice: number; salePrice?: number; platform?: string; fees?: number; status: string; customer?: string; quickSalePrice?: number;
   customShares?: string; photos?: string; createdAt?: string; soldAt?: string;
   marketPriceMin?: number; marketPriceMax?: number; marketPriceAvg?: number; authenticityScore?: number;
   trackingCode?: string; trackingCarrier?: string; trackingStatus?: string;
@@ -554,6 +554,7 @@ export default function App() {
   const [editSalePlatform, setEditSalePlatform] = useState('');
   const [editSaleFees, setEditSaleFees] = useState('');
   const [editSaleCustomer, setEditSaleCustomer] = useState('');
+  const [editQuickSale, setEditQuickSale] = useState(''); // sell panic: prezzo svendita rapida
   const [editWarehouseId, setEditWarehouseId] = useState(''); // magazzino del prodotto (per spostarlo)
   const [isEditShared, setIsEditShared] = useState(false);
   const [editShares, setEditShares] = useState<{userId: string, name: string, percentage: string | number}[]>([]);
@@ -1893,6 +1894,10 @@ export default function App() {
   const activeProducts = filterCat === 'all' ? products : products.filter(p => p.category === filterCat);
   // Valore stock PERSONALE: capitale immobilizzato in base alla mia quota di costo.
   const stockValore = activeProducts.filter(p => p.status === 'IN STOCK').reduce((acc, p) => acc + p.purchasePrice * myCostFactor(p), 0);
+  // Sell panic: valore di LIQUIDAZIONE dello stock = quanto incasseresti vendendo tutto SUBITO.
+  // Per pezzo usa il prezzo di svendita se impostato, altrimenti il valore di mercato, altrimenti il costo.
+  const liquidationValue = activeProducts.filter(p => p.status === 'IN STOCK')
+    .reduce((acc, p) => acc + ((p.quickSalePrice ?? (p as any).marketPriceAvg ?? p.purchasePrice) || 0), 0);
   const soldItemsTotal = activeProducts.filter(p => p.status === 'VENDUTO');
   const ricaviTotali = soldItemsTotal.reduce((acc, p) => acc + (p.salePrice || 0), 0);
   const costoVenduto = soldItemsTotal.reduce((acc, p) => acc + p.purchasePrice, 0);
@@ -3218,6 +3223,7 @@ export default function App() {
     setEditSalePlatform(group.platform || 'Vinted');
     setEditSaleFees(group.fees != null ? String(group.fees) : '');
     setEditSaleCustomer(group.customer || '');
+    setEditQuickSale(group.quickSalePrice != null ? String(group.quickSalePrice) : '');
     setEditWarehouseId(group.warehouseId || baseWarehouse?.id || '');
     // I pezzi di un lotto ora sono righe singole: la modifica opera SOLO su questo gruppo
     // (come un prodotto normale), non su tutto il lotto.
@@ -3393,6 +3399,8 @@ export default function App() {
           customShares: finalEditShares,
           ...(warehouseChanged ? { warehouseId: editWarehouseId } : {}),
           photos: editPhotos.length > 0 ? editPhotos : undefined,
+          // Sell panic: prezzo di svendita rapida (facoltativo, per il valore di liquidazione).
+          quickSalePrice: editQuickSale.trim() ? parseFloat(editQuickSale) : null,
           // Modifica VENDITA: solo per prodotti già venduti.
           ...(productToEdit.status === 'VENDUTO' ? {
             salePrice: editSalePrice.trim() ? parseFloat(editSalePrice) : undefined,
@@ -4745,6 +4753,9 @@ export default function App() {
                 <p className="sys-label mb-4 flex items-center gap-1.5"><Layers size={10} /> {t('dash.stock')}</p>
                 <p className="text-2xl lg:text-3xl font-extrabold num">{stockValore.toFixed(0)}€</p>
                 <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{inStockItems.length} {t('dash.pieces')} · <span className="group-hover:text-[var(--text-muted)] transition-colors">{t('dash.see')} →</span></p>
+                {liquidationValue > 0 && (
+                  <p className="text-[10px] text-amber-400/90 mt-1 flex items-center gap-1"><TrendingDown size={10} /> Svendita rapida: <b className="num">{liquidationValue.toFixed(0)}€</b></p>
+                )}
               </div>
 
               {/* Vendite (ricavi = ottanio) */}
@@ -5702,7 +5713,7 @@ export default function App() {
             {/* KPI row 2: metriche operative */}
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
-                <p className={`text-xl font-bold num ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-violet-400' : 'text-red-400'}`}>
+                <p className={`text-[clamp(14px,4.2vw,20px)] font-bold num tracking-tight leading-none whitespace-nowrap ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-violet-400' : 'text-red-400'}`}>
                   {avgMarginPct >= 0 ? '+' : ''}{avgMarginPct.toFixed(1)}%
                 </p>
                 <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
@@ -8751,6 +8762,15 @@ export default function App() {
                   onChange={(e: any) => setEditPrice(e.target.value)}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
               </div>
+
+              {/* Sell panic — prezzo di svendita rapida (solo articoli IN STOCK) */}
+              {productToEdit.status !== 'VENDUTO' && (
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><TrendingDown size={12} className="text-amber-400" /> Prezzo svendita <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">(sell panic, facoltativo)</span></label>
+                  <input type="number" step="0.01" value={editQuickSale} onChange={e => setEditQuickSale(e.target.value)} placeholder="A quanto lo daresti per venderlo SUBITO?"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
+                </div>
+              )}
 
               {/* Modifica VENDITA — solo per prodotti già venduti (idea utente) */}
               {productToEdit.status === 'VENDUTO' && (
