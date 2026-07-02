@@ -4927,39 +4927,26 @@ export default function App() {
         {currentView === 'dashboard' && (
           <div className="space-y-5 lg:space-y-7">
 
-            {/* Greeting — 3 colonne su desktop: giorno (sx) · saluto (centro) · stat (dx) */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              {/* Sinistra: spacer per bilanciare e centrare il saluto */}
-              <div className="hidden sm:block sm:flex-1" />
-              {/* Centro: saluto + data */}
-              <div className="sm:flex-1 sm:text-center min-w-0">
-                <h2 className="text-3xl lg:text-4xl font-black">
+            {/* Header: saluto a SINISTRA (allineato alle card, lettura a "F") + metriche RAGGRUPPATE
+                a destra in un container con divisori (This week / To ship). "Stale" rimosso. */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black truncate">
                   {t('dash.hello')}, <span className="text-[var(--text)] font-black">{user.name.split(' ')[0]}</span>
                 </h2>
-                <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1.5 capitalize">{new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1 capitalize truncate">{new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
               </div>
-              {/* Destra: cluster stat — riempie l'header su desktop */}
-              <div className="hidden sm:flex sm:flex-1 items-stretch justify-end gap-5 lg:gap-7">
-                <div className="flex flex-col items-end justify-center">
+              <div className="flex items-stretch gap-2 sm:gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-2xl px-2.5 sm:px-3.5 py-2 shrink-0">
+                <div className="flex flex-col items-end justify-center px-1">
                   <p className="sys-label text-[9px]">{t('dash.week')}</p>
-                  <p className={`text-xl lg:text-2xl font-extrabold num ${weekProfit >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>
-                    {weekProfit >= 0 ? '+' : ''}{weekProfit.toFixed(0)}€
-                  </p>
-                  <p className="text-[11px] text-[var(--text-faint)]">{weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')}</p>
+                  <p className={`text-base sm:text-xl lg:text-2xl font-extrabold num leading-tight ${weekProfit >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>{weekProfit >= 0 ? '+' : ''}{weekProfit.toFixed(0)}€</p>
+                  <p className="text-[10px] text-[var(--text-faint)] leading-tight">{weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')}</p>
                 </div>
-                <div className="hidden lg:block w-px bg-[var(--border-2)]" />
-                <div className="hidden lg:flex flex-col items-end justify-center">
+                <div className="w-px bg-[var(--border-2)]" />
+                <div className="flex flex-col items-end justify-center px-1">
                   <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">{t('dash.toShip')}</p>
-                  <p className="text-xl lg:text-2xl font-bold num text-blue-400">
-                    {products.filter(p => p.trackingCode && ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING')).length}
-                  </p>
-                  <p className="text-[11px] text-[var(--text-faint)]">{t('dash.inTransit')}</p>
-                </div>
-                <div className="hidden lg:block w-px bg-[var(--border-2)]" />
-                <div className="hidden lg:flex flex-col items-end justify-center">
-                  <p className="text-[9px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em]">{t('dash.stale')}</p>
-                  <p className={`text-xl lg:text-2xl font-bold num ${staleCount > 0 ? 'text-red-400' : 'text-[var(--text-faint)]'}`}>{staleCount}</p>
-                  <p className="text-[11px] text-[var(--text-faint)]">{t('dash.over30')}</p>
+                  <p className="text-base sm:text-xl lg:text-2xl font-bold num text-blue-400 leading-tight">{products.filter(p => p.trackingCode && ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING')).length}</p>
+                  <p className="text-[10px] text-[var(--text-faint)] leading-tight">{t('dash.inTransit')}</p>
                 </div>
               </div>
             </div>
