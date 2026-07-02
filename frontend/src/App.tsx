@@ -603,6 +603,8 @@ export default function App() {
   const [sellersOpen, setSellersOpen] = useState(false); // accordion tabella "Fornitori" (chiuso di default)
   const [expandedContact, setExpandedContact] = useState<string | null>(null); // riga contatto aperta (mostra i suoi pezzi)
   const [bubbleFocus, setBubbleFocus] = useState<null | 'Entrate' | 'Uscite' | 'Investimenti'>(null); // drill-down bolle analytics
+  const [contactsPage, setContactsPage] = useState<null | 'buyers' | 'sellers'>(null); // pagina intera tutti i compratori/fornitori
+  const [contactPageExpanded, setContactPageExpanded] = useState<string | null>(null);
   // Mesi STORICI (prima dell'apertura del conto)
   const [manualMonths, setManualMonths] = useState<any[]>([]);
   const [manualOpen, setManualOpen] = useState(false);
@@ -4961,9 +4963,9 @@ export default function App() {
                 );
                 return (<>
                   <Card title={t('ct.topBuyers')} icon={<Users size={12} className="text-emerald-400" />} rows={buyerAgg} accent="text-emerald-400"
-                    onAll={() => { navigateTo('analytics'); setBuyersOpen(true); setTimeout(() => setSellersOpen(false), 0); }} />
+                    onAll={() => { setContactPageExpanded(null); setContactsPage('buyers'); }} />
                   <Card title={t('ct.topSellers')} icon={<Package size={12} className="text-[#6b54c6]" />} rows={sellerAgg} accent="text-[#6b54c6]"
-                    onAll={() => { navigateTo('analytics'); setSellersOpen(true); setTimeout(() => setBuyersOpen(false), 0); }} />
+                    onAll={() => { setContactPageExpanded(null); setContactsPage('sellers'); }} />
                 </>);
               })()}
             </div>
@@ -6913,6 +6915,70 @@ export default function App() {
             </div>
           </div>
         ), document.body)}
+
+        {/* ========== PAGINA INTERA: TUTTI I COMPRATORI / FORNITORI ========== */}
+        {contactsPage && createPortal((() => {
+          const isBuyers = contactsPage === 'buyers';
+          const stats: any[] = Object.values(
+            (isBuyers
+              ? products.filter((p: any) => p.status === 'VENDUTO' && (p.customer || '').trim())
+              : products.filter((p: any) => (p.supplier || '').trim())
+            ).reduce((acc: any, p: any) => {
+              const nm = ((isBuyers ? p.customer : p.supplier) || '').trim();
+              if (!acc[nm]) acc[nm] = { name: nm, count: 0, amount: 0, items: [] };
+              acc[nm].count++;
+              acc[nm].amount += isBuyers ? (p.salePrice || 0) : (p.purchasePrice || 0);
+              acc[nm].items.push(p);
+              return acc;
+            }, {})
+          ).sort((a: any, b: any) => b.amount - a.amount);
+          const accent = isBuyers ? 'text-emerald-400' : 'text-[#6b54c6]';
+          const dfmt = (v: any) => v ? new Date(v).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
+          return (
+            <div className="fixed inset-0 z-[200] bg-[var(--bg)] flex flex-col" {...swipeBack(() => setContactsPage(null))}>
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)] shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
+                <button onClick={() => setContactsPage(null)} aria-label={t('common.back')}
+                  className="w-9 h-9 rounded-full flex items-center justify-center bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)] shrink-0 active:scale-95 transition-transform">
+                  <ChevronDown size={18} className="rotate-90" />
+                </button>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-black truncate flex items-center gap-1.5">
+                    {isBuyers ? <Users size={16} className="text-emerald-400" /> : <Package size={16} className="text-[#6b54c6]" />}
+                    {isBuyers ? t('ct.buyers') : t('ct.sellers')}
+                  </h2>
+                  <p className="text-[11px] text-[var(--text-soft)]">{stats.length} · {stats.reduce((a, s) => a + s.amount, 0).toFixed(0)}€</p>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
+                {stats.length === 0 && <p className="text-center text-sm text-[var(--text-faint)] py-10">{isBuyers ? t('ct.noBuyers') : t('ct.noSellers')}</p>}
+                {stats.map((s, i) => {
+                  const open = contactPageExpanded === s.name;
+                  return (
+                    <div key={s.name} className="rounded-2xl bg-[var(--surface)] border border-[var(--border)]">
+                      <button onClick={() => setContactPageExpanded(open ? null : s.name)} className="w-full flex items-center gap-3 px-4 py-3 text-left">
+                        <span className="w-6 text-sm font-black text-[var(--text-faint)] shrink-0">{i + 1}</span>
+                        <span className="text-sm font-bold text-[var(--text)] truncate flex-1">{s.name}</span>
+                        <span className={`text-sm font-bold num shrink-0 ${accent}`}>{s.amount.toFixed(0)}€</span>
+                        <span className="text-[11px] text-[var(--text-faint)] num shrink-0 w-10 text-right">×{s.count}</span>
+                        <ChevronDown size={16} className={`text-[var(--text-faint)] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+                      </button>
+                      {open && (
+                        <div className="px-4 pb-3 space-y-1 border-t border-[var(--border)] pt-2">
+                          {s.items.map((p: any) => (
+                            <div key={p.id} className="flex items-center justify-between gap-2 text-[12px]">
+                              <span className="text-[var(--text-soft)] truncate">{p.brand} {p.name} <span className="text-[var(--text-faint)]">· {p.size}</span></span>
+                              <span className="text-[var(--text-faint)] shrink-0 num">{dfmt(isBuyers ? p.soldAt : p.createdAt)} · {(isBuyers ? (p.salePrice || 0) : (p.purchasePrice || 0)).toFixed(0)}€</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })(), document.body)}
 
         {/* ========== MODALE: DETTAGLIO LOTTO (lista pezzi) ========== */}
         {lotDetail && createPortal((
