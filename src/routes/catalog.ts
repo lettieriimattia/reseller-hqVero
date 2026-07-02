@@ -202,6 +202,10 @@ function inferCategory(title: string, productType?: string | null): string | nul
   if (/\bbelt\b|wallet|card ?holder|\bcap\b|\bhat\b|beanie|sunglass|eyewear|\bsocks?\b|scarf|keychain|key ?ring|gloves|necklace|bracelet|earring|\bwatch\b/.test(t)) return 'accessori';
   if (/apparel|cloth/.test(pt) || /\btee\b|t-?shirt|\bshirt\b|hoodie|sweatshirt|crewneck|\bjacket\b|\bcoat\b|\bsweater\b|cardigan|\bvest\b|\bpants?\b|trousers|\bshorts?\b|jersey|\bpolo\b|long ?sleeve|\bjeans\b|tracksuit|joggers|\bparka\b|flannel/.test(t)) return 'apparel';
   if (/sneaker|shoe|footwear/.test(pt)) return 'sneakers';
+  // Fallback per TITOLO: modelli sneaker notissimi → 'sneakers' anche se il product_type manca
+  // (i risultati StockX senza product_type finivano con categoria nulla → sparivano dalla scheda
+  // Sneakers pur comparendo in "Tutti"). Sta DOPO abbigliamento/accessori: "Jordan hoodie" resta apparel.
+  if (/\b(air ?jordan|jordan|air ?force|air ?max|\bdunk\b|yeezy|new balance|vapormax|blazer|cortez|samba|gazelle|superstar|campus|spezial|kobe|foamposite|foam|salomon|asics|adizero|ultraboost|\bnmd\b|forum|550|530|990|991|992|993|9060|2002r|1906|327|574|998|990v)\b/.test(t)) return 'sneakers';
   return normType(productType);
 }
 
