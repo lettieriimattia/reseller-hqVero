@@ -534,3 +534,19 @@ model ManualMonth {
   @@unique([userId, year, month])
   @@index([userId])
 }
+
+// ==========================================
+// TASK / NOTE — promemoria dell'utente (widget dashboard). Il testo completo resta in `text`;
+// `summary` è il riassunto in ~2 parole generato dall'IA (mostrato compatto nel widget).
+// ==========================================
+model Task {
+  id        String   @id @default(cuid())
+  userId    String
+  text      String
+  summary   String?
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}

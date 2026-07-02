@@ -26,6 +26,7 @@ import trackingRoutes from './src/routes/tracking';
 import adminRoutes from './src/routes/admin';
 import templateRoutes from './src/routes/templates';
 import analyticsRoutes from './src/routes/analytics';
+import taskRoutes from './src/routes/tasks';
 import shippingRoutes from './src/routes/shipping';
 import uploadRoutes from './src/routes/upload';
 import feedbackRoutes from './src/routes/feedback';
@@ -271,6 +272,7 @@ app.use('/tracking', trackingRoutes);
 app.use('/admin', adminRoutes);
 app.use('/templates', templateRoutes);
 app.use('/analytics', analyticsRoutes);
+app.use('/tasks', taskRoutes);
 app.use('/market', marketRoutes);   // vetrina pubblica (GET senza login) + contatta
 app.use('/chat', chatRoutes);       // chat marketplace (solo testo, no link)
 app.use('/billing', billingRoutes); // abbonamenti Stripe (checkout/portal); webhook montato sopra

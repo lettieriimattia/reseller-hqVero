@@ -604,6 +604,12 @@ export default function App() {
   const [expandedContact, setExpandedContact] = useState<string | null>(null); // riga contatto aperta (mostra i suoi pezzi)
   const [contactsPage, setContactsPage] = useState<null | 'buyers' | 'sellers'>(null); // pagina intera tutti i compratori/fornitori
   const [contactPageExpanded, setContactPageExpanded] = useState<string | null>(null);
+  // TASK / NOTE (widget promemoria, sincronizzate sul server, riassunte dall'IA)
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [taskInput, setTaskInput] = useState('');
+  const [taskPanelOpen, setTaskPanelOpen] = useState(false);
+  const [taskSaving, setTaskSaving] = useState(false);
+  const [expandedTask, setExpandedTask] = useState<string | null>(null);
   // Mesi STORICI (prima dell'apertura del conto)
   const [manualMonths, setManualMonths] = useState<any[]>([]);
   const [manualOpen, setManualOpen] = useState(false);
@@ -1519,6 +1525,29 @@ export default function App() {
     if (ok) setExpenses(prev => prev.filter(e => e.id !== id));
   };
 
+  // ----- TASK / NOTE -----
+  const fetchTasks = useCallback(async () => {
+    const { ok, data } = await apiCall<any[]>('/tasks');
+    if (ok && Array.isArray(data)) setTasks(data);
+  }, []);
+  const addTask = async () => {
+    const text = taskInput.trim();
+    if (!text) return;
+    setTaskSaving(true);
+    const { ok, data } = await apiCall<any>('/tasks', { method: 'POST', body: JSON.stringify({ text }) });
+    setTaskSaving(false);
+    if (ok && data?.id) { setTaskInput(''); setTasks(prev => [data, ...prev]); }
+    else showToast(t('ts.error'), 'err');
+  };
+  const toggleTask = async (tk: any) => {
+    const { ok, data } = await apiCall<any>(`/tasks/${tk.id}`, { method: 'PATCH', body: JSON.stringify({ done: !tk.done }) });
+    if (ok && data?.id) setTasks(prev => prev.map(x => x.id === tk.id ? data : x).sort((a: any, b: any) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+  };
+  const deleteTask = async (id: string) => {
+    const { ok } = await apiCall(`/tasks/${id}`, { method: 'DELETE' });
+    if (ok) setTasks(prev => prev.filter(x => x.id !== id));
+  };
+
   // ----- Mesi STORICI (dati economici di mesi precedenti all'apertura del conto) -----
   const fetchManualMonths = useCallback(async () => {
     const { ok, data } = await apiCall<any[]>('/analytics/manual-months');
@@ -1683,6 +1712,7 @@ export default function App() {
     fetchCategories();
     fetchExpenses();
     fetchManualMonths();
+    fetchTasks();
     apiCall<any>('/api/stockx/status').then(({ ok, data }) => { if (ok) setStockxStatus(data); });
     apiCall<any>('/products/auto-publish').then(({ ok, data }) => { if (ok) setAutoPublishOn(!!data?.enabled); });
     fetchNotifications();
@@ -4943,8 +4973,8 @@ export default function App() {
               </section>
             )}
 
-            {/* KPI principali — box compatti (Personale + Stock). "Vendite" rimosso (i ricavi
-                si vedono nel grafico e nei Venduti). */}
+            {/* KPI + NOTE — Personal (profitto mio) + widget Note. Lo "Stock" è stato spostato in
+                Analytics (dashboard più pulita). Le Note si riassumono con l'IA. */}
             <div className="grid grid-cols-2 gap-3">
               {/* Mio profitto (dato critico → ottanio) */}
               <div className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30">
@@ -4953,16 +4983,23 @@ export default function App() {
                 <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('dash.personalQuotas')}</p>
               </div>
 
-              {/* Stock */}
-              <div className="mech bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 cursor-pointer hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group"
-                onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); }}>
-                <p className="sys-label mb-1.5 flex items-center gap-1.5"><Layers size={10} /> {t('dash.stock')}</p>
-                <p className="text-xl lg:text-2xl font-extrabold num">{stockValore.toFixed(0)}€</p>
-                <p className="text-[10px] text-[var(--text-faint)] mt-1">{inStockItems.length} {t('dash.pieces')} · <span className="group-hover:text-[var(--text-muted)] transition-colors">{t('dash.see')} →</span></p>
-                {liquidationValue > 0 && (
-                  <p className="text-[10px] text-amber-400/90 mt-1 flex items-center gap-1"><TrendingDown size={10} /> Svendita: <b className="num">{liquidationValue.toFixed(0)}€</b></p>
+              {/* NOTE / TASK — tap per aprire il pannello (aggiungi/segna/elimina). */}
+              <button onClick={() => setTaskPanelOpen(true)}
+                className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group flex flex-col">
+                <p className="sys-label mb-1.5 flex items-center gap-1.5"><StickyNote size={10} /> {t('task.title')}
+                  {tasks.filter(x => !x.done).length > 0 && <span className="ml-auto text-[9px] font-bold bg-[#6b54c6]/20 text-[#6b54c6] px-1.5 rounded-full num">{tasks.filter(x => !x.done).length}</span>}
+                </p>
+                {tasks.filter(x => !x.done).length === 0 ? (
+                  <p className="text-[11px] text-[var(--text-faint)] leading-snug flex-1">{t('task.empty')}</p>
+                ) : (
+                  <div className="space-y-1 flex-1">
+                    {tasks.filter(x => !x.done).slice(0, 2).map(tk => (
+                      <p key={tk.id} className="text-[12px] text-[var(--text-soft)] truncate flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#6b54c6] shrink-0" />{tk.summary || tk.text}</p>
+                    ))}
+                  </div>
                 )}
-              </div>
+                <p className="text-[10px] text-[#6b54c6] font-bold mt-1.5 group-hover:opacity-80">{t('dash.see')} →</p>
+              </button>
             </div>
 
             {/* Andamento vendite — ora ANCHE su mobile (come desktop), a tutta larghezza.
@@ -5775,6 +5812,23 @@ export default function App() {
                 </section>
               );
             })()}
+
+            {/* ===== STOCK (spostato qui dalla dashboard) ===== */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <button onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); }}
+                className="text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 hover:border-[var(--border-2)] transition-colors">
+                <p className="sys-label mb-1 flex items-center gap-1.5"><Layers size={10} /> {t('dash.stock')}</p>
+                <p className="text-xl lg:text-2xl font-extrabold num">{stockValore.toFixed(0)}€</p>
+                <p className="text-[10px] text-[var(--text-faint)] mt-1">{inStockItems.length} {t('dash.pieces')} · {t('dash.see')} →</p>
+              </button>
+              {liquidationValue > 0 && (
+                <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                  <p className="sys-label mb-1 flex items-center gap-1.5"><TrendingDown size={10} /> Svendita</p>
+                  <p className="text-xl lg:text-2xl font-extrabold num text-amber-400/90">{liquidationValue.toFixed(0)}€</p>
+                  <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('dash.stock')}</p>
+                </div>
+              )}
+            </div>
 
             {/* ===== SMART INSIGHTS (spostati qui dalla dashboard) ===== */}
             {(staleCount > 0 || weekSales.length > 0 || bestCategoryEntry?.profit > 0 || sellThroughRate > 0) && (
@@ -6980,6 +7034,51 @@ export default function App() {
               <p className="text-[11px] text-gray-500 mt-3">Etichetta dimostrativa — non valida per la spedizione reale.</p>
               <button onClick={() => setLabelData(null)}
                 className="mt-4 w-full py-3 rounded-xl bg-[#6b54c6] text-white font-bold">Chiudi</button>
+            </div>
+          </div>
+        ), document.body)}
+
+        {/* ========== PANNELLO NOTE / TASK ========== */}
+        {taskPanelOpen && createPortal((
+          <div className="fixed inset-0 z-[205] bg-black/60 backdrop-blur-sm flex flex-col justify-end sm:items-center sm:justify-center sm:p-4" onClick={() => { setTaskPanelOpen(false); setExpandedTask(null); }}>
+            <div className="bg-[var(--surface)] w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl border-t sm:border border-[var(--border-2)] max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}
+              style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)] shrink-0" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
+                <h3 className="font-extrabold flex items-center gap-2"><StickyNote size={18} className="text-[#6b54c6]" /> {t('task.title')}</h3>
+                <button onClick={() => { setTaskPanelOpen(false); setExpandedTask(null); }} className="p-1.5 rounded-full text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5"><X size={22} /></button>
+              </div>
+              {/* Aggiungi */}
+              <div className="px-5 py-3 border-b border-[var(--border)] shrink-0 flex gap-2">
+                <input value={taskInput} onChange={e => setTaskInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addTask(); }} maxLength={2000}
+                  placeholder={t('task.placeholder')} className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#6b54c6]" />
+                <button onClick={addTask} disabled={taskSaving || !taskInput.trim()}
+                  className="px-4 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white text-sm font-bold disabled:opacity-40 shrink-0">
+                  {taskSaving ? <Loader2 size={16} className="animate-spin" /> : t('task.add')}
+                </button>
+              </div>
+              {/* Lista */}
+              <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2">
+                {tasks.length === 0 && <p className="text-sm text-[var(--text-faint)] text-center py-6">{t('task.empty')}</p>}
+                {tasks.map(tk => {
+                  const open = expandedTask === tk.id;
+                  return (
+                    <div key={tk.id} className={`rounded-xl border px-3 py-2.5 ${tk.done ? 'border-[var(--border)] opacity-55' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
+                      <div className="flex items-center gap-2.5">
+                        <button onClick={() => toggleTask(tk)} className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${tk.done ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-[var(--border-3)]'}`}>
+                          {tk.done && <Check size={13} className="text-white" />}
+                        </button>
+                        <button onClick={() => setExpandedTask(open ? null : tk.id)} className={`flex-1 min-w-0 text-left text-sm font-semibold truncate ${tk.done ? 'line-through text-[var(--text-faint)]' : 'text-[var(--text)]'}`}>
+                          {tk.summary || tk.text}
+                        </button>
+                        <button onClick={() => deleteTask(tk.id)} className="text-[var(--text-faint)] hover:text-red-400 shrink-0"><Trash2 size={14} /></button>
+                      </div>
+                      {open && tk.text && tk.text !== (tk.summary || '') && (
+                        <p className="text-[12px] text-[var(--text-soft)] mt-2 pl-7 whitespace-pre-wrap leading-relaxed">{tk.text}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         ), document.body)}

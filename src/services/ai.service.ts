@@ -208,6 +208,24 @@ Rispondi SOLO col nome ufficiale su una riga, senza virgolette né spiegazioni. 
   } catch { return q; }
 }
 
+// Riassume una nota/task in un titolo BREVISSIMO (1-3 parole) per il widget promemoria.
+// Best-effort: se l'IA non è disponibile o fallisce, ripiega sulle prime parole del testo.
+export async function summarizeTaskText(text: string): Promise<string> {
+  const t = (text || '').trim();
+  if (!t) return '';
+  const fallback = t.split(/\s+/).slice(0, 3).join(' ');
+  if (t.length <= 24) return t; // già corto: tienilo così
+  const prompt = `Riassumi questa nota/promemoria in un TITOLO brevissimo di 1-3 parole (max ~24 caratteri), in italiano, senza punteggiatura finale né virgolette. Solo il titolo.
+Nota: "${t.slice(0, 500)}"`;
+  try {
+    const completion = await groqCallWithRetry(client =>
+      client.chat.completions.create({ messages: [{ role: 'user', content: prompt }], model: TEXT_MODEL, temperature: 0.2, max_tokens: 16 })
+    );
+    const out = (completion.choices[0]?.message?.content || '').trim().split('\n')[0].replace(/^["']|["']$/g, '').replace(/[.!?]+$/, '').trim();
+    return out.length >= 2 ? out.slice(0, 40) : fallback;
+  } catch { return fallback; }
+}
+
 export interface ScanResult {
   category: string;
   brand?: string;

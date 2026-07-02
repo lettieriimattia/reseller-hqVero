@@ -9,7 +9,7 @@ import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimit';
-import { groqAssistantChat, isGroqConfigured, groqTranscribe } from '../services/ai.service';
+import { groqAssistantChat, isGroqConfigured, groqTranscribe, summarizeTaskText } from '../services/ai.service';
 import { searchStockXCandidates, getStockXValuation, isStockXConfigured, getStockXImage } from '../services/stockx.service';
 import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
 import { checkProductQuota } from '../middleware/plan';
@@ -84,6 +84,20 @@ const TOOLS = [
           },
         },
         required: ['nome_lotto', 'articoli'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'aggiungi_task',
+      description: 'Aggiunge una NOTA/promemoria (task) per l\'utente. Usalo quando dice "ricordami…", "segna…", "aggiungi nota…", "devo…". Il testo viene salvato e riassunto in poche parole.',
+      parameters: {
+        type: 'object',
+        properties: {
+          testo: { type: 'string', description: 'Il contenuto della nota/promemoria da salvare.' },
+        },
+        required: ['testo'],
       },
     },
   },
@@ -263,6 +277,14 @@ async function findCatalogPhoto(query: string): Promise<{ image: string | null; 
 // ---- Esecuzione di un singolo tool ----
 async function executeTool(name: string, args: any, ctx: { userId: string }): Promise<any> {
   try {
+    if (name === 'aggiungi_task') {
+      const text = String(args.testo || '').trim().slice(0, 2000);
+      if (!text) return { error: 'Testo della nota mancante.' };
+      const summary = await summarizeTaskText(text).catch(() => '');
+      await prisma.task.create({ data: { userId: ctx.userId, text, summary: summary || null } });
+      return { ok: true, nota: summary || text };
+    }
+
     if (name === 'cerca_catalogo') {
       if (!isStockXConfigured()) return { error: 'Catalogo non disponibile (StockX non configurato).' };
       const query = String(args.query || '');

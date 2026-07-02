@@ -956,6 +956,11 @@ const it: Dict = {
   'hdr.support': 'Aiuto & supporto',
   'dash.fromCatalog': 'Dal catalogo',
   'dash.openCatalog': 'Apri catalogo →',
+  'task.title': 'Note',
+  'task.placeholder': 'Aggiungi una nota… (l\'IA la riassume)',
+  'task.add': 'Aggiungi',
+  'task.empty': 'Nessuna nota. Scrivine una o chiedila alla chat.',
+  'task.done': 'Fatte',
 };
 
 const en: Dict = {
@@ -1967,6 +1972,11 @@ const enExtra: Dict = {
   'hdr.support': 'Help & support',
   'dash.fromCatalog': 'From the catalog',
   'dash.openCatalog': 'Open catalog →',
+  'task.title': 'Notes',
+  'task.placeholder': 'Add a note… (AI summarizes it)',
+  'task.add': 'Add',
+  'task.empty': 'No notes. Write one or ask the chat.',
+  'task.done': 'Done',
 };
 Object.assign(en, enExtra);
 
