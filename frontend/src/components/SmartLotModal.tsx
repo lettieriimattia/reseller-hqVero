@@ -50,6 +50,7 @@ const newRow = (): Row => ({ id: Math.random().toString(36).slice(2), name: '', 
 export default function SmartLotModal({ apiCall, showToast, onDone, onClose, warehouses, baseWarehouseId, categories }: Props) {
   const [lotName, setLotName] = useState('');
   const [category, setCategory] = useState(categories[0] || 'Generico');
+  const [lotWarehouseId, setLotWarehouseId] = useState(baseWarehouseId || warehouses[0]?.id || ''); // magazzino/socio del lotto
   const [qty, setQty] = useState('');
   const [totalCost, setTotalCost] = useState('');
   const [rows, setRows] = useState<Row[]>([]);
@@ -147,7 +148,7 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
       method: 'POST',
       body: JSON.stringify({
         lotName: lotName.trim(), totalPrice: total, splitMode: 'equal',
-        warehouseId: baseWarehouseId || warehouses[0]?.id,
+        warehouseId: lotWarehouseId || baseWarehouseId || warehouses[0]?.id,
         items: valid.map(r => ({ category, brand: '', name: r.name.trim(), size: r.size.trim() || '-', condition: 'N/D', photo: r.photo, marketValue: 0 })),
       }),
     });
@@ -177,6 +178,17 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
         <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-3">
           <input value={lotName} onChange={e => setLotName(e.target.value)} placeholder="Nome del lotto (es. Carte amico 12/06)"
             className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3.5 py-3 text-sm outline-none focus:border-[#6b54c6]" />
+
+          {/* Magazzino / socio del lotto (team): scegli dove finiscono i pezzi. */}
+          {warehouses.length > 1 && (
+            <div>
+              <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">Magazzino</label>
+              <select value={lotWarehouseId} onChange={e => setLotWarehouseId(e.target.value)}
+                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#6b54c6]">
+                {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-2.5">
             <div>
