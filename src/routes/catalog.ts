@@ -449,9 +449,15 @@ async function seedPopular(type: string): Promise<void> {
     const cats = type && SEEDS_BY_TYPE[type] ? [type] : Object.keys(SEEDS_BY_TYPE);
     for (const cat of cats) {
       const productType = TYPE_TO_PRODUCTTYPE[cat] || undefined;
-      for (const q of SEEDS_BY_TYPE[cat]) {
-        const cands = await providerSearch(q, { productType, limit: 12 });
-        for (const c of cands) await upsertCandidate(c, undefined, cat); // categoria = scheda del seed
+      const queries = SEEDS_BY_TYPE[cat];
+      // PARALLELO a gruppi di 6: ~48 ricerche in fila erano lente (60s+); così finisce in pochi
+      // secondi e riempie tutte le categorie in un colpo (senza martellare troppo la fonte).
+      const CHUNK = 6;
+      for (let i = 0; i < queries.length; i += CHUNK) {
+        await Promise.all(queries.slice(i, i + CHUNK).map(async (q) => {
+          const cands = await providerSearch(q, { productType, limit: 12 }).catch(() => []);
+          for (const c of cands) await upsertCandidate(c, undefined, cat).catch(() => {}); // categoria = scheda del seed
+        }));
       }
     }
   } finally {
@@ -487,11 +493,17 @@ router.get('/popular', async (req: AuthRequest, res: Response) => {
     const imagedCount = items.filter(i => i.image).length;
     const fresh = (seededAt.get(type) || 0) > Date.now() - 15 * 60_000;
     if ((imagedCount < 12 && !fresh) && isCatalogConfigured()) {
-      await seedPopular(type);
-      items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 90 });
-      // Throttle SOLO se il seed ha davvero portato foto: se è andato a vuoto (quota/fonte giù)
-      // riproviamo alla prossima apertura invece di lasciare il catalogo vuoto per 15 minuti.
-      if (items.some(i => i.image)) seededAt.set(type, Date.now());
+      if (imagedCount === 0) {
+        // Cache VUOTA (primissima apertura): aspetto il seed così non mostro pagina vuota.
+        await seedPopular(type);
+        items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 90 });
+        if (items.some(i => i.image)) seededAt.set(type, Date.now());
+      } else {
+        // Cache già popolata: rispondo SUBITO con quello che c'è e completo/aggiorno in BACKGROUND
+        // (l'utente non aspetta; alla prossima apertura vede il catalogo completo).
+        seededAt.set(type, Date.now());
+        void seedPopular(type).catch(() => {});
+      }
     }
     // "Tutti" (nessuna categoria) / scroll dashboard: mix CASUALE e BILANCIATO di TUTTE le categorie,
     // che RUOTA ad ogni apertura. Per categoria specifica resta l'ordine fisso.
@@ -501,7 +513,9 @@ router.get('/popular', async (req: AuthRequest, res: Response) => {
       const freshAll = (seededAt.get('') || 0) > Date.now() - 15 * 60_000;
       if (catsHave.length < 4 && !freshAll && isCatalogConfigured()) {
         seededAt.set('', Date.now());
-        await seedPopular('');
+        // Aspetto solo se NON c'è ancora nulla da mostrare; altrimenti completo in background.
+        if (catsHave.length === 0) await seedPopular('');
+        else void seedPopular('').catch(() => {});
       }
       // Max ~10 per categoria (PARTITION), poi mescola → mix variegato e casuale ogni volta.
       const rnd = await prisma.$queryRaw<any[]>`
