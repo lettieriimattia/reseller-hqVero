@@ -5790,6 +5790,12 @@ export default function App() {
               const totSpese = speseMese.reduce((a: number, e: any) => a + (e.amount || 0), 0);
               const netto = ricavi - costo - fees - totSpese;
               const roi = costo > 0 ? (netto / costo * 100) : 0;
+              // Investimenti del mese = capitale immesso in magazzino (pezzi ACQUISTATI nel mese).
+              const investiti = products.filter((p: any) => { const d = new Date(p.createdAt); return d.getFullYear() === reportMonth.y && d.getMonth() === reportMonth.m; }).reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0);
+              // Bolle stile "Trade Republic": Entrate / Uscite / Investimenti (area ∝ valore).
+              const usciteTot = costo + fees + totSpese;
+              const bubbleMax = Math.max(ricavi, usciteTot, investiti, 1);
+              const bubbleR = (v: number) => Math.round(56 + 96 * Math.sqrt(Math.max(v, 0) / bubbleMax)); // diametro px
               // Confronto col mese precedente
               const pm = reportMonth.m === 0 ? { y: reportMonth.y - 1, m: 11 } : { y: reportMonth.y, m: reportMonth.m - 1 };
               const prevSold = products.filter((p: any) => { if (p.status !== 'VENDUTO' || !p.soldAt) return false; const d = new Date(p.soldAt); return d.getFullYear() === pm.y && d.getMonth() === pm.m; });
@@ -5855,6 +5861,39 @@ export default function App() {
                     <p className="text-center py-8 text-sm text-[var(--text-soft)] capitalize">{t('an.noSalesIn')} {label}</p>
                   ) : (
                     <>
+                    {/* Grafico a BOLLE (stile Trade Republic): area ∝ valore + legenda "Categorie". */}
+                    {(() => {
+                      const cats = [
+                        { label: 'Entrate', val: ricavi, circle: 'bg-emerald-500 text-black', dot: 'bg-emerald-500' },
+                        { label: 'Uscite', val: usciteTot, circle: 'bg-[#7c5cff] text-white', dot: 'bg-[#7c5cff]' },
+                        { label: 'Investimenti', val: investiti, circle: 'bg-blue-500 text-white', dot: 'bg-blue-500' },
+                      ];
+                      return (
+                        <div className="mb-4 rounded-2xl bg-[var(--surface-2)]/40 border border-[var(--border)] p-5">
+                          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 py-2 min-h-[150px]">
+                            {[...cats].sort((a, b) => b.val - a.val).map(b => {
+                              const d = bubbleR(b.val);
+                              return (
+                                <div key={b.label} className={`rounded-full flex flex-col items-center justify-center shrink-0 shadow-lg ${b.circle}`} style={{ width: d, height: d }}>
+                                  <span className="font-extrabold num leading-none" style={{ fontSize: Math.max(13, d / 7) }}>{b.val.toFixed(0)}€</span>
+                                  <span className="opacity-80 mt-0.5" style={{ fontSize: Math.max(9, d / 13) }}>{b.label}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="mt-4 space-y-2">
+                            <p className="sys-label mb-1">Categorie</p>
+                            {cats.map(c => (
+                              <div key={c.label} className="flex items-center gap-3">
+                                <span className={`w-3 h-3 rounded-full shrink-0 ${c.dot}`} />
+                                <span className="text-sm font-bold flex-1">{c.label}</span>
+                                <span className="text-sm font-bold num text-[var(--text-soft)]">{c.val.toFixed(2)}€</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                       <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
                         <p className="sys-label mb-1">{t('an.revenue')}</p>
