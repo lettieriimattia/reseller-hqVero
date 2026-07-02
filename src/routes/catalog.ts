@@ -210,9 +210,6 @@ function inferCategory(title: string, productType?: string | null): string | nul
 // scarpe sia t-shirt: ognuna nella sua categoria). forceCategory è solo un fallback
 // quando il product_type manca (es. la query è sotto una scheda specifica).
 async function upsertCandidate(c: CatalogCandidate, byKey?: Map<string, CatalogResult>, forceCategory?: string): Promise<void> {
-  // MAI salvare in cache un item SENZA foto: nel catalogo apparirebbe come immagine rotta.
-  // Meglio non averlo che averlo rotto (le fonti a volte tornano colorway senza immagine).
-  if (!c.image) return;
   const key = dedupKey({ sku: c.styleId, stockxProductId: c.productId, title: c.title });
   if (!key) return;
   const split = splitBrandName(c.title);
@@ -337,7 +334,7 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
       for (const c of cands) await upsertCandidate(c, undefined, type).catch(() => {});
       const out = candsToResults(cands);
       const withImg = out.filter(r => r.image);
-      return res.json(withImg.slice(0, 20)); // solo item CON foto (mai immagini rotte)
+      return res.json((withImg.length >= 3 ? withImg : out).slice(0, 20));
     }
 
     const byKey = new Map<string, CatalogResult>();
@@ -380,7 +377,7 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
     const all = Array.from(byKey.values());
     const inCat = type ? all.filter(r => r.productType === type) : all;
     const withImg = inCat.filter(r => r.image);
-    res.json(withImg.slice(0, 20)); // solo item CON foto (mai immagini rotte)
+    res.json((withImg.length >= 3 ? withImg : inCat).slice(0, 20));
   } catch (e: any) {
     logger.error('GET /catalog/search', { err: e.message });
     res.status(500).json({ error: 'Errore ricerca catalogo' });
@@ -449,7 +446,7 @@ router.get('/popular', async (req: AuthRequest, res: Response) => {
       for (const c of cands) await upsertCandidate(c, undefined, type).catch(() => {});
       const out = candsToResults(cands);
       const withImg = out.filter(r => r.image);
-      return res.json(withImg.slice(0, 60)); // solo item CON foto (mai immagini rotte)
+      return res.json((withImg.length >= 6 ? withImg : out).slice(0, 60));
     }
 
     // Ordine FISSO: per data di inserimento (createdAt non cambia ai re-seed) → il catalogo
@@ -462,9 +459,11 @@ router.get('/popular', async (req: AuthRequest, res: Response) => {
     const imagedCount = items.filter(i => i.image).length;
     const fresh = (seededAt.get(type) || 0) > Date.now() - 15 * 60_000;
     if ((imagedCount < 12 && !fresh) && isCatalogConfigured()) {
-      seededAt.set(type, Date.now());
       await seedPopular(type);
       items = await prisma.catalogItem.findMany({ where, orderBy: order, take: 90 });
+      // Throttle SOLO se il seed ha davvero portato foto: se è andato a vuoto (quota/fonte giù)
+      // riproviamo alla prossima apertura invece di lasciare il catalogo vuoto per 15 minuti.
+      if (items.some(i => i.image)) seededAt.set(type, Date.now());
     }
     // "Tutti" (nessuna categoria) / scroll dashboard: mix CASUALE e BILANCIATO di TUTTE le categorie,
     // che RUOTA ad ogni apertura. Per categoria specifica resta l'ordine fisso.
@@ -484,9 +483,9 @@ router.get('/popular', async (req: AuthRequest, res: Response) => {
         ) t WHERE rn <= 10 ORDER BY RANDOM() LIMIT 60`;
       return res.json(rnd.map((r: any) => ({ key: r.key, brand: r.brand, name: r.name, sku: r.sku, image: r.image, productType: r.productType })));
     }
-    // SOLO righe CON immagine (mai immagini rotte nel catalogo).
+    // PRIORITÀ alle righe CON immagine; se sono poche, mostro comunque il resto (mai pagina vuota).
     const withImg = items.filter(i => i.image);
-    const out = withImg.slice(0, 60);
+    const out = (withImg.length >= 8 ? withImg : items).slice(0, 60);
     res.json(out.map(it => ({
       key: it.key, brand: it.brand, name: it.name, sku: it.sku,
       image: it.image, productType: it.productType,

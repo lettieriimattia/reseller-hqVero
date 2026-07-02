@@ -37,13 +37,37 @@ export interface CatalogCandidate {
   productType: string | null;
 }
 
+// Estrae l'URL immagine da forme diverse della risposta KicksDB (image può essere una stringa,
+// un oggetto {original/small/thumbnail}, oppure la foto sta in media/gallery/grid_picture_url).
+function pickImage(p: any): string | null {
+  if (!p) return null;
+  const img = p.image;
+  if (typeof img === 'string' && img) return img;
+  if (img && typeof img === 'object') {
+    const v = img.original || img.imageUrl || img.url || img.small || img.thumbnail || img.thumb;
+    if (typeof v === 'string' && v) return v;
+  }
+  const m = p.media;
+  if (m && typeof m === 'object') {
+    const v = m.imageUrl || m.thumbUrl || m.smallImageUrl || m.gallery?.[0];
+    if (typeof v === 'string' && v) return v;
+  }
+  const cands = [
+    Array.isArray(p.gallery) ? p.gallery[0] : null,
+    Array.isArray(p.images) ? p.images[0] : null,
+    p.thumbnail, p.thumb, p.imageUrl, p.grid_picture_url, p.picture_url,
+  ];
+  for (const c of cands) if (typeof c === 'string' && c) return c;
+  return null;
+}
+
 function mapProduct(p: any): CatalogCandidate {
   return {
     title: (p?.title || [p?.brand, p?.model].filter(Boolean).join(' ') || '').toString().trim(),
     brand: p?.brand ? String(p.brand) : null,
     styleId: p?.sku ? String(p.sku) : null,
     productId: (p?.id || p?.slug || null) ? String(p.id || p.slug) : null,
-    image: p?.image || (Array.isArray(p?.gallery) ? p.gallery[0] : null) || null,
+    image: pickImage(p),
     productType: (p?.product_type || (Array.isArray(p?.categories) ? p.categories[0] : null) || null),
   };
 }

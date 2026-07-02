@@ -203,6 +203,30 @@ async function findUserStock(userId: string, q: { brand?: any; nome?: any; tagli
   return prisma.product.findMany({ where, orderBy: { createdAt: 'asc' } });
 }
 
+// Cerca la FOTO ufficiale come fa il catalogo: due fonti (KicksDB + StockX), SOLO risultati
+// CON immagine, e sceglie quello che combacia MEGLIO col nome (colore incluso) — così "Canary",
+// "Bred", "Chicago" ecc. prendono la colorway giusta invece del primo risultato a caso.
+async function findCatalogPhoto(query: string): Promise<{ image: string | null; styleId: string | null }> {
+  const q = (query || '').trim();
+  if (q.length < 2) return { image: null, styleId: null };
+  const withImg: { title: string; image: string; styleId: string | null }[] = [];
+  try {
+    if (isKicksConfigured()) {
+      const k = await kicksSearch(q, { limit: 8 });
+      for (const c of k) if (c.image) withImg.push({ title: c.title, image: c.image, styleId: c.styleId });
+    }
+    if (withImg.length < 3 && isStockXConfigured()) {
+      const s = await searchStockXCandidates(q, { limit: 8 });
+      for (const c of s) if (c.image) withImg.push({ title: c.title, image: c.image!, styleId: c.styleId });
+    }
+  } catch { /* foto facoltativa */ }
+  if (!withImg.length) return { image: null, styleId: null };
+  const words = q.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+  const score = (t: string) => { const n = (t || '').toLowerCase(); return words.reduce((s, w) => s + (n.includes(w) ? 1 : 0), 0); };
+  withImg.sort((a, b) => score(b.title) - score(a.title));
+  return { image: withImg[0].image, styleId: withImg[0].styleId };
+}
+
 // ---- Esecuzione di un singolo tool ----
 async function executeTool(name: string, args: any, ctx: { userId: string }): Promise<any> {
   try {
@@ -248,20 +272,12 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
       let photo: string | null = null;
       if (twin?.photos) { try { photo = JSON.parse(twin.photos)?.[0] || null; } catch { /* foto gemello illeggibile */ } }
       if (!photo) {
-        const q = resolvedSku || `${brand} ${nome}`;
-        try {
-          let best: { image: string | null; styleId: string | null } | undefined;
-          if (isKicksConfigured()) {
-            const k = await kicksSearch(q, { limit: 5 });
-            best = k.find(c => c.image) || k[0];
-          }
-          if ((!best || !best.image) && isStockXConfigured()) {
-            const s = await searchStockXCandidates(q, { limit: 5 });
-            best = s.find(c => c.image) || s[0] || best;
-          }
-          if (best?.image) photo = best.image;
-          if (!resolvedSku && best?.styleId) resolvedSku = best.styleId;
-        } catch { /* foto facoltativa: se il catalogo non risponde, aggiungo comunque */ }
+        // Cerco prima per SKU (preciso), altrimenti per marca+nome — sempre color-aware e solo con foto.
+        let found = await findCatalogPhoto(resolvedSku ? String(resolvedSku) : `${brand} ${nome}`);
+        // Se lo SKU non ha dato foto, riprovo col nome esteso (a volte lo SKU in cache non ha immagine).
+        if (!found.image && resolvedSku) found = await findCatalogPhoto(`${brand} ${nome}`);
+        if (found.image) photo = found.image;
+        if (!resolvedSku && found.styleId) resolvedSku = found.styleId;
       }
 
       const data = {
