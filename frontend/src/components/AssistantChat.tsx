@@ -478,13 +478,11 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
         </div>
       )}
 
-      {/* Lanciatore DESKTOP: pulsante tondo discreto in basso a destra (non copre il contenuto;
-          il pannello si apre come card sopra di esso solo quando lo clicchi). */}
+      {/* DESKTOP: barra chatbox in basso CENTRATA (stile Gemini/ChatGPT), nell'area contenuto. */}
       {!open && (
-        <button onClick={() => setOpen(true)} aria-label="Apri assistente HQ"
-          className="fab-violet hidden lg:flex fixed bottom-6 right-6 z-[45] w-20 h-20 rounded-full items-center justify-center text-white ring-1 ring-white/20 shadow-[0_12px_44px_-8px_rgba(107,84,198,0.75)] hover:brightness-110 transition-all active:scale-95">
-          {wakeOn ? <Radio size={30} className="animate-pulse" /> : <Sparkles size={30} />}
-        </button>
+        <div className="hidden lg:block fixed bottom-6 left-60 right-0 z-[45] px-6 pointer-events-none">
+          <div className="max-w-3xl mx-auto pointer-events-auto">{bar}</div>
+        </div>
       )}
     </>
   );
