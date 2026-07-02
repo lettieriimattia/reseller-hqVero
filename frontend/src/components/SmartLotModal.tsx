@@ -97,7 +97,14 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
     try {
       const t = typeForCategory(category);
       const { ok, data } = await apiCall<any[]>(`/api/catalog/search?q=${encodeURIComponent(q)}&type=${encodeURIComponent(t)}`);
-      const hit = ok && Array.isArray(data) ? data.find((d: any) => d?.image) : null;
+      const withImg = ok && Array.isArray(data) ? data.filter((d: any) => d?.image) : [];
+      if (withImg.length === 0) return;
+      // Scegli il risultato che combacia MEGLIO col nome scritto (colore incluso), non il primo:
+      // es. "Dior B27 Blue" prende la variante Blue e non la bianca generica.
+      const words = q.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+      const scoreOf = (d: any) => { const n = `${d.name || ''} ${d.brand || ''}`.toLowerCase(); return words.reduce((s, w) => s + (n.includes(w) ? 1 : 0), 0); };
+      withImg.sort((a: any, b: any) => scoreOf(b) - scoreOf(a));
+      const hit = withImg[0];
       if (hit?.image) updRow(id, { photo: hit.image });
     } catch { /* noop */ }
   };
