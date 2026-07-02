@@ -602,7 +602,6 @@ export default function App() {
   const [buyersOpen, setBuyersOpen] = useState(false);   // accordion tabella "Compratori" (chiuso di default)
   const [sellersOpen, setSellersOpen] = useState(false); // accordion tabella "Fornitori" (chiuso di default)
   const [expandedContact, setExpandedContact] = useState<string | null>(null); // riga contatto aperta (mostra i suoi pezzi)
-  const [bubbleFocus, setBubbleFocus] = useState<null | 'Entrate' | 'Uscite' | 'Investimenti'>(null); // drill-down bolle analytics
   const [contactsPage, setContactsPage] = useState<null | 'buyers' | 'sellers'>(null); // pagina intera tutti i compratori/fornitori
   const [contactPageExpanded, setContactPageExpanded] = useState<string | null>(null);
   // Mesi STORICI (prima dell'apertura del conto)
@@ -2191,6 +2190,24 @@ export default function App() {
     const speseM = expenses.filter((e: any) => inM(e.date)).reduce((a: number, e: any) => a + (e.amount || 0), 0);
     return { sold, bought, ricavi, merce, feeTot, speseM, uscite: merce + feeTot + speseM, investiti: bought.reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0) };
   }, [products, reportMonth, expenses]);
+
+  // Serie ULTIMI 6 MESI (fino al mese selezionato) per il grafico a BARRE SOVRAPPOSTE.
+  const barMonths = useMemo(() => {
+    const arr: { y: number; m: number; label: string; ricavi: number; uscite: number; investiti: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const raw = reportMonth.m - i;
+      const y = reportMonth.y + Math.floor(raw / 12);
+      const m = ((raw % 12) + 12) % 12;
+      const inM = (d: any) => { const x = new Date(d); return x.getFullYear() === y && x.getMonth() === m; };
+      const sold = products.filter((p: any) => p.status === 'VENDUTO' && p.soldAt && inM(p.soldAt));
+      const bought = products.filter((p: any) => p.createdAt && inM(p.createdAt));
+      const ricavi = sold.reduce((a: number, p: any) => a + (p.salePrice || 0), 0);
+      const uscite = sold.reduce((a: number, p: any) => a + (p.purchasePrice || 0) + (p.fees || 0), 0) + expenses.filter((e: any) => inM(e.date)).reduce((a: number, e: any) => a + (e.amount || 0), 0);
+      const investiti = bought.reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0);
+      arr.push({ y, m, label: new Date(y, m, 1).toLocaleDateString(dateLocale, { month: 'short' }), ricavi, uscite, investiti });
+    }
+    return arr;
+  }, [products, expenses, reportMonth, dateLocale]);
 
   // Venduti: SOLO gli articoli realmente venduti (i PAGATI in attesa stanno in "Da spedire").
   const groupedSoldArray = Object.values(searchedProducts.filter(p => p.status === 'VENDUTO').reduce((acc, p) => {
@@ -5700,73 +5717,60 @@ export default function App() {
               </button>
             </div>
 
-            {/* ===== BOLLE INTERATTIVE (stile Trade Republic, colori soffusi, drift lento).
-                Tocca una bolla → le altre spariscono ed escono le sotto-bolle del dettaglio. ===== */}
+            {/* ===== GRAFICO A BARRE SOVRAPPOSTE (ultimi 6 mesi): Entrate/Uscite/Investimenti impilate.
+                Tocca una barra per selezionare quel mese (aggiorna il conto economico sotto). ===== */}
             {(() => {
-              const { sold, bought, ricavi, merce, feeTot, speseM, uscite, investiti } = bubbleMonth;
-              const label = new Date(reportMonth.y, reportMonth.m, 1).toLocaleDateString(dateLocale, { month: 'long', year: 'numeric' });
-              const shiftM = (dd: number) => { setBubbleFocus(null); setReportMonth(({ y, m }) => { const nm = m + dd; return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 }; }); };
-              const now = new Date(); const isCur = reportMonth.y === now.getFullYear() && reportMonth.m === now.getMonth();
-              const BASE: Record<string, string> = { Entrate: '#3fae82', Uscite: '#8878d6', Investimenti: '#5b86c9' };
-              const mains = [{ label: 'Entrate', val: ricavi }, { label: 'Uscite', val: uscite }, { label: 'Investimenti', val: investiti }];
-              // Nome tradotto per i 3 id fissi (Entrate/Uscite/Investimenti); gli altri (piattaforme/reparti) restano.
-              const bubName = (id: string) => id === 'Entrate' ? t('bub.income') : id === 'Uscite' ? t('bub.expenses') : id === 'Investimenti' ? t('bub.invest') : id;
-              const groupSum = (arr: any[], keyFn: (x: any) => string) => {
-                const m: Record<string, number> = {};
-                for (const x of arr) { const k = keyFn(x) || 'Altro'; m[k] = (m[k] || 0) + (x.__v || 0); }
-                return Object.entries(m).map(([l, v]) => ({ label: l, val: v })).sort((a, b) => b.val - a.val);
-              };
-              let breakdown: { label: string; val: number }[] = [];
-              if (bubbleFocus === 'Entrate') breakdown = groupSum(sold.map((p: any) => ({ ...p, __v: p.salePrice || 0 })), (p) => p.platform || 'Privato');
-              else if (bubbleFocus === 'Investimenti') breakdown = groupSum(bought.map((p: any) => ({ ...p, __v: p.purchasePrice || 0 })), (p) => p.category || 'Altro');
-              else if (bubbleFocus === 'Uscite') breakdown = [{ label: t('bub.goods'), val: merce }, { label: t('bub.fee'), val: feeTot }, { label: t('bub.extra'), val: speseM }].filter(b => b.val > 0);
-              const focusColor = bubbleFocus ? BASE[bubbleFocus] : '#5b86c9';
-              const visible = bubbleFocus ? breakdown : mains;
-              const maxV = Math.max(...visible.map(b => b.val), 1);
-              const dia = (v: number) => Math.round(70 + 150 * Math.sqrt(Math.max(v, 0) / maxV));
-              const bg = (base: string) => ({ background: `radial-gradient(circle at 32% 26%, ${base}f2, ${base}b0 52%, ${base}70)`, boxShadow: `0 14px 46px -12px ${base}66, inset 0 1px 0 rgba(255,255,255,0.14)` });
+              const COL = { Entrate: '#3fae82', Uscite: '#8878d6', Investimenti: '#5b86c9' };
+              const legend = [
+                { k: 'Entrate', c: COL.Entrate, lbl: t('bub.income'), val: bubbleMonth.ricavi },
+                { k: 'Uscite', c: COL.Uscite, lbl: t('bub.expenses'), val: bubbleMonth.uscite },
+                { k: 'Investimenti', c: COL.Investimenti, lbl: t('bub.invest'), val: bubbleMonth.investiti },
+              ];
+              const maxTot = Math.max(...barMonths.map(mm => mm.ricavi + mm.uscite + mm.investiti), 1);
+              const H = 150;
               return (
-                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-5 overflow-hidden">
-                  <div className="flex items-center gap-2 mb-1">
-                    {bubbleFocus && (
-                      <button onClick={() => setBubbleFocus(null)} aria-label={t('common.back')}
-                        className="w-7 h-7 rounded-full flex items-center justify-center bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)] shrink-0 active:scale-95 transition-transform">
-                        <ChevronDown size={16} className="rotate-90" />
-                      </button>
-                    )}
-                    <h3 className="font-bold truncate flex-1 min-w-0">{bubbleFocus ? bubName(bubbleFocus) : t('bub.analysis')}</h3>
-                    <div className="flex items-center gap-0.5 shrink-0">
-                      <button onClick={() => shiftM(-1)} className="w-7 h-7 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg flex items-center justify-center">‹</button>
-                      <span className="text-[11px] font-bold capitalize w-[72px] text-center truncate">{label}</span>
-                      <button onClick={() => shiftM(1)} disabled={isCur} className="w-7 h-7 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg disabled:opacity-30 flex items-center justify-center">›</button>
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-5">
+                  <div className="flex items-start justify-between gap-2 mb-4 flex-wrap">
+                    <div>
+                      <h3 className="font-bold">{t('bub.analysis')}</h3>
+                      <div className="flex items-center gap-3.5 mt-1.5 flex-wrap">
+                        {legend.map(l => (
+                          <div key={l.k} className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{ background: l.c }} />{l.lbl}</div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  <div className="relative flex flex-wrap items-center justify-center gap-4 sm:gap-7 py-6 min-h-[230px]">
-                    {visible.every(b => b.val <= 0) && <p className="text-sm text-[var(--text-faint)]">{t('bub.noData')}</p>}
-                    {visible.filter(b => b.val > 0).map((b, i) => {
-                      const d = dia(b.val);
-                      const base = bubbleFocus ? focusColor : (BASE[b.label] || '#5b86c9');
-                      const clickable = !bubbleFocus;
+                  {/* Barre */}
+                  <div className="flex items-end justify-between gap-2" style={{ height: H + 22 }}>
+                    {barMonths.map(mm => {
+                      const sum = mm.ricavi + mm.uscite + mm.investiti;
+                      const h = maxTot > 0 ? (sum / maxTot) * H : 0;
+                      const seg = (v: number) => sum > 0 ? Math.max(0, (v / sum) * h) : 0;
+                      const active = mm.y === reportMonth.y && mm.m === reportMonth.m;
                       return (
-                        <button key={b.label + i} disabled={!clickable} onClick={() => clickable && setBubbleFocus(b.label as any)}
-                          className={`rounded-full flex flex-col items-center justify-center shrink-0 text-white bubble-float ${bubbleFocus ? 'bubble-pop' : ''} ${clickable ? 'cursor-pointer hover:brightness-110' : 'cursor-default'} transition-[filter]`}
-                          style={{ width: d, height: d, animationDelay: bubbleFocus ? `${i * 0.03}s` : `${i * 0.8}s`, ...bg(base) }}>
-                          <span className="font-extrabold num leading-none drop-shadow-sm" style={{ fontSize: Math.max(15, d / 6.5) }}>{b.val.toFixed(0)}€</span>
-                          <span className="opacity-90 mt-1 font-semibold px-1 text-center leading-tight" style={{ fontSize: Math.max(10, d / 13) }}>{bubName(b.label)}</span>
+                        <button key={`${mm.y}-${mm.m}`} onClick={() => setReportMonth({ y: mm.y, m: mm.m })}
+                          className="flex-1 flex flex-col items-center gap-1.5 group min-w-0">
+                          <div className="w-full flex flex-col justify-end" style={{ height: H }}>
+                            <div className={`w-full max-w-[42px] mx-auto rounded-t-md overflow-hidden flex flex-col-reverse transition-all ${active ? 'ring-2 ring-white/25' : 'opacity-80 group-hover:opacity-100'}`} style={{ height: h || 2 }}>
+                              <div style={{ height: seg(mm.ricavi), background: COL.Entrate }} />
+                              <div style={{ height: seg(mm.uscite), background: COL.Uscite }} />
+                              <div style={{ height: seg(mm.investiti), background: COL.Investimenti }} />
+                            </div>
+                          </div>
+                          <span className={`text-[10px] capitalize truncate max-w-full ${active ? 'text-[var(--text)] font-black' : 'text-[var(--text-faint)]'}`}>{mm.label}</span>
                         </button>
                       );
                     })}
                   </div>
-                  <div className="space-y-2 border-t border-[var(--border)] pt-3">
-                    <p className="sys-label mb-1">{bubbleFocus ? t('bub.detail') : t('bub.categories')}</p>
-                    {(bubbleFocus ? breakdown : mains).map(c => (
-                      <div key={c.label} className="flex items-center gap-3">
-                        <span className="w-3 h-3 rounded-full shrink-0" style={{ background: bubbleFocus ? focusColor : (BASE[c.label] || '#5b86c9') }} />
-                        <span className="text-sm font-bold flex-1 truncate">{bubName(c.label)}</span>
-                        <span className="text-sm font-bold num text-[var(--text-soft)]">{c.val.toFixed(2)}€</span>
+                  {/* Dettaglio del mese selezionato */}
+                  <div className="space-y-2 border-t border-[var(--border)] pt-3 mt-3">
+                    {legend.map(l => (
+                      <div key={l.k} className="flex items-center gap-3">
+                        <span className="w-3 h-3 rounded-[3px] shrink-0" style={{ background: l.c }} />
+                        <span className="text-sm font-bold flex-1 truncate">{l.lbl}</span>
+                        <span className="text-sm font-bold num text-[var(--text-soft)]">{l.val.toFixed(2)}€</span>
                       </div>
                     ))}
-                    {!bubbleFocus && <p className="text-[11px] text-[var(--text-faint)] pt-1">{t('bub.hint')}</p>}
                   </div>
                 </section>
               );
