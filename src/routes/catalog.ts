@@ -100,21 +100,47 @@ function isPokemonType(productType?: string): boolean {
   return !!productType && /carte|trading|pokemon|card/.test(productType.toLowerCase());
 }
 
-// Fonte catalogo unificata: carte→pokemontcg.io, resto KicksDB (preferita) → StockX (fallback).
+// Unisce più liste di candidati DEDUPLICANDO sulla stessa key. Se lo stesso prodotto
+// arriva da due fonti e una ha la FOTO e l'altra no, tiene quella CON foto (riempie i buchi
+// di KicksDB con StockX). Mantiene l'ordine: la prima fonte (KicksDB) resta prioritaria.
+function mergeCands(...lists: CatalogCandidate[][]): CatalogCandidate[] {
+  const map = new Map<string, CatalogCandidate>();
+  for (const list of lists) {
+    for (const c of list) {
+      const key = dedupKey({ sku: c.styleId, stockxProductId: c.productId, title: c.title });
+      if (!key) continue;
+      const cur = map.get(key);
+      if (!cur) map.set(key, c);
+      else if (!cur.image && c.image) map.set(key, { ...cur, image: c.image }); // riempi la foto mancante
+    }
+  }
+  return Array.from(map.values());
+}
+
+// Fonte catalogo unificata: carte→pokemontcg.io. Per il resto DUE FONTI in cascata:
+// KicksDB (primaria) → StockX (fallback/integrazione). Se KicksDB non basta (pochi risultati
+// CON foto: es. una colorway che loro non hanno o hanno senza immagine), interroghiamo ANCHE
+// StockX e UNIAMO i risultati riempiendo le foto mancanti. Così ogni colore trova la sua foto.
 async function providerSearch(query: string, opts: { productType?: string; limit?: number }): Promise<CatalogCandidate[]> {
   if (isPokemonType(opts.productType)) {
     const p = await pokemonSearch(query, opts.limit || 12).catch(() => []);
     return p; // le carte vivono solo su pokemontcg.io
   }
+  const limit = opts.limit || 12;
+  let kicks: CatalogCandidate[] = [];
   if (isKicksConfigured()) {
-    const k = await kicksSearch(query, { limit: opts.limit, productType: opts.productType }).catch(() => []);
-    if (k.length) return k;
+    kicks = await kicksSearch(query, { limit, productType: opts.productType }).catch(() => []);
   }
+  const imaged = kicks.filter(c => c.image).length;
+  // KicksDB copre già bene (abbastanza risultati con foto)? usalo da solo (risparmia quota StockX).
+  if (imaged >= Math.min(4, limit)) return kicks;
+  // Altrimenti chiedo anche a StockX e unisco (StockX riempie foto mancanti / colorway assenti).
   if (isStockXConfigured()) {
-    const s = await searchStockXCandidates(query, { sneakersOnly: opts.productType === 'sneakers', limit: opts.limit || 12 }).catch(() => []);
-    return s.map(c => ({ title: c.title, brand: null, styleId: c.styleId, productId: c.productId, image: c.image, productType: c.productType }));
+    const s = await searchStockXCandidates(query, { sneakersOnly: opts.productType === 'sneakers', limit }).catch(() => []);
+    const sMapped: CatalogCandidate[] = s.map(c => ({ title: c.title, brand: null, styleId: c.styleId, productId: c.productId, image: c.image, productType: c.productType }));
+    return mergeCands(kicks, sMapped);
   }
-  return [];
+  return kicks;
 }
 
 export function isCatalogConfigured(): boolean {
@@ -363,7 +389,7 @@ const seededAt = new Map<string, number>(); // ultimo refresh per categoria (thr
 
 // Versione della logica di categorizzazione/cache. Quando la cambio (bump qui), la cache
 // CatalogItem si svuota DA SOLA al primo accesso dopo il deploy → niente _reset a mano.
-const CATALOG_VERSION = '6-bigseed2';
+const CATALOG_VERSION = '7-dualsrc';
 let versionChecked = false;
 async function ensureCatalogVersion(): Promise<void> {
   if (versionChecked) return;
