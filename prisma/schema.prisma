@@ -514,3 +514,23 @@ model CatalogItem {
   @@index([sku])
   @@index([productType])
 }
+
+// ==========================================
+// MANUAL MONTH — dati economici INSERITI A MANO per mesi PRECEDENTI all'apertura del conto HQ
+// (o comunque non tracciati in-app). L'utente registra fatturato/costi di un mese passato così
+// le analitiche storiche sono complete. profit = revenue - cost (calcolato lato client).
+// ==========================================
+model ManualMonth {
+  id        String   @id @default(cuid())
+  userId    String
+  year      Int
+  month     Int      // 0-11 (come JS Date.getMonth)
+  revenue   Float    @default(0)
+  cost      Float    @default(0)
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, year, month])
+  @@index([userId])
+}

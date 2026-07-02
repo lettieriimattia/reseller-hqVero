@@ -602,6 +602,14 @@ export default function App() {
   const [buyersOpen, setBuyersOpen] = useState(false);   // accordion tabella "Compratori" (chiuso di default)
   const [sellersOpen, setSellersOpen] = useState(false); // accordion tabella "Fornitori" (chiuso di default)
   const [expandedContact, setExpandedContact] = useState<string | null>(null); // riga contatto aperta (mostra i suoi pezzi)
+  // Mesi STORICI (prima dell'apertura del conto)
+  const [manualMonths, setManualMonths] = useState<any[]>([]);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [isAddingMM, setIsAddingMM] = useState(false);
+  const [mmYear, setMmYear] = useState(String(new Date().getFullYear()));
+  const [mmMonth, setMmMonth] = useState('0');
+  const [mmRevenue, setMmRevenue] = useState('');
+  const [mmCost, setMmCost] = useState('');
   // ----- MARKETPLACE + CHAT -----
   // Pagina pubblica (senza login): attiva se si arriva su /market
   const [publicMarket, setPublicMarket] = useState(() => {
@@ -1441,6 +1449,31 @@ export default function App() {
     if (ok) setExpenses(prev => prev.filter(e => e.id !== id));
   };
 
+  // ----- Mesi STORICI (dati economici di mesi precedenti all'apertura del conto) -----
+  const fetchManualMonths = useCallback(async () => {
+    const { ok, data } = await apiCall<any[]>('/analytics/manual-months');
+    if (ok && Array.isArray(data)) setManualMonths(data);
+  }, []);
+
+  const addManualMonth = async () => {
+    const rev = parseFloat(mmRevenue) || 0;
+    const cst = parseFloat(mmCost) || 0;
+    if (rev <= 0 && cst <= 0) { showToast('Inserisci fatturato o costi del mese', 'warn'); return; }
+    setIsAddingMM(true);
+    const { ok, data } = await apiCall('/analytics/manual-months', {
+      method: 'POST',
+      body: JSON.stringify({ year: parseInt(mmYear), month: parseInt(mmMonth), revenue: rev, cost: cst }),
+    });
+    setIsAddingMM(false);
+    if (ok) { setMmRevenue(''); setMmCost(''); await fetchManualMonths(); showToast('✓ Mese storico salvato'); }
+    else showToast(data?.error || 'Errore', 'err');
+  };
+
+  const deleteManualMonth = async (id: string) => {
+    const { ok } = await apiCall(`/analytics/manual-months/${id}`, { method: 'DELETE' });
+    if (ok) setManualMonths(prev => prev.filter(m => m.id !== id));
+  };
+
   // Scarica il CSV per il commercialista (fetch con cookie + refresh, poi blob download).
   const downloadAccountantCsv = async () => {
     if (!requireFeatureOrUpgrade('accounting')) return;
@@ -1579,6 +1612,7 @@ export default function App() {
     fetchTeam();
     fetchCategories();
     fetchExpenses();
+    fetchManualMonths();
     apiCall<any>('/api/stockx/status').then(({ ok, data }) => { if (ok) setStockxStatus(data); });
     apiCall<any>('/products/auto-publish').then(({ ok, data }) => { if (ok) setAutoPublishOn(!!data?.enabled); });
     fetchNotifications();
@@ -5666,6 +5700,53 @@ export default function App() {
                   ))}
                 </div>
               )}
+              </>)}
+            </section>
+
+            {/* ===== MESI STORICI (dati economici PRIMA dell'apertura del conto) ===== */}
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+              <button type="button" onClick={() => setManualOpen(o => !o)} className="w-full flex items-center gap-2">
+                <BarChart3 size={18} className="text-[var(--teal)]" />
+                <h3 className="text-lg font-bold tracking-tighter">Mesi precedenti (storico)</h3>
+                <span className="text-[11px] text-[var(--text-faint)] ml-auto num">
+                  {manualMonths.length > 0 ? `${manualMonths.length} · +${manualMonths.reduce((a, m) => a + ((m.revenue || 0) - (m.cost || 0)), 0).toFixed(0)}€` : 'nessuno'}
+                </span>
+                <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${manualOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {!manualOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">Inserisci fatturato e costi dei mesi prima di usare HQ, così lo storico è completo.</p>}
+              {manualOpen && (<>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 mb-3">
+                  <select value={mmMonth} onChange={e => setMmMonth(e.target.value)}
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6]">
+                    {['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'].map((mn, i) => <option key={i} value={i}>{mn}</option>)}
+                  </select>
+                  <input type="number" value={mmYear} onChange={e => setMmYear(e.target.value)} placeholder="Anno"
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6] num" />
+                  <input type="number" step="0.01" min="0" value={mmRevenue} onChange={e => setMmRevenue(e.target.value)} placeholder="Fatturato €"
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6] num" />
+                  <input type="number" step="0.01" min="0" value={mmCost} onChange={e => setMmCost(e.target.value)} placeholder="Costi €"
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#6b54c6] num" />
+                </div>
+                <button onClick={addManualMonth} disabled={isAddingMM}
+                  className="w-full sm:w-auto px-5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 text-black text-sm font-bold transition-opacity disabled:opacity-50 mb-3">
+                  {isAddingMM ? <Loader2 className="animate-spin inline" size={16} /> : 'Salva mese'}
+                </button>
+                {manualMonths.length > 0 && (
+                  <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                    {manualMonths.map((m: any) => {
+                      const prof = (m.revenue || 0) - (m.cost || 0);
+                      const mn = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'][m.month] || '';
+                      return (
+                        <div key={m.id} className="flex items-center justify-between gap-2 bg-[var(--surface-2)] rounded-lg px-3 py-2">
+                          <span className="text-sm font-bold text-[var(--text)] w-20 shrink-0">{mn} {m.year}</span>
+                          <span className="text-[11px] text-[var(--text-soft)] flex-1 num">{(m.revenue || 0).toFixed(0)}€ − {(m.cost || 0).toFixed(0)}€</span>
+                          <span className={`text-sm font-bold num shrink-0 ${prof >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{prof >= 0 ? '+' : ''}{prof.toFixed(0)}€</span>
+                          <button onClick={() => deleteManualMonth(m.id)} className="text-[var(--text-faint)] hover:text-red-400 shrink-0"><Trash2 size={14} /></button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </>)}
             </section>
 

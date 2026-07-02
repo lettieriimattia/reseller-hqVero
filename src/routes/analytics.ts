@@ -338,4 +338,57 @@ router.get('/export.csv', requireFeature('accounting'), async (req: AuthRequest,
   }
 });
 
+// ==========================================
+// MESI STORICI (inseriti a mano) — dati economici di mesi PRECEDENTI all'apertura del conto.
+// ==========================================
+// GET /analytics/manual-months → elenco dei mesi manuali dell'utente
+router.get('/manual-months', async (req: AuthRequest, res: Response) => {
+  try {
+    const rows = await prisma.manualMonth.findMany({
+      where: { userId: req.user!.userId },
+      orderBy: [{ year: 'desc' }, { month: 'desc' }],
+    });
+    res.json(rows);
+  } catch (err: any) {
+    logger.error('GET /analytics/manual-months', { err: err.message });
+    res.status(500).json({ error: 'Errore lettura mesi storici' });
+  }
+});
+
+// POST /analytics/manual-months → crea/aggiorna (upsert) un mese storico {year, month, revenue, cost, note?}
+router.post('/manual-months', async (req: AuthRequest, res: Response) => {
+  try {
+    const year = parseInt(req.body?.year);
+    const month = parseInt(req.body?.month);
+    const revenue = Math.max(0, Number(req.body?.revenue) || 0);
+    const cost = Math.max(0, Number(req.body?.cost) || 0);
+    const note = (req.body?.note ?? '').toString().slice(0, 200) || null;
+    if (!Number.isInteger(year) || year < 2000 || year > 2100 || !Number.isInteger(month) || month < 0 || month > 11) {
+      return res.status(400).json({ error: 'Anno/mese non validi.' });
+    }
+    const row = await prisma.manualMonth.upsert({
+      where: { userId_year_month: { userId: req.user!.userId, year, month } },
+      create: { userId: req.user!.userId, year, month, revenue, cost, note },
+      update: { revenue, cost, note },
+    });
+    res.json(row);
+  } catch (err: any) {
+    logger.error('POST /analytics/manual-months', { err: err.message });
+    res.status(500).json({ error: 'Errore salvataggio mese storico' });
+  }
+});
+
+// DELETE /analytics/manual-months/:id
+router.delete('/manual-months/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const row = await prisma.manualMonth.findUnique({ where: { id: req.params.id } });
+    if (!row || row.userId !== req.user!.userId) return res.status(404).json({ error: 'Non trovato.' });
+    await prisma.manualMonth.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err: any) {
+    logger.error('DELETE /analytics/manual-months', { err: err.message });
+    res.status(500).json({ error: 'Errore eliminazione' });
+  }
+});
+
 export default router;
