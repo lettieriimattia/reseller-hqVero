@@ -206,6 +206,8 @@ if (isProduction) {
   app.get(/^\/s\/[^/]+$/, (_req, res) => res.sendFile(path.join(frontendDist, 'vetrina.html')));
   // Waitlist pre-lancio (PUBBLICA, no login): "lascia l'email, ti avvisiamo".
   app.get('/waitlist', (_req, res) => res.sendFile(path.join(frontendDist, 'waitlist.html')));
+  // Privacy policy pubblica (no login).
+  app.get('/privacy', (_req, res) => res.sendFile(path.join(frontendDist, 'privacy.html')));
   // Landing pubbliche /soluzioni/<slug> (URL pulito SENZA .html, SENZA login) → file statico
   // corrispondente. Deve stare PRIMA dei router API, altrimenti authenticate risponde 401.
   app.get(/^\/soluzioni\/([a-z0-9-]+)\/?$/, (req: Request, res: Response) => {

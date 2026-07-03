@@ -26,7 +26,7 @@ async function api<T = any>(path: string, opts: RequestInit = {}): Promise<{ ok:
 const PLANS = ['free', 'starter', 'pro', 'business'];
 const PLAN_LABEL: Record<string, string> = { free: 'Free', starter: 'Starter', pro: 'Pro', business: 'Business' };
 
-type Tab = 'users' | 'feedback' | 'deliveries' | 'disputes';
+type Tab = 'users' | 'feedback' | 'deliveries' | 'disputes' | 'stats';
 
 export default function AdminApp() {
   const [authState, setAuthState] = useState<'checking' | 'login' | 'in'>('checking');
@@ -46,6 +46,8 @@ export default function AdminApp() {
   const [feedback, setFeedback] = useState<any[]>([]);
   const [deliveries, setDeliveries] = useState<any[]>([]);
   const [disputes, setDisputes] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);          // analytics pre-lancio (visite + waitlist)
+  const [fbFilter, setFbFilter] = useState<'nuove' | 'risolte'>('nuove'); // assistenza: da rispondere vs risolte
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState('');
   const [replyId, setReplyId] = useState<string | null>(null);
@@ -80,6 +82,7 @@ export default function AdminApp() {
   const loadFeedback = async () => { setLoading(true); const r = await api<any>('/admin/feedback'); if (r.ok) setFeedback(r.data.feedback || []); setLoading(false); };
   const loadDeliveries = async () => { setLoading(true); const r = await api<any>('/admin/deliveries'); if (r.ok) setDeliveries(r.data.deliveries || []); setLoading(false); };
   const loadDisputes = async () => { setLoading(true); const r = await api<any>('/admin/disputes'); if (r.ok) setDisputes(r.data.disputes || []); setLoading(false); };
+  const loadStats = async () => { setLoading(true); const r = await api<any>('/admin/analytics'); if (r.ok) setStats(r.data); setLoading(false); };
 
   useEffect(() => {
     if (authState !== 'in') return;
@@ -87,6 +90,7 @@ export default function AdminApp() {
     else if (tab === 'feedback') loadFeedback();
     else if (tab === 'deliveries') loadDeliveries();
     else if (tab === 'disputes') loadDisputes();
+    else if (tab === 'stats') loadStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authState, tab]);
 
@@ -159,7 +163,7 @@ export default function AdminApp() {
 
       {/* Tabs */}
       <nav className="flex gap-1 px-4 py-3 border-b border-neutral-800 overflow-x-auto">
-        {([['users', 'Utenti'], ['feedback', 'Assistenza'], ['deliveries', 'Consegne'], ['disputes', 'Rimborsi']] as [Tab, string][]).map(([t, l]) => (
+        {([['users', 'Utenti'], ['feedback', 'Assistenza'], ['deliveries', 'Consegne'], ['disputes', 'Rimborsi'], ['stats', 'Statistiche']] as [Tab, string][]).map(([t, l]) => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 ${tab === t ? 'bg-violet-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white'}`}>
             {l}
@@ -204,11 +208,25 @@ export default function AdminApp() {
           </div>
         )}
 
-        {/* ASSISTENZA */}
-        {tab === 'feedback' && !loading && (
+        {/* ASSISTENZA — divisa in "Da rispondere" e "Risolte" */}
+        {tab === 'feedback' && !loading && (() => {
+          const nuove = feedback.filter(f => f.status === 'nuova');
+          const risolte = feedback.filter(f => f.status !== 'nuova');
+          const list = fbFilter === 'nuove' ? nuove : risolte;
+          return (
           <div className="space-y-3">
-            {feedback.length === 0 && <p className="text-center text-neutral-500 text-sm py-8">Nessuna richiesta.</p>}
-            {feedback.map(f => (
+            <div className="flex gap-2">
+              <button onClick={() => setFbFilter('nuove')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 ${fbFilter === 'nuove' ? 'bg-violet-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white'}`}>
+                Da rispondere {nuove.length > 0 && <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${fbFilter === 'nuove' ? 'bg-white/25' : 'bg-violet-600 text-white'}`}>{nuove.length}</span>}
+              </button>
+              <button onClick={() => setFbFilter('risolte')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 ${fbFilter === 'risolte' ? 'bg-violet-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white'}`}>
+                Risolte {risolte.length > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-600/25 text-green-300">{risolte.length}</span>}
+              </button>
+            </div>
+            {list.length === 0 && <p className="text-center text-neutral-500 text-sm py-8">{fbFilter === 'nuove' ? 'Nessuna richiesta da rispondere. 🎉' : 'Nessuna richiesta risolta.'}</p>}
+            {list.map(f => (
               <div key={f.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-3.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -240,7 +258,8 @@ export default function AdminApp() {
               </div>
             ))}
           </div>
-        )}
+          );
+        })()}
 
         {/* CONSEGNE */}
         {tab === 'deliveries' && !loading && (
@@ -295,6 +314,75 @@ export default function AdminApp() {
             ))}
           </div>
         )}
+
+        {/* STATISTICHE (pre-lancio): visite landing + waitlist */}
+        {tab === 'stats' && !loading && (() => {
+          if (!stats) return <p className="text-center text-neutral-500 text-sm py-8">Nessun dato ancora.</p>;
+          const pageLabels: Record<string, string> = { home: 'Home', magazzino: 'Magazzino', spedizione: 'Spedizione', waitlist: 'Waitlist', privacy: 'Privacy' };
+          const pages = Object.entries(stats.byPage || {}).sort((a: any, b: any) => b[1] - a[1]) as [string, number][];
+          const maxPage = Math.max(1, ...pages.map(p => p[1]));
+          const sources = Object.entries(stats.bySource || {}).sort((a: any, b: any) => b[1] - a[1]) as [string, number][];
+          const maxSrc = Math.max(1, ...sources.map(s => s[1]));
+          const recent = stats.waitlist?.recent || [];
+          return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+                <p className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold">Iscritti waitlist</p>
+                <p className="text-3xl font-black mt-1 text-violet-400">{stats.waitlist?.total ?? 0}</p>
+              </div>
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+                <p className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold">Visite (30 gg)</p>
+                <p className="text-3xl font-black mt-1">{stats.totalHits ?? 0}</p>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold mb-2.5">Visite per pagina</p>
+              {pages.length === 0 ? <p className="text-xs text-neutral-500">Ancora nessuna visita.</p> : (
+                <div className="space-y-2">
+                  {pages.map(([k, v]) => (
+                    <div key={k} className="flex items-center gap-3">
+                      <span className="text-xs font-bold w-24 shrink-0 truncate">{pageLabels[k] || k}</span>
+                      <div className="flex-1 h-2.5 rounded-full bg-neutral-800 overflow-hidden"><div className="h-full rounded-full bg-violet-500" style={{ width: `${(v / maxPage) * 100}%` }} /></div>
+                      <span className="text-xs font-black w-10 text-right">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold mb-2.5">Da dove arrivano</p>
+              {sources.length === 0 ? <p className="text-xs text-neutral-500">—</p> : (
+                <div className="space-y-2">
+                  {sources.map(([k, v]) => (
+                    <div key={k} className="flex items-center gap-3">
+                      <span className="text-xs font-semibold w-24 shrink-0 truncate text-neutral-400">{k}</span>
+                      <div className="flex-1 h-2.5 rounded-full bg-neutral-800 overflow-hidden"><div className="h-full rounded-full bg-teal-500/70" style={{ width: `${(v / maxSrc) * 100}%` }} /></div>
+                      <span className="text-xs font-black w-10 text-right">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold mb-2.5">Email raccolte (ultime {recent.length})</p>
+              {recent.length === 0 ? <p className="text-xs text-neutral-500">Ancora nessuna iscrizione.</p> : (
+                <div className="border border-neutral-800 rounded-xl divide-y divide-neutral-800 max-h-64 overflow-y-auto">
+                  {recent.map((w: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between gap-2 px-3 py-2">
+                      <span className="text-xs font-semibold truncate">{w.email}</span>
+                      <span className="text-[10px] text-neutral-500 shrink-0">{w.source || '—'} · {new Date(w.createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          );
+        })()}
       </main>
 
       {toast && <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-violet-600 text-white text-sm font-bold px-4 py-2 rounded-xl shadow-lg z-50">{toast}</div>}
