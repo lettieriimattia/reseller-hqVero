@@ -540,15 +540,18 @@ model ManualMonth {
 // `summary` è il riassunto in ~2 parole generato dall'IA (mostrato compatto nel widget).
 // ==========================================
 model Task {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   text      String
   summary   String?
-  done      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  done      Boolean   @default(false)
+  remindAt  DateTime? // promemoria: quando notificare (facoltativo)
+  notified  Boolean   @default(false) // già inviata la notifica per questo promemoria?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([userId])
+  @@index([remindAt])
 }
 
 // ==========================================

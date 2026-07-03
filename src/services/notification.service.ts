@@ -7,7 +7,7 @@ import { logger } from '../utils/logger';
 import { sendPushToUser } from './push.service';
 
 
-export type NotificationType = 'SALE' | 'NEW_MEMBER' | 'PRICE_ALERT' | 'AI_INSIGHT' | 'SECURITY' | 'PRODUCT_ADDED' | 'OFFER' | 'MESSAGE' | 'DISPUTE';
+export type NotificationType = 'SALE' | 'NEW_MEMBER' | 'PRICE_ALERT' | 'AI_INSIGHT' | 'SECURITY' | 'PRODUCT_ADDED' | 'OFFER' | 'MESSAGE' | 'DISPUTE' | 'REMINDER';
 
 // Categorie attivabili/disattivabili dall'utente (Impostazioni → Notifiche).
 export type NotifCategory = 'offers' | 'messages' | 'sales' | 'shipping' | 'disputes' | 'team' | 'insights';

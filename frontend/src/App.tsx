@@ -642,6 +642,11 @@ export default function App() {
   const [taskPanelOpen, setTaskPanelOpen] = useState(false);
   const [taskSaving, setTaskSaving] = useState(false);
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
+  const [taskRemind, setTaskRemind] = useState('');       // promemoria (datetime-local) per la nuova nota
+  const [editingTask, setEditingTask] = useState<string | null>(null); // nota in modifica
+  const [editText, setEditText] = useState('');
+  const [editRemind, setEditRemind] = useState('');
+  const [notifyPrompt, setNotifyPrompt] = useState(false); // popup "attiva notifiche" quando metti un promemoria
   // Mesi STORICI (prima dell'apertura del conto)
   const [manualMonths, setManualMonths] = useState<any[]>([]);
   const [manualOpen, setManualOpen] = useState(false);
@@ -1576,15 +1581,37 @@ export default function App() {
   const addTask = async () => {
     const text = taskInput.trim();
     if (!text) return;
+    const remindAt = taskRemind ? new Date(taskRemind).toISOString() : null;
     setTaskSaving(true);
-    const { ok, data } = await apiCall<any>('/tasks', { method: 'POST', body: JSON.stringify({ text }) });
+    const { ok, data } = await apiCall<any>('/tasks', { method: 'POST', body: JSON.stringify({ text, remindAt }) });
     setTaskSaving(false);
-    if (ok && data?.id) { setTaskInput(''); setTasks(prev => [data, ...prev]); }
-    else showToast(t('ts.error'), 'err');
+    if (ok && data?.id) {
+      setTaskInput(''); setTaskRemind(''); setTasks(prev => [data, ...prev]);
+      // Promemoria impostato ma notifiche spente → chiedi di attivarle.
+      if (remindAt && !pushEnabled) setNotifyPrompt(true);
+    } else showToast(t('ts.error'), 'err');
   };
   const toggleTask = async (tk: any) => {
     const { ok, data } = await apiCall<any>(`/tasks/${tk.id}`, { method: 'PATCH', body: JSON.stringify({ done: !tk.done }) });
     if (ok && data?.id) setTasks(prev => prev.map(x => x.id === tk.id ? data : x).sort((a: any, b: any) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+  };
+  // Salva la MODIFICA di una nota (testo + promemoria). Editabile toccando la nota.
+  const saveTaskEdit = async (id: string) => {
+    const text = editText.trim();
+    if (!text) return;
+    const remindAt = editRemind ? new Date(editRemind).toISOString() : null;
+    const { ok, data } = await apiCall<any>(`/tasks/${id}`, { method: 'PATCH', body: JSON.stringify({ text, remindAt }) });
+    if (ok && data?.id) {
+      setTasks(prev => prev.map(x => x.id === id ? data : x));
+      setEditingTask(null);
+      if (remindAt && !pushEnabled) setNotifyPrompt(true);
+    } else showToast(t('ts.error'), 'err');
+  };
+  // Entra in modalità modifica di una nota (precompila testo + promemoria).
+  const startEditTask = (tk: any) => {
+    setEditingTask(tk.id); setEditText(tk.text || '');
+    // datetime-local vuole "YYYY-MM-DDTHH:mm" in ora locale
+    setEditRemind(tk.remindAt ? new Date(new Date(tk.remindAt).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '');
   };
   const deleteTask = async (id: string) => {
     const { ok } = await apiCall(`/tasks/${id}`, { method: 'DELETE' });
@@ -7208,37 +7235,87 @@ export default function App() {
                 <h3 className="font-extrabold flex items-center gap-2"><StickyNote size={18} className="text-[#6b54c6]" /> {t('task.title')}</h3>
                 <button onClick={() => { setTaskPanelOpen(false); setExpandedTask(null); }} className="p-1.5 rounded-full text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5"><X size={22} /></button>
               </div>
-              {/* Aggiungi */}
-              <div className="px-5 py-3 border-b border-[var(--border)] shrink-0 flex gap-2">
-                <input value={taskInput} onChange={e => setTaskInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addTask(); }} maxLength={2000}
-                  placeholder={t('task.placeholder')} className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#6b54c6]" />
-                <button onClick={addTask} disabled={taskSaving || !taskInput.trim()}
-                  className="px-4 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white text-sm font-bold disabled:opacity-40 shrink-0">
-                  {taskSaving ? <Loader2 size={16} className="animate-spin" /> : t('task.add')}
-                </button>
+              {/* Aggiungi (testo + promemoria facoltativo con notifica) */}
+              <div className="px-5 py-3 border-b border-[var(--border)] shrink-0 space-y-2">
+                <div className="flex gap-2">
+                  <input value={taskInput} onChange={e => setTaskInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addTask(); }} maxLength={2000}
+                    placeholder={t('task.placeholder')} className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#6b54c6]" />
+                  <button onClick={addTask} disabled={taskSaving || !taskInput.trim()}
+                    className="px-4 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white text-sm font-bold disabled:opacity-40 shrink-0">
+                    {taskSaving ? <Loader2 size={16} className="animate-spin" /> : t('task.add')}
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 text-[var(--text-soft)]">
+                  <span className="text-sm">🔔</span>
+                  <input type="datetime-local" value={taskRemind} onChange={e => setTaskRemind(e.target.value)}
+                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-[#6b54c6] text-[var(--text)]" />
+                  {taskRemind
+                    ? <button onClick={() => setTaskRemind('')} className="text-[var(--text-faint)] hover:text-red-400 text-xs font-bold px-1">✕</button>
+                    : <span className="text-[10px] text-[var(--text-faint)]">{t('task.remindHint')}</span>}
+                </div>
               </div>
               {/* Lista */}
               <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2">
                 {tasks.length === 0 && <p className="text-sm text-[var(--text-faint)] text-center py-6">{t('task.empty')}</p>}
                 {tasks.map(tk => {
-                  const open = expandedTask === tk.id;
+                  const editing = editingTask === tk.id;
+                  const remindStr = tk.remindAt ? new Date(tk.remindAt).toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : null;
                   return (
                     <div key={tk.id} className={`rounded-xl border px-3 py-2.5 ${tk.done ? 'border-[var(--border)] opacity-55' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
-                      <div className="flex items-center gap-2.5">
-                        <button onClick={() => toggleTask(tk)} className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${tk.done ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-[var(--border-3)]'}`}>
-                          {tk.done && <Check size={13} className="text-white" />}
-                        </button>
-                        <button onClick={() => setExpandedTask(open ? null : tk.id)} className={`flex-1 min-w-0 text-left text-sm font-semibold truncate ${tk.done ? 'line-through text-[var(--text-faint)]' : 'text-[var(--text)]'}`}>
-                          {tk.summary || tk.text}
-                        </button>
-                        <button onClick={() => deleteTask(tk.id)} className="text-[var(--text-faint)] hover:text-red-400 shrink-0"><Trash2 size={14} /></button>
-                      </div>
-                      {open && tk.text && tk.text !== (tk.summary || '') && (
-                        <p className="text-[12px] text-[var(--text-soft)] mt-2 pl-7 whitespace-pre-wrap leading-relaxed">{tk.text}</p>
+                      {editing ? (
+                        <div className="space-y-2">
+                          <textarea value={editText} onChange={e => setEditText(e.target.value)} rows={2} maxLength={2000} autoFocus
+                            className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2.5 py-2 text-sm outline-none focus:border-[#6b54c6] resize-none" />
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">🔔</span>
+                            <input type="datetime-local" value={editRemind} onChange={e => setEditRemind(e.target.value)}
+                              className="flex-1 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-[#6b54c6] text-[var(--text)]" />
+                            {editRemind && <button onClick={() => setEditRemind('')} className="text-[var(--text-faint)] hover:text-red-400 text-xs font-bold px-1">✕</button>}
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => setEditingTask(null)} className="px-3 py-1.5 text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)]">{t('common.cancel')}</button>
+                            <button onClick={() => saveTaskEdit(tk.id)} disabled={!editText.trim()} className="px-4 py-1.5 rounded-lg bg-[#6b54c6] hover:bg-[#5d44b0] text-white text-xs font-bold disabled:opacity-40">{t('task.save')}</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2.5">
+                            <button onClick={() => toggleTask(tk)} className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${tk.done ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-[var(--border-3)]'}`}>
+                              {tk.done && <Check size={13} className="text-white" />}
+                            </button>
+                            {/* Tap sulla nota = MODIFICA (testo + promemoria) */}
+                            <button onClick={() => startEditTask(tk)} className={`flex-1 min-w-0 text-left text-sm font-semibold truncate ${tk.done ? 'line-through text-[var(--text-faint)]' : 'text-[var(--text)]'}`}>
+                              {tk.summary || tk.text}
+                            </button>
+                            <button onClick={() => deleteTask(tk.id)} className="text-[var(--text-faint)] hover:text-red-400 shrink-0"><Trash2 size={14} /></button>
+                          </div>
+                          {remindStr && (
+                            <p className="text-[11px] text-[#8a78d9] mt-1.5 pl-7 flex items-center gap-1">🔔 {remindStr}{tk.notified ? ` · ${t('task.notified')}` : ''}</p>
+                          )}
+                          {tk.text && tk.text !== (tk.summary || '') && (
+                            <p className="text-[12px] text-[var(--text-soft)] mt-1 pl-7 whitespace-pre-wrap leading-relaxed line-clamp-3">{tk.text}</p>
+                          )}
+                        </>
                       )}
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          </div>
+        ), document.body)}
+
+        {/* ========== POPUP: ATTIVA NOTIFICHE (quando metti un promemoria senza notifiche) ========== */}
+        {notifyPrompt && createPortal((
+          <div className="fixed inset-0 z-[220] bg-black/60 backdrop-blur-sm flex items-center justify-center p-5" onClick={() => setNotifyPrompt(false)}>
+            <div className="bg-[var(--surface)] border border-[var(--border-2)] rounded-3xl p-6 w-full max-w-sm text-center" onClick={e => e.stopPropagation()}>
+              <div className="w-14 h-14 rounded-2xl bg-[#6b54c6]/15 text-[#6b54c6] flex items-center justify-center mb-3 mx-auto text-3xl">🔔</div>
+              <h3 className="text-lg font-black">{t('task.notifTitle')}</h3>
+              <p className="text-sm text-[var(--text-soft)] mt-1.5 mb-4">{t('task.notifBody')}</p>
+              <div className="flex gap-2">
+                <button onClick={() => setNotifyPrompt(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--border-2)] text-sm font-bold text-[var(--text-soft)] hover:text-[var(--text)]">{t('task.notifLater')}</button>
+                <button onClick={async () => { setNotifyPrompt(false); await enablePush(); }} disabled={pushBusy}
+                  className="flex-1 py-2.5 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white text-sm font-bold disabled:opacity-50">{t('task.notifEnable')}</button>
               </div>
             </div>
           </div>

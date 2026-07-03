@@ -33,7 +33,10 @@ router.post('/', async (req: AuthRequest, res: Response) => {
     const text = (req.body?.text ?? '').toString().trim().slice(0, 2000);
     if (!text) return res.status(400).json({ error: 'Nota vuota.' });
     const summary = await summarizeTaskText(text).catch(() => '');
-    const row = await prisma.task.create({ data: { userId: req.user!.userId, text, summary: summary || null } });
+    const remindRaw = req.body?.remindAt;
+    const remindAt = remindRaw ? new Date(remindRaw) : null;
+    const validRemind = remindAt && !isNaN(remindAt.getTime()) ? remindAt : null;
+    const row = await prisma.task.create({ data: { userId: req.user!.userId, text, summary: summary || null, remindAt: validRemind } });
     res.json(row);
   } catch (err: any) {
     logger.error('POST /tasks', { err: err.message });
@@ -51,6 +54,12 @@ router.patch('/:id', async (req: AuthRequest, res: Response) => {
     if (typeof req.body?.text === 'string') {
       const text = req.body.text.trim().slice(0, 2000);
       if (text) { data.text = text; data.summary = (await summarizeTaskText(text).catch(() => '')) || null; }
+    }
+    // Promemoria: 'remindAt' presente = imposta/aggiorna (reset notified); null = rimuovi.
+    if ('remindAt' in (req.body || {})) {
+      const r = req.body.remindAt ? new Date(req.body.remindAt) : null;
+      data.remindAt = r && !isNaN(r.getTime()) ? r : null;
+      data.notified = false; // nuovo orario → potrà rinotificare
     }
     const row = await prisma.task.update({ where: { id: req.params.id }, data });
     res.json(row);

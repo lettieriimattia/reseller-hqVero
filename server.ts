@@ -16,6 +16,7 @@ import path from 'path';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { prisma } from './src/lib/prisma';
+import { notify } from './src/services/notification.service';
 
 import authRoutes from './src/routes/auth';
 import productRoutes from './src/routes/products';
@@ -466,6 +467,21 @@ serverInstance.listen(PORT, () => {
     }, 14 * 60 * 1000);
     logger.info('🔁 Self-ping attivo (ogni 14 min) per Render free tier');
   }
+
+  // PROMEMORIA note: ogni 2 min controlla le note con remindAt scaduto e manda la notifica.
+  // Query indicizzata su remindAt, leggerissima (poche righe). Sempre attivo (feature utente).
+  setInterval(async () => {
+    try {
+      const due = await prisma.task.findMany({
+        where: { remindAt: { lte: new Date() }, notified: false, done: false },
+        take: 50,
+      });
+      for (const tk of due) {
+        await notify({ userId: tk.userId, type: 'REMINDER', title: '⏰ Promemoria', message: (tk.summary || tk.text).slice(0, 140), link: '/?tasks=1' }).catch(() => {});
+        await prisma.task.update({ where: { id: tk.id }, data: { notified: true } }).catch(() => {});
+      }
+    } catch { /* riprova al prossimo giro */ }
+  }, 2 * 60 * 1000);
 
   if (!backgroundJobsEnabled) {
     logger.info('⏸️  Job in background DB (prenotazioni/escrow/tracking) DISATTIVATI — ENABLE_BACKGROUND_JOBS=1 per riattivarli. Risparmio ore di calcolo Neon.');
