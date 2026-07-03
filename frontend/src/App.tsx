@@ -2273,26 +2273,37 @@ export default function App() {
       return acc;
     }, {} as Record<string, any>));
 
-    // COLLASSA per MODELLO: scarpe uguali (marca+nome+condizione) in UNA card; dentro, la
-    // suddivisione per TAGLIA (magazzino più pulito). Taglia unica → resta card normale. Lotti a sé.
+    // COLLASSA per MODELLO: scarpe uguali in UNA card; dentro, la suddivisione per TAGLIA.
+    // Chiave "morbida": normalizzo brand+nome (minuscole, tolgo punteggiatura, parole di rumore
+    // tipo "retro", e brand ripetuti tipo "Jordan Jordan") così varianti di battitura della STESSA
+    // scarpa si uniscono. NON includo la condizione: DS/usato dello stesso modello stanno insieme
+    // (la condizione la vedi sulla riga della taglia). Taglia unica → card normale. Lotti a sé.
+    const NOISE = new Set(['retro', 'og', 'wmns', 'gs', 'td', 'ps', 'sneaker', 'sneakers', 'shoes', 'scarpe', 'low', 'mid', 'high']);
+    const modelKeyOf = (g: any) => {
+      const words = `${g.brand || ''} ${g.name || ''}`.toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ').trim().split(/\s+/).filter(w => w && !NOISE.has(w));
+      const dedup: string[] = [];
+      for (const w of words) if (dedup[dedup.length - 1] !== w) dedup.push(w); // "jordan jordan" → "jordan"
+      return `${g.category}|${dedup.join(' ')}`;
+    };
     const modelMap: Record<string, any[]> = {};
     for (const g of grouped as any[]) {
       if (g.isLot) continue;
-      const mk = `${g.category}-${g.brand.toLowerCase()}-${g.name.toLowerCase()}-${g.condition}`;
+      const mk = modelKeyOf(g);
       (modelMap[mk] = modelMap[mk] || []).push(g);
     }
     const cards: any[] = [];
     const seen = new Set<string>();
     for (const g of grouped as any[]) {
       if (g.isLot) { cards.push(g); continue; }
-      const mk = `${g.category}-${g.brand.toLowerCase()}-${g.name.toLowerCase()}-${g.condition}`;
+      const mk = modelKeyOf(g);
       if (seen.has(mk)) continue;
       seen.add(mk);
       const groups = modelMap[mk];
       if (groups.length === 1) { cards.push(groups[0]); continue; } // una sola taglia → card normale
       let quantity = 0; const ids: string[] = []; let oldestDate = groups[0].oldestDate;
       const sizes = groups
-        .map(gr => { quantity += gr.quantity; ids.push(...gr.ids); if (gr.oldestDate && (!oldestDate || gr.oldestDate < oldestDate)) oldestDate = gr.oldestDate; return { size: gr.size, quantity: gr.quantity, purchasePrice: gr.purchasePrice, supplier: (gr.supplier || '').trim(), date: gr.oldestDate || gr.createdAt, group: gr }; })
+        .map(gr => { quantity += gr.quantity; ids.push(...gr.ids); if (gr.oldestDate && (!oldestDate || gr.oldestDate < oldestDate)) oldestDate = gr.oldestDate; return { size: gr.size, quantity: gr.quantity, purchasePrice: gr.purchasePrice, condition: gr.condition, supplier: (gr.supplier || '').trim(), date: gr.oldestDate || gr.createdAt, group: gr }; })
         .sort((a, b) => (parseFloat(a.size) || 999) - (parseFloat(b.size) || 999) || String(a.size).localeCompare(String(b.size)) || String(a.supplier).localeCompare(String(b.supplier)));
       const sizeCount = new Set(sizes.map(s => s.size)).size; // taglie DISTINTE (43 di Marco + 43 di Luca = 1 taglia, 2 righe)
       cards.push({ ...groups[0], isModel: true, size: '', sizes, sizeCount, quantity, ids, oldestDate });
@@ -7350,8 +7361,9 @@ export default function App() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold">×{s.quantity} <span className="text-[var(--text-faint)] font-normal">· {(s.purchasePrice || 0).toFixed(0)}€ cad.</span></p>
-                      {(s.supplier || s.date) && (
+                      {(s.condition || s.supplier || s.date) && (
                         <p className="text-[11px] text-[var(--text-soft)] truncate mt-0.5">
+                          {s.condition ? `${s.condition} · ` : ''}
                           {s.supplier ? <span className="font-semibold text-[var(--text-muted)]">{t('mag.from')} {s.supplier}</span> : null}
                           {s.supplier && s.date ? ' · ' : ''}
                           {s.date ? new Date(s.date).toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT') : ''}
