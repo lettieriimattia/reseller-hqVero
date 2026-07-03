@@ -31,7 +31,9 @@ function ipHashOf(ip: string): string {
 const router = Router();
 
 // PROVA GRATIS "quanto vale" sulla landing: N ricerche al giorno PER IP, poi si iscrivono a HQ.
-const FREE_CHECKS = Math.max(1, parseInt(process.env.PUBLIC_PRICE_CHECKS_PER_DAY || '3', 10) || 3);
+// PER ORA disattivato (limite altissimo) per poter provare liberamente anche in incognito.
+// Per RIATTIVARE il gate: imposta PUBLIC_PRICE_CHECKS_PER_DAY=3 su Render (es. 3 ricerche/giorno).
+const FREE_CHECKS = Math.max(1, parseInt(process.env.PUBLIC_PRICE_CHECKS_PER_DAY || '999999', 10) || 999999);
 const pcByIp = new Map<string, { date: string; count: number }>();
 function clientIp(req: Request): string {
   const xff = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
