@@ -409,13 +409,16 @@
             // Finite le valutazioni gratis: il form RESTA usabile (puoi cercare/scegliere categoria)
             // ma invece del prezzo esce la schermata iscrizione (waitlist).
             if (d.limited) { out.innerHTML = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
-            if (d.value == null) {
-              out.innerHTML = '<div class="pc-card"><span class="pc-warn">Non ho trovato un valore per “' + esc(query) + '”. Prova col nome esatto del modello.</span></div>';
-            } else {
+            var det = d.detected ? '<div class="pc-src">categoria rilevata: <b style="color:#c9d0d8">' + esc(d.detected) + '</b></div>' : '';
+            if (d.value != null) {
               var cur = (d.currency && d.currency !== 'EUR') ? (' ' + d.currency) : '€';
-              var sub = (sz && sz.value ? ('Taglia ' + esc(sz.value) + ' · ') : '') + (cond ? esc(cond.value) : '');
+              var sub = (det && sz && sz.value ? ('Taglia ' + esc(sz.value) + ' · ') : (sz && sz.value ? ('Taglia ' + esc(sz.value) + ' · ') : '')) + (cond && cond.value ? esc(cond.value) : '');
               var baseLine = (d.base && Math.round(d.base) !== Math.round(d.value)) ? '<div class="pc-src">da nuovo ≈ ' + Math.round(d.base) + cur + '</div>' : '';
-              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + '<div class="pc-src">valore di mercato · ' + esc(d.source || 'StockX') + '</div></div>';
+              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + det + '<div class="pc-src">valore di mercato · ' + esc(d.source || 'StockX') + '</div></div>';
+            } else if (d.range && d.range.low) {
+              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + det + '<div class="pc-src">⚠️ stima indicativa (IA) · non un prezzo di mercato reale</div></div>';
+            } else {
+              out.innerHTML = '<div class="pc-card"><span class="pc-warn">Non ho trovato un valore per “' + esc(query) + '”. Prova col nome esatto del modello.</span>' + det + '</div>';
             }
             if (typeof d.remaining === 'number' && micro) { micro.textContent = d.remaining > 0 ? ('Ricerche gratis rimaste oggi: ' + d.remaining) : 'Ultima ricerca gratis di oggi usata'; }
           })

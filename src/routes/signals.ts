@@ -11,6 +11,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { getValuation } from '../services/valuation.service';
+import { estimatePriceRange } from '../services/ai.service';
 import { isAdminEmail } from '../config/admins';
 
 // L'ADMIN (loggato nel browser) NON è soggetto al limite di ricerche: così puoi provare liberamente.
@@ -98,7 +99,20 @@ router.get('/hit', async (req: Request, res: Response) => {
   await logHit(p, req.get('referer') || undefined, (req.get('cf-ipcountry') || '') || undefined);
 });
 
-// POST /api/price-check — { query } → valore di mercato (StockX per sneaker). Max FREE_CHECKS/IP/giorno.
+// "Altro": indovina la categoria dal testo, così instradiamo alla fonte giusta. Se non capisce,
+// null → fallback generico (StockX prova qualsiasi cosa). Euristica leggera, niente IA.
+function detectCategory(q: string): { cat: string; label: string } | null {
+  const s = q.toLowerCase();
+  if (/pokemon|pokémon|pikachu|charizard|\bcarta\b|\bcard\b|\bpsa\b|\btcg\b|magic|yu-?gi-?oh/.test(s)) return { cat: 'carte', label: 'Carte' };
+  if (/rolex|omega|seiko|casio|patek|audemars|tudor|orolog|\bwatch\b|submariner|daytona|nautilus/.test(s)) return { cat: 'orologi', label: 'Orologi' };
+  if (/louis vuitton|\blv\b|gucci|prada|chanel|hermes|hermès|dior|\bborsa\b|handbag|speedy|birkin|neverfull/.test(s)) return { cat: 'borse', label: 'Borse' };
+  if (/vinile|vinyl|\blp\b|33 giri|album .*disco/.test(s)) return { cat: 'vinili', label: 'Vinili' };
+  if (/jordan|yeezy|\bdunk\b|air force|air max|new balance|sneaker|scarp|adidas|\bnike\b/.test(s)) return { cat: 'scarpe', label: 'Sneaker' };
+  if (/supreme|palace|hoodie|felpa|maglia|\btee\b|giacca|jeans|streetwear|abbigliamento|stone island/.test(s)) return { cat: 'streetwear', label: 'Streetwear' };
+  return null;
+}
+
+// POST /api/price-check — { query, category?, size?, condition?, number? } → valore di mercato.
 router.post('/price-check', async (req: Request, res: Response) => {
   const ip = clientIp(req);
   const admin = isAdminRequest(req); // tu (admin) provi senza limiti
@@ -111,9 +125,12 @@ router.post('/price-check', async (req: Request, res: Response) => {
   const size = String(req.body?.size || '').trim();
   const condition = String(req.body?.condition || '').trim();
   const number = String(req.body?.number || '').trim();
-  const category = (String(req.body?.category || 'scarpe').trim() || 'scarpe').toLowerCase();
-  const isCards = /cart|pok|tcg/.test(category);
+  let category = (String(req.body?.category || 'scarpe').trim() || 'scarpe').toLowerCase();
   if (query.length < 2) return res.status(400).json({ error: 'Scrivi marca e modello.' });
+  // "Altro": prova a capire la categoria dal testo → instrada alla fonte giusta.
+  let detected: string | null = null;
+  if (category === 'altro') { const d = detectCategory(query); if (d) { category = d.cat; detected = d.label; } }
+  const isCards = /cart|pok|tcg/.test(category);
 
   // consuma una ricerca (l'admin no: prova illimitata)
   if (!admin) {
@@ -126,7 +143,12 @@ router.post('/price-check', async (req: Request, res: Response) => {
     const val = await getValuation({ category, name: query, brand: '', size: size || undefined, condition: condition || undefined, number: number || undefined, game: isCards ? 'pokemon' : undefined });
     // Traccia l'uso (anonimo) per le statistiche admin: riutilizzi per visitatore.
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: query.slice(0, 80), found: val.value != null } }).catch(() => {});
-    return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, remaining, freeLimit: FREE_CHECKS });
+    if (val.value != null) {
+      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, detected, remaining, freeLimit: FREE_CHECKS });
+    }
+    // Nessuna fonte ha un prezzo → stima IA indicativa in un RANGE (chiaramente etichettata).
+    const range = await estimatePriceRange(query).catch(() => null);
+    return res.json({ value: null, range, name: query, source: 'Stima indicativa (IA)', detected, remaining, freeLimit: FREE_CHECKS });
   } catch (e: any) {
     logger.warn('price-check errore', { err: e?.message });
     return res.json({ value: null, remaining, freeLimit: FREE_CHECKS });

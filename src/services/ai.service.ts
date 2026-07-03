@@ -226,6 +226,26 @@ Nota: "${t.slice(0, 500)}"`;
   } catch { return fallback; }
 }
 
+// Stima INDICATIVA del valore di rivendita (EUR) quando nessuna fonte di mercato ha un prezzo.
+// È una stima IA "a spanne" — va SEMPRE etichettata come tale (non è un prezzo reale di mercato).
+export async function estimatePriceRange(query: string): Promise<{ low: number; high: number } | null> {
+  const q = (query || '').trim();
+  if (q.length < 2 || !isGroqConfigured()) return null;
+  const prompt = `Stima il valore di RIVENDITA (second hand) in EURO di questo prodotto per un reseller in Italia. Rispondi SOLO con JSON {"low": intero, "high": intero} in euro, fascia realistica e prudente. Prodotto: "${q.slice(0, 120)}"`;
+  try {
+    const completion = await groqCallWithRetry(client =>
+      client.chat.completions.create({ messages: [{ role: 'user', content: prompt }], model: TEXT_MODEL, temperature: 0.2, max_tokens: 40 })
+    );
+    const raw = completion.choices[0]?.message?.content || '';
+    const m = raw.match(/\{[\s\S]*\}/); if (!m) return null;
+    const j = JSON.parse(m[0]);
+    let low = Math.round(Number(j.low)), high = Math.round(Number(j.high));
+    if (!isFinite(low) || !isFinite(high) || low <= 0 || high <= 0) return null;
+    if (low > high) { const t = low; low = high; high = t; }
+    return { low, high };
+  } catch { return null; }
+}
+
 export interface ScanResult {
   category: string;
   brand?: string;
