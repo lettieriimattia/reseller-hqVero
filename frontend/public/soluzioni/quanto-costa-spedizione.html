@@ -112,10 +112,25 @@
     .final { text-align: center; background: linear-gradient(135deg, #0d9488, #0b7c72); border-radius: 28px; padding: 54px 24px; color: #fff; margin: 12px 0 40px; }
     .final h2 { color: #fff; } .final p { color: rgba(255,255,255,.86); font-size: 16.5px; max-width: 520px; margin: 0 auto 24px; }
 
-    footer { border-top: 1px solid var(--line); padding: 40px 0; color: var(--muted); font-size: 14px; }
+    footer { border-top: 1px solid var(--line); padding: 40px 0 90px; color: var(--muted); font-size: 14px; }
     .foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
     .foot nav { display: flex; gap: 20px; flex-wrap: wrap; }
     .foot a:hover { color: var(--ink); }
+    /* Cattura email inline nella CTA (converte piu di un link a un'altra pagina) */
+    .wl-form { display: flex; gap: 10px; max-width: 440px; margin: 6px auto 0; }
+    @media (max-width: 480px) { .wl-form { flex-direction: column; } }
+    .wl-form .js-wl-email { flex: 1; border: none; border-radius: 12px; padding: 15px 16px; font-size: 16px; outline: none; background: #fff; color: var(--ink); box-shadow: 0 8px 24px -12px rgba(0,0,0,.4); }
+    .wl-form .btn { border: none; cursor: pointer; white-space: nowrap; }
+    .wl-msg { color: #fff; font-weight: 700; font-size: 14px; margin-top: 14px; min-height: 20px; }
+    .wl-consent { color: rgba(255,255,255,.8); font-size: 12.5px; margin-top: 12px; }
+    .wl-consent a { color: #fff; text-decoration: underline; }
+    /* Barra CTA sticky su MOBILE: l'invito resta sempre a portata di pollice */
+    .sticky-cta { display: none; }
+    @media (max-width: 760px) {
+      .sticky-cta { display: block; position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 60;
+        background: var(--teal); color: #fff; font-weight: 800; font-size: 16px; padding: 15px 20px; border-radius: 14px;
+        box-shadow: 0 12px 30px -8px rgba(13,148,136,.6); text-align: center; transition: opacity .2s; }
+    }
   </style>
 </head>
 
@@ -211,10 +226,15 @@
           </ul>
         </div>
 
-        <div class="final">
+        <div class="final" id="join">
           <h2>Tieni sotto controllo margini e spedizioni</h2>
-          <p>Gestionale completo per reseller. Inizia gratis in meno di un minuto.</p>
-          <a href="/waitlist?src=spedizione" class="btn btn-white">Inizia gratis con HQVault</a>
+          <p>HQVault fa questo calcolo su ogni vendita. Lascia l'email: ti avvisiamo al lancio.</p>
+          <form class="js-wl-form wl-form" data-src="spedizione" novalidate>
+            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
+            <button class="js-wl-btn btn btn-white" type="submit">Avvisami</button>
+          </form>
+          <p class="js-wl-msg wl-msg" role="status"></p>
+          <p class="wl-consent">Un solo avviso al lancio · niente spam. <a href="/privacy">Privacy</a></p>
         </div>
       </div>
     </section>
@@ -316,6 +336,39 @@
     {"@type":"Question","name":"Come si calcola il profitto netto di una vendita?","acceptedAnswer":{"@type":"Answer","text":"Profitto netto = prezzo di vendita − prezzo d'acquisto − commissione della piattaforma − spedizione a tuo carico. HQVault lo calcola in automatico su ogni vendita."}}
   ]}
   </script>
-  <script>try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=spedizione') : fetch('/api/hit?p=spedizione'); } catch (e) {}</script>
+  <a href="#join" class="sticky-cta">📩 Entra in lista d'attesa →</a>
+
+  <script>
+    // Beacon visita (senza cookie)
+    try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=spedizione') : fetch('/api/hit?p=spedizione'); } catch (e) {}
+    // Waitlist inline: un handler per tutti i .js-wl-form della pagina
+    (function () {
+      var RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      document.querySelectorAll('.js-wl-form').forEach(function (form) {
+        var emailEl = form.querySelector('.js-wl-email');
+        var btn = form.querySelector('.js-wl-btn');
+        var msg = form.parentNode.querySelector('.js-wl-msg');
+        var label = btn ? btn.textContent : 'Invia';
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var email = (emailEl.value || '').trim().toLowerCase();
+          if (!RE.test(email)) { if (msg) { msg.style.color = '#ffe0d0'; msg.textContent = 'Inserisci un\'email valida.'; } return; }
+          btn.disabled = true; btn.textContent = 'Invio…'; if (msg) msg.textContent = '';
+          fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: form.getAttribute('data-src') || 'spedizione' }) })
+            .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+            .then(function (d) {
+              form.style.display = 'none';
+              if (msg) msg.textContent = (d && d.already) ? '✓ Sei già in lista: ti avviseremo al lancio.' : '✓ Sei in lista! Ti scriviamo al lancio.';
+            })
+            .catch(function () { btn.disabled = false; btn.textContent = label; if (msg) { msg.style.color = '#ffe0d0'; msg.textContent = 'Qualcosa è andato storto, riprova.'; } });
+        });
+      });
+      // Nascondi la barra sticky quando il form d'iscrizione è già in vista (non lo coprire).
+      var sticky = document.querySelector('.sticky-cta'), join = document.getElementById('join');
+      if (sticky && join && 'IntersectionObserver' in window) {
+        new IntersectionObserver(function (es) { es.forEach(function (en) { sticky.style.opacity = en.isIntersecting ? '0' : '1'; sticky.style.pointerEvents = en.isIntersecting ? 'none' : 'auto'; }); }, { threshold: .2 }).observe(join);
+      }
+    })();
+  </script>
 </body>
 </html>
