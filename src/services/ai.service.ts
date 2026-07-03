@@ -582,6 +582,11 @@ NON inventare brand o modelli. Se non riconosci con certezza metti null NEL CAMP
 
 REGOLA FONDAMENTALE: Se non riconosci il brand con certezza, descrivi TUTTO nel campo "logoDescription" — ogni testo visibile, ogni simbolo, ogni colore della grafica — è più utile di un brand inventato.
 
+⚠️ LEGGI IL LOGO PRIMA DI DECIDERE — è un SIMBOLO/DISEGNO o una SCRITTA/TESTO? Non confonderli MAI:
+- Se è un SIMBOLO grafico (globo/isola = Corteiz "Alcatraz", stella, teschio, animale…) → NON è un brand a logo testuale. Es. logo Alcatraz = CORTEIZ (CRTZ), MAI Supreme.
+- Se è TESTO dentro un rettangolo ROSSO con scritto "Supreme" (font Futura Heavy Oblique) → allora è Supreme Box Logo. Senza quel testo rosso, NON dire "Supreme".
+- Leggi ESATTAMENTE le lettere/parole del logo prima di nominare il brand. Nel dubbio tra due brand, scegli quello il cui logo COMBACIA con ciò che VEDI (simbolo vs testo), non il più famoso.
+
 ━━━ STREETWEAR AMERICANO ━━━
 SUPREME: Box Logo (font Futura Heavy Oblique — proporzioni H/W precise, colore piatto), stagione sul tag interno (SS/FW + anno). Collab: LV, Nike, TNF, Burberry, Oreo, Comme des Garçons, Jean Paul Gaultier, Yohji Yamamoto, Emilio Pucci, Smurfs, Scarface. Pezzi: Box Logo Tee/Hoodie/Crewneck/Cap/Balaclava, Camp Cap, Bandana, Skateboard
 PALACE: Tri-ferg logo (P triangolare), Gyeon/Globe logo, collab Adidas/Reebok/Umbro/Ralph Lauren/Calvin Klein/Gucci
