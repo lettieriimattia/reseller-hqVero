@@ -3227,9 +3227,11 @@ export default function App() {
     const name = pokeName.trim();
     if (name.length < 2 && !cardNumber.trim()) return;
     setRevaluingCard(true);
+    // Passo anche la gradazione: il backend, se gradata, stima il valore col moltiplicatore per grado.
+    const condition = pokeGraded === 'Si' ? `Gradata ${pokeGrade || ''}`.trim() : 'Raw (Non Gradata)';
     const { ok, data } = await apiCall<any>('/api/ai/value', {
       method: 'POST',
-      body: JSON.stringify({ category: 'Pokemon', game: cardGame, name: name || undefined, number: cardNumber.trim() || undefined }),
+      body: JSON.stringify({ category: 'Pokemon', game: cardGame, name: name || undefined, number: cardNumber.trim() || undefined, condition }),
     });
     setRevaluingCard(false);
     if (ok) setScanMarket(data);
@@ -9207,7 +9209,7 @@ export default function App() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.graded')}</label>
-                      <select value={pokeGraded} onChange={(e: any) => setPokeGraded(e.target.value)}
+                      <select value={pokeGraded} onChange={(e: any) => { setPokeGraded(e.target.value); setTimeout(revalueCard, 0); }}
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none">
                         <option value="No">{t('nf.gradedNo')}</option>
                         <option value="Si">{t('nf.gradedYes')}</option>
@@ -9218,6 +9220,7 @@ export default function App() {
                         <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.grade')}</label>
                         <input type="text" value={pokeGrade}
                           onChange={(e: any) => setPokeGrade(e.target.value)}
+                          onBlur={revalueCard}
                           placeholder="10, 9.5..."
                           className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
                       </div>
