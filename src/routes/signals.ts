@@ -7,9 +7,21 @@
 
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { getValuation } from '../services/valuation.service';
+import { isAdminEmail } from '../config/admins';
+
+// L'ADMIN (loggato nel browser) NON è soggetto al limite di ricerche: così puoi provare liberamente.
+function isAdminRequest(req: Request): boolean {
+  try {
+    const token = (req as any).cookies?.access_token;
+    if (!token || !process.env.JWT_ACCESS_SECRET) return false;
+    const payload: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    return isAdminEmail(payload?.email);
+  } catch { return false; }
+}
 
 // Hash dell'IP (privacy): identifica il visitatore per contare i riutilizzi, senza salvare l'IP.
 function ipHashOf(ip: string): string {
@@ -88,23 +100,29 @@ router.get('/hit', async (req: Request, res: Response) => {
 // POST /api/price-check — { query } → valore di mercato (StockX per sneaker). Max FREE_CHECKS/IP/giorno.
 router.post('/price-check', async (req: Request, res: Response) => {
   const ip = clientIp(req);
+  const admin = isAdminRequest(req); // tu (admin) provi senza limiti
   const today = new Date().toISOString().slice(0, 10);
   const rec = pcByIp.get(ip);
   const used = rec && rec.date === today ? rec.count : 0;
-  if (used >= FREE_CHECKS) return res.json({ limited: true, freeLimit: FREE_CHECKS });
+  if (!admin && used >= FREE_CHECKS) return res.json({ limited: true, freeLimit: FREE_CHECKS });
 
   const query = String(req.body?.query || '').trim();
   const size = String(req.body?.size || '').trim();
   const condition = String(req.body?.condition || '').trim();
+  const number = String(req.body?.number || '').trim();
+  const category = (String(req.body?.category || 'scarpe').trim() || 'scarpe').toLowerCase();
+  const isCards = /cart|pok|tcg/.test(category);
   if (query.length < 2) return res.status(400).json({ error: 'Scrivi marca e modello.' });
 
-  // consuma una ricerca (anche se non trova: evita abusi di brute-force)
-  pcByIp.set(ip, { date: today, count: used + 1 });
-  if (pcByIp.size > 8000) { for (const [k, vv] of pcByIp) if (vv.date !== today) pcByIp.delete(k); } // pulizia
-  const remaining = Math.max(0, FREE_CHECKS - (used + 1));
+  // consuma una ricerca (l'admin no: prova illimitata)
+  if (!admin) {
+    pcByIp.set(ip, { date: today, count: used + 1 });
+    if (pcByIp.size > 8000) { for (const [k, vv] of pcByIp) if (vv.date !== today) pcByIp.delete(k); } // pulizia
+  }
+  const remaining = admin ? 999 : Math.max(0, FREE_CHECKS - (used + 1));
 
   try {
-    const val = await getValuation({ category: 'scarpe', name: query, brand: '', size: size || undefined, condition: condition || undefined });
+    const val = await getValuation({ category, name: query, brand: '', size: size || undefined, condition: condition || undefined, number: number || undefined, game: isCards ? 'pokemon' : undefined });
     // Traccia l'uso (anonimo) per le statistiche admin: riutilizzi per visitatore.
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: query.slice(0, 80), found: val.value != null } }).catch(() => {});
     return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, remaining, freeLimit: FREE_CHECKS });

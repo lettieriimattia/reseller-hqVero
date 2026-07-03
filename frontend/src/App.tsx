@@ -5548,10 +5548,16 @@ export default function App() {
 
                       {/* ===== MOBILE/TABLET: card a riga (SWIPE: → Vendi · ← Elimina) ===== */}
                       <div data-cardswipe className="lg:hidden relative overflow-hidden rounded-2xl">
-                        {!bulkMode && (<>
+                        {!bulkMode && ((g.isModel || g.isLot) ? (
+                          // Modello/Lotto = contenitore: lo swipe APRE il dettaglio (dove scegli la taglia/pezzo).
+                          <div className="absolute inset-0 flex items-center justify-between px-5 rounded-2xl bg-[#6b54c6]/25 text-violet-100 font-bold pointer-events-none" style={{ opacity: swipe?.key === groupKey && Math.abs(swipe.dx) > 8 ? 1 : 0 }}>
+                            <span className="flex items-center gap-1.5"><Layers size={17} /> {t('mag.open')}</span>
+                            <span className="flex items-center gap-1.5">{t('mag.open')} <Layers size={17} /></span>
+                          </div>
+                        ) : (<>
                           <div className="absolute inset-0 flex items-center pl-5 rounded-2xl bg-green-600/25 text-green-200 font-bold pointer-events-none" style={{ opacity: swipe?.key === groupKey && swipe.dx > 8 ? 1 : 0 }}><DollarSign size={18} className="mr-1.5" /> {t('mag.sell')}</div>
                           <div className="absolute inset-0 flex items-center justify-end pr-5 rounded-2xl bg-red-600/25 text-red-200 font-bold pointer-events-none" style={{ opacity: swipe?.key === groupKey && swipe.dx < -8 ? 1 : 0 }}>{t('sw.delete')} <Trash2 size={18} className="ml-1.5" /></div>
-                        </>)}
+                        </>))}
                       <div
                         onClick={() => cardClick(groupKey)}
                         {...cardTouchProps(groupKey, g)}
@@ -7381,23 +7387,25 @@ export default function App() {
                       className={`w-6 h-6 shrink-0 rounded-lg border-2 flex items-center justify-center transition-colors ${sel ? 'bg-[var(--accent)] border-[var(--accent)] text-white' : 'border-[var(--border-2)] text-transparent'}`}>
                       <Check size={14} strokeWidth={3} />
                     </button>
-                    <div className="w-11 shrink-0 text-center">
-                      <p className="text-[9px] text-[var(--text-faint)] uppercase tracking-widest">{t('form.size')}</p>
-                      <p className="font-black text-lg leading-none">{s.size}</p>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold">×{s.quantity} <span className="text-[var(--text-faint)] font-normal">· {(s.purchasePrice || 0).toFixed(0)}€ {t('mag.each')}</span></p>
-                      {(s.condition || s.supplier || s.date) && (
-                        <p className="text-[11px] text-[var(--text-soft)] truncate mt-0.5">
-                          {s.condition ? `${s.condition} · ` : ''}
-                          {s.supplier ? <span className="font-semibold text-[var(--text-muted)]">{t('mag.from')} {s.supplier}</span> : null}
-                          {s.supplier && s.date ? ' · ' : ''}
-                          {s.date ? new Date(s.date).toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT') : ''}
-                        </p>
-                      )}
-                    </div>
+                    {/* Tap sul prodotto = apri la MODIFICA (come nel resto dell'app), non un'iconcina */}
                     <button onClick={() => { setModelDetail(null); openEditModal(s.group); }}
-                      className="px-2.5 py-2 rounded-xl bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)] text-xs font-bold flex items-center gap-1.5"><Edit size={13} /></button>
+                      className="flex items-center gap-2.5 flex-1 min-w-0 text-left active:scale-[.99] transition-transform">
+                      <div className="w-11 shrink-0 text-center">
+                        <p className="text-[9px] text-[var(--text-faint)] uppercase tracking-widest">{t('form.size')}</p>
+                        <p className="font-black text-lg leading-none">{s.size}</p>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold">×{s.quantity} <span className="text-[var(--text-faint)] font-normal">· {(s.purchasePrice || 0).toFixed(0)}€ {t('mag.each')}</span></p>
+                        {(s.condition || s.supplier || s.date) && (
+                          <p className="text-[11px] text-[var(--text-soft)] truncate mt-0.5">
+                            {s.condition ? `${s.condition} · ` : ''}
+                            {s.supplier ? <span className="font-semibold text-[var(--text-muted)]">{t('mag.from')} {s.supplier}</span> : null}
+                            {s.supplier && s.date ? ' · ' : ''}
+                            {s.date ? new Date(s.date).toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT') : ''}
+                          </p>
+                        )}
+                      </div>
+                    </button>
                     <button onClick={() => { setModelDetail(null); openSellModal(s.group.ids, `${fullName(modelDetail.brand, modelDetail.name)}`, s.group); }}
                       className="px-3 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold flex items-center gap-1.5"><DollarSign size={13} /> {t('mag.sell')}</button>
                   </div>

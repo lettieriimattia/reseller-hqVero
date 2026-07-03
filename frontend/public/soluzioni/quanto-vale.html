@@ -188,15 +188,15 @@
         <p class="sub">Scrivi marca e modello: ti diciamo il <b>valore di mercato attuale</b> (fonte StockX). <b>3 ricerche gratis al giorno.</b></p>
         <!-- CHECKER LIVE: prova reale, poi gate → iscrizione -->
         <form id="pcForm" class="pc-form" novalidate>
-          <input id="pcQuery" class="f-name" type="text" autocomplete="off" placeholder="Modello (es. Jordan 4 Bred)" required />
-          <input id="pcSize" class="f-size" type="text" autocomplete="off" placeholder="Taglia" />
-          <select id="pcCond" class="f-cond" aria-label="Condizione">
-            <option value="Nuovo">Nuovo / DS</option>
-            <option value="Come nuovo">Come nuovo</option>
-            <option value="Usato ottimo">Usato ottimo</option>
-            <option value="Usato buono">Usato buono</option>
-            <option value="Usato discreto">Usato discreto</option>
+          <select id="pcCat" class="f-cond" aria-label="Categoria">
+            <option value="scarpe">👟 Sneaker</option>
+            <option value="carte">🃏 Carte Pokémon</option>
+            <option value="orologi">⌚ Orologi</option>
+            <option value="borse">👜 Borse / lusso</option>
           </select>
+          <input id="pcQuery" class="f-name" type="text" autocomplete="off" placeholder="Modello (es. Jordan 4 Bred)" required />
+          <input id="pcDetail" class="f-size" type="text" autocomplete="off" placeholder="Taglia" />
+          <select id="pcCond" class="f-cond" aria-label="Condizione"></select>
           <button type="submit" class="btn btn-primary">Quanto vale? →</button>
         </form>
         <div id="pcResult" class="pc-result" role="status"></div>
@@ -365,16 +365,34 @@
     // CHECKER "quanto vale una scarpa": 3 gratis/giorno per IP, poi gate → iscrizione.
     (function () {
       var form = document.getElementById('pcForm'); if (!form) return;
-      var q = document.getElementById('pcQuery'), sz = document.getElementById('pcSize'), cond = document.getElementById('pcCond'),
-          out = document.getElementById('pcResult'), gate = document.getElementById('pcGate'), micro = document.getElementById('pcMicro');
+      var cat = document.getElementById('pcCat'), q = document.getElementById('pcQuery'), det = document.getElementById('pcDetail'),
+          cond = document.getElementById('pcCond'), out = document.getElementById('pcResult'), gate = document.getElementById('pcGate'), micro = document.getElementById('pcMicro');
       function esc(s) { return (s || '').replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
+      // Config per categoria: placeholder del nome, campo dettaglio (taglia/numero), condizioni.
+      var CATS = {
+        scarpe:  { name: 'Modello (es. Jordan 4 Bred)', detail: 'Taglia', detailKey: 'size', cond: [['Nuovo', 'Nuovo / DS'], ['Come nuovo', 'Come nuovo'], ['Usato ottimo', 'Usato ottimo'], ['Usato buono', 'Usato buono'], ['Usato discreto', 'Usato discreto']] },
+        carte:   { name: 'Nome carta (es. Charizard)', detail: 'N° carta', detailKey: 'number', cond: [['Raw (Non Gradata)', 'Non gradata'], ['Gradata 10', 'Gradata PSA 10'], ['Gradata 9', 'Gradata PSA 9'], ['Gradata 8', 'Gradata PSA 8']] },
+        orologi: { name: 'Marca e modello (es. Rolex Submariner)', detail: '', detailKey: '', cond: [] },
+        borse:   { name: 'Marca e modello (es. Louis Vuitton Speedy)', detail: '', detailKey: '', cond: [] }
+      };
+      function applyCat() {
+        var c = CATS[cat.value] || CATS.scarpe;
+        q.placeholder = c.name;
+        if (c.detail) { det.style.display = ''; det.placeholder = c.detail; } else { det.style.display = 'none'; det.value = ''; }
+        if (c.cond.length) { cond.style.display = ''; cond.innerHTML = c.cond.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join(''); }
+        else { cond.style.display = 'none'; cond.innerHTML = ''; }
+      }
+      cat.addEventListener('change', applyCat); applyCat();
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         var query = (q.value || '').trim();
         if (query.length < 2) { out.innerHTML = '<span class="pc-warn">Scrivi marca e modello.</span>'; return; }
+        var c = CATS[cat.value] || CATS.scarpe;
+        var body = { category: cat.value, query: query, condition: (cond && cond.value || '') };
+        if (c.detailKey && det.value.trim()) body[c.detailKey] = det.value.trim();
         var btn = form.querySelector('button'); var lbl = btn.textContent;
         btn.disabled = true; btn.textContent = 'Cerco…'; out.innerHTML = '';
-        fetch('/api/price-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: query, size: (sz && sz.value || '').trim(), condition: (cond && cond.value || '') }) })
+        fetch('/api/price-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
           .then(function (r) { return r.json(); })
           .then(function (d) {
             btn.disabled = false; btn.textContent = lbl;
