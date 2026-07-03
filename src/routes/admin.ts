@@ -123,6 +123,50 @@ router.get('/feedback', async (_req: AuthRequest, res: Response) => {
   }
 });
 
+// GET /admin/analytics — statistiche pre-lancio: visite landing + iscritti waitlist.
+// Nessun dato personale nelle visite (solo pagina + provenienza). Serve a capire l'interesse.
+router.get('/analytics', async (_req: AuthRequest, res: Response) => {
+  try {
+    const since = new Date(Date.now() - 30 * 864e5); // ultimi 30 giorni
+    const [hits, waitlistCount, recentWaitlist] = await Promise.all([
+      prisma.pageHit.findMany({ where: { createdAt: { gte: since } }, select: { path: true, referrer: true, createdAt: true } }),
+      prisma.waitlist.count(),
+      prisma.waitlist.findMany({ orderBy: { createdAt: 'desc' }, take: 100, select: { email: true, source: true, referrer: true, createdAt: true } }),
+    ]);
+    // Aggrega per pagina
+    const byPage: Record<string, number> = {};
+    const bySource: Record<string, number> = {};
+    const byDay: Record<string, number> = {};
+    for (const h of hits) {
+      byPage[h.path] = (byPage[h.path] || 0) + 1;
+      const r = h.referrer || 'direct'; bySource[r] = (bySource[r] || 0) + 1;
+      const d = h.createdAt.toISOString().slice(0, 10); byDay[d] = (byDay[d] || 0) + 1;
+    }
+    // Iscritti alla waitlist per pagina di origine
+    const waitBySource: Record<string, number> = {};
+    for (const w of recentWaitlist) { const s = w.source || 'altro'; waitBySource[s] = (waitBySource[s] || 0) + 1; }
+    res.json({
+      totalHits: hits.length,
+      byPage, bySource, byDay,
+      waitlist: { total: waitlistCount, bySource: waitBySource, recent: recentWaitlist },
+    });
+  } catch (err: any) {
+    logger.error('Errore GET /admin/analytics', { err: err.message });
+    res.status(500).json({ error: 'Errore database' });
+  }
+});
+
+// GET /admin/waitlist — export completo email raccolte (per invio avviso di lancio)
+router.get('/waitlist', async (_req: AuthRequest, res: Response) => {
+  try {
+    const items = await prisma.waitlist.findMany({ orderBy: { createdAt: 'desc' } });
+    res.json({ waitlist: items, total: items.length });
+  } catch (err: any) {
+    logger.error('Errore GET /admin/waitlist', { err: err.message });
+    res.status(500).json({ error: 'Errore database' });
+  }
+});
+
 // POST /admin/feedback/:id/reply — rispondi: la risposta arriva via email all'utente
 router.post('/feedback/:id/reply', async (req: AuthRequest, res: Response) => {
   try {

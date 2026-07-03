@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>HQVault — In arrivo. Lascia l'email e ti avvisiamo.</title>
+  <meta name="description" content="HQVault sta arrivando. Lascia la tua email e ti avvisiamo appena l'app è pronta." />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#06070a" />
+  <link rel="preload" as="image" href="/logo.png" fetchpriority="high" />
+  <style>
+    :root { --teal: #0d9488; --teal-d: #0b7c72; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { min-height: 100vh; background: #06070a; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; }
+    a { color: inherit; }
+    .fx { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+    .fx span { position: absolute; border-radius: 50%; filter: blur(76px); mix-blend-mode: screen; opacity: .5; animation: aurora 24s ease-in-out infinite; }
+    .fx .b1 { width: 54vw; max-width: 640px; aspect-ratio: 1; background: radial-gradient(circle, #1f9f93, transparent 68%); top: -16%; left: 2%; }
+    .fx .b2 { width: 50vw; max-width: 580px; aspect-ratio: 1; background: radial-gradient(circle, #4a5bd6, transparent 68%); top: -6%; right: 0; animation-delay: -8s; }
+    .fx .b3 { width: 46vw; max-width: 560px; aspect-ratio: 1; background: radial-gradient(circle, #7a4bd6, transparent 68%); bottom: -24%; left: 40%; animation-delay: -16s; }
+    @keyframes aurora { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(5vw,4vh) scale(1.18); } 66% { transform: translate(-4vw,3vh) scale(.88); } }
+    @media (prefers-reduced-motion: reduce) { .fx span { animation: none; } }
+    .top { position: relative; z-index: 2; padding: 22px 20px; }
+    .brand { font-weight: 900; font-size: 19px; letter-spacing: -.02em; color: #f4f6f8; }
+    .brand b { color: #c2c9d2; }
+    main { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px 20px 60px; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; color: #c9d0d8; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10); padding: 7px 15px; border-radius: 999px; margin-bottom: 26px; }
+    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #5fb9ae; animation: pulse 2s ease infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+    h1 { font-size: clamp(34px, 6vw, 60px); font-weight: 900; letter-spacing: -.03em; line-height: 1.03; max-width: 720px; margin: 0 auto 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #dfe3e8 56%, #b6bbc2 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+    .sub { color: #aeb6c0; font-size: clamp(16px, 2.3vw, 20px); max-width: 560px; margin: 0 auto 34px; }
+    .sub b { color: #e9ecef; }
+    form { display: flex; gap: 10px; width: 100%; max-width: 460px; margin: 0 auto; }
+    @media (max-width: 480px) { form { flex-direction: column; } }
+    input[type=email] { flex: 1; background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.16); border-radius: 14px; padding: 15px 18px; color: #fff; font-size: 16px; outline: none; transition: border-color .15s; }
+    input[type=email]:focus { border-color: var(--teal); }
+    input::placeholder { color: #8a929c; }
+    button { background: var(--teal); color: #fff; font-weight: 800; font-size: 16px; padding: 15px 26px; border-radius: 14px; border: none; cursor: pointer; transition: background .15s, transform .15s; white-space: nowrap; }
+    button:hover:not(:disabled) { background: var(--teal-d); transform: translateY(-1px); }
+    button:disabled { opacity: .55; cursor: default; }
+    .consent { margin-top: 16px; font-size: 12.5px; color: #7e8893; max-width: 460px; }
+    .consent a { color: #9aa2ab; text-decoration: underline; }
+    .msg { margin-top: 22px; font-size: 15px; font-weight: 600; min-height: 22px; }
+    .msg.ok { color: #5fb9ae; } .msg.warn { color: #e0b16a; } .msg.err { color: #e08a6a; }
+    .done { display: none; }
+    .done .ico { width: 64px; height: 64px; border-radius: 50%; background: rgba(13,148,136,.16); border: 1px solid rgba(13,148,136,.4); display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 22px; }
+    footer { position: relative; z-index: 2; text-align: center; padding: 22px; color: #6a6e76; font-size: 12.5px; }
+    footer a { color: #8a929c; }
+  </style>
+</head>
+<body>
+  <div class="fx" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
+
+  <div class="top"><a href="/" class="brand">HQ<b>Vault</b></a></div>
+
+  <main>
+    <div id="formView">
+      <span class="pill"><span class="dot"></span> In arrivo · accesso in preparazione</span>
+      <h1>HQVault sta arrivando</h1>
+      <p class="sub">Il gestionale premium per reseller è in fase finale. <b>Lascia la tua email</b> e ti avvisiamo per primo appena l'app è pronta.</p>
+      <form id="wlForm" novalidate>
+        <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
+        <button id="submitBtn" type="submit">Avvisami</button>
+      </form>
+      <p class="consent">Lasciando l'email acconsenti a ricevere un unico avviso quando l'app sarà disponibile. Niente spam, puoi cancellarti quando vuoi. <a href="/">Privacy</a></p>
+      <p class="msg" id="msg" role="status"></p>
+    </div>
+
+    <div class="done" id="doneView">
+      <div class="ico">✓</div>
+      <h1 id="doneTitle">Sei in lista!</h1>
+      <p class="sub" id="doneSub">Ti scriviamo appena l'app è pronta. Grazie per l'interesse.</p>
+    </div>
+  </main>
+
+  <footer>© 2026 HQVault · <a href="/">Torna al sito</a></footer>
+
+  <script>
+    // Da quale pagina è partito (per capire quale landing converte di più).
+    var source = new URLSearchParams(location.search).get('src') || 'diretto';
+
+    var form = document.getElementById('wlForm');
+    var emailEl = document.getElementById('email');
+    var btn = document.getElementById('submitBtn');
+    var msg = document.getElementById('msg');
+    var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function showDone(title, sub) {
+      document.getElementById('formView').style.display = 'none';
+      var d = document.getElementById('doneView');
+      if (title) document.getElementById('doneTitle').textContent = title;
+      if (sub) document.getElementById('doneSub').textContent = sub;
+      d.style.display = 'block';
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = (emailEl.value || '').trim().toLowerCase();
+      msg.className = 'msg';
+      if (!EMAIL_RE.test(email)) { msg.textContent = 'Inserisci un\'email valida.'; msg.className = 'msg err'; return; }
+      btn.disabled = true; btn.textContent = 'Invio…'; msg.textContent = '';
+      fetch('/api/waitlist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, source: source })
+      }).then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+        .then(function (d) {
+          if (d && d.already) {
+            // Email GIÀ registrata → lo diciamo chiaramente.
+            msg.textContent = ''; showDone('Sei già in lista ✓', 'Questa email è già registrata: ti avviseremo appena l\'app è pronta.');
+          } else {
+            showDone('Sei in lista!', 'Ti scriviamo appena l\'app è pronta. Grazie per l\'interesse.');
+          }
+        })
+        .catch(function () {
+          btn.disabled = false; btn.textContent = 'Avvisami';
+          msg.textContent = 'Qualcosa è andato storto, riprova tra poco.'; msg.className = 'msg err';
+        });
+    });
+
+    // Conta la visita a questa pagina (senza cookie).
+    try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=waitlist') : fetch('/api/hit?p=waitlist'); } catch (e) {}
+  </script>
+</body>
+</html>

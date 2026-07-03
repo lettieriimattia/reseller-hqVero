@@ -124,7 +124,7 @@
       <nav class="nav-links" aria-label="Navigazione principale">
         <a href="/#funzioni">Funzioni</a>
         <a href="/#faq">FAQ</a>
-        <a href="/app" class="btn btn-ghost" style="padding:9px 18px;">Accedi</a>
+        <a href="/waitlist?src=magazzino" class="btn btn-ghost" style="padding:9px 18px;">Accedi</a>
       </nav>
     </div>
   </header>
@@ -138,7 +138,7 @@
         <h1>Il tuo magazzino di rivendita, in automatico</h1>
         <p class="sub">Sneaker, streetwear, carte, lusso. Basta Excel e note sparse: <b>scansiona la foto, l'IA compila tutto</b> — nome, foto ufficiale, prezzo di mercato — e tu torni a vendere.</p>
         <div class="cta-row">
-          <a href="/app" class="btn btn-primary">Prova gratis</a>
+          <a href="/waitlist?src=magazzino" class="btn btn-primary">Prova gratis</a>
           <a href="#come" class="btn btn-ghost">Come funziona</a>
         </div>
         <p class="micro">Aggiungi un prodotto in 3 secondi · foto ufficiali incluse · funziona da telefono</p>
@@ -226,7 +226,7 @@
         <div class="final">
           <h2>Smetti di gestire. Inizia a vendere.</h2>
           <p>Aggiungi il tuo primo prodotto in pochi secondi e lascia che HQ tenga il resto.</p>
-          <a href="/app" class="btn btn-white">Prova HQVault gratis</a>
+          <a href="/waitlist?src=magazzino" class="btn btn-white">Prova HQVault gratis</a>
         </div>
       </div>
     </section>
@@ -241,8 +241,8 @@
       <nav aria-label="Link del sito">
         <a href="/#funzioni">Funzioni</a>
         <a href="/#faq">FAQ</a>
-        <a href="/app">Accedi</a>
-        <a href="/app">Registrati</a>
+        <a href="/waitlist?src=magazzino">Accedi</a>
+        <a href="/waitlist?src=magazzino">Registrati</a>
       </nav>
     </div>
   </footer>
@@ -258,5 +258,6 @@
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"SoftwareApplication","name":"HQVault","applicationCategory":"BusinessApplication","operatingSystem":"Web, iOS, Android","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}}
   </script>
+  <script>try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=magazzino') : fetch('/api/hit?p=magazzino'); } catch (e) {}</script>
 </body>
 </html>

@@ -569,3 +569,32 @@ model ShareList {
 
   @@index([userId])
 }
+
+// ==========================================
+// WAITLIST — email raccolte in pre-lancio ("avvisami quando l'app è pronta").
+// Consenso: l'utente lo dà lasciando l'email nel form (testo esplicito lì). Solo email = dato minimo.
+// ==========================================
+model Waitlist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String?  // da quale landing è arrivato (home / magazzino / spedizione)
+  referrer  String?  // provenienza grezza (Google, diretto, social…)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// ==========================================
+// PAGE HIT — conteggio visite landing, SENZA cookie e SENZA dati personali (solo pagina + provenienza).
+// Serve a capire quante persone e quali landing guardano, in attesa di andare live su Google.
+// ==========================================
+model PageHit {
+  id        String   @id @default(cuid())
+  path      String   // pagina vista: "home" | "magazzino" | "spedizione" | "waitlist" | …
+  referrer  String?  // host di provenienza (es. "google", "direct", "instagram")
+  country   String?  // opzionale (da header CDN, se presente)
+  createdAt DateTime @default(now())
+
+  @@index([path])
+  @@index([createdAt])
+}

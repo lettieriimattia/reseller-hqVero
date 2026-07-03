@@ -126,7 +126,7 @@
       <nav class="nav-links" aria-label="Navigazione principale">
         <a href="/#funzioni">Funzioni</a>
         <a href="/#faq">FAQ</a>
-        <a href="/app" class="btn btn-ghost" style="padding:9px 18px;">Accedi</a>
+        <a href="/waitlist?src=spedizione" class="btn btn-ghost" style="padding:9px 18px;">Accedi</a>
       </nav>
     </div>
   </header>
@@ -141,7 +141,7 @@
         <p class="sub">Due calcolatori: una stima del costo di spedizione per corriere e il <b>profitto netto reale</b> di una vendita, con commissioni e spedizione già scontate.</p>
         <div class="cta-row">
           <a href="#tools" class="btn btn-primary">Prova i calcolatori</a>
-          <a href="/app" class="btn btn-ghost">Apri l'app</a>
+          <a href="/waitlist?src=spedizione" class="btn btn-ghost">Apri l'app</a>
         </div>
         <p class="micro">Gratis · nessun dato salvato · prezzi indicativi 2026</p>
       </div>
@@ -236,14 +236,14 @@
           <div class="ico" aria-hidden="true">⚡</div>
           <div>
             <h3>Questo calcolo, automatico su ogni vendita</h3>
-            <p>HQVault applica profitto netto, margine e spedizione a ogni prodotto che vendi e ne conserva lo storico, così non rifai i conti a mano. <a href="/app">Scopri come funziona →</a></p>
+            <p>HQVault applica profitto netto, margine e spedizione a ogni prodotto che vendi e ne conserva lo storico, così non rifai i conti a mano. <a href="/waitlist?src=spedizione">Scopri come funziona →</a></p>
           </div>
         </div>
 
         <div class="final">
           <h2>Tieni sotto controllo margini e spedizioni</h2>
           <p>Gestionale completo per reseller. Inizia gratis in meno di un minuto.</p>
-          <a href="/app" class="btn btn-white">Inizia gratis con HQVault</a>
+          <a href="/waitlist?src=spedizione" class="btn btn-white">Inizia gratis con HQVault</a>
         </div>
       </div>
     </section>
@@ -258,8 +258,8 @@
       <nav aria-label="Link del sito">
         <a href="/#funzioni">Funzioni</a>
         <a href="/#faq">FAQ</a>
-        <a href="/app">Accedi</a>
-        <a href="/app">Registrati</a>
+        <a href="/waitlist?src=spedizione">Accedi</a>
+        <a href="/waitlist?src=spedizione">Registrati</a>
       </nav>
     </div>
   </footer>
@@ -316,5 +316,6 @@
     {"@type":"Question","name":"Come si calcola il profitto netto di una vendita?","acceptedAnswer":{"@type":"Answer","text":"Profitto netto = prezzo di vendita − prezzo d'acquisto − commissione della piattaforma − spedizione a tuo carico. HQVault lo calcola in automatico su ogni vendita."}}
   ]}
   </script>
+  <script>try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=spedizione') : fetch('/api/hit?p=spedizione'); } catch (e) {}</script>
 </body>
 </html>

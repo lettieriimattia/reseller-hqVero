@@ -28,6 +28,7 @@ import templateRoutes from './src/routes/templates';
 import analyticsRoutes from './src/routes/analytics';
 import taskRoutes from './src/routes/tasks';
 import shareRoutes, { publicShareRouter } from './src/routes/share';
+import signalsRouter from './src/routes/signals';
 import { isMaintenanceOn, initMaintenanceFlag } from './src/services/maintenance-flag';
 import shippingRoutes from './src/routes/shipping';
 import uploadRoutes from './src/routes/upload';
@@ -203,6 +204,8 @@ if (isProduction) {
   app.get(/^\/app(\/.*)?$/, (_req, res) => res.sendFile(path.join(frontendDist, 'index.html')));
   // Vetrina pubblica condivisa: /s/<token> → pagina statica che carica i prodotti condivisi.
   app.get(/^\/s\/[^/]+$/, (_req, res) => res.sendFile(path.join(frontendDist, 'vetrina.html')));
+  // Waitlist pre-lancio (PUBBLICA, no login): "lascia l'email, ti avvisiamo".
+  app.get('/waitlist', (_req, res) => res.sendFile(path.join(frontendDist, 'waitlist.html')));
   // Landing pubbliche /soluzioni/<slug> (URL pulito SENZA .html, SENZA login) → file statico
   // corrispondente. Deve stare PRIMA dei router API, altrimenti authenticate risponde 401.
   app.get(/^\/soluzioni\/([a-z0-9-]+)\/?$/, (req: Request, res: Response) => {
@@ -223,6 +226,9 @@ app.get('/health', (req, res) => {
 
 // Vetrina condivisa (PUBBLICA, no login): solo prodotti scelti + campi sicuri. PRIMA di teamRoutes.
 app.use('/api/share', publicShareRouter);
+
+// Segnali pre-lancio PUBBLICI (waitlist + conteggio visite landing). PRIMA di teamRoutes.
+app.use('/api', signalsRouter);
 
 // Stato app (pubblico): il frontend lo legge per mostrare la schermata di manutenzione.
 app.get('/api/status', (_req, res) => {

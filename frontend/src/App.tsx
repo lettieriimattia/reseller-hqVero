@@ -993,7 +993,8 @@ export default function App() {
     </button>
   );
   // Admin: vista corrente (Utenti / Richieste) + stato richieste
-  const [adminView, setAdminView] = useState<'users' | 'feedback' | 'disputes'>('users');
+  const [adminView, setAdminView] = useState<'users' | 'feedback' | 'disputes' | 'stats'>('users');
+  const [adminStats, setAdminStats] = useState<any>(null); // analytics pre-lancio (visite + waitlist)
   const [adminDisputes, setAdminDisputes] = useState<any[]>([]);
   const [adminFeedback, setAdminFeedback] = useState<any[]>([]);
   const [adminFbNuove, setAdminFbNuove] = useState(0);
@@ -1020,6 +1021,11 @@ export default function App() {
     const { ok, data } = await apiCall('/admin/disputes');
     if (ok) setAdminDisputes(data.disputes || []);
     else showToast(data?.error || 'Errore caricamento contestazioni', 'err');
+  };
+  const fetchAdminStats = async () => {
+    const { ok, data } = await apiCall('/admin/analytics');
+    if (ok) setAdminStats(data);
+    else showToast(data?.error || 'Errore caricamento statistiche', 'err');
   };
   const resolveAdminDispute = async (productId: string, decision: 'refund_buyer' | 'release_seller') => {
     const msg = decision === 'refund_buyer' ? 'Rimborsare TUTTO al compratore?' : 'Respingere la contestazione e pagare il venditore?';
@@ -8296,6 +8302,10 @@ export default function App() {
                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'disputes' ? 'bg-white/25' : 'bg-red-500 text-white'}`}>{adminDisputes.filter(d => d.status === 'ESCALATED').length}</span>
                   )}
                 </button>
+                <button onClick={() => { setAdminView('stats'); fetchAdminStats(); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${adminView === 'stats' ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  Statistiche
+                </button>
               </div>
 
               {adminView === 'users' && adminLoaded && (
@@ -8431,6 +8441,88 @@ export default function App() {
                 </>
                 );
               })()}
+
+              {/* Vista STATISTICHE (pre-lancio): visite landing + waitlist */}
+              {adminView === 'stats' && (
+                <div className="p-4 space-y-5 max-h-[38rem] overflow-y-auto">
+                  {!adminStats ? (
+                    <p className="p-6 text-center text-xs text-[var(--text-faint)]"><Loader2 size={16} className="animate-spin inline" /> Carico…</p>
+                  ) : (() => {
+                    const pageLabels: Record<string, string> = { home: 'Home', magazzino: 'Magazzino', spedizione: 'Spedizione', waitlist: 'Waitlist' };
+                    const pages = Object.entries(adminStats.byPage || {}).sort((a: any, b: any) => b[1] - a[1]);
+                    const maxPage = Math.max(1, ...pages.map((p: any) => p[1]));
+                    const sources = Object.entries(adminStats.bySource || {}).sort((a: any, b: any) => b[1] - a[1]);
+                    const maxSrc = Math.max(1, ...sources.map((s: any) => s[1]));
+                    const recent = adminStats.waitlist?.recent || [];
+                    return (
+                    <>
+                      {/* KPI */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-2xl p-4">
+                          <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold">Iscritti waitlist</p>
+                          <p className="text-3xl font-black mt-1 text-[#6b54c6]">{adminStats.waitlist?.total ?? 0}</p>
+                        </div>
+                        <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-2xl p-4">
+                          <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold">Visite (30 gg)</p>
+                          <p className="text-3xl font-black mt-1">{adminStats.totalHits ?? 0}</p>
+                        </div>
+                      </div>
+
+                      {/* Visite per landing */}
+                      <div>
+                        <p className="text-[11px] uppercase tracking-widest text-[var(--text-soft)] font-bold mb-2.5">Visite per pagina</p>
+                        {pages.length === 0 ? <p className="text-xs text-[var(--text-faint)]">Ancora nessuna visita.</p> : (
+                          <div className="space-y-2">
+                            {pages.map(([k, v]: any) => (
+                              <div key={k} className="flex items-center gap-3">
+                                <span className="text-xs font-bold w-24 shrink-0 truncate">{pageLabels[k] || k}</span>
+                                <div className="flex-1 h-2.5 rounded-full bg-[var(--fill)] overflow-hidden">
+                                  <div className="h-full rounded-full bg-[#6b54c6]" style={{ width: `${(v / maxPage) * 100}%` }} />
+                                </div>
+                                <span className="text-xs font-black w-10 text-right num">{v}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Provenienza */}
+                      <div>
+                        <p className="text-[11px] uppercase tracking-widest text-[var(--text-soft)] font-bold mb-2.5">Da dove arrivano</p>
+                        {sources.length === 0 ? <p className="text-xs text-[var(--text-faint)]">—</p> : (
+                          <div className="space-y-2">
+                            {sources.map(([k, v]: any) => (
+                              <div key={k} className="flex items-center gap-3">
+                                <span className="text-xs font-semibold w-24 shrink-0 truncate text-[var(--text-soft)]">{k}</span>
+                                <div className="flex-1 h-2.5 rounded-full bg-[var(--fill)] overflow-hidden">
+                                  <div className="h-full rounded-full bg-teal-500/70" style={{ width: `${(v / maxSrc) * 100}%` }} />
+                                </div>
+                                <span className="text-xs font-black w-10 text-right num">{v}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Email raccolte */}
+                      <div>
+                        <p className="text-[11px] uppercase tracking-widest text-[var(--text-soft)] font-bold mb-2.5">Email raccolte (ultime {recent.length})</p>
+                        {recent.length === 0 ? <p className="text-xs text-[var(--text-faint)]">Ancora nessuna iscrizione.</p> : (
+                          <div className="border border-[var(--border)] rounded-xl divide-y divide-[var(--border)] max-h-56 overflow-y-auto">
+                            {recent.map((w: any, i: number) => (
+                              <div key={i} className="flex items-center justify-between gap-2 px-3 py-2">
+                                <span className="text-xs font-semibold truncate">{w.email}</span>
+                                <span className="text-[10px] text-[var(--text-faint)] shrink-0">{w.source || '—'} · {new Date(w.createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                    );
+                  })()}
+                </div>
+              )}
 
               {/* Vista CONTESTAZIONI */}
               {adminView === 'disputes' && (
