@@ -8,8 +8,17 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
+import { getValuation } from '../services/valuation.service';
 
 const router = Router();
+
+// PROVA GRATIS "quanto vale" sulla landing: N ricerche al giorno PER IP, poi si iscrivono a HQ.
+const FREE_CHECKS = Math.max(1, parseInt(process.env.PUBLIC_PRICE_CHECKS_PER_DAY || '3', 10) || 3);
+const pcByIp = new Map<string, { date: string; count: number }>();
+function clientIp(req: Request): string {
+  const xff = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
+  return xff || (req.socket && req.socket.remoteAddress) || 'unknown';
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ALLOWED_PATHS = new Set(['home', 'magazzino', 'spedizione', 'valore', 'waitlist', 'privacy']);
@@ -68,6 +77,31 @@ router.get('/hit', async (req: Request, res: Response) => {
   res.status(204).end();
   const p = String((req.query.p as string) || '').trim();
   await logHit(p, req.get('referer') || undefined, (req.get('cf-ipcountry') || '') || undefined);
+});
+
+// POST /api/price-check — { query } → valore di mercato (StockX per sneaker). Max FREE_CHECKS/IP/giorno.
+router.post('/price-check', async (req: Request, res: Response) => {
+  const ip = clientIp(req);
+  const today = new Date().toISOString().slice(0, 10);
+  const rec = pcByIp.get(ip);
+  const used = rec && rec.date === today ? rec.count : 0;
+  if (used >= FREE_CHECKS) return res.json({ limited: true, freeLimit: FREE_CHECKS });
+
+  const query = String(req.body?.query || '').trim();
+  if (query.length < 2) return res.status(400).json({ error: 'Scrivi marca e modello.' });
+
+  // consuma una ricerca (anche se non trova: evita abusi di brute-force)
+  pcByIp.set(ip, { date: today, count: used + 1 });
+  if (pcByIp.size > 8000) { for (const [k, vv] of pcByIp) if (vv.date !== today) pcByIp.delete(k); } // pulizia
+  const remaining = Math.max(0, FREE_CHECKS - (used + 1));
+
+  try {
+    const val = await getValuation({ category: 'scarpe', name: query, brand: '' });
+    return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', remaining, freeLimit: FREE_CHECKS });
+  } catch (e: any) {
+    logger.warn('price-check errore', { err: e?.message });
+    return res.json({ value: null, remaining, freeLimit: FREE_CHECKS });
+  }
 });
 
 export default router;

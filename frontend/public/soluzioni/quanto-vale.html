@@ -58,14 +58,25 @@
     .hero .sub { color:#aeb6c0; font-size:clamp(16px,2.3vw,20px); max-width:640px; margin:0 auto 26px; }
     .hero .sub b { color:#e9ecef; font-weight:700; }
     .micro { margin-top:16px; font-size:13.5px; color:#7e8893; }
-    /* Cattura email inline nell'hero */
-    .hero-form { display:flex; gap:10px; max-width:480px; margin:0 auto; }
+    /* Form hero (checker prezzo + email) */
+    .hero-form { display:flex; gap:10px; max-width:520px; margin:0 auto; }
     @media (max-width:480px) { .hero-form { flex-direction:column; } }
-    .hero-form .js-wl-email { flex:1; background:rgba(255,255,255,.08); border:1.5px solid rgba(255,255,255,.18); border-radius:12px; padding:15px 18px; color:#fff; font-size:16px; outline:none; transition:border-color .15s; }
-    .hero-form .js-wl-email:focus { border-color:var(--teal); background:rgba(255,255,255,.12); }
-    .hero-form .js-wl-email::placeholder { color:#8a929c; }
+    .hero-form input { flex:1; background:rgba(255,255,255,.08); border:1.5px solid rgba(255,255,255,.18); border-radius:12px; padding:15px 18px; color:#fff; font-size:16px; outline:none; transition:border-color .15s; }
+    .hero-form input:focus { border-color:var(--teal); background:rgba(255,255,255,.12); }
+    .hero-form input::placeholder { color:#8a929c; }
     .hero-form .btn { border:none; cursor:pointer; white-space:nowrap; }
     .hero-msg { min-height:22px; margin-top:14px; font-weight:700; font-size:15px; color:#5fb9ae; }
+    /* Risultato del checker "quanto vale" */
+    .pc-result { margin-top:18px; min-height:8px; }
+    .pc-card { display:inline-block; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.16); border-radius:16px; padding:16px 24px; }
+    .pc-name { color:#c9d0d8; font-weight:700; font-size:14px; }
+    .pc-val { color:#5fb9ae; font-weight:900; font-size:32px; letter-spacing:-.02em; margin-top:3px; }
+    .pc-src { color:#7e8893; font-size:11.5px; margin-top:5px; }
+    .pc-warn { color:#e0b16a; font-weight:600; font-size:14.5px; }
+    /* Gate: finite le ricerche gratis → iscrizione */
+    .pc-gate { max-width:520px; margin:18px auto 0; background:rgba(13,148,136,.10); border:1px solid rgba(95,185,174,.35); border-radius:18px; padding:22px; }
+    .pc-gate-title { font-weight:800; font-size:19px; color:#fff; }
+    .pc-gate-sub { color:#aeb6c0; font-size:14.5px; margin:6px 0 14px; }
 
     section { padding:58px 0; }
     .eyebrow { color:var(--teal-d); font-weight:800; font-size:13px; letter-spacing:.08em; text-transform:uppercase; text-align:center; margin-bottom:12px; }
@@ -161,15 +172,26 @@
       <div class="hero-fx" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
       <div class="hero-bloom" aria-hidden="true"></div>
       <div class="wrap">
-        <span class="crumb"><span class="dot"></span> Valore di mercato · reseller</span>
-        <h1>Quanto vale quello che hai?<br><span class="hl">E a quanto rivenderlo.</span></h1>
-        <p class="sub">Basta cercare i prezzi a mano. HQVault <b>riconosce il prodotto</b>, aggancia il <b>valore di mercato</b> e ti dice il <b>profitto reale</b> — così compri e vendi al prezzo giusto.</p>
-        <form class="js-wl-form hero-form" data-src="quanto-vale" novalidate>
-          <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
-          <button class="js-wl-btn btn btn-primary" type="submit">Scoprilo per primo →</button>
+        <span class="crumb"><span class="dot"></span> Valuta gratis · reseller</span>
+        <h1>Quanto vale <span class="hl">la tua scarpa?</span></h1>
+        <p class="sub">Scrivi marca e modello: ti diciamo il <b>valore di mercato attuale</b> (fonte StockX). <b>3 ricerche gratis al giorno.</b></p>
+        <!-- CHECKER LIVE: prova reale, poi gate → iscrizione -->
+        <form id="pcForm" class="hero-form" novalidate>
+          <input id="pcQuery" type="text" autocomplete="off" placeholder="Es. Jordan 4 Retro Bred" required />
+          <button type="submit" class="btn btn-primary">Quanto vale? →</button>
         </form>
-        <p class="js-wl-msg hero-msg" role="status"></p>
-        <p class="micro">Lascia l'email: ti avvisiamo al lancio · niente spam · valori dal catalogo ufficiale</p>
+        <div id="pcResult" class="pc-result" role="status"></div>
+        <!-- Gate: appare quando finiscono le 3 ricerche gratis del giorno -->
+        <div id="pcGate" class="pc-gate" hidden>
+          <p class="pc-gate-title">Hai finito le ricerche gratis di oggi 👀</p>
+          <p class="pc-gate-sub">Iscriviti a HQVault e al lancio scopri i prezzi <b>senza limiti</b>, con magazzino e profitti.</p>
+          <form class="js-wl-form hero-form" data-src="quanto-vale-gate" data-redirect="/waitlist?joined=1" novalidate>
+            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
+            <button class="js-wl-btn btn btn-primary" type="submit">Sbloccalo al lancio →</button>
+          </form>
+          <p class="js-wl-msg hero-msg" role="status"></p>
+        </div>
+        <p class="micro" id="pcMicro">Valore di mercato · fonte StockX · 3 ricerche gratis al giorno per visitatore</p>
       </div>
     </section>
 
@@ -320,6 +342,36 @@
   </script>
   <script>
     try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=valore') : fetch('/api/hit?p=valore'); } catch (e) {}
+
+    // CHECKER "quanto vale una scarpa": 3 gratis/giorno per IP, poi gate → iscrizione.
+    (function () {
+      var form = document.getElementById('pcForm'); if (!form) return;
+      var q = document.getElementById('pcQuery'), out = document.getElementById('pcResult'),
+          gate = document.getElementById('pcGate'), micro = document.getElementById('pcMicro');
+      function esc(s) { return (s || '').replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var query = (q.value || '').trim();
+        if (query.length < 2) { out.innerHTML = '<span class="pc-warn">Scrivi marca e modello.</span>'; return; }
+        var btn = form.querySelector('button'); var lbl = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Cerco…'; out.innerHTML = '';
+        fetch('/api/price-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: query }) })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            btn.disabled = false; btn.textContent = lbl;
+            if (d.limited) { form.style.display = 'none'; out.innerHTML = ''; if (micro) micro.style.display = 'none'; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+            if (d.value == null) {
+              out.innerHTML = '<div class="pc-card"><span class="pc-warn">Non ho trovato un valore per “' + esc(query) + '”. Prova col nome esatto del modello.</span></div>';
+            } else {
+              var cur = (d.currency && d.currency !== 'EUR') ? (' ' + d.currency) : '€';
+              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div><div class="pc-src">valore di mercato · ' + esc(d.source || 'StockX') + '</div></div>';
+            }
+            if (typeof d.remaining === 'number' && micro) { micro.textContent = d.remaining > 0 ? ('Ricerche gratis rimaste oggi: ' + d.remaining) : 'Ultima ricerca gratis di oggi usata'; }
+          })
+          .catch(function () { btn.disabled = false; btn.textContent = lbl; out.innerHTML = '<span class="pc-warn">Errore, riprova tra poco.</span>'; });
+      });
+    })();
+
     (function () {
       var RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       document.querySelectorAll('.js-wl-form').forEach(function (form) {
@@ -335,6 +387,9 @@
           fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: form.getAttribute('data-src') || 'quanto-vale' }) })
             .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
             .then(function (d) {
+              // Se il form ha data-redirect (es. il gate), portiamo l'utente sulla pagina waitlist.
+              var redirect = form.getAttribute('data-redirect');
+              if (redirect) { location.href = redirect + (d && d.already ? '&already=1' : ''); return; }
               form.style.display = 'none';
               if (msg) { msg.style.color = ''; msg.textContent = (d && d.already) ? '✓ Sei già in lista: ti avviseremo al lancio.' : '✓ Sei in lista! Ti scriviamo al lancio.'; }
             })

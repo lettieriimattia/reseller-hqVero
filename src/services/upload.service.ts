@@ -3,6 +3,7 @@
 // Se CLOUDINARY_CLOUD_NAME non è configurato, restituisce il base64 originale (fallback locale).
 
 import { v2 as cloudinary } from 'cloudinary';
+import crypto from 'crypto';
 import { logger } from '../utils/logger';
 
 let configured = false;
@@ -36,14 +37,28 @@ export async function uploadImage(base64OrUrl: string, folder = 'hq-products'): 
   if (base64OrUrl.startsWith('https://res.cloudinary.com')) {
     return base64OrUrl;
   }
+  // Le foto ESTERNE (StockX, carte pokemontcg, ecc.) NON si caricano su Cloudinary: si tengono
+  // come link. Così non occupiamo storage con immagini che vivono già online.
+  if (/^https?:\/\//i.test(base64OrUrl)) {
+    return base64OrUrl;
+  }
 
   try {
-    const result = await cloudinary.uploader.upload(base64OrUrl, {
+    // DEDUP: hash del contenuto = public_id. Se una foto IDENTICA è già stata caricata, Cloudinary
+    // (overwrite:false) restituisce quella esistente senza salvarne una copia → meno storage.
+    const opts: any = {
       folder,
       transformation: [
         { width: 1024, height: 1024, crop: 'limit', quality: 'auto:good', fetch_format: 'auto' },
       ],
-    });
+    };
+    if (base64OrUrl.startsWith('data:')) {
+      opts.public_id = crypto.createHash('sha256').update(base64OrUrl).digest('hex').slice(0, 40);
+      opts.overwrite = false;
+      opts.unique_filename = false;
+      opts.use_filename = false;
+    }
+    const result = await cloudinary.uploader.upload(base64OrUrl, opts);
     return result.secure_url;
   } catch (err: any) {
     logger.error('Cloudinary upload error', { err: err.message });

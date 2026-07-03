@@ -9,6 +9,7 @@ import { getCardValue } from './cards.service';
 import { getVinylValue } from './discogs.service';
 import { getBagValue, getWatchValue, isVestiaireConfigured, isChrono24Configured } from './apify.service';
 import { getStockXValuation, isStockXConfigured } from './stockx.service';
+import { getGradedCardValue } from './tcggraded.service';
 
 export interface UnifiedValuation {
   value: number | null;
@@ -39,17 +40,6 @@ function parseGrade(condition?: string): { graded: boolean; grade: number | null
   const m = c.match(/(\d+(?:[.,]\d)?)/);
   return { graded: true, grade: m ? parseFloat(m[1].replace(',', '.')) : null };
 }
-// Moltiplicatore STIMATO sul prezzo raw in base al grado (PSA/BGS). Volutamente prudente:
-// il valore reale di una gradata varia molto per carta, qui diamo un ordine di grandezza.
-function gradeMultiplier(grade: number | null): number {
-  if (grade == null) return 1.6;
-  if (grade >= 10) return 4;
-  if (grade >= 9.5) return 2.8;
-  if (grade >= 9) return 2;
-  if (grade >= 8) return 1.4;
-  if (grade >= 7) return 1.15;
-  return 1;
-}
 
 export async function getValuation(opts: {
   category?: string; game?: string; brand?: string; name?: string;
@@ -65,11 +55,14 @@ export async function getValuation(opts: {
     if (v.value != null) {
       const g = parseGrade(opts.condition);
       if (g.graded) {
-        const mult = gradeMultiplier(g.grade);
-        const gradedVal = Math.round((v.value as number) * mult);
-        const gradeLabel = g.grade != null ? `grado ${g.grade}` : 'gradata';
-        // low = prezzo raw di partenza; value = stima gradata; reliable false = è una stima.
-        return { value: gradedVal, currency: v.currency, source: `${v.source} · raw ×${mult} (${gradeLabel}, stima)`, reliable: false, sample: v.sample, low: v.value, itemName: v.cardName, extra: v.setName };
+        // Gradata → prezzo REALE da TCG Price Lookup (PSA/BGS/CGC). Finite le richieste del giorno
+        // (blocked) o nessun valore → fallback al prezzo RAW dichiarando "NON gradata".
+        const gr = await getGradedCardValue({ name: opts.name, number: opts.number, game: opts.game, grade: g.grade });
+        if (gr.value != null) {
+          return { value: gr.value, currency: gr.currency, source: gr.source, reliable: true, sample: v.sample, low: v.value, itemName: v.cardName, extra: v.setName };
+        }
+        const note = gr.blocked ? ' · limite gradati/giorno raggiunto → prezzo NON gradata' : ' · prezzo NON gradata';
+        return { value: v.value, currency: v.currency, source: v.source + note, reliable: false, sample: v.sample, low: v.low, itemName: v.cardName, extra: v.setName };
       }
       return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, low: v.low, itemName: v.cardName, extra: v.setName };
     }

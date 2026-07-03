@@ -123,6 +123,14 @@
         });
     });
 
+    // Se arrivo già iscritto (dal gate "quanto vale"): mostro subito la conferma.
+    (function () {
+      var p = new URLSearchParams(location.search);
+      if (p.get('joined') === '1') {
+        showDone(p.get('already') === '1' ? 'Sei già in lista ✓' : 'Sei in lista!', p.get('already') === '1' ? 'Questa email è già registrata: ti avviseremo al lancio.' : 'Ti scriviamo appena l\'app è pronta. Grazie per l\'interesse.');
+      }
+    })();
+
     // Conta la visita a questa pagina (senza cookie).
     try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=waitlist') : fetch('/api/hit?p=waitlist'); } catch (e) {}
   </script>
