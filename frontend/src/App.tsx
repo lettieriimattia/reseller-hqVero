@@ -4957,8 +4957,25 @@ export default function App() {
             barra invece di tagliarsi con una linea netta. */}
         <div className="lg:hidden pointer-events-none absolute left-0 right-0 top-full h-6 bg-gradient-to-b from-[var(--bg-blur)] to-transparent" aria-hidden="true" />
         <div className="relative w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-3.5 flex items-center">
-          {/* Spacer sinistro: centra il logo SOLO su desktop. Su mobile il logo resta a sinistra. */}
-          <div className="hidden lg:block flex-1" />
+          {/* Desktop: saluto + data + KPI rapidi (prima la barra era vuota a sinistra). Mobile invariato. */}
+          <div className="hidden lg:flex flex-1 items-center gap-4 min-w-0">
+            <div className="min-w-0">
+              <p className="text-[15px] font-extrabold text-[var(--text)] truncate leading-tight">
+                {(() => { const h = new Date().getHours(); const g = h < 12 ? (lang === 'en' ? 'Good morning' : 'Buongiorno') : h < 18 ? (lang === 'en' ? 'Good afternoon' : 'Buon pomeriggio') : (lang === 'en' ? 'Good evening' : 'Buonasera'); const nm = (user?.name || '').split(' ')[0]; return nm ? `${g}, ${nm}` : g; })()}
+              </p>
+              <p className="text-[11px] text-[var(--text-soft)] capitalize leading-tight">{new Date().toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="px-3 py-1.5 rounded-xl bg-[var(--fill)] border border-[var(--border)]">
+                <span className="block text-[9px] uppercase tracking-widest text-[var(--text-faint)] font-bold leading-none mb-0.5">{t('mag.pieces')}</span>
+                <span className="text-sm font-black text-[var(--text)] num">{inStockItems.length}</span>
+              </div>
+              <div className="px-3 py-1.5 rounded-xl bg-[#6b54c6]/10 border border-[#6b54c6]/25">
+                <span className="block text-[9px] uppercase tracking-widest text-[#8a78d9] font-bold leading-none mb-0.5">{t('mag.stockValue')}</span>
+                <span className="text-sm font-black text-[#8a78d9] num">{Math.round(stockValore).toLocaleString('it-IT')}€</span>
+              </div>
+            </div>
+          </div>
           {/* Wordmark HQVault — su mobile a sinistra, nascosto su desktop (è nella sidebar) */}
           <div className="flex items-center lg:hidden">
             <span className="text-base font-black tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
