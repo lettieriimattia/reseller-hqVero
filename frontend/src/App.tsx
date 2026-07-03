@@ -2256,9 +2256,12 @@ export default function App() {
         if (p.createdAt && (!acc[key].oldestDate || p.createdAt < acc[key].oldestDate)) acc[key].oldestDate = p.createdAt;
         return acc;
       }
-      // Prodotti normali: stesso nome/taglia/condizione + STESSO COSTO + stesso venditore = una riga.
+      // Prodotti normali: stesso nome/taglia/condizione + STESSO COSTO + stesso venditore + STESSO
+      // FORNITORE = una riga. Così se Marco e Luca ti danno la STESSA taglia restano DISTINTI
+      // (vedi da chi arriva ogni paia), non fusi sotto l'ultimo nome/data.
       const seller = `${(p as any).userId || ''}|${(p as any).consignmentName || ''}`;
-      const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.condition}-${p.purchasePrice}-${seller}`;
+      const supKey = ((p as any).supplier || '').trim().toLowerCase();
+      const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.condition}-${p.purchasePrice}-${seller}-${supKey}`;
       if (!acc[key]) acc[key] = {
         ...p, category: cat, quantity: 0, ids: [], oldestDate: p.createdAt,
       };
@@ -2289,9 +2292,10 @@ export default function App() {
       if (groups.length === 1) { cards.push(groups[0]); continue; } // una sola taglia → card normale
       let quantity = 0; const ids: string[] = []; let oldestDate = groups[0].oldestDate;
       const sizes = groups
-        .map(gr => { quantity += gr.quantity; ids.push(...gr.ids); if (gr.oldestDate && (!oldestDate || gr.oldestDate < oldestDate)) oldestDate = gr.oldestDate; return { size: gr.size, quantity: gr.quantity, purchasePrice: gr.purchasePrice, group: gr }; })
-        .sort((a, b) => (parseFloat(a.size) || 999) - (parseFloat(b.size) || 999) || String(a.size).localeCompare(String(b.size)));
-      cards.push({ ...groups[0], isModel: true, size: '', sizes, quantity, ids, oldestDate });
+        .map(gr => { quantity += gr.quantity; ids.push(...gr.ids); if (gr.oldestDate && (!oldestDate || gr.oldestDate < oldestDate)) oldestDate = gr.oldestDate; return { size: gr.size, quantity: gr.quantity, purchasePrice: gr.purchasePrice, supplier: (gr.supplier || '').trim(), date: gr.oldestDate || gr.createdAt, group: gr }; })
+        .sort((a, b) => (parseFloat(a.size) || 999) - (parseFloat(b.size) || 999) || String(a.size).localeCompare(String(b.size)) || String(a.supplier).localeCompare(String(b.supplier)));
+      const sizeCount = new Set(sizes.map(s => s.size)).size; // taglie DISTINTE (43 di Marco + 43 di Luca = 1 taglia, 2 righe)
+      cards.push({ ...groups[0], isModel: true, size: '', sizes, sizeCount, quantity, ids, oldestDate });
     }
 
     return cards.sort((a: any, b: any) => {
@@ -2303,6 +2307,12 @@ export default function App() {
       return av < bv ? 1 : -1;
     });
   }, [searchedProducts, filterCondition, filterPriceMin, filterPriceMax, sortField, sortDir, staleOnly, lang]);
+
+  // Sottotitolo di una card MODELLO: "N taglie · M pezzi", oppure "Taglia 43 · M pezzi" quando è
+  // un'unica taglia con più fornitori (es. la 43 di Marco + la 43 di Luca).
+  const modelSub = (g: any) => (g.sizeCount ?? g.sizes?.length ?? 0) === 1
+    ? `${t('form.size')} ${g.sizes[0].size} · ${g.quantity} ${t('mag.pieces')}`
+    : `${g.sizeCount ?? g.sizes.length} ${t('mag.sizesWord')} · ${g.quantity} ${t('mag.pieces')}`;
 
   // Aggregati del mese per le BOLLE (memoizzati): così cliccare una bolla NON ricalcola i filtri
   // pesanti — la nuova sotto-bolla appare all'istante.
@@ -5528,7 +5538,7 @@ export default function App() {
                               {g.quantity > 1 && <span className="text-[10px] bg-[#6b54c6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
                               {daysBadge}{trackBadge}
                             </div>
-                            <p className="text-xs text-[var(--text-soft)] mt-1">{g.isModel ? `${g.sizes.length} ${t('mag.sizesWord')} · ${g.quantity} ${t('mag.pieces')}` : <>{g.size} · {g.condition} · <span className="text-gray-300 font-semibold">{g.purchasePrice.toFixed(0)}€</span></>}</p>
+                            <p className="text-xs text-[var(--text-soft)] mt-1">{g.isModel ? modelSub(g) : <>{g.size} · {g.condition} · <span className="text-gray-300 font-semibold">{g.purchasePrice.toFixed(0)}€</span></>}</p>
                             {shares?.length > 0 && <p className="text-[10px] text-blue-400/70 mt-0.5 truncate">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                             {!bulkMode && (
                               <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
@@ -5592,7 +5602,7 @@ export default function App() {
                         </div>
                         <div className="p-4 flex-1 flex flex-col items-start text-left">
                           <p className="font-bold text-base leading-tight line-clamp-2 w-full">{g.brand} {g.name}</p>
-                          <p className="text-sm text-[var(--text-muted)] mt-1.5">{g.isModel ? `${g.sizes.length} ${t('mag.sizesWord')} · ${g.quantity} ${t('mag.pieces')}` : `${g.size} · ${g.condition}`}</p>
+                          <p className="text-sm text-[var(--text-muted)] mt-1.5">{g.isModel ? modelSub(g) : `${g.size} · ${g.condition}`}</p>
                           <p className="text-2xl font-bold text-[var(--text)] mt-auto pt-2 num">{g.purchasePrice.toFixed(0)}€</p>
                           {shares?.length > 0 && <p className="text-[11px] text-blue-400/70 mt-1.5 truncate max-w-full">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                           {!bulkMode && (
@@ -7317,7 +7327,7 @@ export default function App() {
                 </button>
                 <div className="min-w-0 flex-1 text-center">
                   <p className="font-bold truncate">{modelDetail.brand} {modelDetail.name}</p>
-                  <p className="text-[11px] text-[var(--text-soft)]">{modelDetail.sizes.length} {t('mag.sizesWord')} · {modelDetail.quantity} {t('mag.pieces')}</p>
+                  <p className="text-[11px] text-[var(--text-soft)]">{modelSub(modelDetail)}</p>
                 </div>
                 <button onClick={() => setModelDetail(null)} aria-label={t('common.close')}
                   className="p-3 -mr-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
@@ -7340,6 +7350,13 @@ export default function App() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold">×{s.quantity} <span className="text-[var(--text-faint)] font-normal">· {(s.purchasePrice || 0).toFixed(0)}€ cad.</span></p>
+                      {(s.supplier || s.date) && (
+                        <p className="text-[11px] text-[var(--text-soft)] truncate mt-0.5">
+                          {s.supplier ? <span className="font-semibold text-[var(--text-muted)]">{t('mag.from')} {s.supplier}</span> : null}
+                          {s.supplier && s.date ? ' · ' : ''}
+                          {s.date ? new Date(s.date).toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT') : ''}
+                        </p>
+                      )}
                     </div>
                     <button onClick={() => { setModelDetail(null); openEditModal(s.group); }}
                       className="px-2.5 py-2 rounded-xl bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)] text-xs font-bold flex items-center gap-1.5"><Edit size={13} /></button>
