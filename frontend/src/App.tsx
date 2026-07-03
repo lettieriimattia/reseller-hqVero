@@ -4954,24 +4954,8 @@ export default function App() {
             barra invece di tagliarsi con una linea netta. */}
         <div className="lg:hidden pointer-events-none absolute left-0 right-0 top-full h-6 bg-gradient-to-b from-[var(--bg-blur)] to-transparent" aria-hidden="true" />
         <div className="relative w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-3.5 flex items-center">
-          {/* Desktop: saluto in base all'ora + data. (Mobile invariato.) */}
-          <div className="hidden lg:flex flex-1 items-center min-w-0">
-            <div className="min-w-0">
-              <p className="text-[15px] font-extrabold text-[var(--text)] truncate leading-tight">
-                {(() => {
-                  const h = new Date().getHours();
-                  const g = (h >= 5 && h < 12) ? (lang === 'en' ? 'Good morning' : 'Buongiorno')
-                    : (h >= 12 && h < 14) ? (lang === 'en' ? 'Hello' : 'Salve')             // mezzogiorno
-                    : (h >= 14 && h < 18) ? (lang === 'en' ? 'Good afternoon' : 'Buon pomeriggio')
-                    : (h >= 18 && h < 23) ? (lang === 'en' ? 'Good evening' : 'Buonasera')
-                    : (lang === 'en' ? 'Hello' : 'Salve');                                    // notte
-                  const nm = (user?.name || '').split(' ')[0];
-                  return nm ? `${g}, ${nm}` : g;
-                })()}
-              </p>
-              <p className="text-[11px] text-[var(--text-soft)] capitalize leading-tight">{new Date().toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-            </div>
-          </div>
+          {/* Spacer sinistro (desktop): spinge le azioni a destra. Mobile: il logo resta a sinistra. */}
+          <div className="hidden lg:block flex-1" />
           {/* Wordmark HQVault — su mobile a sinistra, nascosto su desktop (è nella sidebar) */}
           <div className="flex items-center lg:hidden">
             <span className="text-base font-black tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
@@ -5112,7 +5096,14 @@ export default function App() {
             {/* Header: solo saluto a SINISTRA. "This week / To ship / Stale" rimossi. */}
             <div className="min-w-0">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black truncate">
-                {t('dash.hello')}, <span className="text-[var(--text)] font-black">{user.name.split(' ')[0]}</span>
+                {(() => {
+                  const h = new Date().getHours();
+                  return (h >= 5 && h < 12) ? (lang === 'en' ? 'Good morning' : 'Buongiorno')
+                    : (h >= 12 && h < 14) ? (lang === 'en' ? 'Hello' : 'Salve')             // mezzogiorno
+                    : (h >= 14 && h < 18) ? (lang === 'en' ? 'Good afternoon' : 'Buon pomeriggio')
+                    : (h >= 18 && h < 23) ? (lang === 'en' ? 'Good evening' : 'Buonasera')
+                    : (lang === 'en' ? 'Hello' : 'Salve');                                    // notte
+                })()}, <span className="text-[var(--text)] font-black">{user.name.split(' ')[0]}</span>
               </h2>
               <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1 capitalize truncate">{new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
             </div>
@@ -9499,7 +9490,12 @@ export default function App() {
                       {showCatDetails && (
                         <div className="mt-3">
                           <DynamicForm
-                            fields={activeTemplate.fields}
+                            /* Tolgo dai "dettagli" i campi TAGLIA/SIZE/DIMENSIONE: c'è già il campo Taglia
+                               standard sopra → niente doppioni (es. abbigliamento chiedeva la taglia 2 volte). */
+                            fields={activeTemplate.fields.filter((f: any) => {
+                              const k = `${f.key || ''} ${f.label || ''} ${f.name || ''}`.toLowerCase();
+                              return !(/\bsize\b|tagli|dimension|misura/.test(k)) || /belt|hat|case|band|strap|watch/.test(k);
+                            })}
                             values={dynamicAttrs}
                             onChange={(key, value) => setDynamicAttrs(prev => ({ ...prev, [key]: value }))}
                             disabled={isSaving}
