@@ -5152,12 +5152,30 @@ export default function App() {
                   <p className="text-2xl lg:text-3xl font-extrabold num text-[var(--teal)]">{periodProfit.toFixed(0)}€</p>
                   <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] mt-1 truncate capitalize font-semibold">{periodLabel}</p>
                 </button>
-                <button onClick={() => navigateTo('tracking')}
-                  className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group hidden lg:flex lg:flex-col">
-                  <p className="sys-label mb-1.5 flex items-center gap-1.5"><Truck size={11} /> {t('nav.tracking')} <ChevronDown size={11} className="-rotate-90 text-[var(--text-faint)] group-hover:text-[var(--text-soft)]" /></p>
-                  <p className="text-2xl lg:text-3xl font-extrabold num text-[var(--text)]">{toShipItems.length}</p>
-                  <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] mt-1 truncate font-semibold">{t('dash.toShip')}</p>
-                </button>
+                {/* Box SMART: mostra la cosa più urgente — da spedire → fermi >30gg → valore stock. */}
+                {(() => {
+                  const shipN = toShipItems.length;
+                  const staleN = products.filter((p: any) => p.status === 'IN STOCK' && (p.oldestDate || p.createdAt) && (Date.now() - new Date(p.oldestDate || p.createdAt).getTime()) / 86400000 > 30).length;
+                  let icon, label, value, sub, onClick, valColor;
+                  if (shipN > 0) {
+                    icon = <Truck size={11} />; label = t('nav.tracking'); value = String(shipN); sub = t('dash.toShip'); valColor = 'text-[var(--text)]';
+                    onClick = () => navigateTo('tracking');
+                  } else if (staleN > 0) {
+                    icon = <AlertTriangle size={11} />; label = t('dash.stale'); value = String(staleN); sub = t('dash.staleSub'); valColor = 'text-amber-400';
+                    onClick = () => { setStaleOnly(true); navigateTo('magazzino'); };
+                  } else {
+                    icon = <Wallet size={11} />; label = t('mag.stockValue'); value = `${Math.round(stockValore).toLocaleString('it-IT')}€`; sub = t('dash.stock'); valColor = 'text-[#8a78d9]';
+                    onClick = () => navigateTo('magazzino');
+                  }
+                  return (
+                    <button onClick={onClick}
+                      className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group hidden lg:flex lg:flex-col">
+                      <p className="sys-label mb-1.5 flex items-center gap-1.5">{icon} {label} <ChevronDown size={11} className="-rotate-90 text-[var(--text-faint)] group-hover:text-[var(--text-soft)]" /></p>
+                      <p className={`text-2xl lg:text-3xl font-extrabold num ${valColor}`}>{value}</p>
+                      <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] mt-1 truncate font-semibold">{sub}</p>
+                    </button>
+                  );
+                })()}
               </div>
 
               {/* NOTE / TASK — desktop: colonna ALTA a destra (row-span-2). */}
