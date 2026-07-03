@@ -6,9 +6,15 @@
 // Va montato PRIMA di app.use('/', teamRoutes), altrimenti authenticate risponde 401.
 
 import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { getValuation } from '../services/valuation.service';
+
+// Hash dell'IP (privacy): identifica il visitatore per contare i riutilizzi, senza salvare l'IP.
+function ipHashOf(ip: string): string {
+  return crypto.createHash('sha256').update(`${ip}|hq-pricecheck`).digest('hex').slice(0, 16);
+}
 
 const router = Router();
 
@@ -99,6 +105,8 @@ router.post('/price-check', async (req: Request, res: Response) => {
 
   try {
     const val = await getValuation({ category: 'scarpe', name: query, brand: '', size: size || undefined, condition: condition || undefined });
+    // Traccia l'uso (anonimo) per le statistiche admin: riutilizzi per visitatore.
+    prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: query.slice(0, 80), found: val.value != null } }).catch(() => {});
     return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, remaining, freeLimit: FREE_CHECKS });
   } catch (e: any) {
     logger.warn('price-check errore', { err: e?.message });

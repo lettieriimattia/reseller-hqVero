@@ -145,10 +145,31 @@ router.get('/analytics', async (_req: AuthRequest, res: Response) => {
     // Iscritti alla waitlist per pagina di origine
     const waitBySource: Record<string, number> = {};
     for (const w of recentWaitlist) { const s = w.source || 'altro'; waitBySource[s] = (waitBySource[s] || 0) + 1; }
+
+    // Uso del checker "trova valore" (anonimo): quante ricerche, quanti IP, quanti hanno RIUSATO.
+    const checks = await prisma.priceCheckLog.findMany({ where: { createdAt: { gte: since } }, select: { ipHash: true, query: true, found: true } });
+    const byIp: Record<string, number> = {};
+    const byQuery: Record<string, number> = {};
+    for (const c of checks) {
+      byIp[c.ipHash] = (byIp[c.ipHash] || 0) + 1;
+      const qk = (c.query || '').trim().toLowerCase();
+      if (qk) byQuery[qk] = (byQuery[qk] || 0) + 1;
+    }
+    const ipCounts = Object.entries(byIp);
+    const priceChecks = {
+      total: checks.length,
+      found: checks.filter(c => c.found).length,
+      uniqueIps: ipCounts.length,
+      reusedIps: ipCounts.filter(([, n]) => n > 1).length,          // IP che l'hanno usato più di 1 volta
+      topReusers: ipCounts.sort((a, b) => b[1] - a[1]).slice(0, 10).map(([h, n]) => ({ id: h.slice(0, 6), count: n })),
+      topQueries: Object.entries(byQuery).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([q, n]) => ({ q, count: n })),
+    };
+
     res.json({
       totalHits: hits.length,
       byPage, bySource, byDay,
       waitlist: { total: waitlistCount, bySource: waitBySource, recent: recentWaitlist },
+      priceChecks,
     });
   } catch (err: any) {
     logger.error('Errore GET /admin/analytics', { err: err.message });

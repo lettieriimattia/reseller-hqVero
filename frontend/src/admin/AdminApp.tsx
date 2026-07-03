@@ -380,6 +380,39 @@ export default function AdminApp() {
                 </div>
               )}
             </div>
+
+            {/* TROVA VALORE: uso del checker pubblico (anonimo) */}
+            {stats.priceChecks && (
+              <div>
+                <p className="text-[11px] uppercase tracking-widest text-neutral-400 font-bold mb-2.5">Trova valore prodotto (30 gg)</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                  <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3"><p className="text-[9px] uppercase tracking-widest text-neutral-500 font-bold">Ricerche</p><p className="text-xl font-black mt-1">{stats.priceChecks.total}</p></div>
+                  <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3"><p className="text-[9px] uppercase tracking-widest text-neutral-500 font-bold">Visitatori (IP)</p><p className="text-xl font-black mt-1">{stats.priceChecks.uniqueIps}</p></div>
+                  <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3"><p className="text-[9px] uppercase tracking-widest text-neutral-500 font-bold">Hanno riusato</p><p className="text-xl font-black mt-1 text-violet-400">{stats.priceChecks.reusedIps}</p></div>
+                  <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3"><p className="text-[9px] uppercase tracking-widest text-neutral-500 font-bold">Con esito</p><p className="text-xl font-black mt-1">{stats.priceChecks.found}</p></div>
+                </div>
+                {stats.priceChecks.topReusers?.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-[10px] text-neutral-500 mb-1.5">Chi ha riusato di più (IP anonimo · n° ricerche)</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {stats.priceChecks.topReusers.map((u: any) => (
+                        <span key={u.id} className="text-[11px] bg-neutral-900 border border-neutral-800 rounded-lg px-2 py-1"><span className="text-neutral-500">#{u.id}</span> · <b>{u.count}×</b></span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {stats.priceChecks.topQueries?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] text-neutral-500 mb-1.5">Modelli più cercati</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {stats.priceChecks.topQueries.map((x: any, i: number) => (
+                        <span key={i} className="text-[11px] bg-neutral-900 border border-neutral-800 rounded-lg px-2 py-1">{x.q} <b className="text-neutral-400">{x.count}×</b></span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           );
         })()}

@@ -598,3 +598,16 @@ model PageHit {
   @@index([path])
   @@index([createdAt])
 }
+
+// Uso del checker pubblico "quanto vale" — anonimo: salviamo un HASH dell'IP (non l'IP in chiaro),
+// così possiamo contare quante volte uno stesso visitatore ha riusato il tool, senza dati personali.
+model PriceCheckLog {
+  id        String   @id @default(cuid())
+  ipHash    String   // sha256(ip) troncato → identifica il visitatore senza rivelarlo
+  query     String?  // cosa ha cercato (per capire i modelli più richiesti)
+  found     Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([ipHash])
+  @@index([createdAt])
+}
