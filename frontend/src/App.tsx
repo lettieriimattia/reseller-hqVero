@@ -3464,7 +3464,9 @@ export default function App() {
       ids, name: itemName, maxQty: ids.length,
       purchasePrice: p.purchasePrice,
     });
-    setSellQuantity(ids.length.toString());
+    // Default: vendi UNA sola paia (il caso normale). Se ne hai più della stessa taglia
+    // e ne vendi più di una, alzi tu la quantità (max = disponibili).
+    setSellQuantity('1');
     setSellPrice('');
     setSellCustomer('');
     setSellExtraCosts([]); setSellExtraOpen(false);
