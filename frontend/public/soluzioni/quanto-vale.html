@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Quanto vale? A quanto rivendere le tue sneaker — HQVault</title>
+  <meta name="description" content="Scopri quanto vale quello che hai e a quanto rivenderlo: HQVault riconosce il prodotto, aggancia il valore di mercato (StockX per sneaker e streetwear) e calcola il profitto reale a ogni vendita. Basta comps a mano." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="canonical" href="https://resellerhq.onrender.com/soluzioni/quanto-vale" />
+  <meta name="author" content="HQVault" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="HQVault" />
+  <meta property="og:title" content="Quanto vale? A quanto rivendere — HQVault" />
+  <meta property="og:description" content="Riconosce il prodotto, aggancia il valore di mercato e calcola il profitto reale. Basta comps a mano su eBay." />
+  <meta property="og:image" content="https://resellerhq.onrender.com/logo.png" />
+  <link rel="preload" as="image" href="/logo.png" fetchpriority="high" />
+  <script>document.documentElement.classList.add('js');</script>
+  <style>
+    :root { --bg:#ffffff; --soft-bg:#f6f7f9; --card:#ffffff; --line:#e7e9ee; --text:#14181f; --muted:#5b6573; --teal:#0d9488; --teal-d:#0b7c72; --ink:#0f172a; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; }
+    a { color:inherit; text-decoration:none; }
+    .wrap { max-width:1120px; margin:0 auto; padding:0 20px; }
+    .narrow { max-width:900px; }
+    .btn { display:inline-block; padding:14px 26px; border-radius:12px; font-weight:800; font-size:15px; transition:transform .15s, box-shadow .2s, background .2s; }
+    .btn-primary { background:var(--teal); color:#fff; box-shadow:0 8px 24px -8px rgba(13,148,136,.5); }
+    .btn-primary:hover { transform:translateY(-2px); background:var(--teal-d); }
+    .btn-ghost { border:1.5px solid rgba(255,255,255,.22); color:#fff; }
+    .btn-ghost:hover { border-color:#fff; background:rgba(255,255,255,.06); }
+    .btn-white { background:#fff; color:var(--teal-d); }
+
+    header { position:sticky; top:0; z-index:50; background:rgba(8,9,11,.72); backdrop-filter:blur(14px) saturate(160%); border-bottom:1px solid rgba(255,255,255,.07); }
+    .nav { display:flex; align-items:center; justify-content:space-between; height:66px; }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:900; font-size:19px; letter-spacing:-.02em; color:#f4f6f8; }
+    .brand b { color:#c2c9d2; }
+    .nav-links { display:flex; align-items:center; gap:24px; font-size:14.5px; color:#9aa2ab; font-weight:600; }
+    .nav-links a:hover { color:#fff; }
+    @media (max-width:760px) { .nav-links a:not(.btn) { display:none; } }
+
+    /* Hero scuro con aurora */
+    .hero { position:relative; overflow:hidden; background:#06070a; color:#fff; text-align:center; padding:84px 0 68px; }
+    .hero > .wrap { position:relative; z-index:2; }
+    .hero-fx { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+    .hero-fx span { position:absolute; border-radius:50%; filter:blur(72px); mix-blend-mode:screen; opacity:.5; animation:aurora 24s ease-in-out infinite; }
+    .hero-fx .b1 { width:52vw; max-width:640px; aspect-ratio:1; background:radial-gradient(circle, #1f9f93, transparent 68%); top:-16%; left:3%; }
+    .hero-fx .b2 { width:48vw; max-width:560px; aspect-ratio:1; background:radial-gradient(circle, #4a5bd6, transparent 68%); top:-6%; right:2%; animation-delay:-8s; }
+    .hero-fx .b3 { width:42vw; max-width:540px; aspect-ratio:1; background:radial-gradient(circle, #7a4bd6, transparent 68%); bottom:-22%; left:38%; animation-delay:-16s; }
+    @keyframes aurora { 0%,100% { transform:translate(0,0) scale(1); } 33% { transform:translate(5vw,4vh) scale(1.18); } 66% { transform:translate(-4vw,3vh) scale(.88); } }
+    @media (prefers-reduced-motion: reduce) { .hero-fx span { animation:none; } }
+    .hero-bloom { position:absolute; z-index:1; top:8%; left:50%; transform:translateX(-50%); width:min(680px,82vw); height:300px; pointer-events:none; background:radial-gradient(closest-side, rgba(210,224,255,.26), rgba(140,170,255,.06) 50%, transparent 72%); filter:blur(22px); }
+    .crumb { display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; letter-spacing:.04em; color:#c9d0d8; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); padding:7px 15px; border-radius:999px; margin-bottom:24px; }
+    .crumb .dot { width:7px; height:7px; border-radius:50%; background:#5fb9ae; }
+    .hero h1 { font-size:clamp(32px,5.6vw,56px); font-weight:900; letter-spacing:-.03em; line-height:1.12; max-width:820px; margin:0 auto 16px; padding-bottom:.12em;
+      background:linear-gradient(180deg, #ffffff 0%, #dfe3e8 58%, #b6bbc2 100%); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
+    .hero h1 .hl { background:linear-gradient(120deg, #34d0b6, #5fb9ae 50%, #7fd4c8); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
+    .hero .sub { color:#aeb6c0; font-size:clamp(16px,2.3vw,20px); max-width:640px; margin:0 auto 26px; }
+    .hero .sub b { color:#e9ecef; font-weight:700; }
+    .micro { margin-top:16px; font-size:13.5px; color:#7e8893; }
+    /* Cattura email inline nell'hero */
+    .hero-form { display:flex; gap:10px; max-width:480px; margin:0 auto; }
+    @media (max-width:480px) { .hero-form { flex-direction:column; } }
+    .hero-form .js-wl-email { flex:1; background:rgba(255,255,255,.08); border:1.5px solid rgba(255,255,255,.18); border-radius:12px; padding:15px 18px; color:#fff; font-size:16px; outline:none; transition:border-color .15s; }
+    .hero-form .js-wl-email:focus { border-color:var(--teal); background:rgba(255,255,255,.12); }
+    .hero-form .js-wl-email::placeholder { color:#8a929c; }
+    .hero-form .btn { border:none; cursor:pointer; white-space:nowrap; }
+    .hero-msg { min-height:22px; margin-top:14px; font-weight:700; font-size:15px; color:#5fb9ae; }
+
+    section { padding:58px 0; }
+    .eyebrow { color:var(--teal-d); font-weight:800; font-size:13px; letter-spacing:.08em; text-transform:uppercase; text-align:center; margin-bottom:12px; }
+    h2 { font-size:clamp(25px,4vw,38px); font-weight:900; letter-spacing:-.025em; color:var(--ink); text-align:center; max-width:760px; margin:0 auto 14px; }
+    .lead { color:var(--muted); text-align:center; max-width:640px; margin:0 auto 44px; font-size:17px; }
+
+    /* Risposta diretta alla domanda (stile featured snippet) */
+    .answer { background:#eefaf7; border:1px solid #cdeae6; border-left:4px solid var(--teal); border-radius:16px; padding:24px 26px; max-width:820px; margin:0 auto; }
+    .answer .answer-label { color:var(--teal-d); font-weight:800; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+    .answer .answer-text { color:var(--ink); font-size:17.5px; line-height:1.6; }
+    .answer .answer-text b { font-weight:800; }
+    .prob { background:var(--soft-bg); border:1px solid var(--line); border-radius:18px; padding:30px; max-width:820px; margin:0 auto; }
+    .prob ul { list-style:none; display:grid; gap:14px; }
+    .prob li { display:flex; gap:13px; align-items:flex-start; font-size:16px; color:var(--muted); }
+    .prob li b { color:var(--ink); font-weight:700; }
+    .x { flex:0 0 22px; height:22px; border-radius:7px; background:#fdecea; color:#e05c4b; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:13px; margin-top:1px; }
+
+    .feat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+    @media (max-width:820px) { .feat-grid { grid-template-columns:1fr; } }
+    .feat { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:26px; transition:transform .15s, box-shadow .2s; }
+    .feat:hover { transform:translateY(-3px); box-shadow:0 16px 40px -20px rgba(15,23,42,.3); }
+    .feat .ico { width:46px; height:46px; border-radius:12px; background:#e6f5f3; color:var(--teal-d); display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:16px; }
+    .feat h3 { font-size:18px; font-weight:800; color:var(--ink); margin-bottom:8px; }
+    .feat p { color:var(--muted); font-size:15px; }
+
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; text-align:center; max-width:820px; margin:0 auto; }
+    @media (max-width:620px) { .stats { grid-template-columns:1fr; } }
+    .stat { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:28px 20px; }
+    .stat .n { font-size:40px; font-weight:900; color:var(--teal); letter-spacing:-.03em; }
+    .stat .l { color:var(--muted); font-size:14px; margin-top:6px; }
+
+    .method { background:var(--soft-bg); border:1px solid var(--line); border-radius:16px; padding:24px 26px; max-width:820px; margin:0 auto; }
+    .method h3 { font-size:16px; font-weight:900; color:var(--ink); margin-bottom:12px; }
+    .method ul { list-style:none; display:grid; gap:10px; }
+    .method li { font-size:15px; color:var(--muted); padding-left:20px; position:relative; }
+    .method li::before { content:"✓"; position:absolute; left:0; top:0; color:var(--teal); font-weight:900; }
+
+    .faq { max-width:760px; margin:0 auto; }
+    details { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:12px; }
+    details summary { font-weight:800; font-size:16px; color:var(--ink); cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    details summary::-webkit-details-marker { display:none; }
+    details summary::after { content:'+'; color:var(--teal); font-size:24px; line-height:1; }
+    details[open] summary::after { content:'\2212'; }
+    details p { color:var(--muted); margin-top:12px; font-size:15px; }
+
+    .final { text-align:center; background:linear-gradient(135deg, #0d9488, #0b7c72); border-radius:28px; padding:56px 24px; color:#fff; margin:10px 0 44px; }
+    .final h2 { color:#fff; } .final p { color:rgba(255,255,255,.86); max-width:520px; margin:0 auto 20px; font-size:16.5px; }
+    .wl-form { display:flex; gap:10px; max-width:440px; margin:6px auto 0; }
+    @media (max-width:480px) { .wl-form { flex-direction:column; } }
+    .wl-form .js-wl-email { flex:1; border:none; border-radius:12px; padding:15px 16px; font-size:16px; outline:none; background:#fff; color:var(--ink); box-shadow:0 8px 24px -12px rgba(0,0,0,.4); }
+    .wl-form .btn { border:none; cursor:pointer; white-space:nowrap; }
+    .wl-msg { color:#fff; font-weight:700; font-size:14px; margin-top:14px; min-height:20px; }
+    .wl-consent { color:rgba(255,255,255,.8); font-size:12.5px; margin-top:12px; }
+    .wl-consent a { color:#fff; text-decoration:underline; }
+
+    footer { border-top:1px solid var(--line); padding:40px 0 90px; color:var(--muted); font-size:14px; }
+    .foot { display:flex; justify-content:space-between; flex-wrap:wrap; gap:18px; align-items:flex-end; }
+    .foot nav { display:flex; gap:20px; flex-wrap:wrap; }
+    .foot a:hover { color:var(--ink); }
+
+    .sticky-cta { display:none; }
+    @media (max-width:760px) {
+      .sticky-cta { display:block; position:fixed; left:12px; right:12px; bottom:12px; z-index:60; background:var(--teal); color:#fff; font-weight:800; font-size:16px; padding:15px 20px; border-radius:14px; box-shadow:0 12px 30px -8px rgba(13,148,136,.6); text-align:center; transition:opacity .2s; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap nav">
+      <a href="/" class="brand" aria-label="HQVault home">HQ<b>Vault</b></a>
+      <nav class="nav-links" aria-label="Navigazione principale">
+        <a href="/#funzioni">Funzioni</a>
+        <a href="/#faq">FAQ</a>
+        <a href="#join" class="btn btn-ghost" style="padding:9px 18px;">Entra in lista</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-fx" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
+      <div class="hero-bloom" aria-hidden="true"></div>
+      <div class="wrap">
+        <span class="crumb"><span class="dot"></span> Valore di mercato · reseller</span>
+        <h1>Quanto vale quello che hai?<br><span class="hl">E a quanto rivenderlo.</span></h1>
+        <p class="sub">Basta cercare i prezzi a mano. HQVault <b>riconosce il prodotto</b>, aggancia il <b>valore di mercato</b> e ti dice il <b>profitto reale</b> — così compri e vendi al prezzo giusto.</p>
+        <form class="js-wl-form hero-form" data-src="quanto-vale" novalidate>
+          <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
+          <button class="js-wl-btn btn btn-primary" type="submit">Scoprilo per primo →</button>
+        </form>
+        <p class="js-wl-msg hero-msg" role="status"></p>
+        <p class="micro">Lascia l'email: ti avvisiamo al lancio · niente spam · valori dal catalogo ufficiale</p>
+      </div>
+    </section>
+
+    <!-- RISPOSTA DIRETTA alla domanda "quanto vale / a quanto rivendere" -->
+    <section style="padding-top:44px; padding-bottom:8px">
+      <div class="wrap narrow">
+        <div class="answer">
+          <p class="answer-label">La risposta veloce</p>
+          <p class="answer-text">Per sapere <b>quanto vale</b> una sneaker — e a quanto rivenderla — guarda i prezzi <b>VENDUTI</b> (non quelli richiesti) per lo stesso <b>modello, taglia e condizione</b>: su <b>StockX</b> per l'hype, sui <b>venduti di eBay</b> per il resto. Il valore giusto è la media recente dei venduti, meno le commissioni. <b>HQVault lo fa al posto tuo</b>: riconosce il pezzo e aggancia il valore di mercato, senza cercare a mano.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROBLEMA -->
+    <section style="padding-top:36px">
+      <div class="wrap">
+        <p class="eyebrow">Il problema</p>
+        <h2>La domanda che ti fai ogni giorno: "vale? e quanto?"</h2>
+        <p class="lead">Prima di comprare e prima di vendere, la risposta ti serve subito — non dopo 10 minuti di ricerche.</p>
+        <div class="prob">
+          <ul>
+            <li><span class="x">✕</span><span><b>Prezzi a memoria:</b> tiri a indovinare e lasci soldi sul piatto (o resti col pezzo invenduto).</span></li>
+            <li><span class="x">✕</span><span><b>Comps a mano su eBay/StockX:</b> aprire, cercare, filtrare i venduti… per ogni singolo pezzo.</span></li>
+            <li><span class="x">✕</span><span><b>Non sai il valore del tuo magazzino:</b> quanto vale davvero lo stock, oggi?</span></li>
+            <li><span class="x">✕</span><span><b>Margine nel dubbio:</b> dopo fee e spedizione, ci hai guadagnato o no?</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SOLUZIONE -->
+    <section id="come" style="background:var(--soft-bg); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+      <div class="wrap">
+        <p class="eyebrow">Con HQVault</p>
+        <h2>Il valore, senza cercarlo a mano</h2>
+        <p class="lead">Tre cose, in automatico, dal telefono.</p>
+        <div class="feat-grid">
+          <article class="feat"><div class="ico" aria-hidden="true">🔎</div><h3>Riconosce e valuta</h3><p>Aggiungi dal catalogo o con una foto: HQ riconosce il modello e aggancia il <b>valore di mercato</b> (StockX per sneaker e streetwear). Niente comps a mano.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">💰</div><h3>Valore del magazzino</h3><p>Vedi in tempo reale <b>quanto vale il tuo stock</b> e quanto incasseresti liquidandolo subito.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">📈</div><h3>Profitto reale</h3><p>A ogni vendita, <b>profitto e margine</b> calcolati con fee e spedizione già sottratte. Sai sempre se hai guadagnato.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- CREDIBILITÀ / DATI -->
+    <section>
+      <div class="wrap">
+        <p class="eyebrow">Perché conta</p>
+        <h2>Sul valore giusto si gioca tutto il margine</h2>
+        <p class="lead">Dati reali di mercato: piccoli errori di prezzo, grandi differenze di guadagno.</p>
+        <div class="stats">
+          <div class="stat"><div class="n">+54%</div><div class="l">rincaro medio sul retail per le Air Jordan sul resell</div></div>
+          <div class="stat"><div class="n">+86%</div><div class="l">premio della Air Jordan 1, la sneaker più rivenduta</div></div>
+          <div class="stat"><div class="n">47%</div><div class="l">delle release va davvero a profitto: sbagliare prezzo costa</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- METODO / TRASPARENZA -->
+    <section style="background:var(--soft-bg); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+      <div class="wrap">
+        <p class="eyebrow">Come funziona il valore</p>
+        <h2>Numeri veri, non inventati</h2>
+        <div class="method" style="margin-top:22px">
+          <h3>Da dove arriva il valore</h3>
+          <ul>
+            <li>Per sneaker e streetwear il valore di mercato arriva dal <b>catalogo ufficiale (StockX)</b> — la foto pulita si aggancia da sola.</li>
+            <li>Il valore del magazzino è la somma aggiornata dei tuoi pezzi; il profitto è: prezzo di vendita − acquisto − commissioni − spedizione.</li>
+            <li>È una <b>stima di mercato</b> per decidere meglio, non una promessa di vendita: il prezzo finale lo fai tu.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <div class="wrap">
+        <p class="eyebrow">Domande frequenti</p>
+        <h2>Le domande sul valore</h2>
+        <div class="faq" style="margin-top:24px">
+          <details open><summary>Come faccio a sapere quanto vale una sneaker?</summary><p>Aggiungi il modello dal catalogo o con una foto: HQVault lo riconosce e mostra il valore di mercato aggiornato (fonte StockX per sneaker e streetwear), così sai subito a quanto rivenderlo.</p></details>
+          <details><summary>Da dove prendete i prezzi?</summary><p>Dal catalogo ufficiale integrato (StockX per sneaker/streetwear). Sono valori di mercato reali, non stime inventate da un'IA.</p></details>
+          <details><summary>Posso sapere quanto vale tutto il mio magazzino?</summary><p>Sì: HQVault somma il valore dei tuoi pezzi in tempo reale e ti mostra anche quanto incasseresti liquidando subito lo stock.</p></details>
+          <details><summary>Mi dice se ci sto guadagnando?</summary><p>Sì. A ogni vendita calcola profitto e margine con commissioni e spedizione già sottratte: niente più dubbi sul guadagno reale.</p></details>
+          <details><summary>Funziona dal telefono?</summary><p>Sì, è un'app installabile (PWA): controlli valore, magazzino e profitti ovunque, anche mentre sei a comprare.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA FINALE -->
+    <section>
+      <div class="wrap narrow">
+        <div class="final" id="join">
+          <h2>Scopri quanto vale, per primo</h2>
+          <p>HQVault sta arrivando. Lascia l'email e ti avvisiamo appena l'app è pronta.</p>
+          <form class="js-wl-form wl-form" data-src="quanto-vale-bottom" novalidate>
+            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
+            <button class="js-wl-btn btn btn-white" type="submit">Avvisami</button>
+          </form>
+          <p class="js-wl-msg wl-msg" role="status"></p>
+          <p class="wl-consent">Un solo avviso al lancio · niente spam. <a href="/privacy">Privacy</a></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <div>
+        <div class="brand" style="margin-bottom:8px; font-size:17px; color:var(--ink);">HQ<b style="color:var(--muted)">Vault</b></div>
+        <span>© 2026 HQVault — Software gestionale per reseller.</span>
+      </div>
+      <nav aria-label="Link del sito">
+        <a href="/#funzioni">Funzioni</a>
+        <a href="/#faq">FAQ</a>
+        <a href="/soluzioni/magazzino">Magazzino</a>
+        <a href="/soluzioni/quanto-costa-spedizione">Spedizioni</a>
+      </nav>
+    </div>
+  </footer>
+
+  <a href="#join" class="sticky-cta">📩 Entra in lista d'attesa →</a>
+
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+    {"@type":"Question","name":"Come faccio a sapere quanto vale una sneaker?","acceptedAnswer":{"@type":"Answer","text":"Aggiungi il modello dal catalogo o con una foto: HQVault lo riconosce e mostra il valore di mercato aggiornato (fonte StockX per sneaker e streetwear), così sai a quanto rivenderlo."}},
+    {"@type":"Question","name":"Da dove prendete i prezzi?","acceptedAnswer":{"@type":"Answer","text":"Dal catalogo ufficiale integrato (StockX per sneaker e streetwear): valori di mercato reali, non stime inventate."}},
+    {"@type":"Question","name":"Mi dice se ci sto guadagnando?","acceptedAnswer":{"@type":"Answer","text":"Sì: a ogni vendita calcola profitto e margine con commissioni e spedizione già sottratte."}}
+  ]}
+  </script>
+  <script>
+    try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=valore') : fetch('/api/hit?p=valore'); } catch (e) {}
+    (function () {
+      var RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      document.querySelectorAll('.js-wl-form').forEach(function (form) {
+        var emailEl = form.querySelector('.js-wl-email');
+        var btn = form.querySelector('.js-wl-btn');
+        var msg = form.parentNode.querySelector('.js-wl-msg');
+        var label = btn ? btn.textContent : 'Invia';
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var email = (emailEl.value || '').trim().toLowerCase();
+          if (!RE.test(email)) { if (msg) { msg.style.color = '#e08a6a'; msg.textContent = 'Inserisci un\'email valida.'; } return; }
+          btn.disabled = true; btn.textContent = 'Invio…'; if (msg) msg.textContent = '';
+          fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: form.getAttribute('data-src') || 'quanto-vale' }) })
+            .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+            .then(function (d) {
+              form.style.display = 'none';
+              if (msg) { msg.style.color = ''; msg.textContent = (d && d.already) ? '✓ Sei già in lista: ti avviseremo al lancio.' : '✓ Sei in lista! Ti scriviamo al lancio.'; }
+            })
+            .catch(function () { btn.disabled = false; btn.textContent = label; if (msg) { msg.style.color = '#e08a6a'; msg.textContent = 'Qualcosa è andato storto, riprova.'; } });
+        });
+      });
+      var sticky = document.querySelector('.sticky-cta'), join = document.getElementById('join');
+      if (sticky && join && 'IntersectionObserver' in window) {
+        new IntersectionObserver(function (es) { es.forEach(function (en) { sticky.style.opacity = en.isIntersecting ? '0' : '1'; sticky.style.pointerEvents = en.isIntersecting ? 'none' : 'auto'; }); }, { threshold: .2 }).observe(join);
+      }
+    })();
+  </script>
+</body>
+</html>

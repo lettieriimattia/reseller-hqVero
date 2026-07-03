@@ -12,7 +12,7 @@ import { logger } from '../utils/logger';
 const router = Router();
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const ALLOWED_PATHS = new Set(['home', 'magazzino', 'spedizione', 'waitlist', 'privacy']);
+const ALLOWED_PATHS = new Set(['home', 'magazzino', 'spedizione', 'valore', 'waitlist', 'privacy']);
 
 // Da dove arriva il visitatore (host grezzo → etichetta semplice), senza tracciare la persona.
 function refLabel(referrer?: string): string {
