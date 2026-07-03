@@ -5156,8 +5156,8 @@ export default function App() {
               <button onClick={() => { setPpFrom(personalPeriod.from || ''); setPpTo(personalPeriod.to || ''); setPeriodPickerOpen(true); }}
                 className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group lg:col-span-2">
                 <p className="sys-label mb-1.5 flex items-center gap-1.5"><Wallet size={10} /> {t('dash.personal')} <ChevronDown size={11} className="text-[var(--text-faint)] group-hover:text-[var(--text-soft)]" /></p>
-                <p className="text-xl lg:text-2xl font-extrabold num text-[var(--teal)]">{periodProfit.toFixed(0)}€</p>
-                <p className="text-[10px] text-[var(--text-faint)] mt-1 truncate capitalize">{periodLabel}</p>
+                <p className="text-2xl lg:text-3xl font-extrabold num text-[var(--teal)]">{periodProfit.toFixed(0)}€</p>
+                <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] mt-1 truncate capitalize font-semibold">{periodLabel}</p>
               </button>
 
               {/* NOTE / TASK — desktop: colonna ALTA a destra (row-span-2). */}
@@ -5189,17 +5189,17 @@ export default function App() {
               <section className="col-span-2 lg:col-span-2 flex flex-col bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
                 <div className="flex items-start justify-between gap-2 mb-3 flex-wrap">
                   <div className="min-w-0">
-                    <h3 className="font-semibold">{t('an.salesTrend')}</h3>
+                    <h3 className="text-lg lg:text-xl font-bold">{t('an.salesTrend')}</h3>
                     {/* Legenda subito sotto il titolo (colori allineati al grafico). */}
-                    <div className="flex items-center gap-4 mt-1">
-                      <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-[3px] rounded-full inline-block" style={{ background: '#8a78d9' }} />{t('an.revenue')}</div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-soft)]"><span className="w-3 h-[3px] rounded-full inline-block" style={{ background: '#6b54c6' }} />{t('dash.profit')}</div>
+                    <div className="flex items-center gap-4 mt-1.5">
+                      <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-soft)]"><span className="w-4 h-[3px] rounded-full inline-block" style={{ background: '#8a78d9' }} />{t('an.revenue')}</div>
+                      <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-soft)]"><span className="w-4 h-[3px] rounded-full inline-block" style={{ background: '#6b54c6' }} />{t('dash.profit')}</div>
                     </div>
                   </div>
                   {/* Il periodo si sceglie dalla card "Personal": qui mostro solo l'etichetta (tap → selettore). */}
                   <button onClick={() => { setPpFrom(personalPeriod.from || ''); setPpTo(personalPeriod.to || ''); setPeriodPickerOpen(true); }}
-                    className="flex items-center gap-1.5 bg-[var(--surface-2)] px-3 py-1.5 rounded-xl border border-[var(--border-2)] text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] shrink-0 capitalize">
-                    {periodLabel} <ChevronDown size={13} />
+                    className="flex items-center gap-1.5 bg-[var(--surface-2)] px-3.5 py-2 rounded-xl border border-[var(--border-2)] text-[13px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] shrink-0 capitalize">
+                    {periodLabel} <ChevronDown size={14} />
                   </button>
                 </div>
                 {trendData.length === 0 ? (
