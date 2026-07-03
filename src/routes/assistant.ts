@@ -534,53 +534,51 @@ function summarizeToolResult(name: string, result: any): string {
 }
 
 // POST /api/assistant/message — { messages: [{role:'user'|'assistant', content}] }
+// Loop tool-calling (max 3 round) RIUSABILE: dall'app e da Telegram. Ritorna testo + azioni.
+export async function runAssistant(history: { role: string; content: string }[], userId: string): Promise<{ reply: string; actions: any[] }> {
+  const msgs: any[] = [{ role: 'system', content: SYSTEM_PROMPT }, ...history];
+  const actions: any[] = [];
+  const ctx = { userId };
+  for (let round = 0; round < 3; round++) {
+    let m: any;
+    try {
+      m = await groqAssistantChat({ messages: msgs, tools: TOOLS });
+    } catch (err: any) {
+      const failed = err?.status === 400 ? parseFailedToolCall(err) : null;
+      if (!failed) throw err;
+      const result = await executeTool(failed.name, failed.args, ctx);
+      actions.push({ tool: failed.name, args: failed.args, result });
+      return { reply: summarizeToolResult(failed.name, result), actions };
+    }
+    if (!m) break;
+    if (m.tool_calls && m.tool_calls.length) {
+      msgs.push({ role: 'assistant', content: m.content || '', tool_calls: m.tool_calls });
+      for (const tc of m.tool_calls) {
+        let args: any = {};
+        try { args = JSON.parse(tc.function?.arguments || '{}'); } catch {}
+        const result = await executeTool(tc.function?.name, args, ctx);
+        actions.push({ tool: tc.function?.name, args, result });
+        msgs.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
+      }
+      continue;
+    }
+    return { reply: m.content || '', actions };
+  }
+  return { reply: 'Fatto.', actions };
+}
+
 // Esegue il loop di tool-calling (max 3 round) e ritorna la risposta finale + azioni.
 router.post('/message', async (req: AuthRequest, res: Response) => {
   if (!isGroqConfigured()) return res.status(503).json({ error: 'Assistente non disponibile (Groq non configurato).' });
   try {
     const clientMessages = Array.isArray(req.body?.messages) ? req.body.messages : [];
-    // Igienizza: solo role/content testuali, ultimi 12 messaggi.
     const history = clientMessages
       .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
       .slice(-12)
       .map((m: any) => ({ role: m.role, content: m.content.slice(0, 2000) }));
     if (!history.length) return res.status(400).json({ error: 'Messaggio vuoto.' });
-
-    const msgs: any[] = [{ role: 'system', content: SYSTEM_PROMPT }, ...history];
-    const actions: any[] = [];
-    const ctx = { userId: req.user!.userId };
-
-    for (let round = 0; round < 3; round++) {
-      let m: any;
-      try {
-        m = await groqAssistantChat({ messages: msgs, tools: TOOLS });
-      } catch (err: any) {
-        // Groq ha rifiutato la tool-call (validazione schema): eseguila a mano e rispondi.
-        const failed = err?.status === 400 ? parseFailedToolCall(err) : null;
-        if (!failed) throw err;
-        const result = await executeTool(failed.name, failed.args, ctx);
-        actions.push({ tool: failed.name, args: failed.args, result });
-        return res.json({ reply: summarizeToolResult(failed.name, result), actions });
-      }
-      if (!m) break;
-
-      if (m.tool_calls && m.tool_calls.length) {
-        msgs.push({ role: 'assistant', content: m.content || '', tool_calls: m.tool_calls });
-        for (const tc of m.tool_calls) {
-          let args: any = {};
-          try { args = JSON.parse(tc.function?.arguments || '{}'); } catch {}
-          const result = await executeTool(tc.function?.name, args, ctx);
-          actions.push({ tool: tc.function?.name, args, result });
-          msgs.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
-        }
-        continue; // lascia che il modello risponda con i risultati dei tool
-      }
-
-      // Risposta finale (niente altri tool)
-      return res.json({ reply: m.content || '', actions });
-    }
-    // Esauriti i round: ultima risposta best-effort
-    return res.json({ reply: 'Fatto.', actions });
+    const out = await runAssistant(history, req.user!.userId);
+    return res.json(out);
   } catch (e: any) {
     logger.error('POST /assistant/message', { err: e.message });
     res.status(500).json({ error: 'Errore assistente' });

@@ -44,6 +44,19 @@ export async function setTelegramWebhook(): Promise<void> {
   } catch (e: any) { logger.warn('Errore setWebhook Telegram', { err: e.message }); }
 }
 
+// Invia a UNA chat specifica (per rispondere a chi ha scritto un comando dal bot).
+export async function sendTelegramTo(chatId: string | number, text: string): Promise<boolean> {
+  if (!TG_TOKEN || !chatId) return false;
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+    });
+    const d: any = await r.json().catch(() => ({}));
+    return !!(r.ok && d?.ok);
+  } catch { return false; }
+}
+
 export async function sendTelegram(text: string): Promise<boolean> {
   if (!isTelegramConfigured()) {
     logger.warn('Telegram NON configurato (TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID mancanti su Render) → fallback email');
