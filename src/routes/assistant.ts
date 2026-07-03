@@ -76,12 +76,14 @@ const TOOLS = [
           data_acquisto: { type: 'string', description: 'Quando ho comprato il lotto (facoltativo). Passa la data COSÌ COME DETTA: "ieri", "12 giugno", "10/06". NON convertirla tu.' },
           articoli: {
             type: 'array',
-            description: 'Elenco dei pezzi del lotto. Ogni pezzo: {nome, taglia?}. Il costo si divide in parti uguali.',
+            description: 'Righe del lotto. Ogni riga: {nome, taglia?, quantita?, fornitore?}. "quantita" = quante paia IDENTICHE di quella riga (es. "20 paia di Jordan 4" → quantita 20). Se una parte è di un fornitore e una parte di un altro, crea DUE righe (es. 10 da Luca + 10 da Marco). Il costo totale si divide su TUTTI i pezzi.',
             items: {
               type: 'object',
               properties: {
                 nome: { type: 'string', description: 'Nome/modello del pezzo' },
                 taglia: { type: 'string', description: 'Taglia (facoltativo)' },
+                quantita: { type: ['number', 'string'], description: 'Quante paia IDENTICHE di questa riga (default 1)' },
+                fornitore: { type: 'string', description: 'Da chi arriva questa riga (facoltativo)' },
               },
               required: ['nome'],
             },
@@ -218,6 +220,8 @@ Regole:
 - Per INSERIRE un prodotto usa "aggiungi_prodotto" con i dati che ti dà; se manca la taglia o il prezzo va bene (li metterà dopo).
 - Se l'utente aggiunge un articolo IDENTICO a uno che ha già (stessa marca+nome+taglia), aggiungilo lo stesso: il sistema riconosce il duplicato e AUMENTA lo stock (non serve dire che esiste già).
 - Se l'utente dice un numero di unità uguali (es. "aggiungi 4 Jordan 4 uguali"), imposta "quantita".
+- Se l'utente indica FORNITORI o DATE DIVERSI per unità diverse dello STESSO prodotto (es. "aggiungi 2 Amiri taglia M, uno da Riccardo e l'altro da Marco"), NON fare una sola chiamata con quantita 2: fai UNA chiamata "aggiungi_prodotto" PER ogni fornitore, con la quantità giusta per ciascuno (qui: 1 con fornitore Riccardo, 1 con fornitore Marco). Idem se cambia la data.
+- Nel "crea_lotto": "20 paia di X" → una riga con quantita 20; se una parte del lotto è di un fornitore e una parte di un altro ("metà a Luca, metà a Marco"), spezza in due righe con le rispettive quantità e "fornitore". Il prezzo_totale è quello di TUTTO il lotto: il sistema divide sui pezzi totali.
 - Per MODIFICARE un articolo già in magazzino (prezzo, taglia, condizione, categoria) usa "modifica_prodotto".
 - Per VENDERE un articolo già in magazzino usa "vendi_prodotto" col prezzo di vendita (e quantità se più di una).
 - FORNITORE e DATA in ACQUISTO: se l'utente dice DA CHI ha comprato ("me le ha vendute Marco", "comprate da Luca", "bought from Marco", "from @tizio") passa "fornitore". Se dice QUANDO ("ieri", "il 12 giugno", "3 giorni fa", "10/06", "yesterday", "June 12", "3 days ago") passa "data_acquisto". Vale sia per "aggiungi_prodotto" che per "crea_lotto".
@@ -435,36 +439,43 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
     if (name === 'crea_lotto') {
       const lotName = String(args.nome_lotto || '').trim();
       const items: any[] = Array.isArray(args.articoli) ? args.articoli : [];
-      const valid = items.filter(it => it && String(it.nome || '').trim());
+      // Ogni riga può avere una QUANTITÀ (es. "20 paia") → la espando in N pezzi. Il fornitore
+      // può essere per riga (10 da Luca + 10 da Marco = due righe) o unico per tutto il lotto.
+      const lotSupplier = (args.fornitore ? String(args.fornitore).trim() : '') || null;
+      const rows = items
+        .filter(it => it && String(it.nome || '').trim())
+        .map(it => ({
+          nome: String(it.nome).trim(),
+          size: (it.taglia ? String(it.taglia) : '').trim() || '—',
+          qty: Math.min(Math.max(Math.floor(Number(it.quantita) || 1), 1), 500),
+          supplier: (it.fornitore ? String(it.fornitore).trim() : '') || lotSupplier,
+        }));
       if (!lotName) return { error: 'Serve il nome del lotto.' };
-      if (!valid.length) return { error: 'Serve almeno un articolo nel lotto.' };
-      const quotaErr = await checkProductQuota(ctx.userId, valid.length);
+      if (!rows.length) return { error: 'Serve almeno un articolo nel lotto.' };
+      const totalPieces = rows.reduce((a, r) => a + r.qty, 0); // pezzi TOTALI (non righe)
+      const quotaErr = await checkProductQuota(ctx.userId, totalPieces);
       if (quotaErr) return { error: 'Hai raggiunto il limite di prodotti del tuo piano.' };
       const warehouseId = await findTargetWarehouse(ctx.userId);
       if (!warehouseId) return { error: 'Nessun magazzino trovato per l\'utente.' };
       const category = await defaultCategory(ctx.userId, args.categoria);
       const total = Math.max(Number(args.prezzo_totale) || 0, 0);
-      const unit = Math.round((total / valid.length) * 100) / 100; // costo diviso in parti uguali
-      const lotSupplier = (args.fornitore ? String(args.fornitore).trim() : '') || null;
+      const unit = Math.round((total / totalPieces) * 100) / 100; // costo diviso su TUTTI i pezzi
       const lotBoughtOn = parseItDate(args.data_acquisto);
       let withPhoto = 0;
-      for (const it of valid) {
-        const nome = String(it.nome).trim();
-        const size = (it.taglia ? String(it.taglia) : '').trim() || '—';
-        const found = await findCatalogPhoto(nome).catch(() => ({ image: null as string | null }));
-        if (found.image) withPhoto++;
-        await prisma.product.create({
-          data: {
-            category, brand: '', name: nome, size, condition: '—',
-            purchasePrice: unit, status: 'IN STOCK', userId: ctx.userId, warehouseId,
-            lotName, notes: `Lotto "${lotName}"`,
-            supplier: lotSupplier,
-            photos: found.image ? JSON.stringify([found.image]) : null,
-            ...(lotBoughtOn ? { createdAt: lotBoughtOn } : {}),
-          },
-        });
+      for (const r of rows) {
+        const found = await findCatalogPhoto(r.nome).catch(() => ({ image: null as string | null }));
+        const photos = found.image ? JSON.stringify([found.image]) : null;
+        if (found.image) withPhoto += r.qty;
+        const base: any = {
+          category, brand: '', name: r.nome, size: r.size, condition: '—',
+          purchasePrice: unit, status: 'IN STOCK', userId: ctx.userId, warehouseId,
+          lotName, notes: `Lotto "${lotName}"`, supplier: r.supplier, photos,
+          ...(lotBoughtOn ? { createdAt: lotBoughtOn } : {}),
+        };
+        if (r.qty > 1) await prisma.product.createMany({ data: Array.from({ length: r.qty }, () => ({ ...base })) });
+        else await prisma.product.create({ data: base });
       }
-      return { ok: true, lotto: lotName, pezzi: valid.length, prezzo_totale: total, costo_cad: unit, foto_trovate: withPhoto, fornitore: lotSupplier || undefined, data_acquisto: lotBoughtOn ? lotBoughtOn.toLocaleDateString('it-IT') : undefined };
+      return { ok: true, lotto: lotName, pezzi: totalPieces, righe: rows.length, prezzo_totale: total, costo_cad: unit, foto_trovate: withPhoto, data_acquisto: lotBoughtOn ? lotBoughtOn.toLocaleDateString('it-IT') : undefined };
     }
 
     if (name === 'modifica_prodotto') {
@@ -575,6 +586,10 @@ function summarizeToolResult(name: string, result: any): string {
     const from = result.fornitore ? ` da ${result.fornitore}` : '';
     const when = result.data_acquisto ? ` (${result.data_acquisto})` : '';
     return `✅ Aggiunto: ${result.aggiunto}${qty}${taglia}${from}${when}${result.foto ? ' (con foto)' : ''}${stock}.`;
+  }
+  if (name === 'crea_lotto' && result?.ok) {
+    const righe = result.righe > 1 ? ` (${result.righe} righe)` : '';
+    return `📦 Lotto creato: ${result.lotto} — ${result.pezzi} pezzi${righe}, ${result.costo_cad}€ cad.`;
   }
   if (name === 'modifica_prodotto' && result?.ok) {
     const parti: string[] = [];
