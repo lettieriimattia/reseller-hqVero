@@ -534,11 +534,26 @@ function summarizeToolResult(name: string, result: any): string {
 }
 
 // POST /api/assistant/message — { messages: [{role:'user'|'assistant', content}] }
+// Tool che MODIFICANO i dati (vanno confermati prima di eseguire, quando richiesto es. da Telegram).
+export const MUTATING_TOOLS = new Set(['aggiungi_prodotto', 'crea_lotto', 'modifica_prodotto', 'vendi_prodotto', 'elimina_prodotto', 'aggiungi_task']);
+export { executeTool };
+
 // Loop tool-calling (max 3 round) RIUSABILE: dall'app e da Telegram. Ritorna testo + azioni.
-export async function runAssistant(history: { role: string; content: string }[], userId: string): Promise<{ reply: string; actions: any[] }> {
+// interceptTool: se fornito e ritorna un valore ≠ undefined, quel valore è usato AL POSTO
+// dell'esecuzione reale (serve al flusso Telegram "proponi → conferma": le azioni che modificano
+// non vengono eseguite subito, ma proposte).
+export async function runAssistant(
+  history: { role: string; content: string }[],
+  userId: string,
+  interceptTool?: (name: string, args: any) => Promise<any> | any,
+): Promise<{ reply: string; actions: any[] }> {
   const msgs: any[] = [{ role: 'system', content: SYSTEM_PROMPT }, ...history];
   const actions: any[] = [];
   const ctx = { userId };
+  const run = async (name: string, args: any) => {
+    if (interceptTool) { const r = await interceptTool(name, args); if (r !== undefined) return r; }
+    return executeTool(name, args, ctx);
+  };
   for (let round = 0; round < 3; round++) {
     let m: any;
     try {
@@ -546,7 +561,7 @@ export async function runAssistant(history: { role: string; content: string }[],
     } catch (err: any) {
       const failed = err?.status === 400 ? parseFailedToolCall(err) : null;
       if (!failed) throw err;
-      const result = await executeTool(failed.name, failed.args, ctx);
+      const result = await run(failed.name, failed.args);
       actions.push({ tool: failed.name, args: failed.args, result });
       return { reply: summarizeToolResult(failed.name, result), actions };
     }
@@ -556,7 +571,7 @@ export async function runAssistant(history: { role: string; content: string }[],
       for (const tc of m.tool_calls) {
         let args: any = {};
         try { args = JSON.parse(tc.function?.arguments || '{}'); } catch {}
-        const result = await executeTool(tc.function?.name, args, ctx);
+        const result = await run(tc.function?.name, args);
         actions.push({ tool: tc.function?.name, args, result });
         msgs.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
       }
