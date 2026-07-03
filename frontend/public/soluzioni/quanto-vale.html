@@ -32,7 +32,7 @@
     .btn-white { background:#fff; color:var(--teal-d); }
 
     header { position:sticky; top:0; z-index:50; background:rgba(8,9,11,.72); backdrop-filter:blur(14px) saturate(160%); border-bottom:1px solid rgba(255,255,255,.07); }
-    .nav { display:flex; align-items:center; justify-content:space-between; height:66px; }
+    .nav { display:flex; align-items:center; justify-content:space-between; height:52px; }
     .brand { display:flex; align-items:center; gap:10px; font-weight:900; font-size:19px; letter-spacing:-.02em; color:#f4f6f8; }
     .brand b { color:#c2c9d2; }
     .nav-links { display:flex; align-items:center; gap:24px; font-size:14.5px; color:#9aa2ab; font-weight:600; }
@@ -40,7 +40,8 @@
     @media (max-width:760px) { .nav-links a:not(.btn) { display:none; } }
 
     /* Hero scuro con aurora */
-    .hero { position:relative; overflow:hidden; background:#06070a; color:#fff; text-align:center; padding:84px 0 68px; }
+    .hero { position:relative; overflow:hidden; background:#06070a; color:#fff; text-align:center; padding:52px 0 60px; }
+    @media (max-width:760px) { .hero { padding:30px 0 48px; } }
     .hero > .wrap { position:relative; z-index:2; }
     .hero-fx { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
     .hero-fx span { position:absolute; border-radius:50%; filter:blur(72px); mix-blend-mode:screen; opacity:.5; animation:aurora 24s ease-in-out infinite; }
@@ -155,7 +156,7 @@
     .wl-consent { color:rgba(255,255,255,.8); font-size:12.5px; margin-top:12px; }
     .wl-consent a { color:#fff; text-decoration:underline; }
 
-    footer { border-top:1px solid var(--line); padding:40px 0 90px; color:var(--muted); font-size:14px; }
+    footer { border-top:1px solid var(--line); padding:40px 0; color:var(--muted); font-size:14px; }
     .foot { display:flex; justify-content:space-between; flex-wrap:wrap; gap:18px; align-items:flex-end; }
     .foot nav { display:flex; gap:20px; flex-wrap:wrap; }
     .foot a:hover { color:var(--ink); }
@@ -356,8 +357,6 @@
       </nav>
     </div>
   </footer>
-
-  <a href="#join" class="sticky-cta">📩 Entra in lista d'attesa →</a>
 
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
