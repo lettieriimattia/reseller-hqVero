@@ -28,6 +28,7 @@ import templateRoutes from './src/routes/templates';
 import analyticsRoutes from './src/routes/analytics';
 import taskRoutes from './src/routes/tasks';
 import shareRoutes, { publicShareRouter } from './src/routes/share';
+import { isMaintenanceOn, initMaintenanceFlag } from './src/services/maintenance-flag';
 import shippingRoutes from './src/routes/shipping';
 import uploadRoutes from './src/routes/upload';
 import feedbackRoutes from './src/routes/feedback';
@@ -217,14 +218,14 @@ app.use('/api/share', publicShareRouter);
 
 // Stato app (pubblico): il frontend lo legge per mostrare la schermata di manutenzione.
 app.get('/api/status', (_req, res) => {
-  res.json({ maintenance: process.env.MAINTENANCE_MODE === '1' });
+  res.json({ maintenance: isMaintenanceOn() });
 });
 
 // Modalità manutenzione: blocca le API "pesanti" (così durante la migrazione foto il
 // server non viene caricato). Restano attivi: /health, /api/status e i file statici (per
 // mostrare la schermata di manutenzione). Risponde 503 con {maintenance:true}.
 app.use((req, res, next) => {
-  if (process.env.MAINTENANCE_MODE !== '1') return next();
+  if (!isMaintenanceOn()) return next();
   const p = req.path;
   if (p === '/health' || p === '/api/status') return next();
   // Lascia passare le richieste di pagine/asset (GET non-API) → serve la schermata manutenzione.
@@ -423,6 +424,9 @@ serverInstance.listen(PORT, () => {
 
   // Manutenzione DB settimanale (prune cache catalogo + retention log). Solo pulizia, zero logica app.
   startMaintenance();
+
+  // Carica lo stato "manutenzione" runtime (toggle-abile da Telegram).
+  initMaintenanceFlag();
 
   // Registra il webhook Telegram (per ricevere le RISPOSTE dell'admin → email al cliente).
   setTelegramWebhook();

@@ -12,7 +12,26 @@ import { sendEmail } from '../services/email.service';
 import { sendTelegram, sendTelegramTo, webhookSecret, isAdminChat } from '../services/telegram';
 import { runAssistant, executeTool, MUTATING_TOOLS } from './assistant';
 import { isGroqConfigured } from '../services/ai.service';
+import { setMaintenance, isMaintenanceOn } from '../services/maintenance-flag';
 import { logger } from '../utils/logger';
+
+// Comandi OPERATIVI d'emergenza (manutenzione sito) — riconosciuti prima dell'agente IA.
+async function handleOpsCommand(chatId: string, text: string): Promise<boolean> {
+  const t = text.toLowerCase().trim();
+  if (/^(\/)?(manutenzione|maintenance|manutenzione sito)\b/.test(t) || /(metti|vai) in manutenzione/.test(t) || /(togli|esci|riattiva).*manutenzione/.test(t) || /sito (giu|offline|online|su)/.test(t)) {
+    const on = /\bon\b|attiva|metti|giu|giù|offline|blocca|chiudi/.test(t) && !/\boff\b|disattiva|togli|riattiva|online|su\b|riapri/.test(t);
+    await setMaintenance(on);
+    await sendTelegramTo(chatId, on
+      ? '🔒 <b>Sito in MANUTENZIONE.</b> Gli utenti vedono la schermata di manutenzione. Scrivi "manutenzione off" per riaprire.'
+      : '✅ <b>Sito ONLINE.</b> Manutenzione disattivata.');
+    return true;
+  }
+  if (/^(\/)?(stato|status)\b/.test(t)) {
+    await sendTelegramTo(chatId, isMaintenanceOn() ? '🔒 Sito in manutenzione.' : '🟢 Sito online e operativo.');
+    return true;
+  }
+  return false;
+}
 
 const router = Router();
 
@@ -31,6 +50,8 @@ async function resolveOwnerUserId(): Promise<string | null> {
 
 // Gestisce un COMANDO all'agente (messaggio normale dell'admin, non una risposta a un cliente).
 async function handleAgentCommand(chatId: string, text: string): Promise<void> {
+  // Comandi operativi d'emergenza (manutenzione/stato): gestiti PRIMA dell'IA.
+  if (await handleOpsCommand(chatId, text)) return;
   if (!isGroqConfigured()) { await sendTelegramTo(chatId, '🤖 Assistente non disponibile (IA non configurata).'); return; }
   const userId = await resolveOwnerUserId();
   if (!userId) { await sendTelegramTo(chatId, '⚠️ Nessun account HQ collegato. Imposta TELEGRAM_OWNER_EMAIL.'); return; }
