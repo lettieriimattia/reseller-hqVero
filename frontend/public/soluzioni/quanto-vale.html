@@ -196,6 +196,7 @@
             <option value="carte">🃏 Carte Pokémon</option>
             <option value="orologi">⌚ Orologi</option>
             <option value="borse">👜 Borse / lusso</option>
+            <option value="altro">🔎 Altro (scrivi cosa)</option>
           </select>
           <label class="pc-lbl">2 · Dettagli</label>
           <div class="pc-fields">
@@ -381,7 +382,8 @@
         streetwear: { name: 'Capo (es. Supreme Box Logo Hoodie)', detail: 'Taglia (S/M/L)', detailKey: 'size', cond: SNEAKER_COND },
         carte:      { name: 'Nome carta (es. Charizard)', detail: 'N° carta', detailKey: 'number', cond: [['Raw (Non Gradata)', 'Non gradata'], ['Gradata 10', 'Gradata PSA 10'], ['Gradata 9', 'Gradata PSA 9'], ['Gradata 8', 'Gradata PSA 8']] },
         orologi:    { name: 'Marca e modello (es. Rolex Submariner)', detail: '', detailKey: '', cond: [] },
-        borse:      { name: 'Marca e modello (es. Louis Vuitton Speedy)', detail: '', detailKey: '', cond: [] }
+        borse:      { name: 'Marca e modello (es. Louis Vuitton Speedy)', detail: '', detailKey: '', cond: [] },
+        altro:      { name: 'Scrivi cosa vuoi valutare (es. iPhone 15 Pro)', detail: '', detailKey: '', cond: [] }
       };
       function applyCat() {
         var c = CATS[cat.value] || CATS.scarpe;
