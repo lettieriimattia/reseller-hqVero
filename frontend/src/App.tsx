@@ -4353,12 +4353,12 @@ export default function App() {
   // ==========================================
   if (bootLoading) {
     return (
-      <div className="min-h-screen relative flex flex-col items-center justify-center gap-7 overflow-hidden"
+      <div className="min-h-screen relative flex flex-col items-center justify-center gap-4 overflow-hidden"
         style={{ background: 'radial-gradient(125% 80% at 50% 24%, #1b1b21 0%, #0b0b0e 55%, #050506 100%)' }}>
-        {/* Ambiente: pavimento riflettente in basso (caveau in una stanza, come un vero caveau) */}
-        <div className="absolute left-0 right-0 bottom-0" style={{ height: '34%', background: 'linear-gradient(180deg, transparent, rgba(255,255,255,0.03) 38%, rgba(0,0,0,0.55))', borderTop: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 -1px 30px rgba(0,0,0,0.6)' }} />
-        <VaultLoader />
-        <p className="relative text-[11px] font-extrabold uppercase tracking-[0.4em] text-[var(--text-faint)] pl-[0.4em]">HQVault</p>
+        {/* Loader minimale (niente animazione caveau): logo cromato + spinner sottile. */}
+        <span className="text-3xl font-black tracking-[0.02em]" style={{ background: 'linear-gradient(177deg,#fbfbfc,#d2d5d9 40%,#83878f 58%,#eceef0)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>HQ</span>
+        <Loader2 size={22} className="animate-spin text-[var(--text-faint)]" />
+        <p className="relative text-[10px] font-extrabold uppercase tracking-[0.4em] text-[var(--text-faint)] pl-[0.4em]">HQVault</p>
       </div>
     );
   }
