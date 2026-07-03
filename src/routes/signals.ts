@@ -30,10 +30,9 @@ function ipHashOf(ip: string): string {
 
 const router = Router();
 
-// PROVA GRATIS "quanto vale" sulla landing: N ricerche al giorno PER IP, poi si iscrivono a HQ.
-// PER ORA disattivato (limite altissimo) per poter provare liberamente anche in incognito.
-// Per RIATTIVARE il gate: imposta PUBLIC_PRICE_CHECKS_PER_DAY=3 su Render (es. 3 ricerche/giorno).
-const FREE_CHECKS = Math.max(1, parseInt(process.env.PUBLIC_PRICE_CHECKS_PER_DAY || '999999', 10) || 999999);
+// PROVA GRATIS "quanto vale" sulla landing: N valutazioni al giorno PER IP, poi il risultato
+// diventa l'iscrizione (waitlist). L'admin loggato è illimitato. Modificabile con PUBLIC_PRICE_CHECKS_PER_DAY.
+const FREE_CHECKS = Math.max(1, parseInt(process.env.PUBLIC_PRICE_CHECKS_PER_DAY || '2', 10) || 2);
 const pcByIp = new Map<string, { date: string; count: number }>();
 function clientIp(req: Request): string {
   const xff = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();

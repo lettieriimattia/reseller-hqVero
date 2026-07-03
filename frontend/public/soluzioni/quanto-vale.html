@@ -65,13 +65,14 @@
     .hero-form input:focus { border-color:var(--teal); background:rgba(255,255,255,.12); }
     .hero-form input::placeholder { color:#8a929c; }
     .hero-form .btn { border:none; cursor:pointer; white-space:nowrap; }
-    /* Checker a riga: Nome · Taglia · Condizione */
-    .pc-form { display:flex; flex-wrap:wrap; gap:10px; max-width:680px; margin:0 auto; }
-    .pc-form .f-name { flex:1 1 240px; }
-    .pc-form .f-size { flex:0 1 110px; }
-    .pc-form .f-cond { flex:1 1 150px; }
-    .pc-form .btn { flex:1 1 100%; }
-    @media (min-width:720px) { .pc-form .btn { flex:0 0 auto; } }
+    /* Checker: prima la Categoria, poi i campi giusti (come il reparto nell'app) */
+    .pc-form { display:flex; flex-direction:column; gap:10px; max-width:680px; margin:0 auto; text-align:left; }
+    .pc-lbl { font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:#8a929c; margin-top:4px; }
+    .pc-fields { display:flex; flex-wrap:wrap; gap:10px; }
+    .pc-fields .f-name { flex:1 1 220px; }
+    .pc-fields .f-size { flex:0 1 120px; }
+    .pc-fields .f-cond { flex:1 1 150px; }
+    .pc-go { margin-top:6px; }
     .pc-form input, .pc-form select { width:100%; background:rgba(255,255,255,.08); border:1.5px solid rgba(255,255,255,.18); border-radius:12px; padding:15px 16px; color:#fff; font-size:16px; outline:none; transition:border-color .15s; }
     .pc-form input:focus, .pc-form select:focus { border-color:var(--teal); background:rgba(255,255,255,.12); }
     .pc-form input::placeholder { color:#8a929c; }
@@ -184,20 +185,25 @@
       <div class="hero-bloom" aria-hidden="true"></div>
       <div class="wrap">
         <span class="crumb"><span class="dot"></span> Valuta gratis · reseller</span>
-        <h1>Quanto vale <span class="hl">la tua scarpa?</span></h1>
-        <p class="sub">Scrivi marca e modello: ti diciamo il <b>valore di mercato attuale</b> (fonte StockX). <b>3 ricerche gratis al giorno.</b></p>
-        <!-- CHECKER LIVE: prova reale, poi gate → iscrizione -->
+        <h1>Quanto <span class="hl">vale?</span></h1>
+        <p class="sub">Scegli la categoria, inserisci i dati e scopri il <b>valore di mercato</b> — sneaker, carte, streetwear, orologi, borse.</p>
+        <!-- CHECKER LIVE: prima la categoria (crea i campi giusti), poi i dettagli -->
         <form id="pcForm" class="pc-form" novalidate>
-          <select id="pcCat" class="f-cond" aria-label="Categoria">
+          <label class="pc-lbl">1 · Categoria</label>
+          <select id="pcCat" class="pc-cat" aria-label="Categoria">
             <option value="scarpe">👟 Sneaker</option>
+            <option value="streetwear">🧥 Streetwear / Abbigliamento</option>
             <option value="carte">🃏 Carte Pokémon</option>
             <option value="orologi">⌚ Orologi</option>
             <option value="borse">👜 Borse / lusso</option>
           </select>
-          <input id="pcQuery" class="f-name" type="text" autocomplete="off" placeholder="Modello (es. Jordan 4 Bred)" required />
-          <input id="pcDetail" class="f-size" type="text" autocomplete="off" placeholder="Taglia" />
-          <select id="pcCond" class="f-cond" aria-label="Condizione"></select>
-          <button type="submit" class="btn btn-primary">Quanto vale? →</button>
+          <label class="pc-lbl">2 · Dettagli</label>
+          <div class="pc-fields">
+            <input id="pcQuery" class="f-name" type="text" autocomplete="off" placeholder="Modello (es. Jordan 4 Bred)" required />
+            <input id="pcDetail" class="f-size" type="text" autocomplete="off" placeholder="Taglia" />
+            <select id="pcCond" class="f-cond" aria-label="Condizione"></select>
+          </div>
+          <button type="submit" class="btn btn-primary pc-go">Quanto vale? →</button>
         </form>
         <div id="pcResult" class="pc-result" role="status"></div>
         <!-- Gate: appare quando finiscono le 3 ricerche gratis del giorno -->
@@ -210,7 +216,7 @@
           </form>
           <p class="js-wl-msg hero-msg" role="status"></p>
         </div>
-        <p class="micro" id="pcMicro">Valore di mercato · fonte StockX · 3 ricerche gratis al giorno per visitatore</p>
+        <p class="micro" id="pcMicro">Valore di mercato · fonti ufficiali per categoria (StockX, Cardmarket…)</p>
       </div>
     </section>
 
@@ -369,11 +375,13 @@
           cond = document.getElementById('pcCond'), out = document.getElementById('pcResult'), gate = document.getElementById('pcGate'), micro = document.getElementById('pcMicro');
       function esc(s) { return (s || '').replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
       // Config per categoria: placeholder del nome, campo dettaglio (taglia/numero), condizioni.
+      var SNEAKER_COND = [['Nuovo', 'Nuovo / DS'], ['Come nuovo', 'Come nuovo'], ['Usato ottimo', 'Usato ottimo'], ['Usato buono', 'Usato buono'], ['Usato discreto', 'Usato discreto']];
       var CATS = {
-        scarpe:  { name: 'Modello (es. Jordan 4 Bred)', detail: 'Taglia', detailKey: 'size', cond: [['Nuovo', 'Nuovo / DS'], ['Come nuovo', 'Come nuovo'], ['Usato ottimo', 'Usato ottimo'], ['Usato buono', 'Usato buono'], ['Usato discreto', 'Usato discreto']] },
-        carte:   { name: 'Nome carta (es. Charizard)', detail: 'N° carta', detailKey: 'number', cond: [['Raw (Non Gradata)', 'Non gradata'], ['Gradata 10', 'Gradata PSA 10'], ['Gradata 9', 'Gradata PSA 9'], ['Gradata 8', 'Gradata PSA 8']] },
-        orologi: { name: 'Marca e modello (es. Rolex Submariner)', detail: '', detailKey: '', cond: [] },
-        borse:   { name: 'Marca e modello (es. Louis Vuitton Speedy)', detail: '', detailKey: '', cond: [] }
+        scarpe:     { name: 'Modello (es. Jordan 4 Bred)', detail: 'Taglia', detailKey: 'size', cond: SNEAKER_COND },
+        streetwear: { name: 'Capo (es. Supreme Box Logo Hoodie)', detail: 'Taglia (S/M/L)', detailKey: 'size', cond: SNEAKER_COND },
+        carte:      { name: 'Nome carta (es. Charizard)', detail: 'N° carta', detailKey: 'number', cond: [['Raw (Non Gradata)', 'Non gradata'], ['Gradata 10', 'Gradata PSA 10'], ['Gradata 9', 'Gradata PSA 9'], ['Gradata 8', 'Gradata PSA 8']] },
+        orologi:    { name: 'Marca e modello (es. Rolex Submariner)', detail: '', detailKey: '', cond: [] },
+        borse:      { name: 'Marca e modello (es. Louis Vuitton Speedy)', detail: '', detailKey: '', cond: [] }
       };
       function applyCat() {
         var c = CATS[cat.value] || CATS.scarpe;
@@ -396,7 +404,9 @@
           .then(function (r) { return r.json(); })
           .then(function (d) {
             btn.disabled = false; btn.textContent = lbl;
-            if (d.limited) { form.style.display = 'none'; out.innerHTML = ''; if (micro) micro.style.display = 'none'; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+            // Finite le valutazioni gratis: il form RESTA usabile (puoi cercare/scegliere categoria)
+            // ma invece del prezzo esce la schermata iscrizione (waitlist).
+            if (d.limited) { out.innerHTML = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
             if (d.value == null) {
               out.innerHTML = '<div class="pc-card"><span class="pc-warn">Non ho trovato un valore per “' + esc(query) + '”. Prova col nome esatto del modello.</span></div>';
             } else {
