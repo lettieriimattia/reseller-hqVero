@@ -90,6 +90,21 @@
     .pc-gate { max-width:520px; margin:18px auto 0; background:rgba(13,148,136,.10); border:1px solid rgba(95,185,174,.35); border-radius:18px; padding:22px; }
     .pc-gate-title { font-weight:800; font-size:19px; color:#fff; }
     .pc-gate-sub { color:#aeb6c0; font-size:14.5px; margin:6px 0 14px; }
+    /* Popup dopo il valore: invito a iscriversi */
+    .vpop { position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(3,4,7,.72); backdrop-filter:blur(6px); }
+    .vpop.on { display:flex; }
+    .vpop-card { position:relative; background:#12151b; border:1px solid #2a2f3a; border-radius:22px; padding:28px 24px; max-width:400px; width:100%; text-align:center; box-shadow:0 30px 80px -20px rgba(0,0,0,.7); }
+    .vpop-x { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:9px; border:none; background:rgba(255,255,255,.06); color:#9aa2ab; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .vpop-x:hover { background:rgba(255,255,255,.12); color:#fff; }
+    .vpop-ic { width:56px; height:56px; border-radius:16px; background:rgba(13,148,136,.14); border:1px solid rgba(95,185,174,.4); display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 14px; }
+    .vpop-card h3 { color:#fff; font-size:20px; font-weight:900; letter-spacing:-.01em; margin-bottom:8px; }
+    .vpop-card p { color:#aeb6c0; font-size:14.5px; line-height:1.55; margin-bottom:18px; }
+    .vpop-card p b { color:#e9ecef; }
+    .vpop-btns { display:flex; flex-direction:column; gap:8px; }
+    .vpop-join { background:var(--teal); color:#fff; font-weight:800; font-size:15px; padding:14px; border-radius:13px; border:none; cursor:pointer; }
+    .vpop-join:hover { background:var(--teal-d); }
+    .vpop-close { background:transparent; color:#8a929c; font-weight:700; font-size:13.5px; padding:8px; border:none; cursor:pointer; }
+    .vpop-close:hover { color:#c9d0d8; }
 
     section { padding:58px 0; }
     .eyebrow { color:var(--teal-d); font-weight:800; font-size:13px; letter-spacing:.08em; text-transform:uppercase; text-align:center; margin-bottom:12px; }
@@ -358,6 +373,20 @@
     </div>
   </footer>
 
+  <!-- Popup dopo il valore: invito a iscriversi -->
+  <div id="vpop" class="vpop">
+    <div class="vpop-card">
+      <button class="vpop-x" id="vpopX" aria-label="Chiudi">✕</button>
+      <div class="vpop-ic">💸</div>
+      <h3>Fallo in automatico con HQVault</h3>
+      <p>Hai appena visto il valore. Con <b>HQVault</b> valuti i prodotti, tieni il magazzino in ordine e sai il <b>profitto reale a ogni vendita</b> — tutto in un tap, senza cercare a mano.</p>
+      <div class="vpop-btns">
+        <button class="vpop-join" id="vpopJoin">Mettiti in lista d'attesa →</button>
+        <button class="vpop-close" id="vpopClose">Continua a valutare</button>
+      </div>
+    </div>
+  </div>
+
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
     {"@type":"Question","name":"Come faccio a sapere quanto vale una sneaker?","acceptedAnswer":{"@type":"Answer","text":"Aggiungi il modello dal catalogo o con una foto: HQVault lo riconosce e mostra il valore di mercato aggiornato (fonte StockX per sneaker e streetwear), così sai a quanto rivenderlo."}},
@@ -392,6 +421,16 @@
         else { cond.style.display = 'none'; cond.innerHTML = ''; }
       }
       cat.addEventListener('change', applyCat); applyCat();
+      // Popup "iscriviti" dopo il valore (una volta). Il bottone porta alla waitlist (rivela il form email).
+      var vpop = document.getElementById('vpop'), vpopShown = false;
+      function maybePopup() { if (vpopShown || !vpop) return; vpopShown = true; setTimeout(function () { vpop.classList.add('on'); }, 900); }
+      function closePopup() { if (vpop) vpop.classList.remove('on'); }
+      var vj = document.getElementById('vpopJoin'), vc = document.getElementById('vpopClose');
+      if (vj) vj.addEventListener('click', function () { location.href = '/waitlist?src=quanto-vale'; });
+      if (vc) vc.addEventListener('click', closePopup);
+      var vx = document.getElementById('vpopX'); if (vx) vx.addEventListener('click', closePopup);
+      if (vpop) vpop.addEventListener('click', function (e) { if (e.target === vpop) closePopup(); }); // tap fuori (mobile)
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePopup(); });   // ESC (pc)
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         var query = (q.value || '').trim();
@@ -414,6 +453,7 @@
               var sub = (det && sz && sz.value ? ('Taglia ' + esc(sz.value) + ' · ') : (sz && sz.value ? ('Taglia ' + esc(sz.value) + ' · ') : '')) + (cond && cond.value ? esc(cond.value) : '');
               var baseLine = (d.base && Math.round(d.base) !== Math.round(d.value)) ? '<div class="pc-src">da nuovo ≈ ' + Math.round(d.base) + cur + '</div>' : '';
               out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + det + '<div class="pc-src">valore di mercato · ' + esc(d.source || 'StockX') + '</div></div>';
+              maybePopup(); // appena esce il valore → invito a iscriversi
             } else if (d.range && d.range.low) {
               out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + det + '<div class="pc-src">⚠️ stima indicativa (IA) · non un prezzo di mercato reale</div></div>';
             } else {
