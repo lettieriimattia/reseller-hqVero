@@ -88,6 +88,8 @@ router.post('/price-check', async (req: Request, res: Response) => {
   if (used >= FREE_CHECKS) return res.json({ limited: true, freeLimit: FREE_CHECKS });
 
   const query = String(req.body?.query || '').trim();
+  const size = String(req.body?.size || '').trim();
+  const condition = String(req.body?.condition || '').trim();
   if (query.length < 2) return res.status(400).json({ error: 'Scrivi marca e modello.' });
 
   // consuma una ricerca (anche se non trova: evita abusi di brute-force)
@@ -96,8 +98,8 @@ router.post('/price-check', async (req: Request, res: Response) => {
   const remaining = Math.max(0, FREE_CHECKS - (used + 1));
 
   try {
-    const val = await getValuation({ category: 'scarpe', name: query, brand: '' });
-    return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', remaining, freeLimit: FREE_CHECKS });
+    const val = await getValuation({ category: 'scarpe', name: query, brand: '', size: size || undefined, condition: condition || undefined });
+    return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, remaining, freeLimit: FREE_CHECKS });
   } catch (e: any) {
     logger.warn('price-check errore', { err: e?.message });
     return res.json({ value: null, remaining, freeLimit: FREE_CHECKS });

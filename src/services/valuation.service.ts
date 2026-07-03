@@ -33,6 +33,22 @@ function matches(cat: string, keys: string[]): boolean {
   return keys.some(k => c.includes(k));
 }
 
+// Valore in base alla CONDIZIONE: percentuale del prezzo base (nuovo/DS = 100%). Numeri di
+// partenza — regolabili qui in un punto solo (li conferma il socio). Il match è per "contiene".
+const CONDITION_PCT: Array<[string, number]> = [
+  ['deadstock', 1], ['ds', 1], ['nuovo', 1], ['new', 1], ['sigillat', 1],
+  ['come nuovo', 0.9], ['vnds', 0.9], ['quasi nuovo', 0.9],
+  ['usato ottimo', 0.75], ['ottim', 0.75],
+  ['usato buono', 0.6], ['buono', 0.6], ['buone', 0.6],
+  ['usato discreto', 0.45], ['discret', 0.45], ['segni', 0.45],
+];
+function conditionMultiplier(condition?: string): { pct: number; label: string } {
+  const c = (condition || '').toLowerCase().trim();
+  if (!c) return { pct: 1, label: '' };
+  for (const [k, pct] of CONDITION_PCT) if (c.includes(k)) return { pct, label: k };
+  return { pct: 1, label: '' };
+}
+
 // Legge la gradazione dal campo "condition" (es. "Gradata 10", "Gradata 9.5", "Raw (Non Gradata)").
 function parseGrade(condition?: string): { graded: boolean; grade: number | null } {
   const c = (condition || '').toLowerCase();
@@ -94,7 +110,12 @@ export async function getValuation(opts: {
     if (q.length >= 2) {
       const v = await getStockXValuation({ query: q, name: opts.name, size: opts.size, category: opts.category || 'scarpe', sku: opts.sku });
       if (v.value != null) {
-        return { value: v.value, currency: 'EUR', source: 'Valutazione di mercato', reliable: true, sample: v.sample || 1, itemName: v.itemName };
+        // StockX dà il prezzo del NUOVO/DS. Se la scarpa è usata, applichiamo la % per condizione
+        // (mostrata in trasparenza nella fonte). ⚠️ Percentuali PROVVISORIE — da confermare col socio.
+        const cm = conditionMultiplier(opts.condition);
+        const adjusted = Math.round((v.value as number) * cm.pct);
+        const src = cm.pct !== 1 ? `Valutazione di mercato · ${Math.round(cm.pct * 100)}% (${cm.label})` : 'Valutazione di mercato';
+        return { value: adjusted, currency: 'EUR', source: src, reliable: true, sample: v.sample || 1, itemName: v.itemName, low: cm.pct !== 1 ? v.value : undefined };
       }
     }
   }

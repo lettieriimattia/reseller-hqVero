@@ -65,6 +65,17 @@
     .hero-form input:focus { border-color:var(--teal); background:rgba(255,255,255,.12); }
     .hero-form input::placeholder { color:#8a929c; }
     .hero-form .btn { border:none; cursor:pointer; white-space:nowrap; }
+    /* Checker a riga: Nome · Taglia · Condizione */
+    .pc-form { display:flex; flex-wrap:wrap; gap:10px; max-width:680px; margin:0 auto; }
+    .pc-form .f-name { flex:1 1 240px; }
+    .pc-form .f-size { flex:0 1 110px; }
+    .pc-form .f-cond { flex:1 1 150px; }
+    .pc-form .btn { flex:1 1 100%; }
+    @media (min-width:720px) { .pc-form .btn { flex:0 0 auto; } }
+    .pc-form input, .pc-form select { width:100%; background:rgba(255,255,255,.08); border:1.5px solid rgba(255,255,255,.18); border-radius:12px; padding:15px 16px; color:#fff; font-size:16px; outline:none; transition:border-color .15s; }
+    .pc-form input:focus, .pc-form select:focus { border-color:var(--teal); background:rgba(255,255,255,.12); }
+    .pc-form input::placeholder { color:#8a929c; }
+    .pc-form select option { color:#111; }
     .hero-msg { min-height:22px; margin-top:14px; font-weight:700; font-size:15px; color:#5fb9ae; }
     /* Risultato del checker "quanto vale" */
     .pc-result { margin-top:18px; min-height:8px; }
@@ -176,8 +187,16 @@
         <h1>Quanto vale <span class="hl">la tua scarpa?</span></h1>
         <p class="sub">Scrivi marca e modello: ti diciamo il <b>valore di mercato attuale</b> (fonte StockX). <b>3 ricerche gratis al giorno.</b></p>
         <!-- CHECKER LIVE: prova reale, poi gate → iscrizione -->
-        <form id="pcForm" class="hero-form" novalidate>
-          <input id="pcQuery" type="text" autocomplete="off" placeholder="Es. Jordan 4 Retro Bred" required />
+        <form id="pcForm" class="pc-form" novalidate>
+          <input id="pcQuery" class="f-name" type="text" autocomplete="off" placeholder="Modello (es. Jordan 4 Bred)" required />
+          <input id="pcSize" class="f-size" type="text" autocomplete="off" placeholder="Taglia" />
+          <select id="pcCond" class="f-cond" aria-label="Condizione">
+            <option value="Nuovo">Nuovo / DS</option>
+            <option value="Come nuovo">Come nuovo</option>
+            <option value="Usato ottimo">Usato ottimo</option>
+            <option value="Usato buono">Usato buono</option>
+            <option value="Usato discreto">Usato discreto</option>
+          </select>
           <button type="submit" class="btn btn-primary">Quanto vale? →</button>
         </form>
         <div id="pcResult" class="pc-result" role="status"></div>
@@ -346,8 +365,8 @@
     // CHECKER "quanto vale una scarpa": 3 gratis/giorno per IP, poi gate → iscrizione.
     (function () {
       var form = document.getElementById('pcForm'); if (!form) return;
-      var q = document.getElementById('pcQuery'), out = document.getElementById('pcResult'),
-          gate = document.getElementById('pcGate'), micro = document.getElementById('pcMicro');
+      var q = document.getElementById('pcQuery'), sz = document.getElementById('pcSize'), cond = document.getElementById('pcCond'),
+          out = document.getElementById('pcResult'), gate = document.getElementById('pcGate'), micro = document.getElementById('pcMicro');
       function esc(s) { return (s || '').replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
       form.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -355,7 +374,7 @@
         if (query.length < 2) { out.innerHTML = '<span class="pc-warn">Scrivi marca e modello.</span>'; return; }
         var btn = form.querySelector('button'); var lbl = btn.textContent;
         btn.disabled = true; btn.textContent = 'Cerco…'; out.innerHTML = '';
-        fetch('/api/price-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: query }) })
+        fetch('/api/price-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: query, size: (sz && sz.value || '').trim(), condition: (cond && cond.value || '') }) })
           .then(function (r) { return r.json(); })
           .then(function (d) {
             btn.disabled = false; btn.textContent = lbl;
@@ -364,7 +383,9 @@
               out.innerHTML = '<div class="pc-card"><span class="pc-warn">Non ho trovato un valore per “' + esc(query) + '”. Prova col nome esatto del modello.</span></div>';
             } else {
               var cur = (d.currency && d.currency !== 'EUR') ? (' ' + d.currency) : '€';
-              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div><div class="pc-src">valore di mercato · ' + esc(d.source || 'StockX') + '</div></div>';
+              var sub = (sz && sz.value ? ('Taglia ' + esc(sz.value) + ' · ') : '') + (cond ? esc(cond.value) : '');
+              var baseLine = (d.base && Math.round(d.base) !== Math.round(d.value)) ? '<div class="pc-src">da nuovo ≈ ' + Math.round(d.base) + cur + '</div>' : '';
+              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + '<div class="pc-src">valore di mercato · ' + esc(d.source || 'StockX') + '</div></div>';
             }
             if (typeof d.remaining === 'number' && micro) { micro.textContent = d.remaining > 0 ? ('Ricerche gratis rimaste oggi: ' + d.remaining) : 'Ultima ricerca gratis di oggi usata'; }
           })
