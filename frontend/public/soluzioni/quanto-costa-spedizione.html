@@ -1,183 +1,248 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Calcolatore costi di spedizione e profitto per reseller — HQVault</title>
   <meta name="description" content="Stima il costo di spedizione (Italia ed estero, per corriere) e calcola il profitto netto di una vendita — commissioni e spedizione incluse. Strumento gratuito, prezzi indicativi 2026." />
   <meta name="robots" content="noindex, nofollow" />
-  <link rel="canonical" href="https://hqvault.app/soluzioni/quanto-costa-spedizione" />
+  <link rel="canonical" href="https://resellerhq.onrender.com/soluzioni/quanto-costa-spedizione" />
+  <meta name="author" content="HQVault" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="HQVault" />
   <meta property="og:title" content="Calcolatore costi di spedizione e profitto per reseller — HQVault" />
-  <meta name="theme-color" content="#0b0d11" />
+  <meta property="og:description" content="Stima il costo di spedizione e il profitto netto reale di una vendita. Strumento gratuito per reseller." />
+  <meta property="og:image" content="https://resellerhq.onrender.com/logo.png" />
+  <link rel="preload" as="image" href="/logo.png" fetchpriority="high" />
+  <script>document.documentElement.classList.add('js');</script>
   <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    :root{
-      --bg:#0b0d11;--surface:#12151b;--surface2:#191d25;--border:rgba(255,255,255,.07);
-      --border2:rgba(255,255,255,.12);--text:#eceef1;--soft:#a2a8b2;--faint:#6b7280;
-      --accent:#6f7cf0;--accent-soft:rgba(111,124,240,.10);--pos:#34b27b;--neg:#d98a6a}
-    html{scroll-behavior:smooth}
-    body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.62;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-    a{color:inherit;text-decoration:none}
-    .wrap{max-width:820px;margin:0 auto;padding:0 22px}
-    .btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;font-weight:700;padding:13px 24px;border-radius:12px;font-size:15px;transition:background .15s;border:none;cursor:pointer}
-    .btn:hover{background:#5b68e0}
-    .btn-ghost{color:var(--soft);font-weight:600;padding:8px 16px;border:1px solid var(--border2);border-radius:10px;transition:color .15s,border-color .15s}
-    .btn-ghost:hover{color:var(--text);border-color:var(--soft)}
-    nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(16px);background:rgba(11,13,17,.82);border-bottom:1px solid var(--border)}
-    nav .wrap{max-width:1040px;display:flex;align-items:center;justify-content:space-between;height:60px}
-    .logo{font-weight:800;font-size:18px;letter-spacing:-.01em;color:var(--text)}
-    .logo span{color:var(--accent)}
-    header.hero{padding:58px 0 8px}
-    .crumb{font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.14em;font-weight:700;margin-bottom:18px}
-    h1{font-size:clamp(28px,4.8vw,44px);line-height:1.12;letter-spacing:-.02em;font-weight:800;margin-bottom:14px}
-    .sub{font-size:17px;color:var(--soft);max-width:620px}
-    /* ==== CALCOLATORI ==== */
-    .calc{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin:22px 0}
-    .calc .tag{font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);margin-bottom:10px}
-    .calc h2{font-size:20px;font-weight:700;margin-bottom:18px;letter-spacing:-.01em}
-    .fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    @media(max-width:560px){.fields{grid-template-columns:1fr}}
-    .field label{display:block;font-size:12.5px;font-weight:600;color:var(--soft);margin-bottom:6px}
-    .field select,.field input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:11px 13px;color:var(--text);font-size:15px;font-weight:500;outline:none;transition:border-color .15s}
-    .field select:focus,.field input:focus{border-color:var(--accent)}
-    /* result */
-    .res{margin-top:20px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-    .res .lbl{font-size:12.5px;color:var(--soft);font-weight:600;margin-bottom:2px}
-    .res .big{font-size:30px;font-weight:800;letter-spacing:-.02em}
-    .res .big.pos{color:var(--pos)} .res .big.neg{color:var(--neg)}
-    .res .side{text-align:right;font-size:13px;color:var(--soft);line-height:1.5}
-    .res .side b{color:var(--text);font-weight:700}
-    .breakdown{margin-top:14px;display:grid;gap:7px;border-top:1px solid var(--border);padding-top:14px}
-    .breakdown .row{display:flex;justify-content:space-between;font-size:14px;color:var(--soft)}
-    .breakdown .row b{color:var(--text);font-weight:600}
-    .breakdown .row.tot{margin-top:4px;padding-top:9px;border-top:1px solid var(--border);color:var(--text);font-weight:700}
-    section{padding:26px 0}
-    h2.s{font-size:clamp(20px,3.2vw,26px);font-weight:800;margin:8px 0 12px;letter-spacing:-.01em}
-    .lead{color:var(--soft);font-size:15.5px;max-width:640px;margin-bottom:8px}
-    .tbl{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin:16px 0;overflow-x:auto}
-    table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:440px}
-    th,td{text-align:left;padding:12px 15px;border-bottom:1px solid var(--border)}
-    th{background:var(--surface2);color:var(--soft);font-weight:700;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase}
-    td:last-child{color:var(--text);font-weight:700;white-space:nowrap}
-    tr:last-child td{border-bottom:none}
-    .note{font-size:13px;color:var(--faint)}
-    /* metodologia / trasparenza */
-    .method{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin:20px 0}
-    .method h3{font-size:15px;font-weight:700;margin-bottom:10px}
-    .method ul{list-style:none;display:grid;gap:9px}
-    .method li{font-size:14px;color:var(--soft);padding-left:18px;position:relative}
-    .method li::before{content:"";position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
-    .hq{background:var(--surface);border:1px solid var(--border);border-left:2px solid var(--accent);border-radius:12px;padding:20px 24px;margin:26px 0}
-    .hq h3{margin:0 0 6px;font-size:16px;font-weight:700} .hq p{color:var(--soft);font-size:14.5px} .hq a{color:var(--accent);font-weight:600}
-    .final{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px 28px;margin:30px 0 52px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
-    .final h2{font-size:20px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
-    .final p{color:var(--soft);font-size:14.5px}
-    footer{border-top:1px solid var(--border);padding:26px 0;color:var(--faint);font-size:12.5px;text-align:center}
+    :root {
+      --bg: #ffffff; --soft-bg: #f6f7f9; --card: #ffffff; --line: #e7e9ee;
+      --text: #14181f; --muted: #5b6573; --teal: #0d9488; --teal-d: #0b7c72; --ink: #0f172a;
+      --pos: #0d9488; --neg: #e05c4b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+    .narrow { max-width: 820px; }
+    .btn { display: inline-block; padding: 14px 26px; border-radius: 12px; font-weight: 800; font-size: 15px; transition: transform .15s, box-shadow .2s, background .2s; }
+    .btn-primary { background: var(--teal); color: #fff; box-shadow: 0 8px 24px -8px rgba(13,148,136,.5); }
+    .btn-primary:hover { transform: translateY(-2px); background: var(--teal-d); }
+    .btn-ghost { border: 1.5px solid rgba(255,255,255,.22); color: #fff; }
+    .btn-ghost:hover { border-color: #fff; background: rgba(255,255,255,.06); }
+    .btn-white { background: #fff; color: var(--teal-d); }
+
+    /* ===== Header identico alla landing principale ===== */
+    header { position: sticky; top: 0; z-index: 50; background: rgba(8,9,11,.72); backdrop-filter: blur(14px) saturate(160%); border-bottom: 1px solid rgba(255,255,255,.07); }
+    .nav { display: flex; align-items: center; justify-content: space-between; height: 66px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 19px; letter-spacing: -.02em; color: #f4f6f8; }
+    .brand b { color: #c2c9d2; }
+    .nav-links { display: flex; align-items: center; gap: 24px; font-size: 14.5px; color: #9aa2ab; font-weight: 600; }
+    .nav-links a:hover { color: #fff; }
+    @media (max-width: 760px) { .nav-links a:not(.btn) { display: none; } }
+
+    /* ===== Hero chiaro con eyebrow, coerente con le sezioni ===== */
+    .subhero { text-align: center; padding: 70px 0 6px; }
+    .crumb { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--teal-d); background: #e6f5f3; border: 1px solid #cdeae6; padding: 7px 15px; border-radius: 999px; margin-bottom: 20px; }
+    .crumb .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
+    h1 { font-size: clamp(30px, 5vw, 50px); font-weight: 900; letter-spacing: -.03em; color: var(--ink); max-width: 760px; margin: 0 auto 14px; line-height: 1.06; }
+    .sub { color: var(--muted); font-size: clamp(16px, 2.2vw, 19px); max-width: 620px; margin: 0 auto; }
+
+    section { padding: 40px 0; }
+    .eyebrow { color: var(--teal-d); font-weight: 800; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+    h2 { font-size: clamp(23px, 3.4vw, 32px); font-weight: 900; letter-spacing: -.025em; color: var(--ink); margin-bottom: 10px; }
+    .lead { color: var(--muted); font-size: 16.5px; max-width: 640px; }
+
+    /* ===== Calcolatori: card chiare stile .feat ===== */
+    .calc { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 26px; margin: 20px 0; box-shadow: 0 16px 40px -28px rgba(15,23,42,.35); }
+    .calc .ctag { color: var(--teal-d); font-weight: 800; font-size: 12.5px; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 6px; }
+    .calc h3 { font-size: 20px; font-weight: 900; letter-spacing: -.02em; color: var(--ink); margin-bottom: 18px; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 560px) { .fields { grid-template-columns: 1fr; } }
+    .field label { display: block; font-size: 12.5px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+    .field select, .field input { width: 100%; background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding: 12px 14px; color: var(--text); font-size: 15px; font-weight: 600; outline: none; transition: border-color .15s; -webkit-appearance: none; appearance: none; }
+    .field select:focus, .field input:focus { border-color: var(--teal); }
+    .note { font-size: 13px; color: #97a0ac; }
+    .res { margin-top: 20px; background: var(--soft-bg); border: 1px solid var(--line); border-radius: 14px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .res .lbl { font-size: 12.5px; color: var(--muted); font-weight: 700; margin-bottom: 2px; }
+    .res .big { font-size: 32px; font-weight: 900; letter-spacing: -.02em; color: var(--ink); }
+    .res .big.pos { color: var(--pos); } .res .big.neg { color: var(--neg); }
+    .res .side { text-align: right; font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+    .res .side b { color: var(--ink); font-weight: 800; }
+    .breakdown { margin-top: 14px; display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 14px; }
+    .breakdown .row { display: flex; justify-content: space-between; font-size: 14.5px; color: var(--muted); }
+    .breakdown .row b { color: var(--text); font-weight: 700; }
+    .breakdown .row.tot { margin-top: 3px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--ink); font-weight: 800; }
+    .breakdown .row.tot b { color: var(--teal-d); }
+
+    .method { background: var(--soft-bg); border: 1px solid var(--line); border-radius: 16px; padding: 24px 26px; margin: 22px 0; }
+    .method h3 { font-size: 16px; font-weight: 900; color: var(--ink); margin-bottom: 12px; }
+    .method ul { list-style: none; display: grid; gap: 10px; }
+    .method li { font-size: 15px; color: var(--muted); padding-left: 20px; position: relative; }
+    .method li::before { content: "✓"; position: absolute; left: 0; top: 0; color: var(--teal); font-weight: 900; }
+
+    .tbl { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; margin: 16px 0; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 460px; }
+    th, td { text-align: left; padding: 13px 16px; border-bottom: 1px solid var(--line); }
+    th { background: var(--soft-bg); color: var(--muted); font-weight: 800; font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; }
+    td:last-child { color: var(--teal-d); font-weight: 800; white-space: nowrap; }
+    tr:last-child td { border-bottom: none; }
+
+    .hq { display: flex; gap: 16px; align-items: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; margin: 26px 0; box-shadow: 0 16px 40px -28px rgba(15,23,42,.3); }
+    .hq .ico { flex: 0 0 46px; height: 46px; border-radius: 12px; background: #e6f5f3; color: var(--teal-d); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .hq h3 { font-size: 17px; font-weight: 800; color: var(--ink); margin-bottom: 5px; }
+    .hq p { color: var(--muted); font-size: 15px; } .hq a { color: var(--teal-d); font-weight: 800; }
+
+    .final { text-align: center; background: linear-gradient(135deg, #0d9488, #0b7c72); border-radius: 28px; padding: 54px 24px; color: #fff; margin: 12px 0 40px; }
+    .final h2 { color: #fff; } .final p { color: rgba(255,255,255,.86); font-size: 16.5px; max-width: 520px; margin: 0 auto 24px; }
+
+    footer { border-top: 1px solid var(--line); padding: 40px 0; color: var(--muted); font-size: 14px; }
+    .foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+    .foot nav { display: flex; gap: 20px; flex-wrap: wrap; }
+    .foot a:hover { color: var(--ink); }
   </style>
 </head>
+
 <body>
-  <nav><div class="wrap"><span class="logo">HQ<span>Vault</span></span><a href="/app" class="btn-ghost">Apri l'app</a></div></nav>
+  <header>
+    <div class="wrap nav">
+      <a href="/" class="brand" aria-label="HQVault home">HQ<b>Vault</b></a>
+      <nav class="nav-links" aria-label="Navigazione principale">
+        <a href="/#funzioni">Funzioni</a>
+        <a href="/#faq">FAQ</a>
+        <a href="/app" class="btn btn-ghost" style="padding:9px 18px;">Accedi</a>
+      </nav>
+    </div>
+  </header>
 
-  <header class="hero"><div class="wrap">
-    <p class="crumb">Strumenti reseller · Spedizioni</p>
-    <h1>Quanto costa spedire e quanto guadagni davvero</h1>
-    <p class="sub">Due calcolatori: una stima del costo di spedizione per corriere e il profitto netto reale di una vendita, con commissioni e spedizione già scontate.</p>
-  </div></header>
+  <main>
+    <section class="subhero">
+      <div class="wrap narrow">
+        <span class="crumb"><span class="dot"></span> Strumenti reseller · Spedizioni</span>
+        <h1>Quanto costa spedire e quanto guadagni davvero</h1>
+        <p class="sub">Due calcolatori: una stima del costo di spedizione per corriere e il profitto netto reale di una vendita, con commissioni e spedizione già scontate.</p>
+      </div>
+    </section>
 
-  <div class="wrap">
-    <!-- CALCOLATORE SPEDIZIONE -->
-    <div class="calc">
-      <div class="tag">Calcolatore spedizione</div>
-      <h2>Stima del costo di spedizione</h2>
-      <div class="fields">
-        <div class="field"><label>Destinazione</label>
-          <select id="dest">
-            <option value="it">Italia</option>
-            <option value="eu">Europa (UE)</option>
-            <option value="extra">Fuori UE</option>
-          </select>
+    <section style="padding-top:22px">
+      <div class="wrap narrow">
+        <!-- CALCOLATORE SPEDIZIONE -->
+        <div class="calc">
+          <div class="ctag">Calcolatore spedizione</div>
+          <h3>Stima del costo di spedizione</h3>
+          <div class="fields">
+            <div class="field"><label>Destinazione</label>
+              <select id="dest">
+                <option value="it">Italia</option>
+                <option value="eu">Europa (UE)</option>
+                <option value="extra">Fuori UE</option>
+              </select>
+            </div>
+            <div class="field"><label>Peso del pacco</label>
+              <select id="weight">
+                <option value="s">Piccolo (fino a 2 kg)</option>
+                <option value="m">Medio (2–5 kg)</option>
+                <option value="l">Grande (5–10 kg)</option>
+              </select>
+            </div>
+            <div class="field"><label>Corriere / metodo</label>
+              <select id="courier">
+                <option value="inpost">InPost / Locker</option>
+                <option value="brt">BRT / GLS (con contratto)</option>
+                <option value="poste">Poste Italiane</option>
+                <option value="aggr">Aggregatore (Sendcloud/Packlink)</option>
+                <option value="vinted">Vinted / Wallapop</option>
+              </select>
+            </div>
+            <div class="field" style="display:flex;align-items:flex-end"><span class="note">Prezzi indicativi 2026. Variano per zona, volume e contratto.</span></div>
+          </div>
+          <div class="res">
+            <div><div class="lbl">Costo stimato</div><div class="big" id="shipOut">5–9 €</div></div>
+            <div class="side" id="shipNote">Italia · pacco piccolo</div>
+          </div>
         </div>
-        <div class="field"><label>Peso del pacco</label>
-          <select id="weight">
-            <option value="s">Piccolo (fino a 2 kg)</option>
-            <option value="m">Medio (2–5 kg)</option>
-            <option value="l">Grande (5–10 kg)</option>
-          </select>
+
+        <!-- CALCOLATORE PROFITTO -->
+        <div class="calc">
+          <div class="ctag">Calcolatore profitto netto</div>
+          <h3>Il margine reale di una vendita</h3>
+          <div class="fields">
+            <div class="field"><label>Prezzo d'acquisto (€)</label><input id="buy" type="number" inputmode="decimal" value="120" /></div>
+            <div class="field"><label>Prezzo di vendita (€)</label><input id="sell" type="number" inputmode="decimal" value="180" /></div>
+            <div class="field"><label>Commissione piattaforma (%)</label><input id="fee" type="number" inputmode="decimal" value="5" /></div>
+            <div class="field"><label>Spedizione a tuo carico (€)</label><input id="ship" type="number" inputmode="decimal" value="7" /></div>
+          </div>
+          <div class="res">
+            <div><div class="lbl">Profitto netto</div><div class="big pos" id="profitOut">+43 €</div></div>
+            <div class="side">Margine <b id="marginOut">36%</b><br>ROI <b id="roiOut">36%</b></div>
+          </div>
+          <div class="breakdown" id="bd"></div>
         </div>
-        <div class="field"><label>Corriere / metodo</label>
-          <select id="courier">
-            <option value="inpost">InPost / Locker</option>
-            <option value="brt">BRT / GLS (con contratto)</option>
-            <option value="poste">Poste Italiane</option>
-            <option value="aggr">Aggregatore (Sendcloud/Packlink)</option>
-            <option value="vinted">Vinted / Wallapop</option>
-          </select>
+
+        <div class="method">
+          <h3>Come sono calcolati questi numeri</h3>
+          <ul>
+            <li>Il costo di spedizione parte da tariffe pubbliche indicative 2026 ed è scalato per il peso — è una stima, non un preventivo.</li>
+            <li>Profitto netto = prezzo di vendita − prezzo d'acquisto − commissione della piattaforma − spedizione a tuo carico.</li>
+            <li>Il margine è sul ricavo, il ROI è sul capitale investito. Nessun dato viene salvato: i conti restano sul tuo dispositivo.</li>
+          </ul>
         </div>
-        <div class="field" style="display:flex;align-items:flex-end"><span class="note">Prezzi indicativi 2026. Variano per zona, volume e contratto.</span></div>
       </div>
-      <div class="res">
-        <div><div class="lbl">Costo stimato</div><div class="big" id="shipOut">5–9 €</div></div>
-        <div class="side" id="shipNote">Italia · pacco piccolo</div>
+    </section>
+
+    <section style="background:var(--soft-bg); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+      <div class="wrap narrow">
+        <p class="eyebrow">Riferimento</p>
+        <h2>Costi indicativi per corriere</h2>
+        <p class="lead">Italia, pacco piccolo. Fascia di prezzo tipica per un reseller con volumi medi.</p>
+        <div class="tbl"><table>
+          <tr><th>Metodo</th><th>Uso tipico</th><th>Costo</th></tr>
+          <tr><td>InPost (Locker)</td><td>Sneaker, abbigliamento</td><td>4–6 €</td></tr>
+          <tr><td>BRT / GLS (contratto)</td><td>Volumi frequenti</td><td>5–8 €</td></tr>
+          <tr><td>Poste — Pacco Ordinario</td><td>Spedizioni occasionali</td><td>8–12 €</td></tr>
+          <tr><td>Aggregatori</td><td>Sconti senza contratto</td><td>4–7 €</td></tr>
+          <tr><td>Vinted / Wallapop</td><td>La paga il compratore</td><td>3–5 €</td></tr>
+        </table></div>
+        <p class="note">Estero: Europa da ~12–20 €, fuori UE 20–45 € oltre a dazi e IVA di destinazione.</p>
       </div>
-    </div>
+    </section>
 
-    <!-- CALCOLATORE PROFITTO -->
-    <div class="calc">
-      <div class="tag">Calcolatore profitto netto</div>
-      <h2>Il margine reale di una vendita</h2>
-      <div class="fields">
-        <div class="field"><label>Prezzo d'acquisto (€)</label><input id="buy" type="number" inputmode="decimal" value="120" /></div>
-        <div class="field"><label>Prezzo di vendita (€)</label><input id="sell" type="number" inputmode="decimal" value="180" /></div>
-        <div class="field"><label>Commissione piattaforma (%)</label><input id="fee" type="number" inputmode="decimal" value="5" /></div>
-        <div class="field"><label>Spedizione a tuo carico (€)</label><input id="ship" type="number" inputmode="decimal" value="7" /></div>
+    <section>
+      <div class="wrap narrow">
+        <div class="hq">
+          <div class="ico" aria-hidden="true">⚡</div>
+          <div>
+            <h3>Questo calcolo, automatico su ogni vendita</h3>
+            <p>HQVault applica profitto netto, margine e spedizione a ogni prodotto che vendi e ne conserva lo storico, così non rifai i conti a mano. <a href="/app">Scopri come funziona →</a></p>
+          </div>
+        </div>
+
+        <div class="final">
+          <h2>Tieni sotto controllo margini e spedizioni</h2>
+          <p>Gestionale completo per reseller. Inizia gratis in meno di un minuto.</p>
+          <a href="/app" class="btn btn-white">Inizia gratis con HQVault</a>
+        </div>
       </div>
-      <div class="res">
-        <div><div class="lbl">Profitto netto</div><div class="big pos" id="profitOut">+43 €</div></div>
-        <div class="side">Margine <b id="marginOut">36%</b><br>ROI <b id="roiOut">36%</b></div>
-      </div>
-      <div class="breakdown" id="bd"></div>
-    </div>
+    </section>
+  </main>
 
-    <div class="method">
-      <h3>Come sono calcolati questi numeri</h3>
-      <ul>
-        <li>Il costo di spedizione parte da tariffe pubbliche indicative 2026 e viene scalato in base al peso — è una stima, non un preventivo.</li>
-        <li>Il profitto netto è: prezzo di vendita − prezzo d'acquisto − commissione della piattaforma − spedizione a tuo carico.</li>
-        <li>Il margine è sul ricavo, il ROI è sul capitale investito nell'acquisto. Nessun dato viene salvato: i conti restano sul tuo dispositivo.</li>
-      </ul>
-    </div>
-  </div>
-
-  <section><div class="wrap">
-    <h2 class="s">Costi indicativi per corriere</h2>
-    <p class="lead">Italia, pacco piccolo. Fascia di prezzo tipica per un reseller con volumi medi.</p>
-    <div class="tbl"><table>
-      <tr><th>Metodo</th><th>Uso tipico</th><th>Costo</th></tr>
-      <tr><td>InPost (Locker)</td><td>Sneaker, abbigliamento</td><td>4–6 €</td></tr>
-      <tr><td>BRT / GLS (contratto)</td><td>Volumi frequenti</td><td>5–8 €</td></tr>
-      <tr><td>Poste — Pacco Ordinario</td><td>Spedizioni occasionali</td><td>8–12 €</td></tr>
-      <tr><td>Aggregatori</td><td>Sconti senza contratto</td><td>4–7 €</td></tr>
-      <tr><td>Vinted / Wallapop</td><td>La paga il compratore</td><td>3–5 €</td></tr>
-    </table></div>
-    <p class="note">Estero: Europa da ~12–20 €, fuori UE 20–45 € oltre a dazi e IVA di destinazione.</p>
-  </div></section>
-
-  <div class="wrap">
-    <div class="hq">
-      <h3>Questo calcolo, automatico su ogni vendita</h3>
-      <p>HQVault applica profitto netto, margine e spedizione a ogni prodotto che vendi e ne conserva lo storico, così non rifai i conti a mano. <a href="/app">Scopri come funziona</a></p>
-    </div>
-
-    <div class="final">
+  <footer>
+    <div class="wrap foot">
       <div>
-        <h2>Tieni sotto controllo margini e spedizioni</h2>
-        <p>Gestionale completo per reseller. Prova senza impegno.</p>
+        <div class="brand" style="margin-bottom:8px; font-size:17px; color:var(--ink);">HQ<b style="color:var(--muted)">Vault</b></div>
+        <span>© 2026 HQVault — Software gestionale per reseller.</span>
       </div>
-      <a href="/app" class="btn">Apri HQVault</a>
+      <nav aria-label="Link del sito">
+        <a href="/#funzioni">Funzioni</a>
+        <a href="/#faq">FAQ</a>
+        <a href="/app">Accedi</a>
+        <a href="/app">Registrati</a>
+      </nav>
     </div>
-  </div>
-
-  <footer><div class="wrap">HQVault — gestionale per reseller. © 2026 · Prezzi indicativi, verifica sempre col corriere.</div></footer>
+  </footer>
 
   <script>
     // ---- Calcolatore spedizione ----
