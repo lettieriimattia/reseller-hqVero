@@ -7320,10 +7320,19 @@ export default function App() {
                 <button onClick={() => setModelDetail(null)} aria-label={t('common.close')}
                   className="p-3 -mr-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
               </div>
+              <div className="px-4 py-2 border-b border-[var(--border)] text-[10px] text-[var(--text-soft)]/80 shrink-0 text-center">{t('mag.modelPickHint')}</div>
               <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
-                {modelDetail.sizes.map((s: any, i: number) => (
-                  <div key={i} className="flex items-center gap-3 rounded-2xl bg-[var(--surface-2)] border border-[var(--border)] px-4 py-3">
-                    <div className="w-12 shrink-0 text-center">
+                {modelDetail.sizes.map((s: any, i: number) => {
+                  const ids: string[] = s.group.ids || [];
+                  const sel = ids.length > 0 && ids.every((id: string) => selectedPieceIds.has(id));
+                  return (
+                  <div key={i} className={`flex items-center gap-2.5 rounded-2xl border px-3 py-3 transition-colors ${sel ? 'bg-[var(--accent)]/12 border-[var(--accent)]' : 'bg-[var(--surface-2)] border-[var(--border)]'}`}>
+                    <button onClick={() => setSelectedPieceIds(prev => { setBulkMode(true); const next = new Set(prev); if (sel) ids.forEach(id => next.delete(id)); else ids.forEach(id => next.add(id)); return next; })}
+                      aria-label={t('mag.select')}
+                      className={`w-6 h-6 shrink-0 rounded-lg border-2 flex items-center justify-center transition-colors ${sel ? 'bg-[var(--accent)] border-[var(--accent)] text-white' : 'border-[var(--border-2)] text-transparent'}`}>
+                      <Check size={14} strokeWidth={3} />
+                    </button>
+                    <div className="w-11 shrink-0 text-center">
                       <p className="text-[9px] text-[var(--text-faint)] uppercase tracking-widest">{t('form.size')}</p>
                       <p className="font-black text-lg leading-none">{s.size}</p>
                     </div>
@@ -7331,11 +7340,12 @@ export default function App() {
                       <p className="text-sm font-bold">×{s.quantity} <span className="text-[var(--text-faint)] font-normal">· {(s.purchasePrice || 0).toFixed(0)}€ cad.</span></p>
                     </div>
                     <button onClick={() => { setModelDetail(null); openEditModal(s.group); }}
-                      className="px-3 py-2 rounded-xl bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)] text-xs font-bold flex items-center gap-1.5"><Edit size={13} /></button>
+                      className="px-2.5 py-2 rounded-xl bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)] text-xs font-bold flex items-center gap-1.5"><Edit size={13} /></button>
                     <button onClick={() => { setModelDetail(null); openSellModal(s.group.ids, `${modelDetail.brand} ${modelDetail.name}`, s.group); }}
-                      className="px-3.5 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold flex items-center gap-1.5"><DollarSign size={13} /> {t('mag.sell')}</button>
+                      className="px-3 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold flex items-center gap-1.5"><DollarSign size={13} /> {t('mag.sell')}</button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
