@@ -43,13 +43,23 @@
     .nav-links a:hover { color: #fff; }
     @media (max-width: 760px) { .nav-links a:not(.btn) { display: none; } }
 
-    /* Hero chiaro */
-    .subhero { text-align: center; padding: 74px 0 8px; }
-    .crumb { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--teal-d); background: #e6f5f3; border: 1px solid #cdeae6; padding: 7px 15px; border-radius: 999px; margin-bottom: 20px; }
-    .crumb .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
-    h1 { font-size: clamp(32px, 5.4vw, 54px); font-weight: 900; letter-spacing: -.03em; color: var(--ink); max-width: 780px; margin: 0 auto 16px; line-height: 1.05; }
-    .sub { color: var(--muted); font-size: clamp(16px, 2.3vw, 20px); max-width: 640px; margin: 0 auto 28px; }
-    .sub b { color: var(--ink); font-weight: 700; }
+    /* Hero scuro con aurora — stesso pattern della landing principale */
+    .hero { position: relative; overflow: hidden; background: #06070a; color: #fff; text-align: center; padding: 86px 0 70px; }
+    .hero > .wrap { position: relative; z-index: 2; }
+    .hero-fx { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+    .hero-fx span { position: absolute; border-radius: 50%; filter: blur(72px); mix-blend-mode: screen; opacity: .5; animation: aurora 24s ease-in-out infinite; }
+    .hero-fx .b1 { width: 52vw; max-width: 640px; aspect-ratio: 1; background: radial-gradient(circle, #1f9f93, transparent 68%); top: -16%; left: 3%; }
+    .hero-fx .b2 { width: 48vw; max-width: 560px; aspect-ratio: 1; background: radial-gradient(circle, #4a5bd6, transparent 68%); top: -6%; right: 2%; animation-delay: -8s; }
+    .hero-fx .b3 { width: 42vw; max-width: 540px; aspect-ratio: 1; background: radial-gradient(circle, #7a4bd6, transparent 68%); bottom: -22%; left: 38%; animation-delay: -16s; }
+    @keyframes aurora { 0%, 100% { transform: translate(0,0) scale(1); } 33% { transform: translate(5vw,4vh) scale(1.18); } 66% { transform: translate(-4vw,3vh) scale(.88); } }
+    @media (prefers-reduced-motion: reduce) { .hero-fx span { animation: none; } }
+    .hero-bloom { position: absolute; z-index: 1; top: 8%; left: 50%; transform: translateX(-50%); width: min(680px, 82vw); height: 300px; pointer-events: none; background: radial-gradient(closest-side, rgba(210,224,255,.26), rgba(140,170,255,.06) 50%, transparent 72%); filter: blur(22px); }
+    .crumb { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; color: #c9d0d8; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10); padding: 7px 15px; border-radius: 999px; margin-bottom: 24px; }
+    .crumb .dot { width: 7px; height: 7px; border-radius: 50%; background: #5fb9ae; }
+    .hero h1 { font-size: clamp(32px, 5.4vw, 54px); font-weight: 900; letter-spacing: -.03em; line-height: 1.05; max-width: 800px; margin: 0 auto 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #dfe3e8 58%, #b6bbc2 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+    .hero .sub { color: #aeb6c0; font-size: clamp(16px, 2.3vw, 20px); max-width: 640px; margin: 0 auto 28px; }
+    .hero .sub b { color: #e9ecef; font-weight: 700; }
     .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
     .micro { margin-top: 16px; font-size: 13.5px; color: #7e8893; }
 
@@ -120,14 +130,16 @@
   </header>
 
   <main>
-    <section class="subhero">
+    <section class="hero">
+      <div class="hero-fx" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
+      <div class="hero-bloom" aria-hidden="true"></div>
       <div class="wrap narrow">
         <span class="crumb"><span class="dot"></span> Gestionale magazzino reseller</span>
         <h1>Il tuo magazzino di rivendita, in automatico</h1>
         <p class="sub">Sneaker, streetwear, carte, lusso. Basta Excel e note sparse: <b>scansiona la foto, l'IA compila tutto</b> — nome, foto ufficiale, prezzo di mercato — e tu torni a vendere.</p>
         <div class="cta-row">
           <a href="/app" class="btn btn-primary">Prova gratis</a>
-          <a href="#come" class="btn btn-white" style="border:1.5px solid var(--line); box-shadow:none; color:var(--ink)">Come funziona</a>
+          <a href="#come" class="btn btn-ghost">Come funziona</a>
         </div>
         <p class="micro">Aggiungi un prodotto in 3 secondi · foto ufficiali incluse · funziona da telefono</p>
       </div>

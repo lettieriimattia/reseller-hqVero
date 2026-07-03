@@ -44,12 +44,25 @@
     .nav-links a:hover { color: #fff; }
     @media (max-width: 760px) { .nav-links a:not(.btn) { display: none; } }
 
-    /* ===== Hero chiaro con eyebrow, coerente con le sezioni ===== */
-    .subhero { text-align: center; padding: 70px 0 6px; }
-    .crumb { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--teal-d); background: #e6f5f3; border: 1px solid #cdeae6; padding: 7px 15px; border-radius: 999px; margin-bottom: 20px; }
-    .crumb .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
-    h1 { font-size: clamp(30px, 5vw, 50px); font-weight: 900; letter-spacing: -.03em; color: var(--ink); max-width: 760px; margin: 0 auto 14px; line-height: 1.06; }
-    .sub { color: var(--muted); font-size: clamp(16px, 2.2vw, 19px); max-width: 620px; margin: 0 auto; }
+    /* ===== Hero scuro con aurora — stesso pattern della landing principale ===== */
+    .hero { position: relative; overflow: hidden; background: #06070a; color: #fff; text-align: center; padding: 82px 0 66px; }
+    .hero > .wrap { position: relative; z-index: 2; }
+    .hero-fx { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+    .hero-fx span { position: absolute; border-radius: 50%; filter: blur(72px); mix-blend-mode: screen; opacity: .5; animation: aurora 24s ease-in-out infinite; }
+    .hero-fx .b1 { width: 52vw; max-width: 640px; aspect-ratio: 1; background: radial-gradient(circle, #1f9f93, transparent 68%); top: -16%; left: 3%; }
+    .hero-fx .b2 { width: 48vw; max-width: 560px; aspect-ratio: 1; background: radial-gradient(circle, #4a5bd6, transparent 68%); top: -6%; right: 2%; animation-delay: -8s; }
+    .hero-fx .b3 { width: 42vw; max-width: 540px; aspect-ratio: 1; background: radial-gradient(circle, #7a4bd6, transparent 68%); bottom: -22%; left: 38%; animation-delay: -16s; }
+    @keyframes aurora { 0%, 100% { transform: translate(0,0) scale(1); } 33% { transform: translate(5vw,4vh) scale(1.18); } 66% { transform: translate(-4vw,3vh) scale(.88); } }
+    @media (prefers-reduced-motion: reduce) { .hero-fx span { animation: none; } }
+    .hero-bloom { position: absolute; z-index: 1; top: 8%; left: 50%; transform: translateX(-50%); width: min(680px, 82vw); height: 300px; pointer-events: none; background: radial-gradient(closest-side, rgba(210,224,255,.26), rgba(140,170,255,.06) 50%, transparent 72%); filter: blur(22px); }
+    .crumb { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; color: #c9d0d8; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10); padding: 7px 15px; border-radius: 999px; margin-bottom: 24px; }
+    .crumb .dot { width: 7px; height: 7px; border-radius: 50%; background: #5fb9ae; }
+    .hero h1 { font-size: clamp(30px, 5vw, 52px); font-weight: 900; letter-spacing: -.03em; line-height: 1.05; max-width: 780px; margin: 0 auto 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #dfe3e8 58%, #b6bbc2 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+    .hero .sub { color: #aeb6c0; font-size: clamp(16px, 2.2vw, 19px); max-width: 620px; margin: 0 auto 26px; }
+    .hero .sub b { color: #e9ecef; }
+    .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .micro { margin-top: 16px; font-size: 13.5px; color: #7e8893; }
 
     section { padding: 40px 0; }
     .eyebrow { color: var(--teal-d); font-weight: 800; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
@@ -119,15 +132,22 @@
   </header>
 
   <main>
-    <section class="subhero">
+    <section class="hero">
+      <div class="hero-fx" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
+      <div class="hero-bloom" aria-hidden="true"></div>
       <div class="wrap narrow">
         <span class="crumb"><span class="dot"></span> Strumenti reseller · Spedizioni</span>
         <h1>Quanto costa spedire e quanto guadagni davvero</h1>
-        <p class="sub">Due calcolatori: una stima del costo di spedizione per corriere e il profitto netto reale di una vendita, con commissioni e spedizione già scontate.</p>
+        <p class="sub">Due calcolatori: una stima del costo di spedizione per corriere e il <b>profitto netto reale</b> di una vendita, con commissioni e spedizione già scontate.</p>
+        <div class="cta-row">
+          <a href="#tools" class="btn btn-primary">Prova i calcolatori</a>
+          <a href="/app" class="btn btn-ghost">Apri l'app</a>
+        </div>
+        <p class="micro">Gratis · nessun dato salvato · prezzi indicativi 2026</p>
       </div>
     </section>
 
-    <section style="padding-top:22px">
+    <section id="tools" style="padding-top:40px">
       <div class="wrap narrow">
         <!-- CALCOLATORE SPEDIZIONE -->
         <div class="calc">
