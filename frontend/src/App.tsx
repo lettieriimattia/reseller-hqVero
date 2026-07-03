@@ -1889,6 +1889,10 @@ export default function App() {
       [taskPanelOpen, () => setTaskPanelOpen(false)],
       [periodPickerOpen, () => setPeriodPickerOpen(false)],
       [!!swipeDelete, () => setSwipeDelete(null)],
+      [!!zoomPhoto, () => setZoomPhoto(null)],
+      [!!lotDetail, () => setLotDetail(null)],
+      [!!marketDetail, () => setMarketDetail(null)],
+      [notifPanelOpen, () => setNotifPanelOpen(false)],
       [cmdOpen, () => setCmdOpen(false)],
       [barcodeModalOpen, () => setBarcodeModalOpen(false)],
       [deleteConfirmOpen, () => setDeleteConfirmOpen(false)],
@@ -1927,7 +1931,7 @@ export default function App() {
     window.addEventListener('keydown', onKey);
     window.addEventListener('mousedown', onDown);
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onDown); };
-  }, [contactsPage, taskPanelOpen, periodPickerOpen, swipeDelete, cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
+  }, [contactsPage, taskPanelOpen, periodPickerOpen, swipeDelete, zoomPhoto, lotDetail, marketDetail, notifPanelOpen, cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
 
   // Tasti FRECCIA ← → su PC: scorrono i set di 4 mesi del grafico a barre (solo in Analytics).
   useEffect(() => {
