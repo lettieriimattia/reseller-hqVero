@@ -555,6 +555,7 @@ export default function App() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<any>(null);
   const [lotDetail, setLotDetail] = useState<any>(null); // dettaglio lotto: lista dei pezzi
+  const [modelDetail, setModelDetail] = useState<any>(null); // dettaglio MODELLO: suddivisione per taglia
   const [zoomPhoto, setZoomPhoto] = useState<string | null>(null); // foto ingrandita (lightbox magazzino)
   const [expandedSoldKey, setExpandedSoldKey] = useState<string | null>(null); // card venduto aperta (tendina compratori)
   // Pubblicazione nel marketplace dalla modale di modifica
@@ -829,7 +830,11 @@ export default function App() {
   const swipeEnd = (key: string, g: any) => {
     if (swipeRef.current.key === key && swipeRef.current.axis === 'h' && swipe && swipe.key === key) {
       const dx = swipe.dx;
-      if (dx >= SWIPE_SELL) { swipeActed.current = true; openSellModal(g.ids, `${g.brand} ${g.name}`, g); }
+      // MODELLO/LOTTO = contenitori (più taglie/pezzi): lo swipe non vende/elimina tutto; apre il
+      // dettaglio così scegli la taglia/pezzo giusto.
+      if (g.isModel || g.isLot) {
+        if (Math.abs(dx) >= SWIPE_SELL) { swipeActed.current = true; openEditModal(g); }
+      } else if (dx >= SWIPE_SELL) { swipeActed.current = true; openSellModal(g.ids, `${g.brand} ${g.name}`, g); }
       else if (dx <= -SWIPE_DEL) { swipeActed.current = true; setSwipeDelete(g); }
     }
     setSwipe(null); swipeRef.current = { x: 0, y: 0, axis: '', key: '' };
@@ -1904,6 +1909,7 @@ export default function App() {
       [!!swipeDelete, () => setSwipeDelete(null)],
       [!!zoomPhoto, () => setZoomPhoto(null)],
       [!!lotDetail, () => setLotDetail(null)],
+      [!!modelDetail, () => setModelDetail(null)],
       [!!marketDetail, () => setMarketDetail(null)],
       [notifPanelOpen, () => setNotifPanelOpen(false)],
       [cmdOpen, () => setCmdOpen(false)],
@@ -1944,7 +1950,7 @@ export default function App() {
     window.addEventListener('keydown', onKey);
     window.addEventListener('mousedown', onDown);
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onDown); };
-  }, [contactsPage, taskPanelOpen, periodPickerOpen, swipeDelete, zoomPhoto, lotDetail, marketDetail, notifPanelOpen, cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
+  }, [contactsPage, taskPanelOpen, periodPickerOpen, swipeDelete, zoomPhoto, lotDetail, modelDetail, marketDetail, notifPanelOpen, cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
 
   // Tasti FRECCIA ← → su PC: scorrono i set di 4 mesi del grafico a barre (solo in Analytics).
   useEffect(() => {
@@ -2263,7 +2269,32 @@ export default function App() {
       }
       return acc;
     }, {} as Record<string, any>));
-    return grouped.sort((a: any, b: any) => {
+
+    // COLLASSA per MODELLO: scarpe uguali (marca+nome+condizione) in UNA card; dentro, la
+    // suddivisione per TAGLIA (magazzino più pulito). Taglia unica → resta card normale. Lotti a sé.
+    const modelMap: Record<string, any[]> = {};
+    for (const g of grouped as any[]) {
+      if (g.isLot) continue;
+      const mk = `${g.category}-${g.brand.toLowerCase()}-${g.name.toLowerCase()}-${g.condition}`;
+      (modelMap[mk] = modelMap[mk] || []).push(g);
+    }
+    const cards: any[] = [];
+    const seen = new Set<string>();
+    for (const g of grouped as any[]) {
+      if (g.isLot) { cards.push(g); continue; }
+      const mk = `${g.category}-${g.brand.toLowerCase()}-${g.name.toLowerCase()}-${g.condition}`;
+      if (seen.has(mk)) continue;
+      seen.add(mk);
+      const groups = modelMap[mk];
+      if (groups.length === 1) { cards.push(groups[0]); continue; } // una sola taglia → card normale
+      let quantity = 0; const ids: string[] = []; let oldestDate = groups[0].oldestDate;
+      const sizes = groups
+        .map(gr => { quantity += gr.quantity; ids.push(...gr.ids); if (gr.oldestDate && (!oldestDate || gr.oldestDate < oldestDate)) oldestDate = gr.oldestDate; return { size: gr.size, quantity: gr.quantity, purchasePrice: gr.purchasePrice, group: gr }; })
+        .sort((a, b) => (parseFloat(a.size) || 999) - (parseFloat(b.size) || 999) || String(a.size).localeCompare(String(b.size)));
+      cards.push({ ...groups[0], isModel: true, size: '', sizes, quantity, ids, oldestDate });
+    }
+
+    return cards.sort((a: any, b: any) => {
       let av: any, bv: any;
       if (sortField === 'price') { av = a.purchasePrice; bv = b.purchasePrice; }
       else if (sortField === 'name') { av = `${a.brand} ${a.name}`; bv = `${b.brand} ${b.name}`; }
@@ -3483,6 +3514,8 @@ export default function App() {
     if (swipeActed.current) { swipeActed.current = false; return; } // tap subito dopo una swipe → ignora
     // I lotti aprono il dettaglio (lista pezzi), non la modifica diretta.
     if (group?.isLot) { setLotDetail(group); return; }
+    // I MODELLI (più taglie) aprono la suddivisione per taglia.
+    if (group?.isModel) { setModelDetail(group); return; }
     setProductToEdit(group);
     setEditBrand(group.brand); setEditName(group.name);
     setEditSize(group.size); setEditCondition(group.condition);
@@ -5493,7 +5526,7 @@ export default function App() {
                               {g.quantity > 1 && <span className="text-[10px] bg-[#6b54c6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
                               {daysBadge}{trackBadge}
                             </div>
-                            <p className="text-xs text-[var(--text-soft)] mt-1">{g.size} · {g.condition} · <span className="text-gray-300 font-semibold">{g.purchasePrice.toFixed(0)}€</span></p>
+                            <p className="text-xs text-[var(--text-soft)] mt-1">{g.isModel ? `${g.sizes.length} ${t('mag.sizesWord')} · ${g.quantity} ${t('mag.pieces')}` : <>{g.size} · {g.condition} · <span className="text-gray-300 font-semibold">{g.purchasePrice.toFixed(0)}€</span></>}</p>
                             {shares?.length > 0 && <p className="text-[10px] text-blue-400/70 mt-0.5 truncate">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                             {!bulkMode && (
                               <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
@@ -5557,7 +5590,7 @@ export default function App() {
                         </div>
                         <div className="p-4 flex-1 flex flex-col items-start text-left">
                           <p className="font-bold text-base leading-tight line-clamp-2 w-full">{g.brand} {g.name}</p>
-                          <p className="text-sm text-[var(--text-muted)] mt-1.5">{g.size} · {g.condition}</p>
+                          <p className="text-sm text-[var(--text-muted)] mt-1.5">{g.isModel ? `${g.sizes.length} ${t('mag.sizesWord')} · ${g.quantity} ${t('mag.pieces')}` : `${g.size} · ${g.condition}`}</p>
                           <p className="text-2xl font-bold text-[var(--text)] mt-auto pt-2 num">{g.purchasePrice.toFixed(0)}€</p>
                           {shares?.length > 0 && <p className="text-[11px] text-blue-400/70 mt-1.5 truncate max-w-full">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                           {!bulkMode && (
@@ -7270,6 +7303,43 @@ export default function App() {
             </div>
           );
         })(), document.body)}
+
+        {/* ========== MODALE: DETTAGLIO MODELLO (suddivisione per taglia) ========== */}
+        {modelDetail && createPortal((
+          <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={() => setModelDetail(null)} {...swipeBack(() => setModelDetail(null))}>
+            <div className="bg-[var(--surface)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-2 p-3 border-b border-[var(--border)] shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
+                <button onClick={() => setModelDetail(null)} aria-label={t('common.back')}
+                  className="flex items-center gap-1 px-2 py-2 -ml-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform text-[var(--text-soft)] hover:text-[var(--text)]">
+                  <ChevronDown size={20} className="rotate-90" /> <span className="text-sm font-bold">{t('common.back')}</span>
+                </button>
+                <div className="min-w-0 flex-1 text-center">
+                  <p className="font-bold truncate">{modelDetail.brand} {modelDetail.name}</p>
+                  <p className="text-[11px] text-[var(--text-soft)]">{modelDetail.sizes.length} {t('mag.sizesWord')} · {modelDetail.quantity} {t('mag.pieces')}</p>
+                </div>
+                <button onClick={() => setModelDetail(null)} aria-label={t('common.close')}
+                  className="p-3 -mr-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
+              </div>
+              <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
+                {modelDetail.sizes.map((s: any, i: number) => (
+                  <div key={i} className="flex items-center gap-3 rounded-2xl bg-[var(--surface-2)] border border-[var(--border)] px-4 py-3">
+                    <div className="w-12 shrink-0 text-center">
+                      <p className="text-[9px] text-[var(--text-faint)] uppercase tracking-widest">{t('form.size')}</p>
+                      <p className="font-black text-lg leading-none">{s.size}</p>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold">×{s.quantity} <span className="text-[var(--text-faint)] font-normal">· {(s.purchasePrice || 0).toFixed(0)}€ cad.</span></p>
+                    </div>
+                    <button onClick={() => { setModelDetail(null); openEditModal(s.group); }}
+                      className="px-3 py-2 rounded-xl bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)] text-xs font-bold flex items-center gap-1.5"><Edit size={13} /></button>
+                    <button onClick={() => { setModelDetail(null); openSellModal(s.group.ids, `${modelDetail.brand} ${modelDetail.name}`, s.group); }}
+                      className="px-3.5 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold flex items-center gap-1.5"><DollarSign size={13} /> {t('mag.sell')}</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ), document.body)}
 
         {/* ========== MODALE: DETTAGLIO LOTTO (lista pezzi) ========== */}
         {lotDetail && createPortal((
