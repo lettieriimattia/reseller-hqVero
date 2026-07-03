@@ -82,6 +82,10 @@ router.post('/webhook', async (req: Request, res: Response) => {
     if (!isAdminChat(chatId)) return;                                 // solo dalle chat autorizzate (tu/socio)
     const text = msg.text.toString().trim();
 
+    // Se c'è un'azione in sospeso per questa chat, il messaggio è la conferma/annullo (anche se
+    // inviato col tasto Reply): gestiscilo come comando agente, non come risposta a un cliente.
+    if (pendingByChat.has(chatId)) { await handleAgentCommand(chatId, text); return; }
+
     // COMANDO all'agente: messaggio normale (NON una risposta a un cliente).
     if (!msg.reply_to_message) {
       if (/^\/start\b/i.test(text)) { await sendTelegramTo(chatId, '👋 Sono l\'agente HQVault. Scrivimi cosa fare (es. "quante Jordan 4 ho", "vendi le Dunk a 180", "ricordami di spedire a Marco"). Le azioni che modificano te le propongo prima e le eseguo solo se rispondi OK.'); return; }
