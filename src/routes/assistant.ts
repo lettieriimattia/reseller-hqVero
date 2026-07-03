@@ -54,6 +54,8 @@ const TOOLS = [
           condizione: { type: 'string', description: 'Condizione, es. "Nuovo" (facoltativo)' },
           categoria: { type: 'string', description: 'Reparto/categoria, es. "Scarpe" (facoltativo)' },
           quantita: { type: ['number', 'string'], description: 'Quante unità IDENTICHE aggiungere (default 1). Es. "aggiungi 4 Jordan 4 uguali" → 4.' },
+          fornitore: { type: 'string', description: 'Da CHI ho comprato: nome/@social del venditore o socio (facoltativo). Es. "da Marco" → "Marco".' },
+          data_acquisto: { type: 'string', description: 'Quando l\'ho comprato (facoltativo). Passa la data COSÌ COME DETTA dall\'utente: "ieri", "12 giugno", "10/06", "3 giorni fa". NON convertirla tu.' },
         },
         required: ['brand', 'nome'],
       },
@@ -70,6 +72,8 @@ const TOOLS = [
           nome_lotto: { type: 'string', description: 'Nome del lotto, es. "Stock Milano 12/06"' },
           categoria: { type: 'string', description: 'Reparto/categoria dei pezzi (facoltativo, es. "Scarpe")' },
           prezzo_totale: { type: ['number', 'string'], description: 'Prezzo TOTALE pagato per tutto il lotto in euro (facoltativo). Solo cifre.' },
+          fornitore: { type: 'string', description: 'Da CHI ho comprato il lotto (facoltativo). Es. "da Luca" → "Luca".' },
+          data_acquisto: { type: 'string', description: 'Quando ho comprato il lotto (facoltativo). Passa la data COSÌ COME DETTA: "ieri", "12 giugno", "10/06". NON convertirla tu.' },
           articoli: {
             type: 'array',
             description: 'Elenco dei pezzi del lotto. Ogni pezzo: {nome, taglia?}. Il costo si divide in parti uguali.',
@@ -151,6 +155,8 @@ const TOOLS = [
           prezzo_vendita: { type: ['number', 'string'], description: 'Prezzo di vendita per unità, in euro' },
           piattaforma: { type: 'string', description: 'Dove l\'hai venduto: Vinted/StockX/eBay/Subito/Privato (facoltativo)' },
           quantita: { type: ['number', 'string'], description: 'Quante unità vendere (default 1)' },
+          cliente: { type: 'string', description: 'A CHI ho venduto: nome/@social del cliente (facoltativo). Es. "a Giulia" → "Giulia".' },
+          data_vendita: { type: 'string', description: 'Quando l\'ho venduto (facoltativo). Passa la data COSÌ COME DETTA: "ieri", "oggi", "12 giugno", "10/06". NON convertirla tu.' },
         },
         required: ['nome', 'prezzo_vendita'],
       },
@@ -214,6 +220,9 @@ Regole:
 - Se l'utente dice un numero di unità uguali (es. "aggiungi 4 Jordan 4 uguali"), imposta "quantita".
 - Per MODIFICARE un articolo già in magazzino (prezzo, taglia, condizione, categoria) usa "modifica_prodotto".
 - Per VENDERE un articolo già in magazzino usa "vendi_prodotto" col prezzo di vendita (e quantità se più di una).
+- FORNITORE e DATA in ACQUISTO: se l'utente dice DA CHI ha comprato ("me le ha vendute Marco", "comprate da Luca", "prese da @tizio") passa "fornitore". Se dice QUANDO ("ieri", "il 12 giugno", "3 giorni fa", "10/06") passa "data_acquisto". Vale sia per "aggiungi_prodotto" che per "crea_lotto".
+- CLIENTE e DATA in VENDITA: se dice A CHI ha venduto ("venduta a Giulia", "presa da @cliente") passa "cliente". Se dice QUANDO l'ha venduta passa "data_vendita".
+- Le date passale ESATTAMENTE come le dice l'utente (es. "ieri", "12 giugno", "10/06"): NON convertirle tu in un altro formato, ci pensa il sistema.
 - Per PROMEMORIA/note ("ricordami…", "segna…") usa "aggiungi_task".
 - Usa UN SOLO tool per richiesta quando basta (più veloce): non incatenare ricerche inutili.
 - Dopo un'azione, conferma in una riga cosa hai fatto (es. "✅ Aggiunto: Jordan 4 Bred, taglia 42 — stock a 21").
@@ -279,6 +288,47 @@ async function findCatalogPhoto(query: string): Promise<{ image: string | null; 
 }
 
 // ---- Esecuzione di un singolo tool ----
+// Interpreta una data scritta in linguaggio naturale italiano (ciò che dice l'utente in chat) e
+// la trasforma in Date. Gestisce: "oggi/ieri/avantieri", "N giorni/settimane/mesi fa",
+// ISO (2025-06-12), gg/mm[/aaaa] e "12 giugno [2025]". Ritorna null se non riconosce nulla.
+const IT_MONTHS: Record<string, number> = {
+  gennaio: 0, febbraio: 1, marzo: 2, aprile: 3, maggio: 4, giugno: 5,
+  luglio: 6, agosto: 7, settembre: 8, ottobre: 9, novembre: 10, dicembre: 11,
+  gen: 0, feb: 1, mar: 2, apr: 3, mag: 4, giu: 5, lug: 6, ago: 7, set: 8, ott: 9, nov: 10, dic: 11,
+};
+function parseItDate(input?: string | null): Date | null {
+  if (!input) return null;
+  const s = String(input).toLowerCase().trim();
+  if (!s) return null;
+  const at = (d: Date) => { d.setHours(12, 0, 0, 0); return d; };
+  const now = new Date();
+  if (/\boggi\b/.test(s)) return at(new Date());
+  if (/\b(l'altro\s*ieri|altro\s*ieri|avantieri|avant'ieri)\b/.test(s)) return at(new Date(Date.now() - 2 * 864e5));
+  if (/\bieri\b/.test(s)) return at(new Date(Date.now() - 864e5));
+  let m = s.match(/(\d+)\s*giorn/);       if (m) return at(new Date(Date.now() - (+m[1]) * 864e5));
+  m = s.match(/(\d+)\s*settiman/);         if (m) return at(new Date(Date.now() - (+m[1]) * 7 * 864e5));
+  m = s.match(/(\d+)\s*mes[ei]/);          if (m) { const d = new Date(); d.setMonth(d.getMonth() - (+m[1])); return at(d); }
+  // ISO 2025-06-12
+  m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/); if (m) return at(new Date(+m[1], +m[2] - 1, +m[3]));
+  // gg/mm[/aaaa] (o con - o .)
+  m = s.match(/\b(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-](\d{2,4}))?\b/);
+  if (m) {
+    let y = m[3] ? +m[3] : now.getFullYear(); if (y < 100) y += 2000;
+    const d = new Date(y, +m[2] - 1, +m[1]);
+    if (!m[3] && d.getTime() > Date.now() + 864e5) d.setFullYear(y - 1); // "10/06" nel futuro → anno scorso
+    return at(d);
+  }
+  // "12 giugno [2025]" o "12 giu"
+  m = s.match(/\b(\d{1,2})\s*(?:°|º)?\s*(?:di\s+)?([a-zà]{3,})\.?(?:\s+(\d{4}))?\b/);
+  if (m && IT_MONTHS[m[2]] !== undefined) {
+    const y = m[3] ? +m[3] : now.getFullYear();
+    const d = new Date(y, IT_MONTHS[m[2]], +m[1]);
+    if (!m[3] && d.getTime() > Date.now() + 864e5) d.setFullYear(y - 1);
+    return at(d);
+  }
+  return null;
+}
+
 async function executeTool(name: string, args: any, ctx: { userId: string }): Promise<any> {
   try {
     if (name === 'aggiungi_task') {
@@ -345,12 +395,16 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
         if (!resolvedSku && found.styleId) resolvedSku = found.styleId;
       }
 
-      const data = {
+      const supplier = (args.fornitore ? String(args.fornitore).trim() : '') || twin?.supplier || null;
+      const boughtOn = parseItDate(args.data_acquisto); // data d'acquisto se detta in chat
+      const data: any = {
         category, brand, name: nome, size, condition, purchasePrice,
         status: 'IN STOCK',
         userId: ctx.userId, warehouseId,
         sku: resolvedSku || null,
+        supplier,
         photos: photo ? JSON.stringify([photo]) : null,
+        ...(boughtOn ? { createdAt: boughtOn } : {}),
       };
       if (qty > 1) await prisma.product.createMany({ data: Array.from({ length: qty }, () => ({ ...data })) });
       else await prisma.product.create({ data });
@@ -363,7 +417,7 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
           name: { equals: nome, mode: 'insensitive' },
         },
       });
-      return { ok: true, aggiunto: `${brand} ${nome}`, taglia: size, prezzo: purchasePrice, foto: !!photo, quantita: qty, stock_totale: stockTotale, raggruppato: !!twin };
+      return { ok: true, aggiunto: `${brand} ${nome}`, taglia: size, prezzo: purchasePrice, foto: !!photo, quantita: qty, stock_totale: stockTotale, raggruppato: !!twin, fornitore: supplier || undefined, data_acquisto: boughtOn ? boughtOn.toLocaleDateString('it-IT') : undefined };
     }
 
     if (name === 'crea_lotto') {
@@ -379,6 +433,8 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
       const category = await defaultCategory(ctx.userId, args.categoria);
       const total = Math.max(Number(args.prezzo_totale) || 0, 0);
       const unit = Math.round((total / valid.length) * 100) / 100; // costo diviso in parti uguali
+      const lotSupplier = (args.fornitore ? String(args.fornitore).trim() : '') || null;
+      const lotBoughtOn = parseItDate(args.data_acquisto);
       let withPhoto = 0;
       for (const it of valid) {
         const nome = String(it.nome).trim();
@@ -390,11 +446,13 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
             category, brand: '', name: nome, size, condition: '—',
             purchasePrice: unit, status: 'IN STOCK', userId: ctx.userId, warehouseId,
             lotName, notes: `Lotto "${lotName}"`,
+            supplier: lotSupplier,
             photos: found.image ? JSON.stringify([found.image]) : null,
+            ...(lotBoughtOn ? { createdAt: lotBoughtOn } : {}),
           },
         });
       }
-      return { ok: true, lotto: lotName, pezzi: valid.length, prezzo_totale: total, costo_cad: unit, foto_trovate: withPhoto };
+      return { ok: true, lotto: lotName, pezzi: valid.length, prezzo_totale: total, costo_cad: unit, foto_trovate: withPhoto, fornitore: lotSupplier || undefined, data_acquisto: lotBoughtOn ? lotBoughtOn.toLocaleDateString('it-IT') : undefined };
     }
 
     if (name === 'modifica_prodotto') {
@@ -418,10 +476,12 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
       if (!all.length) return { error: 'Non ho trovato quel prodotto disponibile in magazzino.' };
       const prods = all.slice(0, sellQty);
       const platform = (args.piattaforma ? String(args.piattaforma).trim() : '') || 'Privato';
+      const customer = (args.cliente ? String(args.cliente).trim() : '') || null;
+      const soldOn = parseItDate(args.data_vendita) || new Date(); // se non detta → adesso
       for (const p of prods) {
-        await prisma.product.update({ where: { id: p.id }, data: { salePrice: prezzo, platform, status: 'VENDUTO' } });
+        await prisma.product.update({ where: { id: p.id }, data: { salePrice: prezzo, platform, status: 'VENDUTO', customer, soldAt: soldOn } });
       }
-      return { ok: true, venduti: prods.length, prodotto: `${prods[0].brand} ${prods[0].name}`, taglia: prods[0].size, prezzo, piattaforma: platform };
+      return { ok: true, venduti: prods.length, prodotto: `${prods[0].brand} ${prods[0].name}`, taglia: prods[0].size, prezzo, piattaforma: platform, cliente: customer || undefined, data_vendita: soldOn.toLocaleDateString('it-IT') };
     }
 
     if (name === 'valuta_prezzo') {
@@ -500,7 +560,9 @@ function summarizeToolResult(name: string, result: any): string {
     const taglia = result.taglia && result.taglia !== '—' ? `, taglia ${result.taglia}` : '';
     const qty = result.quantita > 1 ? ` ×${result.quantita}` : '';
     const stock = result.raggruppato && result.stock_totale ? ` — stock a ${result.stock_totale}` : '';
-    return `✅ Aggiunto: ${result.aggiunto}${qty}${taglia}${result.foto ? ' (con foto)' : ''}${stock}.`;
+    const from = result.fornitore ? ` da ${result.fornitore}` : '';
+    const when = result.data_acquisto ? ` (${result.data_acquisto})` : '';
+    return `✅ Aggiunto: ${result.aggiunto}${qty}${taglia}${from}${when}${result.foto ? ' (con foto)' : ''}${stock}.`;
   }
   if (name === 'modifica_prodotto' && result?.ok) {
     const parti: string[] = [];
@@ -514,7 +576,9 @@ function summarizeToolResult(name: string, result: any): string {
   if (name === 'vendi_prodotto' && result?.ok) {
     const taglia = result.taglia && result.taglia !== '—' ? ` (taglia ${result.taglia})` : '';
     const n = result.venduti > 1 ? ` ×${result.venduti}` : '';
-    return `💰 Venduto: ${result.prodotto}${taglia}${n} a ${result.prezzo}€ su ${result.piattaforma}.`;
+    const to = result.cliente ? ` a ${result.cliente}` : '';
+    const when = result.data_vendita ? ` (${result.data_vendita})` : '';
+    return `💰 Venduto: ${result.prodotto}${taglia}${n}${to} a ${result.prezzo}€ su ${result.piattaforma}${when}.`;
   }
   if (name === 'valuta_prezzo' && result?.valore != null) return `💶 ${result.modello || 'Valore'}: circa ${result.valore}€ (${result.fonte}).`;
   if (name === 'cerca_magazzino' && result?.prodotti) {
