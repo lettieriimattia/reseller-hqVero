@@ -246,6 +246,14 @@
     .final { text-align: center; background: linear-gradient(135deg, #0d9488, #0b7c72); border-radius: 28px; padding: 60px 24px; color: #fff; }
     .final h2 { color: #fff; } .final .lead { color: rgba(255,255,255,.85); }
     .final .btn-white { background: #fff; color: var(--teal-d); }
+    /* Waitlist inline (email capture direttamente in home) */
+    .wl-form { display: flex; gap: 10px; max-width: 440px; margin: 4px auto 0; }
+    @media (max-width: 480px) { .wl-form { flex-direction: column; } }
+    .wl-form input { flex: 1; border: none; border-radius: 12px; padding: 14px 16px; font-size: 15px; outline: none; background: #fff; color: var(--ink); box-shadow: 0 8px 24px -12px rgba(0,0,0,.4); }
+    .wl-form button { border: none; cursor: pointer; }
+    .wl-msg { color: #fff; font-weight: 700; font-size: 14px; margin-top: 14px; min-height: 20px; }
+    .wl-consent { color: rgba(255,255,255,.75); font-size: 12.5px; margin-top: 12px; }
+    .wl-consent a { color: #fff; text-decoration: underline; }
 
     footer { border-top: 1px solid var(--line); padding: 40px 0; color: var(--muted); font-size: 14px; }
     .foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
@@ -375,9 +383,14 @@
     <section>
       <div class="wrap">
         <div class="final reveal">
-          <h2>Pronto a organizzare il tuo reselling?</h2>
-          <p class="lead">Inizia gratis in meno di un minuto. Il tuo magazzino, finalmente sotto controllo.</p>
-          <a href="/waitlist?src=home" class="btn btn-white">Inizia gratis con HQVault</a>
+          <h2>Sii il primo a provarlo</h2>
+          <p class="lead">HQVault sta arrivando. Lascia la tua email e ti avvisiamo appena l'app è pronta.</p>
+          <form id="wlForm" class="wl-form" novalidate>
+            <input id="wlEmail" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
+            <button type="submit" id="wlBtn" class="btn btn-white">Avvisami</button>
+          </form>
+          <p class="wl-msg" id="wlMsg" role="status"></p>
+          <p class="wl-consent">Lasciando l'email acconsenti a un solo avviso al lancio. Niente spam. <a href="/privacy">Privacy</a></p>
         </div>
       </div>
     </section>
@@ -464,6 +477,29 @@
 
     // Conta la visita (pre-lancio, senza cookie).
     try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=home') : fetch('/api/hit?p=home'); } catch (e) {}
+
+    // Waitlist inline: iscrizione email direttamente dalla home.
+    (function () {
+      var form = document.getElementById('wlForm');
+      if (!form) return;
+      var emailEl = document.getElementById('wlEmail');
+      var btn = document.getElementById('wlBtn');
+      var msg = document.getElementById('wlMsg');
+      var RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var email = (emailEl.value || '').trim().toLowerCase();
+        if (!RE.test(email)) { msg.textContent = 'Inserisci un\'email valida.'; return; }
+        btn.disabled = true; btn.textContent = 'Invio…'; msg.textContent = '';
+        fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: 'home' }) })
+          .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+          .then(function (d) {
+            form.style.display = 'none';
+            msg.textContent = (d && d.already) ? '✓ Sei già in lista: ti avviseremo al lancio.' : '✓ Sei in lista! Ti scriviamo appena l\'app è pronta.';
+          })
+          .catch(function () { btn.disabled = false; btn.textContent = 'Avvisami'; msg.textContent = 'Qualcosa è andato storto, riprova.'; });
+      });
+    })();
 
     // Se sei già loggato, vai dritto all'app: la landing non la rivedi.
     fetch('/auth/refresh', { method: 'POST', credentials: 'include' })
