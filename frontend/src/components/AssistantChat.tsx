@@ -91,6 +91,28 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
     if (open && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, open, sending, voiceState]);
 
+  // BLOCCO SCROLL DELLA PAGINA quando la chat è aperta (solo mobile): altrimenti dietro al
+  // pannello si muoveva la pagina invece della conversazione. Su iOS overflow:hidden non basta →
+  // fissiamo il body alla posizione attuale (stessa tecnica dei modali a tutto schermo).
+  useEffect(() => {
+    if (!open) return;
+    if (window.matchMedia('(min-width: 1024px)').matches) return; // desktop: il pannello è flottante, non blocca
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: body.style.overflow };
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
+
   // Persisti la conversazione per la sessione (ultimi 60 messaggi).
   useEffect(() => {
     try { sessionStorage.setItem('hq_chat', JSON.stringify(messages.slice(-60))); } catch { /* storage pieno */ }
