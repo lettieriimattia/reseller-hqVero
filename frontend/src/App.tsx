@@ -526,15 +526,28 @@ export default function App() {
   const [smartLotOpen, setSmartLotOpen] = useState(false); // flusso "Lotto smart (IA)"
   const [dashPopular, setDashPopular] = useState<any[]>([]); // catalogo che scorre in dashboard
   const [enrichingPhotos, setEnrichingPhotos] = useState(false);
-  const enrichMissingPhotos = async () => {
+  const autoEnrichedRef = useRef(false); // aggancio foto automatico una volta per sessione
+  const enrichMissingPhotos = async (silent = false) => {
     setEnrichingPhotos(true);
-    showToast('🖼️ Cerco le foto mancanti…', 'ok');
+    if (!silent) showToast('🖼️ Cerco le foto mancanti…', 'ok');
     const { ok, data } = await apiCall<any>('/products/enrich-photos', { method: 'POST', body: JSON.stringify({}) });
     setEnrichingPhotos(false);
-    if (!ok) { showToast('Errore ricerca foto', 'err'); return; }
+    if (!ok) { if (!silent) showToast('Errore ricerca foto', 'err'); return; }
     await fetchProducts();
-    showToast(data?.updated ? `✅ ${data.updated} foto agganciate` : 'Nessuna nuova foto trovata', data?.updated ? 'ok' : 'warn');
+    if (!silent) showToast(data?.updated ? `✅ ${data.updated} foto agganciate` : 'Nessuna nuova foto trovata', data?.updated ? 'ok' : 'warn');
+    else if (data?.updated) showToast(`✅ ${data.updated} foto agganciate in automatico`, 'ok');
   };
+  // AUTO: all'apertura del Magazzino, se ci sono prodotti IN STOCK senza foto, le aggancia da
+  // solo (una volta per sessione, silenzioso). Solo admin per ora.
+  useEffect(() => {
+    if (autoEnrichedRef.current || currentView !== 'magazzino') return;
+    if (!productsLoaded || !products.length || !isAdminEmail(user?.email)) return;
+    if (!products.some((p: any) => p.status === 'IN STOCK' && !p.photos)) return;
+    autoEnrichedRef.current = true;
+    enrichMissingPhotos(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentView, productsLoaded, products, user]);
+
   // Tracking opzionale della spedizione di vendita (OUTBOUND) direttamente nel flusso Vendi
   const [sellTrackingCode, setSellTrackingCode] = useState('');
   const [sellTrackingCarrier, setSellTrackingCarrier] = useState('Auto');
