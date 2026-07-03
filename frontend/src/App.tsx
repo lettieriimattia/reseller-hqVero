@@ -5095,7 +5095,7 @@ export default function App() {
 
             {/* Header: solo saluto a SINISTRA. "This week / To ship / Stale" rimossi. */}
             <div className="min-w-0">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black truncate">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight">
                 {(() => {
                   const h = new Date().getHours();
                   return (h >= 5 && h < 12) ? (lang === 'en' ? 'Good morning' : 'Buongiorno')
