@@ -35,12 +35,13 @@ function matches(cat: string, keys: string[]): boolean {
 
 // Valore in base alla CONDIZIONE: percentuale del prezzo base (nuovo/DS = 100%). Numeri di
 // partenza — regolabili qui in un punto solo (li conferma il socio). Il match è per "contiene".
+// Percentuali REALI (fornite dal socio) per SCARPE e VESTITI: 100 / 77 / 62 / 45 / 30.
 const CONDITION_PCT: Array<[string, number]> = [
   ['deadstock', 1], ['ds', 1], ['nuovo', 1], ['new', 1], ['sigillat', 1],
-  ['come nuovo', 0.9], ['vnds', 0.9], ['quasi nuovo', 0.9],
-  ['usato ottimo', 0.75], ['ottim', 0.75],
-  ['usato buono', 0.6], ['buono', 0.6], ['buone', 0.6],
-  ['usato discreto', 0.45], ['discret', 0.45], ['segni', 0.45],
+  ['come nuovo', 0.77], ['vnds', 0.77], ['quasi nuovo', 0.77],
+  ['usato ottimo', 0.62], ['ottim', 0.62],
+  ['usato buono', 0.45], ['buono', 0.45], ['buone', 0.45],
+  ['usato discreto', 0.30], ['discret', 0.30], ['segni', 0.30],
 ];
 function conditionMultiplier(condition?: string): { pct: number; label: string } {
   const c = (condition || '').toLowerCase().trim();
@@ -138,7 +139,11 @@ export async function getValuation(opts: {
     if (q.length >= 2) {
       const v = await getStockXValuation({ query: q, name: opts.name, size: opts.size, category: opts.category, sku: opts.sku });
       if (v.value != null) {
-        return { value: v.value, currency: 'EUR', source: 'Valutazione di mercato', reliable: true, sample: v.sample || 1, itemName: v.itemName };
+        // Anche qui applichiamo la % per condizione (vestiti/streetwear passano di qui).
+        const cm = conditionMultiplier(opts.condition);
+        const adjusted = Math.round((v.value as number) * cm.pct);
+        const src = cm.pct !== 1 ? `Valutazione di mercato · ${Math.round(cm.pct * 100)}% (${cm.label})` : 'Valutazione di mercato';
+        return { value: adjusted, currency: 'EUR', source: src, reliable: true, sample: v.sample || 1, itemName: v.itemName, low: cm.pct !== 1 ? v.value : undefined };
       }
     }
   }
