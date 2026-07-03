@@ -2677,11 +2677,8 @@ export default function App() {
     setSelectedWarehouseId('');
     setIsConsignment(false); setConsignmentName(''); setConsignmentPercent('');
     setIsFormOpen(true);
-    // Apri SUBITO la fotocamera nello stesso gesto del tap su "+"
-    // (deve essere sincrono: niente setTimeout o il browser blocca la camera).
-    // Solo su dispositivi touch (mobile/tablet): su desktop eviterei un dialog file a sorpresa.
-    const isTouch = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
-    if (isTouch) addCameraInputRef.current?.click();
+    // NB: la fotocamera NON si apre più in automatico col "+". Si apre solo quando l'utente
+    // tocca "Scatta" dentro il form (addCameraInputRef). Così il "+" porta alla pagina prodotto.
   };
 
   // Aggiungi dal CATALOGO con DETTAGLI (idea utente): apre il form già precompilato
