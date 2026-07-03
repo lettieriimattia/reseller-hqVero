@@ -288,6 +288,21 @@ async function compressImage(file: File, maxSize = 1024, quality = 0.5): Promise
 
 // Sentinella "modalità automatica": l'IA rileva la categoria dalla foto
 const AUTO_CATEGORY = '__AUTO__';
+
+// Dal catalogo il NOME arriva spesso col brand già dentro ("Jordan 5 Trophy Room" con brand
+// "Jordan") → mostrando "brand + nome" diventava "Jordan Jordan 5…". Togliamo il brand ripetuto
+// in testa al nome. Robusto: gestisce anche brand a più parole (es. "Air Jordan").
+function stripDupBrand(brand?: string | null, name?: string | null): string {
+  const b = (brand || '').trim(); const n = (name || '').trim();
+  if (!b || !n) return n;
+  const esc = b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const cleaned = n.replace(new RegExp(`^${esc}\\s+`, 'i'), '').trim();
+  return cleaned || n;
+}
+// Titolo pulito "Brand Nome" senza duplicazioni del brand.
+function fullName(brand?: string | null, name?: string | null): string {
+  return `${(brand || '').trim()} ${stripDupBrand(brand, name)}`.trim();
+}
 // Valutazione di mercato: DISATTIVATA. La ricerca eBay generica dava prezzi falsi
 // (es. Rolex a 110€ perché pescava cinturini/parti/repliche). Riattivare SOLO con
 // fonti affidabili per categoria (StockX sneaker, Chrono24 orologi, ecc.).
@@ -834,7 +849,7 @@ export default function App() {
       // dettaglio così scegli la taglia/pezzo giusto.
       if (g.isModel || g.isLot) {
         if (Math.abs(dx) >= SWIPE_SELL) { swipeActed.current = true; openEditModal(g); }
-      } else if (dx >= SWIPE_SELL) { swipeActed.current = true; openSellModal(g.ids, `${g.brand} ${g.name}`, g); }
+      } else if (dx >= SWIPE_SELL) { swipeActed.current = true; openSellModal(g.ids, `${fullName(g.brand, g.name)}`, g); }
       else if (dx <= -SWIPE_DEL) { swipeActed.current = true; setSwipeDelete(g); }
     }
     setSwipe(null); swipeRef.current = { x: 0, y: 0, axis: '', key: '' };
@@ -855,7 +870,7 @@ export default function App() {
     const results = await Promise.allSettled(ids.map(id => apiCall(`/products/${id}`, { method: 'DELETE' })));
     const ok = results.filter(r => r.status === 'fulfilled' && (r.value as any).ok).length;
     await fetchProducts();
-    if (ok > 0) showToast(`🗑️ ${g.brand} ${g.name} rimosso — puoi reintegrarlo dalle Importazioni`, 'ok', { label: t('common.cancel'), onClick: () => undoDeleteIds(ids) });
+    if (ok > 0) showToast(`🗑️ ${fullName(g.brand, g.name)} rimosso — puoi reintegrarlo dalle Importazioni`, 'ok', { label: t('common.cancel'), onClick: () => undoDeleteIds(ids) });
     else showToast(t('ts.error'), 'err');
   };
   const [bulkSellOpen, setBulkSellOpen] = useState(false);
@@ -1300,7 +1315,7 @@ export default function App() {
         from: { ...shipFrom },
         to: { ...shipTo },
         pkg: { weight: shipPreset.weight, width: shipPreset.width, height: shipPreset.height, length: shipPreset.length },
-        content: shippingProduct ? `${shippingProduct.brand} ${shippingProduct.name}` : 'Articolo',
+        content: shippingProduct ? `${fullName(shippingProduct.brand, shippingProduct.name)}` : 'Articolo',
       }),
     });
     setIsBooking(false);
@@ -1313,7 +1328,7 @@ export default function App() {
       } else {
         // Demo: mostra l'etichetta DENTRO l'app (niente nuova finestra che intrappola su mobile)
         openDemoLabel(
-          shippingProduct ? `${shippingProduct.brand} ${shippingProduct.name}` : 'Articolo',
+          shippingProduct ? `${fullName(shippingProduct.brand, shippingProduct.name)}` : 'Articolo',
           shipFrom?.name || user?.name || 'Venditore',
           shipTo?.name || 'Acquirente',
           data.reference || data.trackingCode || 'HQ-DEMO',
@@ -2312,7 +2327,7 @@ export default function App() {
     return cards.sort((a: any, b: any) => {
       let av: any, bv: any;
       if (sortField === 'price') { av = a.purchasePrice; bv = b.purchasePrice; }
-      else if (sortField === 'name') { av = `${a.brand} ${a.name}`; bv = `${b.brand} ${b.name}`; }
+      else if (sortField === 'name') { av = `${fullName(a.brand, a.name)}`; bv = `${fullName(b.brand, b.name)}`; }
       else { av = a.oldestDate || a.createdAt || ''; bv = b.oldestDate || b.createdAt || ''; }
       if (sortDir === 'asc') return av > bv ? 1 : -1;
       return av < bv ? 1 : -1;
@@ -2641,7 +2656,7 @@ export default function App() {
     setDetectedReparto(''); setShowRepartoGrid(false);
     setScanResult(null); setScanMarket(null); setPriceEstimate(null);
     setCategory(item.category || AUTO_CATEGORY);
-    setBrand(item.brand || ''); setName(item.name || ''); setSku(item.sku || '');
+    setBrand(item.brand || ''); setName(stripDupBrand(item.brand, item.name)); setSku(item.sku || '');
     setPrice(''); setQuantity('1'); setCondition('DS'); setSize('');
     setPokeName(''); setPokeGraded('No'); setPokeGrade(''); setCardNumber(''); setCardGame('pokemon');
     setWatchBrand(''); setWatchModel(''); setWatchCase(''); setWatchStrap(''); setWatchMaterial('');
@@ -2879,11 +2894,11 @@ export default function App() {
     try { snap = p.shippingLabel ? JSON.parse(p.shippingLabel) : null; } catch {}
     if (snap?.labelUrl) { window.open(snap.labelUrl, '_blank'); return; } // etichetta reale (PDF corriere)
     if (snap) {
-      openDemoLabel(`${p.brand} ${p.name}`, snap.from?.name || user?.name || 'Venditore', snap.to?.name || 'Acquirente', snap.trackingCode || p.trackingCode, snap.carrier || p.trackingCarrier || 'Corriere');
+      openDemoLabel(`${fullName(p.brand, p.name)}`, snap.from?.name || user?.name || 'Venditore', snap.to?.name || 'Acquirente', snap.trackingCode || p.trackingCode, snap.carrier || p.trackingCarrier || 'Corriere');
       return;
     }
     // Nessuno snapshot ma c'è un tracking: ricostruisci la stessa etichetta dai dati salvati.
-    openDemoLabel(`${p.brand} ${p.name}`, user?.name || 'Venditore', 'Acquirente', p.trackingCode, p.trackingCarrier || 'Corriere');
+    openDemoLabel(`${fullName(p.brand, p.name)}`, user?.name || 'Venditore', 'Acquirente', p.trackingCode, p.trackingCarrier || 'Corriere');
   };
   // Apre la pagina pubblica di tracciamento del corriere (azione di sistema, non un link in chat).
   const trackShipment = (code: string) => {
@@ -4020,7 +4035,7 @@ export default function App() {
   const handleReturn = async (group: any) => {
     const id = group.ids?.[0];
     if (!id) return;
-    await handleReturnIds([id], `${group.brand} ${group.name}`);
+    await handleReturnIds([id], `${fullName(group.brand, group.name)}`);
   };
 
   // Reso di UNO o più pezzi SPECIFICI (per id) — così si rende il paio giusto, non l'ultimo/primo.
@@ -4492,7 +4507,7 @@ export default function App() {
                     {it.photo ? <img src={it.photo} alt="" className="w-full h-full object-cover" /> : <span className="text-4xl">{getCategoryIcon(it.category)}</span>}
                   </div>
                   <div className="p-3">
-                    <p className="font-bold text-sm truncate">{it.brand} {it.name}</p>
+                    <p className="font-bold text-sm truncate">{fullName(it.brand, it.name)}</p>
                     <p className="text-[11px] text-[var(--text-soft)]">{it.size} · {it.condition}</p>
                     <p className="text-lg font-bold mt-1">{it.price != null ? `${it.price}€` : '—'}</p>
                   </div>
@@ -4506,7 +4521,7 @@ export default function App() {
             <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0"
                 style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
-                <span className="font-bold text-sm truncate">{marketDetail.brand} {marketDetail.name}</span>
+                <span className="font-bold text-sm truncate">{fullName(marketDetail.brand, marketDetail.name)}</span>
                 <button onClick={() => setMarketDetail(null)} aria-label="Chiudi"
                   className="p-3 -mr-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
               </div>
@@ -4515,7 +4530,7 @@ export default function App() {
                   {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
                 </div>
                 <div className="p-5">
-                  <p className="text-xl font-bold">{marketDetail.brand} {marketDetail.name}</p>
+                  <p className="text-xl font-bold">{fullName(marketDetail.brand, marketDetail.name)}</p>
                   <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
                   <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
                   {marketDetail.breakdown && (
@@ -5226,7 +5241,7 @@ export default function App() {
                             className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[var(--fill)] cursor-pointer transition-colors">
                             <span className="text-xl shrink-0">{getCategoryIcon(p.category)}</span>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold truncate">{p.brand} {p.name}</p>
+                              <p className="text-sm font-bold truncate">{fullName(p.brand, p.name)}</p>
                               <p className="text-[10px] text-[var(--text-faint)] font-mono truncate">{p.trackingCarrier || t('home.carrier')} · {p.trackingCode}</p>
                             </div>
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${st.c}`}>{st.t}</span>
@@ -5442,7 +5457,7 @@ export default function App() {
                               : <span className="text-2xl shrink-0 w-14 text-center">{getCategoryIcon(p.category)}</span>}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-bold text-sm truncate">{p.brand} {p.name}</span>
+                                <span className="font-bold text-sm truncate">{fullName(p.brand, p.name)}</span>
                                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${paid ? 'text-[#6b54c6] bg-[#6b54c6]/15' : 'text-amber-400 bg-amber-500/15'}`}>{paid ? t('mag.paidInApp') : t('mag.soldOutside')}</span>
                                 {p.trackingCode && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase text-green-400 bg-green-500/15">{t('mag.shipped')}</span>}
                               </div>
@@ -5545,7 +5560,7 @@ export default function App() {
                           <div className={`flex-1 min-w-0 ${!bulkMode ? 'cursor-pointer' : ''}`}
                             onClick={!bulkMode ? () => openEditModal(g) : undefined}>
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-sm truncate">{g.brand} {g.name}</span>
+                              <span className="font-bold text-sm truncate">{fullName(g.brand, g.name)}</span>
                               {g.quantity > 1 && <span className="text-[10px] bg-[#6b54c6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
                               {daysBadge}{trackBadge}
                             </div>
@@ -5581,7 +5596,7 @@ export default function App() {
                                 <div className="w-px bg-[var(--fill)]" />
                               </>
                             )}
-                            <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> {t('mag.sell')}</button>
+                            <button onClick={() => openSellModal(g.ids, `${fullName(g.brand, g.name)}`, g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> {t('mag.sell')}</button>
                           </div>
                         )}
                       </div>
@@ -5612,7 +5627,7 @@ export default function App() {
                           )}
                         </div>
                         <div className="p-4 flex-1 flex flex-col items-start text-left">
-                          <p className="font-bold text-base leading-tight line-clamp-2 w-full">{g.brand} {g.name}</p>
+                          <p className="font-bold text-base leading-tight line-clamp-2 w-full">{fullName(g.brand, g.name)}</p>
                           <p className="text-sm text-[var(--text-muted)] mt-1.5">{g.isModel ? modelSub(g) : `${g.size} · ${g.condition}`}</p>
                           <p className="text-2xl font-bold text-[var(--text)] mt-auto pt-2 num">{g.purchasePrice.toFixed(0)}€</p>
                           {shares?.length > 0 && <p className="text-[11px] text-blue-400/70 mt-1.5 truncate max-w-full">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
@@ -5633,10 +5648,10 @@ export default function App() {
                             {isAdmin ? (
                               <div className="grid grid-cols-2 gap-1.5">
                                 <button onClick={() => openShipping(g)} className="py-2 rounded-lg text-xs font-bold bg-violet-500/15 text-violet-400 hover:bg-violet-500/25 hover:text-violet-300 transition-colors flex items-center justify-center gap-1"><Package size={12} /> {t('mag.ship')}</button>
-                                <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1"><DollarSign size={12} /> {t('mag.sell')}</button>
+                                <button onClick={() => openSellModal(g.ids, `${fullName(g.brand, g.name)}`, g)} className="py-2 rounded-lg text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1"><DollarSign size={12} /> {t('mag.sell')}</button>
                               </div>
                             ) : (
-                              <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> {t('mag.sell')}</button>
+                              <button onClick={() => openSellModal(g.ids, `${fullName(g.brand, g.name)}`, g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> {t('mag.sell')}</button>
                             )}
                             {MARKETPLACE_ENABLED && (
                             <button onClick={() => quickTogglePublic(g)}
@@ -5695,7 +5710,7 @@ export default function App() {
                                 : <span className="text-2xl shrink-0 opacity-60">{getCategoryIcon(g.category)}</span>}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <p className="font-bold text-sm truncate">{g.brand} {g.name}</p>
+                                  <p className="font-bold text-sm truncate">{fullName(g.brand, g.name)}</p>
                                   <span className="text-[9px] font-bold text-[#6b54c6] bg-[#6b54c6]/15 px-1.5 py-0.5 rounded-full uppercase">{t('mag.paidPending')}</span>
                                 </div>
                                 <p className="text-[10px] text-[var(--text-soft)]">{g.size} · {g.condition} · {(g.heldAmount ?? g.publicPrice ?? 0).toFixed(0)}€</p>
@@ -5724,10 +5739,10 @@ export default function App() {
                                 ? <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[var(--border)]"><img src={photos[0]} alt="" className="w-full h-full object-cover" /></div>
                                 : <span className="text-2xl shrink-0 opacity-60">{getCategoryIcon(g.category)}</span>}
                               <div className="flex-1 min-w-0">
-                                <p className="font-bold text-sm">{g.brand} {g.name}</p>
+                                <p className="font-bold text-sm">{fullName(g.brand, g.name)}</p>
                                 <p className="text-[10px] text-[var(--text-soft)]">{g.size} · {g.condition}</p>
                               </div>
-                              <button onClick={() => openSellModal(g.ids, `${g.brand} ${g.name}`, g)}
+                              <button onClick={() => openSellModal(g.ids, `${fullName(g.brand, g.name)}`, g)}
                                 className="shrink-0 text-xs bg-yellow-500/15 border border-yellow-500/25 text-yellow-400 hover:bg-yellow-500/25 px-3 py-2 rounded-xl font-semibold transition-colors flex items-center gap-1.5">
                                 <Truck size={12} /> Completa
                               </button>
@@ -5748,7 +5763,7 @@ export default function App() {
                               : <span className="text-2xl shrink-0 opacity-40">{getCategoryIcon(g.category)}</span>}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                                <p className="font-bold text-sm">{g.brand} {g.name}</p>
+                                <p className="font-bold text-sm">{fullName(g.brand, g.name)}</p>
                                 {g.quantity > 1 && (
                                   <span className="text-[9px] bg-green-500/15 border border-green-500/25 text-green-400 px-1.5 py-0.5 rounded-full font-semibold shrink-0">×{g.quantity}</span>
                                 )}
@@ -5811,7 +5826,7 @@ export default function App() {
                                         <span className="text-[var(--text-faint)]">
                                           {s.soldAt ? new Date(s.soldAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' }) : '—'} · {s.salePrice.toFixed(0)}€
                                         </span>
-                                        <button onClick={(e) => { e.stopPropagation(); handleReturnIds([s.id], `${g.brand} ${g.name}`); }}
+                                        <button onClick={(e) => { e.stopPropagation(); handleReturnIds([s.id], `${fullName(g.brand, g.name)}`); }}
                                           className="flex items-center gap-1 text-blue-400 hover:text-blue-300 font-semibold px-2 py-0.5 rounded-lg hover:bg-blue-500/10 transition-colors">
                                           ↩ {t('mag.return')}
                                         </button>
@@ -6177,7 +6192,7 @@ export default function App() {
                                 <div className="px-3 pb-2.5 space-y-1 border-t border-[var(--border)] pt-2">
                                   {b.items.map((p: any) => (
                                     <div key={p.id} className="flex items-center justify-between gap-2 text-[11px]">
-                                      <span className="text-[var(--text-soft)] truncate">{p.brand} {p.name} <span className="text-[var(--text-faint)]">· {p.size}</span></span>
+                                      <span className="text-[var(--text-soft)] truncate">{fullName(p.brand, p.name)} <span className="text-[var(--text-faint)]">· {p.size}</span></span>
                                       <span className="text-[var(--text-faint)] shrink-0 num">{dfmt(p.soldAt)} · {(p.salePrice || 0).toFixed(0)}€</span>
                                     </div>
                                   ))}
@@ -6217,7 +6232,7 @@ export default function App() {
                                 <div className="px-3 pb-2.5 space-y-1 border-t border-[var(--border)] pt-2">
                                   {s.items.map((p: any) => (
                                     <div key={p.id} className="flex items-center justify-between gap-2 text-[11px]">
-                                      <span className="text-[var(--text-soft)] truncate">{p.brand} {p.name} <span className="text-[var(--text-faint)]">· {p.size}</span></span>
+                                      <span className="text-[var(--text-soft)] truncate">{fullName(p.brand, p.name)} <span className="text-[var(--text-faint)]">· {p.size}</span></span>
                                       <span className="text-[var(--text-faint)] shrink-0 num">{dfmt(p.createdAt)} · {(p.purchasePrice || 0).toFixed(0)}€</span>
                                     </div>
                                   ))}
@@ -6520,7 +6535,7 @@ export default function App() {
                         <div key={p.id} className="flex items-center gap-3 p-3 bg-[var(--surface-2)] rounded-xl">
                           <span className="text-lg shrink-0">{medals[i]}</span>
                           <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm truncate">{p.brand} {p.name}</p>
+                            <p className="font-bold text-sm truncate">{fullName(p.brand, p.name)}</p>
                             <p className="text-[10px] text-[var(--text-soft)]">{p.size} · {p.platform} · {p.purchasePrice.toFixed(0)}€→{(p.salePrice || 0).toFixed(0)}€</p>
                           </div>
                           <div className="text-right shrink-0">
@@ -6612,7 +6627,7 @@ export default function App() {
                           <span className="text-base">{getCategoryIcon(p.category)}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold truncate">{p.brand} {p.name}</p>
+                          <p className="text-sm font-bold truncate">{fullName(p.brand, p.name)}</p>
                           <p className="text-[10px] text-[var(--text-soft)]">{p.size} · {p.condition}</p>
                         </div>
                         <div className="text-right shrink-0">
@@ -6670,7 +6685,7 @@ export default function App() {
                       {it.photo ? <img src={it.photo} alt="" className="w-full h-full object-cover" /> : <span className="text-4xl">{getCategoryIcon(it.category)}</span>}
                     </div>
                     <div className="p-3">
-                      <p className="font-bold text-sm truncate">{it.brand} {it.name}</p>
+                      <p className="font-bold text-sm truncate">{fullName(it.brand, it.name)}</p>
                       <p className="text-[11px] text-[var(--text-soft)]">{it.size} · {it.condition}</p>
                       <p className="text-lg font-bold mt-1">{it.price != null ? `${it.price}€` : '—'}</p>
                     </div>
@@ -7030,7 +7045,7 @@ export default function App() {
               {/* Header con chiudi (sempre visibile, sotto la status bar) */}
               <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0"
                 style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
-                <span className="font-bold text-sm truncate">{marketDetail.brand} {marketDetail.name}</span>
+                <span className="font-bold text-sm truncate">{fullName(marketDetail.brand, marketDetail.name)}</span>
                 <button onClick={() => setMarketDetail(null)} aria-label="Chiudi"
                   className="p-3 -mr-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
               </div>
@@ -7058,7 +7073,7 @@ export default function App() {
                   );
                 })()}
                 <div className="p-5">
-                  <p className="text-xl font-bold">{marketDetail.brand} {marketDetail.name}</p>
+                  <p className="text-xl font-bold">{fullName(marketDetail.brand, marketDetail.name)}</p>
                   <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
                   {marketDetail.sku && <p className="text-[11px] text-[var(--text-faint)] mt-1">SKU: {marketDetail.sku}</p>}
                   <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
@@ -7090,7 +7105,7 @@ export default function App() {
                       <button onClick={() => payProduct(marketDetail.id)}
                         className="flex-1 py-3 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white font-bold transition-colors">{t('market.buyNow')}</button>
                     ) : (
-                      <button onClick={() => contactSeller(marketDetail.id, `${t('market.buyMsgPre')}${marketDetail.brand} ${marketDetail.name}${t('market.buyMsgPost')}`)}
+                      <button onClick={() => contactSeller(marketDetail.id, `${t('market.buyMsgPre')}${fullName(marketDetail.brand, marketDetail.name)}${t('market.buyMsgPost')}`)}
                         className="flex-1 py-3 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white font-bold transition-colors">{t('market.buy')}</button>
                     )}
                     <button onClick={() => contactSeller(marketDetail.id)}
@@ -7312,7 +7327,7 @@ export default function App() {
                         <div className="px-4 pb-3 space-y-1 border-t border-[var(--border)] pt-2">
                           {s.items.map((p: any) => (
                             <div key={p.id} className="flex items-center justify-between gap-2 text-[12px]">
-                              <span className="text-[var(--text-soft)] truncate">{p.brand} {p.name} <span className="text-[var(--text-faint)]">· {p.size}</span></span>
+                              <span className="text-[var(--text-soft)] truncate">{fullName(p.brand, p.name)} <span className="text-[var(--text-faint)]">· {p.size}</span></span>
                               <span className="text-[var(--text-faint)] shrink-0 num">{dfmt(isBuyers ? p.soldAt : p.createdAt)} · {(isBuyers ? (p.salePrice || 0) : (p.purchasePrice || 0)).toFixed(0)}€</span>
                             </div>
                           ))}
@@ -7372,7 +7387,7 @@ export default function App() {
                     </div>
                     <button onClick={() => { setModelDetail(null); openEditModal(s.group); }}
                       className="px-2.5 py-2 rounded-xl bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)] text-xs font-bold flex items-center gap-1.5"><Edit size={13} /></button>
-                    <button onClick={() => { setModelDetail(null); openSellModal(s.group.ids, `${modelDetail.brand} ${modelDetail.name}`, s.group); }}
+                    <button onClick={() => { setModelDetail(null); openSellModal(s.group.ids, `${fullName(modelDetail.brand, modelDetail.name)}`, s.group); }}
                       className="px-3 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold flex items-center gap-1.5"><DollarSign size={13} /> {t('mag.sell')}</button>
                   </div>
                   );
@@ -7425,14 +7440,14 @@ export default function App() {
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold truncate">{p.brand} {p.name}</p>
+                            <p className="text-sm font-semibold truncate">{fullName(p.brand, p.name)}</p>
                             <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition} · {p.purchasePrice?.toFixed(0)}€</p>
                           </div>
                           {!selecting && (
                           <div className="flex gap-1.5 shrink-0">
                             <button onClick={() => { setLotDetail(null); openEditModal({ ...p, ids: [p.id], quantity: 1, isLot: false }); }}
                               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)]">Modifica</button>
-                            <button onClick={() => { setLotDetail(null); openSellModal([p.id], `${p.brand} ${p.name}`, p); }}
+                            <button onClick={() => { setLotDetail(null); openSellModal([p.id], `${fullName(p.brand, p.name)}`, p); }}
                               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-500/15 text-green-400">Vendi</button>
                           </div>
                           )}
@@ -7505,7 +7520,7 @@ export default function App() {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-bold text-sm">{p.brand} {p.name}</p>
+                      <p className="font-bold text-sm">{fullName(p.brand, p.name)}</p>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${dir === 'OUTBOUND' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-blue-500/15 text-blue-400'}`}>
                         {dir === 'OUTBOUND' ? t('track.dirSale') : t('track.dirIncoming')}
                       </span>
@@ -7530,7 +7545,7 @@ export default function App() {
                   <div className="border-t border-yellow-800/40 bg-yellow-900/10 px-4 py-2.5 flex items-center justify-between">
                     <p className="text-xs text-yellow-400 font-bold">{t('track.deliveredSaleToComplete')}</p>
                     <button
-                      onClick={() => openSellModal([p.id], `${p.brand} ${p.name}`, p)}
+                      onClick={() => openSellModal([p.id], `${fullName(p.brand, p.name)}`, p)}
                       className="text-[10px] bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 px-3 py-1.5 rounded-xl font-bold transition-colors">
                       {t('track.complete')}
                     </button>
@@ -7797,7 +7812,7 @@ export default function App() {
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {staleProducts.slice(0, 10).map((sp: any) => (
                       <div key={sp.id} className="text-xs bg-[var(--surface-2)] p-2 rounded-lg">
-                        <p className="text-[var(--text)] font-bold">{sp.brand} {sp.name}</p>
+                        <p className="text-[var(--text)] font-bold">{fullName(sp.brand, sp.name)}</p>
                         <p className="text-[var(--text-soft)]">
                           {sp.daysInStock}{t('set.daysInStock')} • {t('set.discount')}: <span className="text-yellow-400 font-bold">-{sp.suggestedDiscount}%</span> → <span className="text-green-400">€{sp.suggestedPrice}</span>
                         </p>
@@ -8552,17 +8567,17 @@ export default function App() {
         );
         const navActions = baseActions.filter(a => !q || a.label.toLowerCase().includes(q));
         const prodItems = (q.length > 0
-          ? products.filter((p: any) => `${p.brand} ${p.name} ${p.size || ''} ${p.category || ''}`.toLowerCase().includes(q)).slice(0, 8)
+          ? products.filter((p: any) => `${fullName(p.brand, p.name)} ${p.size || ''} ${p.category || ''}`.toLowerCase().includes(q)).slice(0, 8)
           : []
         ).map((p: any) => ({
           key: `prod-${p.id}`, icon: Package,
-          label: `${p.brand} ${p.name}`,
+          label: `${fullName(p.brand, p.name)}`,
           sub: `${p.size ? p.size + ' · ' : ''}${p.category || ''} · ${p.status === 'VENDUTO' ? t('cmd.sold') : t('cmd.inStockWord')}`,
           run: () => {
             setCurrentView('magazzino');
             setMagazzinoView(p.status === 'VENDUTO' ? 'sold' : 'instock');
             setFilterCat('all');
-            setSearchTerm(`${p.brand} ${p.name}`);
+            setSearchTerm(`${fullName(p.brand, p.name)}`);
             window.scrollTo({ top: 0, behavior: 'smooth' });
           },
         }));
@@ -10703,7 +10718,7 @@ export default function App() {
                     {repricingList && repricingList.map((r: any) => (
                       <div key={r.id} className="flex items-center justify-between bg-[var(--surface-2)] rounded-xl p-3">
                         <div className="min-w-0">
-                          <p className="text-sm font-bold truncate">{r.brand} {r.name}</p>
+                          <p className="text-sm font-bold truncate">{fullName(r.brand, r.name)}</p>
                           <p className="text-[10px] text-[var(--text-faint)]">{r.daysInStock} {t('plan.daysWord')} · {t('plan.sizeWord')} {r.size}</p>
                         </div>
                         <div className="text-right shrink-0 ml-3">
@@ -10726,7 +10741,7 @@ export default function App() {
                       className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#6b54c6]">
                       <option value="">{t('plan.chooseProduct')}</option>
                       {products.filter((p: any) => p.status === 'IN STOCK').map((p: any) => (
-                        <option key={p.id} value={p.id}>{p.brand} {p.name} ({p.size})</option>
+                        <option key={p.id} value={p.id}>{fullName(p.brand, p.name)} ({p.size})</option>
                       ))}
                     </select>
                     <div className="flex gap-2">
@@ -10770,7 +10785,7 @@ export default function App() {
                       className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#6b54c6]">
                       <option value="">{t('plan.chooseProduct')}</option>
                       {products.filter((p: any) => p.status === 'IN STOCK').map((p: any) => (
-                        <option key={p.id} value={p.id}>{p.brand} {p.name} ({p.size})</option>
+                        <option key={p.id} value={p.id}>{fullName(p.brand, p.name)} ({p.size})</option>
                       ))}
                     </select>
                     <div className="flex flex-wrap gap-2">
