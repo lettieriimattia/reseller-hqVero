@@ -477,14 +477,8 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
       const found = await findCatalogImage(brand, name);
       if (found) finalPhotos = [found.image];
     }
-    if (finalPhotos && isCloudinaryConfigured()) {
-      const toUpload = finalPhotos.filter((p: any) => typeof p === 'string' && p.startsWith('data:'));
-      if (toUpload.length > 0) {
-        const uploaded = await uploadImages(toUpload);
-        let i = 0;
-        finalPhotos = finalPhotos.map((p: any) => (typeof p === 'string' && p.startsWith('data:')) ? uploaded[i++] : p);
-      }
-    }
+    // Le foto scattate (base64) NON si caricano ora: si salva SUBITO com'è (il base64 è mostrabile)
+    // e l'upload su Cloudinary avviene in BACKGROUND dopo la risposta → salvataggio istantaneo.
     const parsedPhotos = finalPhotos ? JSON.stringify(finalPhotos) : null;
 
     // Gestione profitShareOverride
@@ -518,29 +512,27 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
       },
     });
 
-    await logInventory({
-      productId: newProduct.id,
-      userId: req.user!.userId,
-      action: 'STATUS_CHANGE',
-      field: 'status',
-      newValue: 'IN STOCK',
-    });
-
-    await audit({
-      action: 'PRODUCT_CREATE', userId: req.user!.userId, req,
-      resource: newProduct.id,
-      metadata: { brand, name, price },
-    });
-
-    await notifyWarehouseMembers({
-      warehouseId: targetMembership.warehouseId,
-      excludeUserId: req.user!.userId,
-      type: 'PRODUCT_ADDED',
-      title: 'Nuovo prodotto in magazzino',
-      message: `${brand} ${name} (${size}) aggiunto · categoria ${category}`,
-    });
-
+    // RISPOSTA ISTANTANEA: il prodotto è già salvato. Tutto il resto (log, notifica, upload foto
+    // su Cloudinary) gira in BACKGROUND e non fa aspettare l'utente.
     res.json(newProduct);
+
+    (async () => {
+      try {
+        await logInventory({ productId: newProduct.id, userId: req.user!.userId, action: 'STATUS_CHANGE', field: 'status', newValue: 'IN STOCK' });
+        await audit({ action: 'PRODUCT_CREATE', userId: req.user!.userId, req, resource: newProduct.id, metadata: { brand, name, price } });
+        await notifyWarehouseMembers({ warehouseId: targetMembership.warehouseId, excludeUserId: req.user!.userId, type: 'PRODUCT_ADDED', title: 'Nuovo prodotto in magazzino', message: `${brand} ${name} (${size}) aggiunto · categoria ${category}` });
+        // Upload foto scattate (base64) → Cloudinary, poi sostituisco gli URL nel prodotto.
+        if (finalPhotos && isCloudinaryConfigured()) {
+          const toUpload = finalPhotos.filter((p: any) => typeof p === 'string' && p.startsWith('data:'));
+          if (toUpload.length > 0) {
+            const uploaded = await uploadImages(toUpload);
+            let i = 0;
+            const swapped = finalPhotos.map((p: any) => (typeof p === 'string' && p.startsWith('data:')) ? (uploaded[i++] || p) : p);
+            await prisma.product.update({ where: { id: newProduct.id }, data: { photos: JSON.stringify(swapped) } });
+          }
+        }
+      } catch (e: any) { logger.warn('POST /products lavoro in background', { err: e?.message, id: newProduct.id }); }
+    })();
   } catch (err: any) {
     logger.error('Errore POST /products', { err: err.message });
     res.status(500).json({ error: 'Errore creazione prodotto' });
