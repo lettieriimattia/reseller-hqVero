@@ -209,7 +209,7 @@ const TOOLS = [
 const SYSTEM_PROMPT = `Sei "HQ", l'assistente di HQVault (gestionale per reseller di sneaker/streetwear).
 Aiuti l'utente a GESTIRE il suo magazzino: elencare/cercare ciò che ha, riepilogo, aggiungere, modificare, vendere, eliminare prodotti, e valutarne il prezzo.
 Regole:
-- Rispondi SEMPRE in italiano, in modo breve e amichevole.
+- Rispondi nella STESSA LINGUA in cui scrive l'utente: se scrive in inglese rispondi in inglese, se scrive in italiano rispondi in italiano. Sempre breve e amichevole. (Reply in the SAME language the user writes in — English or Italian.)
 - MAGAZZINO = ciò che l'utente POSSIEDE davvero. CATALOGO = database di modelli in vendita nel mondo (NON è roba sua).
 - Per domande su cosa HA/possiede ("cosa ho", "che taglie di X ho", "quante X ho in magazzino", "ho le Y?") usa SOLO "cerca_magazzino". Se non trova nulla, rispondi CHIARO e BREVE: "Non hai [X] in magazzino." e FERMATI. NON cercare nel catalogo e NON elencare modelli del catalogo per queste domande: sarebbe fuorviante (l'utente crederebbe di averli). HAI ACCESSO ai dati: non dire mai che non puoi vederli.
 - Per i totali ("quanto vale lo stock", "come va") usa "riepilogo_magazzino".
@@ -220,9 +220,9 @@ Regole:
 - Se l'utente dice un numero di unità uguali (es. "aggiungi 4 Jordan 4 uguali"), imposta "quantita".
 - Per MODIFICARE un articolo già in magazzino (prezzo, taglia, condizione, categoria) usa "modifica_prodotto".
 - Per VENDERE un articolo già in magazzino usa "vendi_prodotto" col prezzo di vendita (e quantità se più di una).
-- FORNITORE e DATA in ACQUISTO: se l'utente dice DA CHI ha comprato ("me le ha vendute Marco", "comprate da Luca", "prese da @tizio") passa "fornitore". Se dice QUANDO ("ieri", "il 12 giugno", "3 giorni fa", "10/06") passa "data_acquisto". Vale sia per "aggiungi_prodotto" che per "crea_lotto".
-- CLIENTE e DATA in VENDITA: se dice A CHI ha venduto ("venduta a Giulia", "presa da @cliente") passa "cliente". Se dice QUANDO l'ha venduta passa "data_vendita".
-- Le date passale ESATTAMENTE come le dice l'utente (es. "ieri", "12 giugno", "10/06"): NON convertirle tu in un altro formato, ci pensa il sistema.
+- FORNITORE e DATA in ACQUISTO: se l'utente dice DA CHI ha comprato ("me le ha vendute Marco", "comprate da Luca", "bought from Marco", "from @tizio") passa "fornitore". Se dice QUANDO ("ieri", "il 12 giugno", "3 giorni fa", "10/06", "yesterday", "June 12", "3 days ago") passa "data_acquisto". Vale sia per "aggiungi_prodotto" che per "crea_lotto".
+- CLIENTE e DATA in VENDITA: se dice A CHI ha venduto ("venduta a Giulia", "sold to Giulia", "to @cliente") passa "cliente". Se dice QUANDO l'ha venduta passa "data_vendita".
+- Le date passale ESATTAMENTE come le dice l'utente (es. "ieri"/"yesterday", "12 giugno"/"June 12", "10/06"): NON convertirle tu in un altro formato, ci pensa il sistema.
 - Per PROMEMORIA/note ("ricordami…", "segna…") usa "aggiungi_task".
 - Usa UN SOLO tool per richiesta quando basta (più veloce): non incatenare ricerche inutili.
 - Dopo un'azione, conferma in una riga cosa hai fatto (es. "✅ Aggiunto: Jordan 4 Bred, taglia 42 — stock a 21").
@@ -295,6 +295,10 @@ const IT_MONTHS: Record<string, number> = {
   gennaio: 0, febbraio: 1, marzo: 2, aprile: 3, maggio: 4, giugno: 5,
   luglio: 6, agosto: 7, settembre: 8, ottobre: 9, novembre: 10, dicembre: 11,
   gen: 0, feb: 1, mar: 2, apr: 3, mag: 4, giu: 5, lug: 6, ago: 7, set: 8, ott: 9, nov: 10, dic: 11,
+  // Inglese (l'utente può scrivere in EN)
+  january: 0, february: 1, march: 2, april: 3, may: 4, june: 5, july: 6,
+  august: 7, september: 8, october: 9, november: 10, december: 11,
+  jan: 0, jun: 5, jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, dec: 11,
 };
 function parseItDate(input?: string | null): Date | null {
   if (!input) return null;
@@ -302,12 +306,12 @@ function parseItDate(input?: string | null): Date | null {
   if (!s) return null;
   const at = (d: Date) => { d.setHours(12, 0, 0, 0); return d; };
   const now = new Date();
-  if (/\boggi\b/.test(s)) return at(new Date());
-  if (/\b(l'altro\s*ieri|altro\s*ieri|avantieri|avant'ieri)\b/.test(s)) return at(new Date(Date.now() - 2 * 864e5));
-  if (/\bieri\b/.test(s)) return at(new Date(Date.now() - 864e5));
-  let m = s.match(/(\d+)\s*giorn/);       if (m) return at(new Date(Date.now() - (+m[1]) * 864e5));
-  m = s.match(/(\d+)\s*settiman/);         if (m) return at(new Date(Date.now() - (+m[1]) * 7 * 864e5));
-  m = s.match(/(\d+)\s*mes[ei]/);          if (m) { const d = new Date(); d.setMonth(d.getMonth() - (+m[1])); return at(d); }
+  if (/\boggi\b|\btoday\b/.test(s)) return at(new Date());
+  if (/\b(l'altro\s*ieri|altro\s*ieri|avantieri|avant'ieri|day before yesterday)\b/.test(s)) return at(new Date(Date.now() - 2 * 864e5));
+  if (/\bieri\b|\byesterday\b/.test(s)) return at(new Date(Date.now() - 864e5));
+  let m = s.match(/(\d+)\s*(?:giorn|days?)/);          if (m) return at(new Date(Date.now() - (+m[1]) * 864e5));
+  m = s.match(/(\d+)\s*(?:settiman|weeks?)/);           if (m) return at(new Date(Date.now() - (+m[1]) * 7 * 864e5));
+  m = s.match(/(\d+)\s*(?:mes[ei]|months?)/);           if (m) { const d = new Date(); d.setMonth(d.getMonth() - (+m[1])); return at(d); }
   // ISO 2025-06-12
   m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/); if (m) return at(new Date(+m[1], +m[2] - 1, +m[3]));
   // gg/mm[/aaaa] (o con - o .)
@@ -318,11 +322,19 @@ function parseItDate(input?: string | null): Date | null {
     if (!m[3] && d.getTime() > Date.now() + 864e5) d.setFullYear(y - 1); // "10/06" nel futuro → anno scorso
     return at(d);
   }
-  // "12 giugno [2025]" o "12 giu"
-  m = s.match(/\b(\d{1,2})\s*(?:°|º)?\s*(?:di\s+)?([a-zà]{3,})\.?(?:\s+(\d{4}))?\b/);
+  // "12 giugno [2025]" / "12 giu" / "12 June 2025" (giorno prima del mese)
+  m = s.match(/\b(\d{1,2})\s*(?:°|º)?\s*(?:di\s+|of\s+)?([a-zà]{3,})\.?(?:\s+(\d{4}))?\b/);
   if (m && IT_MONTHS[m[2]] !== undefined) {
     const y = m[3] ? +m[3] : now.getFullYear();
     const d = new Date(y, IT_MONTHS[m[2]], +m[1]);
+    if (!m[3] && d.getTime() > Date.now() + 864e5) d.setFullYear(y - 1);
+    return at(d);
+  }
+  // "June 12[, 2025]" (formato inglese: mese prima del giorno)
+  m = s.match(/\b([a-z]{3,})\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?\b/);
+  if (m && IT_MONTHS[m[1]] !== undefined) {
+    const y = m[3] ? +m[3] : now.getFullYear();
+    const d = new Date(y, IT_MONTHS[m[1]], +m[2]);
     if (!m[3] && d.getTime() > Date.now() + 864e5) d.setFullYear(y - 1);
     return at(d);
   }

@@ -35,6 +35,8 @@ function Waveform({ level }: { level: number }) {
 }
 
 export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it', hideBar = false, onPlus }: Props) {
+  const en = lang === 'en'; // testi della chatbox nella lingua dell'app
+  const tx = (it: string, eng: string) => (en ? eng : it);
   const [open, setOpen] = useState(false);
   // La conversazione resta finché non chiudi l'app (sessionStorage = si svuota alla chiusura).
   const [messages, setMessages] = useState<Msg[]>(() => {
@@ -151,7 +153,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       try {
         clip = await recordCommand(9000, 1100, 4000, setMicLevel); // si ferma da sola alla pausa
       } catch {
-        showToast('Permesso microfono negato', 'err');
+        showToast(tx('Permesso microfono negato', 'Microphone permission denied'), 'err');
         stopConvo();
         return;
       }
@@ -169,7 +171,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
 
   const toggleMic = useCallback(() => {
     if (convoRef.current) { stopConvo(); return; }
-    if (!recSupported) { showToast('Microfono non disponibile su questo browser', 'warn'); return; }
+    if (!recSupported) { showToast(tx('Microfono non disponibile su questo browser', 'Microphone not available on this browser'), 'warn'); return; }
     setOpen(true);
     convoRef.current = true;
     setConvo(true);
@@ -201,13 +203,13 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
   const startPtt = useCallback(async (e: React.PointerEvent) => {
     if (pttActive || sending) return;
     e.preventDefault();
-    if (!recSupported) { showToast('Microfono non disponibile su questo browser', 'warn'); return; }
+    if (!recSupported) { showToast(tx('Microfono non disponibile su questo browser', 'Microphone not available on this browser'), 'warn'); return; }
     try { (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); } catch { /* noop */ }
     pttStartRef.current = { x: e.clientX, y: e.clientY };
     setPttCancel(false); setPttLocked(false);
     pttCancelRef.current = false; pttLockedRef.current = false;
     const rec = new VoiceRecorder();
-    try { await rec.start(); } catch { showToast('Permesso microfono negato', 'err'); return; }
+    try { await rec.start(); } catch { showToast(tx('Permesso microfono negato', 'Microphone permission denied'), 'err'); return; }
     recRef.current = rec;
     setPttActive(true); setPttSecs(0);
     pttTimerRef.current = setInterval(() => setPttSecs(s => s + 1), 1000);
@@ -256,7 +258,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
         sendRef.current(t, true);
       };
 
-      startVoskWakeWord({ modelUrl, triggers, onCommand, onWake: () => showToast('🎙️ Dimmi pure…', 'ok') })
+      startVoskWakeWord({ modelUrl, triggers, onCommand, onWake: () => showToast(tx('🎙️ Dimmi pure…', '🎙️ Go ahead…'), 'ok') })
         .then(h => { if (cancelled) { h.stop(); return; } wakeRef.current = h; setWakeOn(true); setWakeLoading(false);
           // Ricorda che il mic è stato concesso: su iOS (niente Permissions API) serve per ri-armare
           // da soli alle aperture successive, senza riconnettere a mano.
@@ -345,9 +347,9 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
           </div>
         </div>
       )}
-      <div className="flex items-center gap-2 rounded-full bg-[var(--surface)]/90 backdrop-blur-xl border border-white/5 pl-1.5 pr-1.5 py-2">
+      <div className="flex items-center gap-2 rounded-full bg-[var(--surface-blur)] backdrop-blur-xl border border-[var(--border-2)] shadow-[0_12px_44px_-8px_rgba(0,0,0,0.6)] ring-1 ring-black/5 pl-1.5 pr-1.5 py-2">
         {/* "+" grande = aggiungi un prodotto al volo. Quando ascolta/parla, un puntino pulsa sopra. */}
-        <button onClick={() => { onPlus?.(); }} aria-label="Aggiungi prodotto"
+        <button onClick={() => { onPlus?.(); }} aria-label={tx('Aggiungi prodotto', 'Add product')}
           className="relative w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-md shadow-teal-500/30 hover:from-teal-400 hover:to-emerald-500 transition-all active:scale-90">
           <Plus size={22} />
           {(convo || wakeOn) && (
@@ -360,24 +362,24 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
           onFocus={() => setOpen(true)}
           onKeyDown={e => { if (e.key === 'Enter') send(input); }}
           placeholder={
-            convo ? (voiceState === 'transcribing' ? 'Trascrivo…' : 'Parla pure… faccio una pausa e invio')
-            : sending ? 'Eseguo…'
-            : wakeOn ? 'Chiedi a HQVault…  o di’ "Ehy HQ"'
-            : 'Chiedi a HQVault...'}
+            convo ? (voiceState === 'transcribing' ? tx('Trascrivo…', 'Transcribing…') : tx('Parla pure… faccio una pausa e invio', 'Go ahead… I pause and send'))
+            : sending ? tx('Eseguo…', 'Working…')
+            : wakeOn ? tx('Chiedi a HQVault…  o di’ "Ehy HQ"', 'Ask HQVault…  or say "Ehy HQ"')
+            : tx('Chiedi a HQVault...', 'Ask HQVault...')}
           disabled={convo}
           style={{ WebkitAppearance: 'none', appearance: 'none' }}
           className="flex-1 bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] min-w-0 disabled:opacity-70" />
         <button
           onPointerDown={startPtt} onPointerMove={movePtt} onPointerUp={endPtt}
           onPointerCancel={() => finishPtt('cancel')} onContextMenu={e => e.preventDefault()}
-          aria-label="Tieni premuto per parlare"
+          aria-label={tx('Tieni premuto per parlare', 'Hold to talk')}
           style={{ touchAction: 'none' }}
           className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
             pttActive ? (pttCancel ? 'bg-red-500/25 text-red-300 scale-110' : 'bg-red-500/15 text-red-400 ring-1 ring-red-500/30 scale-110') : 'text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-white/5'
           }`}>
           <Mic size={18} />
         </button>
-        <button onClick={() => send(input)} disabled={sending || !input.trim()} aria-label="Invia"
+        <button onClick={() => send(input)} disabled={sending || !input.trim()} aria-label={tx('Invia', 'Send')}
           className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-lg shadow-violet-500/30 transition-all hover:from-violet-400 hover:to-violet-500 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed">
           {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
         </button>
@@ -403,14 +405,14 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
                 <div className="flex flex-col leading-none gap-1">
                   <span className="font-bold tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
                   <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-400/80">
-                    {wakeOn ? 'in ascolto di Ehy HQ' : 'Assistente · beta'}
+                    {wakeOn ? tx('in ascolto di Ehy HQ', 'listening for Ehy HQ') : tx('Assistente · beta', 'Assistant · beta')}
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-1">
                 {/* Toggle wake-word "Ehy HQ" (Vosk on-device). L'utente la accende: niente mic a sorpresa. */}
-                <button onClick={() => setWakeEnabled(v => { if (!v) userArmedRef.current = true; return !v; })} aria-label={wakeEnabled ? 'Disattiva Ehy HQ' : 'Attiva Ehy HQ'}
-                  title='Ascolto "Ehy HQ"'
+                <button onClick={() => setWakeEnabled(v => { if (!v) userArmedRef.current = true; return !v; })} aria-label={wakeEnabled ? tx('Disattiva Ehy HQ', 'Disable Ehy HQ') : tx('Attiva Ehy HQ', 'Enable Ehy HQ')}
+                  title={tx('Ascolto "Ehy HQ"', 'Listening for "Ehy HQ"')}
                   className={`flex items-center gap-1.5 px-2.5 h-8 rounded-full text-[11px] font-bold transition-colors ${
                     wakeOn ? 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/30'
                     : wakeEnabled ? 'bg-white/5 text-[var(--text-soft)]'
@@ -419,7 +421,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
                   {wakeLoading ? <Loader2 size={14} className="animate-spin" /> : <Radio size={14} className={wakeOn ? 'animate-pulse' : ''} />}
                   Ehy HQ
                 </button>
-                <button onClick={() => setOpen(false)} aria-label="Chiudi"
+                <button onClick={() => setOpen(false)} aria-label={tx('Chiudi', 'Close')}
                   className="text-[var(--text-faint)] hover:text-[var(--text)] p-1.5 rounded-full hover:bg-white/5 transition-colors">
                   <X size={20} />
                 </button>
@@ -430,8 +432,8 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
             <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-5 py-3 space-y-3.5">
               {messages.length === 0 && (
                 <div className="text-sm text-[var(--text-soft)] py-8 text-center leading-relaxed">
-                  Ciao! Scrivimi o parla 👇<br />
-                  <span className="text-[var(--text-faint)]">es. "aggiungi le Jordan 4 Bred taglia 42 a 180€" oppure "quanto vale la Dunk Panda?"</span>
+                  {tx('Ciao! Scrivimi o parla 👇', 'Hi! Type or talk to me 👇')}<br />
+                  <span className="text-[var(--text-faint)]">{tx('es. "aggiungi le Jordan 4 Bred taglia 42 a 180€" oppure "quanto vale la Dunk Panda?"', 'e.g. "add the Jordan 4 Bred size 42 for €180" or "what\'s the Dunk Panda worth?"')}</span>
                 </div>
               )}
               {messages.map((m, i) => (
@@ -455,8 +457,8 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
                 <div className="flex justify-end">
                   <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl rounded-br-md bg-violet-500/15 border border-violet-500/30">
                     {voiceState === 'recording'
-                      ? <><Waveform level={micLevel} /><span className="text-xs text-violet-200 font-medium">in ascolto…</span></>
-                      : <><Loader2 size={15} className="animate-spin text-violet-300" /><span className="text-xs text-violet-200 font-medium">trascrivo…</span></>}
+                      ? <><Waveform level={micLevel} /><span className="text-xs text-violet-200 font-medium">{tx('in ascolto…', 'listening…')}</span></>
+                      : <><Loader2 size={15} className="animate-spin text-violet-300" /><span className="text-xs text-violet-200 font-medium">{tx('trascrivo…', 'transcribing…')}</span></>}
                   </div>
                 </div>
               )}

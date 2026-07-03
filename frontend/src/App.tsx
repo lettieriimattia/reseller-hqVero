@@ -4911,10 +4911,12 @@ export default function App() {
       {/* ========== HEADER ========== */}
       <header className="lux-underline sticky top-0 z-40 lg:static lg:z-30 lg:flex-none bg-[var(--bg-blur)] backdrop-blur-xl lg:border-b lg:border-[var(--border)]"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        {/* Sfumatura sotto lo status bar iOS (notch/orario): tiene sempre leggibili l'orario e
-            il wordmark HQVault, evitando la sovrapposizione col contenuto su iPhone. Solo mobile. */}
-        <div className="lg:hidden pointer-events-none absolute top-0 left-0 right-0 bg-gradient-to-b from-[var(--bg)] via-[var(--bg)]/85 to-transparent"
-          style={{ height: 'calc(env(safe-area-inset-top) + 18px)' }} aria-hidden="true" />
+        {/* Sfumatura sotto lo status bar (orario/batteria): la zona della status bar resta PIENA
+            (contenuto invisibile lì) e poi sfuma dolcemente → scorrendo il contenuto svanisce sotto
+            orario/batteria invece di collidere. Solo mobile. */}
+        <div className="lg:hidden pointer-events-none absolute top-0 left-0 right-0" aria-hidden="true"
+          style={{ height: 'calc(env(safe-area-inset-top) + 26px)',
+                   background: 'linear-gradient(to bottom, var(--bg) 0%, var(--bg) calc(env(safe-area-inset-top) + 2px), transparent 100%)' }} />
         {/* Sfumatura SOTTO l'header (mobile): quando scorri, il contenuto sfuma dolcemente sotto la
             barra invece di tagliarsi con una linea netta. */}
         <div className="lg:hidden pointer-events-none absolute left-0 right-0 top-full h-6 bg-gradient-to-b from-[var(--bg-blur)] to-transparent" aria-hidden="true" />
@@ -7375,7 +7377,7 @@ export default function App() {
                       <p className="font-black text-lg leading-none">{s.size}</p>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold">×{s.quantity} <span className="text-[var(--text-faint)] font-normal">· {(s.purchasePrice || 0).toFixed(0)}€ cad.</span></p>
+                      <p className="text-sm font-bold">×{s.quantity} <span className="text-[var(--text-faint)] font-normal">· {(s.purchasePrice || 0).toFixed(0)}€ {t('mag.each')}</span></p>
                       {(s.condition || s.supplier || s.date) && (
                         <p className="text-[11px] text-[var(--text-soft)] truncate mt-0.5">
                           {s.condition ? `${s.condition} · ` : ''}
