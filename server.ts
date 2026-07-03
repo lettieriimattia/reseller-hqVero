@@ -203,6 +203,14 @@ if (isProduction) {
   app.get(/^\/app(\/.*)?$/, (_req, res) => res.sendFile(path.join(frontendDist, 'index.html')));
   // Vetrina pubblica condivisa: /s/<token> → pagina statica che carica i prodotti condivisi.
   app.get(/^\/s\/[^/]+$/, (_req, res) => res.sendFile(path.join(frontendDist, 'vetrina.html')));
+  // Landing pubbliche /soluzioni/<slug> (URL pulito SENZA .html, SENZA login) → file statico
+  // corrispondente. Deve stare PRIMA dei router API, altrimenti authenticate risponde 401.
+  app.get(/^\/soluzioni\/([a-z0-9-]+)\/?$/, (req: Request, res: Response) => {
+    const slug = (req.params as any)[0];
+    res.sendFile(path.join(frontendDist, 'soluzioni', `${slug}.html`), (err) => {
+      if (err) res.status(404).sendFile(path.join(frontendDist, 'landing.html'));
+    });
+  });
   app.use(express.static(frontendDist));
 }
 
