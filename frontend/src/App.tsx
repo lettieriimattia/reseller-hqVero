@@ -997,6 +997,7 @@ export default function App() {
   const [adminDisputes, setAdminDisputes] = useState<any[]>([]);
   const [adminFeedback, setAdminFeedback] = useState<any[]>([]);
   const [adminFbNuove, setAdminFbNuove] = useState(0);
+  const [fbFilter, setFbFilter] = useState<'nuove' | 'risolte'>('nuove'); // distinzione assistenza: da rispondere vs risolte
   const [replyingId, setReplyingId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [replySending, setReplySending] = useState(false);
@@ -8352,11 +8353,30 @@ export default function App() {
               )}
 
               {/* Vista RICHIESTE */}
-              {adminView === 'feedback' && (
-                <div className="divide-y divide-[var(--border)] max-h-[34rem] overflow-y-auto">
-                  {adminFeedback.length === 0 ? (
-                    <p className="p-6 text-center text-xs text-[var(--text-faint)]">Nessuna richiesta al momento.</p>
-                  ) : adminFeedback.map(f => (
+              {adminView === 'feedback' && (() => {
+                const isOpen = (f: any) => f.status === 'nuova'; // "nuova" = arrivata, non ancora risposta
+                const nuove = adminFeedback.filter(isOpen);
+                const risolte = adminFeedback.filter(f => !isOpen(f));
+                const list = fbFilter === 'nuove' ? nuove : risolte;
+                return (
+                <>
+                  {/* Distinzione: assistenza DA RISPONDERE vs GIÀ RISOLTA */}
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--border)] sticky top-0 bg-[var(--surface)] z-10">
+                    <button onClick={() => setFbFilter('nuove')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${fbFilter === 'nuove' ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                      Da rispondere
+                      {nuove.length > 0 && <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${fbFilter === 'nuove' ? 'bg-white/25' : 'bg-[#6b54c6] text-white'}`}>{nuove.length}</span>}
+                    </button>
+                    <button onClick={() => setFbFilter('risolte')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${fbFilter === 'risolte' ? 'bg-[#6b54c6] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                      Risolte
+                      {risolte.length > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400">{risolte.length}</span>}
+                    </button>
+                  </div>
+                <div className="divide-y divide-[var(--border)] max-h-[30rem] overflow-y-auto">
+                  {list.length === 0 ? (
+                    <p className="p-6 text-center text-xs text-[var(--text-faint)]">{fbFilter === 'nuove' ? 'Nessuna richiesta da rispondere. 🎉' : 'Nessuna richiesta risolta.'}</p>
+                  ) : list.map(f => (
                     <div key={f.id} className="px-4 py-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
@@ -8408,7 +8428,9 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-              )}
+                </>
+                );
+              })()}
 
               {/* Vista CONTESTAZIONI */}
               {adminView === 'disputes' && (
