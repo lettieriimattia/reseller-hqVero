@@ -19,7 +19,7 @@ import {
   KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon, ScanFace,
   Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal, Send,
   Footprints, Shirt, Watch, ShoppingBag, Gem, Glasses, SprayCan, Smartphone,
-  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check
+  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check, Share2
 } from 'lucide-react';
 
 // ==========================================
@@ -3903,6 +3903,23 @@ export default function App() {
     errors > 0 ? showToast(t('ts.deletedWithErrors').replace('{n}', String(errors)), 'warn') : showToast(t('ts.nProductsDeleted').replace('{n}', String(ids.length)), 'ok', { label: t('common.cancel'), onClick: () => undoDeleteIds(ids) });
   };
 
+  // ----- CONDIVIDI PRODOTTI SELEZIONATI (vetrina pubblica, solo campi sicuri) -----
+  const [shareResult, setShareResult] = useState<{ url: string; count: number } | null>(null);
+  const [shareCreating, setShareCreating] = useState(false);
+  const shareSelected = async () => {
+    const ids = getBulkSelectedIds();
+    if (!ids.length) return;
+    setShareCreating(true);
+    const { ok, data } = await apiCall<any>('/share', { method: 'POST', body: JSON.stringify({ productIds: ids, sellerName: user?.name || '' }) });
+    setShareCreating(false);
+    if (ok && data?.url) {
+      const full = `${window.location.origin}${data.url}`;
+      setShareResult({ url: full, count: data.count });
+      try { await navigator.clipboard.writeText(full); } catch {}
+      setBulkMode(false); setSelectedGroupKeys(new Set()); setSelectedPieceIds(new Set());
+    } else showToast(data?.error || t('ts.error'), 'err');
+  };
+
   const handleBulkSell = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsBulkProcessing(true);
@@ -7126,6 +7143,27 @@ export default function App() {
           </div>
         ), document.body)}
 
+        {/* ========== MODALE: LINK VETRINA CONDIVISA ========== */}
+        {shareResult && createPortal((
+          <div className="fixed inset-0 z-[210] bg-black/60 backdrop-blur-sm flex items-center justify-center p-5" onClick={() => setShareResult(null)}>
+            <div className="bg-[var(--surface)] border border-[var(--border-2)] rounded-3xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+              <div className="w-12 h-12 rounded-2xl bg-[#6b54c6]/15 text-[#6b54c6] flex items-center justify-center mb-3"><Share2 size={22} /></div>
+              <h3 className="text-lg font-black">Vetrina creata · {shareResult.count} prodotti</h3>
+              <p className="text-sm text-[var(--text-soft)] mt-1 mb-3">Link copiato negli appunti. Mostra <b>solo</b> questi prodotti (niente prezzi d'acquisto, clienti o resto del magazzino).</p>
+              <div className="flex items-center gap-2 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5">
+                <span className="text-[12px] text-[var(--text-soft)] truncate flex-1">{shareResult.url}</span>
+                <button onClick={() => { navigator.clipboard.writeText(shareResult.url).catch(() => {}); showToast('Link copiato'); }}
+                  className="text-[#6b54c6] hover:text-[#8a78d9] shrink-0"><Copy size={16} /></button>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <a href={shareResult.url} target="_blank" rel="noopener noreferrer"
+                  className="flex-1 py-2.5 rounded-xl border border-[var(--border-2)] text-sm font-bold text-center text-[var(--text-soft)] hover:text-[var(--text)]">Apri</a>
+                <button onClick={() => setShareResult(null)} className="flex-1 py-2.5 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white text-sm font-bold">Ok</button>
+              </div>
+            </div>
+          </div>
+        ), document.body)}
+
         {/* ========== POPUP CONFERMA ELIMINA (da swipe ← sinistra) ========== */}
         {swipeDelete && createPortal((
           <div className="fixed inset-0 z-[210] bg-black/60 backdrop-blur-sm flex items-center justify-center p-5" onClick={() => setSwipeDelete(null)}>
@@ -9903,6 +9941,16 @@ export default function App() {
                   : 'Tieni premuto una card per selezionare'}
               </span>
             </div>
+            {/* Condividi (solo admin per ora): vetrina pubblica dei prodotti selezionati */}
+            {isAdminEmail(user?.email) && (
+              <button
+                onClick={shareSelected}
+                disabled={selCount === 0 || shareCreating}
+                title="Condividi selezionati"
+                className="px-3 py-2 bg-[#6b54c6]/25 hover:bg-[#6b54c6]/35 text-[#b9a8f0] rounded-xl text-xs font-bold disabled:opacity-30 transition-colors">
+                {shareCreating ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
+              </button>
+            )}
             <button
               onClick={() => setBulkDeleteConfirmOpen(true)}
               disabled={selCount === 0}

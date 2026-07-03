@@ -550,3 +550,22 @@ model Task {
 
   @@index([userId])
 }
+
+// ==========================================
+// SHARE LIST — vetrina pubblica di prodotti SELEZIONATI (link segreto per venderli/mostrarli).
+// Espone SOLO i prodotti scelti e SOLO campi non sensibili (mai prezzo d'acquisto, profitto,
+// clienti, magazzino). Il resto del magazzino resta privato. Il token = id (cuid, non indovinabile).
+// ==========================================
+model ShareList {
+  id         String   @id @default(cuid())
+  userId     String
+  title      String?
+  productIds String   // JSON array di id prodotto condivisi
+  sellerName String?  // nome/contatto mostrato pubblicamente (facoltativo)
+  contact    String?  // @social / link / email per chi vuole comprare (facoltativo)
+  active     Boolean  @default(true)
+  views      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}

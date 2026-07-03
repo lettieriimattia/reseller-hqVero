@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Vetrina — HQVault</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#06070a" />
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#06070a;--surface:#0e0f13;--surface2:#15171c;--border:rgba(255,255,255,.08);--text:#e9ecef;--soft:#9aa0a8;--faint:#6a6e76;--violet:#8b6dff;--teal:#3fae82}
+    body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Helvetica Neue',Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1000px;margin:0 auto;padding:0 18px}
+    nav{position:sticky;top:0;z-index:10;backdrop-filter:blur(16px);background:rgba(8,9,11,.72);border-bottom:1px solid var(--border)}
+    nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+    .logo{font-weight:900;font-size:19px;background:linear-gradient(177deg,#fbfbfc,#d2d5d9 40%,#83878f 60%,#eceef0);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .logo small{font-weight:700;color:var(--soft);-webkit-text-fill-color:var(--soft);font-size:12px;margin-left:6px}
+    header.top{padding:38px 0 8px}
+    h1{font-size:clamp(24px,4.6vw,38px);font-weight:900;letter-spacing:-.02em;margin-bottom:8px}
+    .meta{color:var(--soft);font-size:14.5px}
+    .contact{display:inline-flex;align-items:center;gap:8px;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:9px 15px;font-weight:700;font-size:14px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;padding:26px 0 60px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:transform .2s,border-color .2s}
+    .card:hover{transform:translateY(-4px);border-color:rgba(139,109,255,.3)}
+    .ph{aspect-ratio:1;background:#ededf1;display:flex;align-items:center;justify-content:center}
+    .ph img{width:100%;height:100%;object-fit:contain;padding:8px}
+    .ph .noimg{color:#9aa0a8;font-size:34px}
+    .info{padding:14px 15px 16px}
+    .brand{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--violet)}
+    .nm{font-weight:800;font-size:15px;margin:3px 0 6px;line-height:1.25}
+    .sub{color:var(--soft);font-size:12.5px}
+    .price{margin-top:9px;font-weight:900;font-size:17px;color:var(--teal)}
+    .empty,.loading{text-align:center;padding:90px 20px;color:var(--soft)}
+    .spinner{width:34px;height:34px;border:3px solid rgba(255,255,255,.12);border-top-color:var(--violet);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .cta{text-align:center;padding:20px 0 70px}
+    .cta a{display:inline-flex;align-items:center;gap:8px;color:var(--soft);font-weight:700;font-size:13.5px;border:1px solid var(--border);border-radius:12px;padding:10px 18px}
+    footer{border-top:1px solid var(--border);padding:22px 0;text-align:center;color:var(--faint);font-size:12.5px}
+  </style>
+</head>
+<body>
+  <nav><div class="wrap"><span class="logo">HQVault<small>vetrina</small></span></div></nav>
+  <header class="top"><div class="wrap">
+    <h1 id="title">Vetrina</h1>
+    <p class="meta" id="meta">Caricamento…</p>
+    <div id="contactBox"></div>
+  </div></header>
+  <div class="wrap"><div id="grid" class="grid"></div></div>
+  <div class="cta"><a href="/">Creata con HQVault — il gestionale dei reseller →</a></div>
+  <footer><div class="wrap">Vetrina privata · solo i prodotti condivisi sono visibili.</div></footer>
+
+  <script>
+    var token = (location.pathname.split('/s/')[1] || '').replace(/[^a-zA-Z0-9]/g,'');
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '<div class="loading"><div class="spinner"></div>Carico la vetrina…</div>';
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+    fetch('/api/share/' + token).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(d){
+      document.getElementById('title').textContent = d.title || 'Vetrina';
+      document.getElementById('meta').textContent = (d.count||0) + (d.count===1?' prodotto':' prodotti') + (d.sellerName? ' · '+d.sellerName : '');
+      if(d.contact){ document.getElementById('contactBox').innerHTML = '<span class="contact">✉️ '+esc(d.contact)+'</span>'; }
+      if(!d.products || !d.products.length){ grid.className=''; grid.innerHTML='<div class="empty">Nessun prodotto disponibile in questa vetrina.</div>'; return; }
+      grid.innerHTML = d.products.map(function(p){
+        var src = p.photo || '';
+        if (src && /^https?:\/\/(images\.stockx\.com|images\.pokemontcg\.io|images?\.goat\.com)/i.test(src)) src = '/api/catalog/img-public?u='+encodeURIComponent(src);
+        var img = src ? '<img src="'+esc(src)+'" onerror="this.parentNode.innerHTML=\'<span class=noimg>📦</span>\'" alt="">' : '<span class="noimg">📦</span>';
+        var price = p.price!=null ? '<div class="price">'+Math.round(p.price)+' €</div>' : '';
+        return '<div class="card"><div class="ph">'+img+'</div><div class="info">'+
+          '<div class="brand">'+esc(p.brand)+'</div>'+
+          '<div class="nm">'+esc(p.name)+'</div>'+
+          '<div class="sub">'+esc(p.size)+' · '+esc(p.condition)+'</div>'+ price +
+          '</div></div>';
+      }).join('');
+    }).catch(function(){
+      grid.className=''; grid.innerHTML='<div class="empty">Vetrina non trovata o non più disponibile.</div>';
+      document.getElementById('meta').textContent='';
+    });
+  </script>
+</body>
+</html>

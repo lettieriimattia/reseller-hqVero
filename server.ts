@@ -27,6 +27,7 @@ import adminRoutes from './src/routes/admin';
 import templateRoutes from './src/routes/templates';
 import analyticsRoutes from './src/routes/analytics';
 import taskRoutes from './src/routes/tasks';
+import shareRoutes, { publicShareRouter } from './src/routes/share';
 import shippingRoutes from './src/routes/shipping';
 import uploadRoutes from './src/routes/upload';
 import feedbackRoutes from './src/routes/feedback';
@@ -199,6 +200,8 @@ if (isProduction) {
   // altrimenti un visitatore SLOGGATO che apre /app (i bottoni della landing!) verrebbe
   // intercettato da `app.use('/', teamRoutes)` → middleware authenticate → 401 JSON.
   app.get(/^\/app(\/.*)?$/, (_req, res) => res.sendFile(path.join(frontendDist, 'index.html')));
+  // Vetrina pubblica condivisa: /s/<token> → pagina statica che carica i prodotti condivisi.
+  app.get(/^\/s\/[^/]+$/, (_req, res) => res.sendFile(path.join(frontendDist, 'vetrina.html')));
   app.use(express.static(frontendDist));
 }
 
@@ -208,6 +211,9 @@ if (isProduction) {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Vetrina condivisa (PUBBLICA, no login): solo prodotti scelti + campi sicuri. PRIMA di teamRoutes.
+app.use('/api/share', publicShareRouter);
 
 // Stato app (pubblico): il frontend lo legge per mostrare la schermata di manutenzione.
 app.get('/api/status', (_req, res) => {
@@ -274,6 +280,7 @@ app.use('/admin', adminRoutes);
 app.use('/templates', templateRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/tasks', taskRoutes);
+app.use('/share', shareRoutes);   // gestione vetrine condivise (autenticato)
 app.use('/market', marketRoutes);   // vetrina pubblica (GET senza login) + contatta
 app.use('/chat', chatRoutes);       // chat marketplace (solo testo, no link)
 app.use('/billing', billingRoutes); // abbonamenti Stripe (checkout/portal); webhook montato sopra
