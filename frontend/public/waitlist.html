@@ -20,9 +20,11 @@
     .fx .b3 { width: 46vw; max-width: 560px; aspect-ratio: 1; background: radial-gradient(circle, #7a4bd6, transparent 68%); bottom: -24%; left: 40%; animation-delay: -16s; }
     @keyframes aurora { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(5vw,4vh) scale(1.18); } 66% { transform: translate(-4vw,3vh) scale(.88); } }
     @media (prefers-reduced-motion: reduce) { .fx span { animation: none; } }
-    .top { position: relative; z-index: 2; padding: 22px 20px; }
+    .top { position: relative; z-index: 2; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 960px; margin: 0 auto; width: 100%; }
     .brand { font-weight: 900; font-size: 19px; letter-spacing: -.02em; color: #f4f6f8; }
     .brand b { color: #c2c9d2; }
+    .home-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #e9ecef; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); padding: 11px 20px; border-radius: 13px; transition: background .15s, border-color .15s, transform .15s; }
+    .home-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.32); transform: translateY(-1px); }
     main { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px 20px 60px; }
     .pill { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; color: #c9d0d8; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10); padding: 7px 15px; border-radius: 999px; margin-bottom: 26px; }
     .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #5fb9ae; animation: pulse 2s ease infinite; }
@@ -52,7 +54,10 @@
 <body>
   <div class="fx" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
 
-  <div class="top"><a href="/" class="brand">HQ<b>Vault</b></a></div>
+  <div class="top">
+    <a href="/" class="brand">HQ<b>Vault</b></a>
+    <a href="/" class="home-btn">← Pagina principale</a>
+  </div>
 
   <main>
     <div id="formView">
