@@ -565,7 +565,11 @@
           out.innerHTML = '<div class="pc-card">' + img + '<div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
           maybePopup();
         } else if (d.range && d.range.low) {
-          out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + detHtml + '<div class="pc-src">' + tv('aiEst') + '</div></div>';
+          // Come nel checker testuale: se la categoria è del tipo coperto da StockX (sneaker/streetwear)
+          // e otteniamo solo la stima IA, quasi sempre serve il MODELLO ESATTO (non il tipo generico).
+          var stockxLike = /sneak|scarp|shoe|street|abbigli|vestit|felp|maglia|hoodie|shirt|jacket|jeans/i.test(d.detected || d.name || '');
+          var hintP = stockxLike ? '<div class="pc-src" style="margin-top:6px">' + tv('hintModel') + '</div>' : '';
+          out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + detHtml + '<div class="pc-src">' + tv('aiEst') + '</div>' + hintP + '</div>';
         } else {
           out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notFoundA') + esc(d.name || '') + tv('notFoundB') + '</span>' + detHtml + '</div>';
         }

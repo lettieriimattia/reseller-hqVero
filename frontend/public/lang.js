@@ -39,4 +39,25 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
+
+  // Auto-guarigione service worker: le pagine statiche (questa) non caricano main.tsx, quindi
+  // non controllano MAI un aggiornamento del SW. Se il browser ha un SW vecchio (es. da prima
+  // di una fix), resterebbe bloccato fino a 24h. Qui: appena c'è una versione nuova, ricarica
+  // UNA volta sola (guard anti-loop) così la pagina statica arriva sempre fresca dal server.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(function (reg) {
+      if (!reg) return;
+      function reloadOnce() {
+        try { if (sessionStorage.getItem('hqSwReloaded')) return; sessionStorage.setItem('hqSwReloaded', '1'); } catch (e) {}
+        location.reload();
+      }
+      if (reg.waiting) { reloadOnce(); return; }
+      reg.addEventListener('updatefound', function () {
+        var nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', function () { if (nw.state === 'activated') reloadOnce(); });
+      });
+      reg.update().catch(function () {});
+    }).catch(function () {});
+  }
 })();
