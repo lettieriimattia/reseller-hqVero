@@ -283,10 +283,11 @@
     <div class="wrap nav">
       <a href="/" class="brand" aria-label="HQVault home">HQ<b>Vault</b></a>
       <nav class="nav-links" aria-label="Navigazione principale">
-        <a href="#funzioni">Funzioni</a>
-        <a href="#perche">Perché HQVault</a>
-        <a href="#faq">FAQ</a>
-        <a href="/waitlist?src=home" class="btn btn-ghost" style="padding:9px 18px;">Lista d'attesa</a>
+        <a href="#funzioni" data-i18n="nav1">Funzioni</a>
+        <a href="#perche" data-i18n="nav2">Perché HQVault</a>
+        <a href="#faq" data-i18n="nav3">FAQ</a>
+        <a href="/waitlist?src=home" class="btn btn-ghost" style="padding:9px 18px;" data-i18n="nav4">Lista d'attesa</a>
+        <button id="hqLangBtn" onclick="hqToggleLang()" style="font-size:12.5px;font-weight:800;letter-spacing:.03em;color:#e9ecef;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);padding:8px 13px;border-radius:999px;cursor:pointer;">EN</button>
       </nav>
     </div>
   </header>
@@ -296,17 +297,17 @@
       <div class="hero-fx" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
       <div class="hero-bloom" aria-hidden="true"></div>
       <div class="wrap">
-        <span class="pill"><span class="dot"></span> Pre-lancio · fatto da reseller, per reseller</span>
+        <span class="pill"><span class="dot"></span> <span data-i18n="pill">Pre-lancio · fatto da reseller, per reseller</span></span>
         <p class="kicker">HQ<b>Vault</b></p>
-        <h1 class="hero-h1">Basta Excel.<br>Sai sempre <span class="hl">quanto guadagni.</span></h1>
-        <p class="sub">Il gestionale per reseller di sneaker e streetwear: <b>foto ufficiali in automatico</b>, magazzino sempre in ordine e <b>profitto reale calcolato a ogni vendita</b>.</p>
+        <h1 class="hero-h1" data-i18n="h1">Basta Excel.<br>Sai sempre <span class="hl">quanto guadagni.</span></h1>
+        <p class="sub" data-i18n="sub">Il gestionale per reseller di sneaker e streetwear: <b>foto ufficiali in automatico</b>, magazzino sempre in ordine e <b>profitto reale calcolato a ogni vendita</b>.</p>
         <!-- Cattura email nell'hero = leva #1 di conversione per una waitlist -->
         <form class="js-wl-form hero-form" data-src="home" novalidate>
-          <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
-          <button class="js-wl-btn btn btn-primary" type="submit">Entra in lista →</button>
+          <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" data-i18n-ph="ph" required />
+          <button class="js-wl-btn btn btn-primary" type="submit" data-i18n="heroBtn">Entra in lista →</button>
         </form>
         <p class="js-wl-msg hero-msg" role="status"></p>
-        <p class="micro">Lascia l'email: ti avvisiamo al lancio. Niente spam · nessuna carta · iPhone, Android e desktop</p>
+        <p class="micro" data-i18n="micro">Lascia l'email: ti avvisiamo al lancio. Niente spam · nessuna carta · iPhone, Android e desktop</p>
       </div>
       <!-- Carosello di prodotti reali (popolato dal catalogo) -->
       <div class="ticker" id="ticker" hidden aria-hidden="true">
@@ -317,15 +318,15 @@
     <!-- Anteprima dell'app: mockup browser con l'interfaccia HQ ricreata + foto reali dei prodotti -->
     <section id="anteprima">
       <div class="wrap">
-        <p class="eyebrow">Dentro l'app</p>
-        <h2>Tutto il tuo magazzino, a colpo d'occhio</h2>
-        <p class="lead">Dashboard, inventario con foto, vendite e profitti: pulito, veloce, sempre sincronizzato su telefono e desktop.</p>
+        <p class="eyebrow" data-i18n="ap_eye">Dentro l'app</p>
+        <h2 data-i18n="ap_h2">Tutto il tuo magazzino, a colpo d'occhio</h2>
+        <p class="lead" data-i18n="ap_lead">Dashboard, inventario con foto, vendite e profitti: pulito, veloce, sempre sincronizzato su telefono e desktop.</p>
         <div class="shots reveal">
           <div class="shot-tabs">
-            <button class="shot-tab on" data-shot="/dashboardHQ.jpg">Dashboard</button>
-            <button class="shot-tab" data-shot="/inventoryHQ.jpg">Inventario</button>
-            <button class="shot-tab" data-shot="/analyticsHQ.jpg">Analitiche</button>
-            <button class="shot-tab" data-shot="/settingsHQ.jpg">Impostazioni</button>
+            <button class="shot-tab on" data-shot="/dashboardHQ.jpg" data-i18n="ap_t1">Dashboard</button>
+            <button class="shot-tab" data-shot="/inventoryHQ.jpg" data-i18n="ap_t2">Inventario</button>
+            <button class="shot-tab" data-shot="/analyticsHQ.jpg" data-i18n="ap_t3">Analitiche</button>
+            <button class="shot-tab" data-shot="/settingsHQ.jpg" data-i18n="ap_t4">Impostazioni</button>
           </div>
           <div class="browser">
             <div class="bw-bar"><span class="bw-dot" style="background:#ff5f57"></span><span class="bw-dot" style="background:#febc2e"></span><span class="bw-dot" style="background:#28c840"></span><span class="bw-url">app.hqvault.com</span></div>
@@ -338,63 +339,63 @@
 
     <section id="perche">
       <div class="wrap">
-        <p class="eyebrow">Stop a Excel</p>
-        <h2>La migliore alternativa a Excel per i reseller</h2>
-        <p class="lead">Liste che si rompono, prezzi a memoria, profitti del reselling impossibili da tracciare. Noi lo sappiamo perché lo abbiamo vissuto: per questo HQVault fa il lavoro noioso al posto tuo.</p>
+        <p class="eyebrow" data-i18n="pe_eye">Stop a Excel</p>
+        <h2 data-i18n="pe_h2">La migliore alternativa a Excel per i reseller</h2>
+        <p class="lead" data-i18n="pe_lead">Liste che si rompono, prezzi a memoria, profitti del reselling impossibili da tracciare. Noi lo sappiamo perché lo abbiamo vissuto: per questo HQVault fa il lavoro noioso al posto tuo.</p>
         <div class="pain-grid reveal">
-          <article class="pain"><h3><span class="x">✕</span> Prima: Excel e caos</h3><p>Formule che saltano, nessuna foto, e capire il margine reale è un'impresa.</p></article>
-          <article class="pain good"><h3><span class="v">✓</span> Con HQVault: tutto in ordine</h3><p>Magazzino chiaro, foto ufficiali in automatico, profitto e margine già calcolati su ogni vendita.</p></article>
-          <article class="pain"><h3><span class="x">✕</span> Prima: ore a inserire pezzi</h3><p>Marca, modello, taglia, prezzo per ognuno, uno alla volta.</p></article>
-          <article class="pain good"><h3><span class="v">✓</span> Con HQVault: aggiungi in un tap</h3><p>Foto o catalogo e il pezzo è dentro, con immagine ufficiale e valore di mercato. Anche a voce.</p></article>
+          <article class="pain" data-i18n="pe_c1"><h3><span class="x">✕</span> Prima: Excel e caos</h3><p>Formule che saltano, nessuna foto, e capire il margine reale è un'impresa.</p></article>
+          <article class="pain good" data-i18n="pe_c2"><h3><span class="v">✓</span> Con HQVault: tutto in ordine</h3><p>Magazzino chiaro, foto ufficiali in automatico, profitto e margine già calcolati su ogni vendita.</p></article>
+          <article class="pain" data-i18n="pe_c3"><h3><span class="x">✕</span> Prima: ore a inserire pezzi</h3><p>Marca, modello, taglia, prezzo per ognuno, uno alla volta.</p></article>
+          <article class="pain good" data-i18n="pe_c4"><h3><span class="v">✓</span> Con HQVault: aggiungi in un tap</h3><p>Foto o catalogo e il pezzo è dentro, con immagine ufficiale e valore di mercato. Anche a voce.</p></article>
         </div>
       </div>
     </section>
 
     <section id="funzioni">
       <div class="wrap">
-        <p class="eyebrow">Le funzioni</p>
-        <h2>Gestione stock, inventario sneakers e vendite, in un posto solo</h2>
-        <p class="lead">Dalla gestione di stock e inventario sneakers alle vendite, fino al tracking automatico dei profitti con l'intelligenza artificiale.</p>
+        <p class="eyebrow" data-i18n="fn_eye">Le funzioni</p>
+        <h2 data-i18n="fn_h2">Gestione stock, inventario sneakers e vendite, in un posto solo</h2>
+        <p class="lead" data-i18n="fn_lead">Dalla gestione di stock e inventario sneakers alle vendite, fino al tracking automatico dei profitti con l'intelligenza artificiale.</p>
         <div class="feat-grid reveal">
-          <article class="feat"><div class="ico" aria-hidden="true">📦</div><h3>Magazzino smart</h3><p>Pezzi in stock e venduti, raggruppati, con valore dello stock e stato in tempo reale.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">🛍️</div><h3>Catalogo automatico</h3><p>Cerchi un modello e lo aggiungi con la foto ufficiale: sneaker, streetwear, borse, carte, elettronica.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">🤖</div><h3>Assistente IA "HQ"</h3><p>Gli chiedi di aggiungere, modificare, vendere o elencare i prodotti. Anche con la voce.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">📈</div><h3>Vendite e profitti</h3><p>Registri la vendita e l'app calcola profitto, margine e fee. Analitiche chiare per reparto.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">📥</div><h3>Import da Excel</h3><p>Carichi il tuo file, abbini le colonne e importi tutto: nomi e prezzi riconosciuti da soli.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">👥</div><h3>Team e soci</h3><p>Gestisci il magazzino in più persone, con divisione automatica di costi, ricavi e profitti.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">📦</div><h3 data-i18n="fn_1h">Magazzino smart</h3><p data-i18n="fn_1p">Pezzi in stock e venduti, raggruppati, con valore dello stock e stato in tempo reale.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">🛍️</div><h3 data-i18n="fn_2h">Catalogo automatico</h3><p data-i18n="fn_2p">Cerchi un modello e lo aggiungi con la foto ufficiale: sneaker, streetwear, borse, carte, elettronica.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">🤖</div><h3 data-i18n="fn_3h">Assistente IA "HQ"</h3><p data-i18n="fn_3p">Gli chiedi di aggiungere, modificare, vendere o elencare i prodotti. Anche con la voce.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">📈</div><h3 data-i18n="fn_4h">Vendite e profitti</h3><p data-i18n="fn_4p">Registri la vendita e l'app calcola profitto, margine e fee. Analitiche chiare per reparto.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">📥</div><h3 data-i18n="fn_5h">Import da Excel</h3><p data-i18n="fn_5p">Carichi il tuo file, abbini le colonne e importi tutto: nomi e prezzi riconosciuti da soli.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">👥</div><h3 data-i18n="fn_6h">Team e soci</h3><p data-i18n="fn_6p">Gestisci il magazzino in più persone, con divisione automatica di costi, ricavi e profitti.</p></article>
         </div>
       </div>
     </section>
 
     <section style="background:var(--soft-bg); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
       <div class="wrap">
-        <p class="eyebrow">Perché ti serve adesso</p>
-        <h2>Oggi solo il 47% delle release va a profitto. Sai quali sono le tue?</h2>
+        <p class="eyebrow" data-i18n="st_eye">Perché ti serve adesso</p>
+        <h2 data-i18n="st_h2">Oggi solo il 47% delle release va a profitto. Sai quali sono le tue?</h2>
         <div class="stats reveal">
-          <div class="stat"><div class="n">47%</div><div class="l">delle release va davvero a profitto: senza numeri, tiri a indovinare</div></div>
-          <div class="stat"><div class="n">−90%</div><div class="l">tempo per gestire l'inventario, rispetto a Excel</div></div>
-          <div class="stat"><div class="n">3s</div><div class="l">per aggiungere un prodotto, foto ufficiale inclusa</div></div>
+          <div class="stat"><div class="n">47%</div><div class="l" data-i18n="st_1">delle release va davvero a profitto: senza numeri, tiri a indovinare</div></div>
+          <div class="stat"><div class="n">−90%</div><div class="l" data-i18n="st_2">tempo per gestire l'inventario, rispetto a Excel</div></div>
+          <div class="stat"><div class="n">3s</div><div class="l" data-i18n="st_3">per aggiungere un prodotto, foto ufficiale inclusa</div></div>
         </div>
         <blockquote class="reveal">
-          “Ho spostato 200 paia da Excel a HQVault in un pomeriggio: foto e prezzi caricati da soli. Ora so sempre quanto guadagno davvero, paio per paio.”
-          <div class="who"><div class="av">M</div><div class="nm"><b>Marco</b><span>Reseller di sneaker · beta tester</span></div></div>
+          <span data-i18n="quote">“Ho spostato 200 paia da Excel a HQVault in un pomeriggio: foto e prezzi caricati da soli. Ora so sempre quanto guadagno davvero, paio per paio.”</span>
+          <div class="who"><div class="av">M</div><div class="nm"><b>Marco</b><span data-i18n="who">Reseller di sneaker · beta tester</span></div></div>
         </blockquote>
       </div>
     </section>
 
     <section id="faq">
       <div class="wrap">
-        <p class="eyebrow">FAQ</p>
-        <h2>Domande frequenti</h2>
+        <p class="eyebrow" data-i18n="fq_eye">FAQ</p>
+        <h2 data-i18n="fq_h2">Domande frequenti</h2>
         <div class="faq reveal">
-          <details open><summary>Cos'è un software per reseller?</summary><p>È un gestionale che centralizza inventario, costi, vendite e profitti del tuo business di reselling, sostituendo i fogli Excel e automatizzando schede prodotto e foto.</p></details>
-          <details><summary>HQVault è gratis?</summary><p>Sì, puoi iniziare gratis. Aggiungi i prodotti, gestisci magazzino e vendite, e passi a un piano superiore solo se ti serve più capacità.</p></details>
-          <details><summary>Posso importare il mio Excel?</summary><p>Sì. Carichi il tuo Excel e abbini le colonne: HQVault riconosce nome e prezzo da solo e aggancia in automatico le foto ufficiali dei prodotti.</p></details>
-          <details><summary>Per quali categorie funziona?</summary><p>Sneaker, streetwear, borse, accessori, carte da gioco (Pokémon) ed elettronica: catalogo e IA riconoscono i prodotti per categoria.</p></details>
-          <details><summary>Posso gestire il magazzino in più persone?</summary><p>Sì: HQVault gestisce team e soci con divisione automatica di costi, ricavi e profitti per ciascun membro.</p></details>
-          <details><summary>Qual è il miglior software per tenere traccia delle sneakers vendute?</summary><p>HQVault è pensato proprio per questo: ogni paio venduto registra prezzo, profitto, margine e fee, così hai sempre lo storico completo delle sneakers vendute e di quanto hai guadagnato davvero.</p></details>
-          <details><summary>Come automatizzo il tracking delle vendite di streetwear?</summary><p>Aggiungi i capi dal catalogo o con una foto, registri la vendita in un tap e HQVault calcola e traccia profitti e margini in automatico, con analitiche per categoria e periodo.</p></details>
-          <details><summary>C'è un'app per gestire il magazzino da reseller?</summary><p>Sì: HQVault è un'app per gestire il magazzino da reseller su iPhone, Android e desktop, con inventario, vendite, profitti e foto ufficiali sempre sincronizzati.</p></details>
+          <details open><summary data-i18n="fq_1s">Cos'è un software per reseller?</summary><p data-i18n="fq_1p">È un gestionale che centralizza inventario, costi, vendite e profitti del tuo business di reselling, sostituendo i fogli Excel e automatizzando schede prodotto e foto.</p></details>
+          <details><summary data-i18n="fq_2s">HQVault è gratis?</summary><p data-i18n="fq_2p">Sì, puoi iniziare gratis. Aggiungi i prodotti, gestisci magazzino e vendite, e passi a un piano superiore solo se ti serve più capacità.</p></details>
+          <details><summary data-i18n="fq_3s">Posso importare il mio Excel?</summary><p data-i18n="fq_3p">Sì. Carichi il tuo Excel e abbini le colonne: HQVault riconosce nome e prezzo da solo e aggancia in automatico le foto ufficiali dei prodotti.</p></details>
+          <details><summary data-i18n="fq_4s">Per quali categorie funziona?</summary><p data-i18n="fq_4p">Sneaker, streetwear, borse, accessori, carte da gioco (Pokémon) ed elettronica: catalogo e IA riconoscono i prodotti per categoria.</p></details>
+          <details><summary data-i18n="fq_5s">Posso gestire il magazzino in più persone?</summary><p data-i18n="fq_5p">Sì: HQVault gestisce team e soci con divisione automatica di costi, ricavi e profitti per ciascun membro.</p></details>
+          <details><summary data-i18n="fq_6s">Qual è il miglior software per tenere traccia delle sneakers vendute?</summary><p data-i18n="fq_6p">HQVault è pensato proprio per questo: ogni paio venduto registra prezzo, profitto, margine e fee, così hai sempre lo storico completo delle sneakers vendute e di quanto hai guadagnato davvero.</p></details>
+          <details><summary data-i18n="fq_7s">Come automatizzo il tracking delle vendite di streetwear?</summary><p data-i18n="fq_7p">Aggiungi i capi dal catalogo o con una foto, registri la vendita in un tap e HQVault calcola e traccia profitti e margini in automatico, con analitiche per categoria e periodo.</p></details>
+          <details><summary data-i18n="fq_8s">C'è un'app per gestire il magazzino da reseller?</summary><p data-i18n="fq_8p">Sì: HQVault è un'app per gestire il magazzino da reseller su iPhone, Android e desktop, con inventario, vendite, profitti e foto ufficiali sempre sincronizzati.</p></details>
         </div>
       </div>
     </section>
@@ -402,14 +403,14 @@
     <section>
       <div class="wrap">
         <div class="final reveal">
-          <h2>Sii il primo a provarlo</h2>
-          <p class="lead">HQVault sta arrivando. Lascia la tua email e ti avvisiamo appena l'app è pronta.</p>
+          <h2 data-i18n="fin_h2">Sii il primo a provarlo</h2>
+          <p class="lead" data-i18n="fin_lead">HQVault sta arrivando. Lascia la tua email e ti avvisiamo appena l'app è pronta.</p>
           <form class="js-wl-form wl-form" data-src="home-bottom" novalidate>
-            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
-            <button type="submit" class="js-wl-btn btn btn-white">Avvisami</button>
+            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" data-i18n-ph="ph" required />
+            <button type="submit" class="js-wl-btn btn btn-white" data-i18n="fin_btn">Avvisami</button>
           </form>
           <p class="js-wl-msg wl-msg" role="status"></p>
-          <p class="wl-consent">Lasciando l'email acconsenti a un solo avviso al lancio. Niente spam. <a href="/privacy">Privacy</a></p>
+          <p class="wl-consent" data-i18n="fin_consent">Lasciando l'email acconsenti a un solo avviso al lancio. Niente spam. <a href="/privacy">Privacy</a></p>
         </div>
       </div>
     </section>
@@ -419,18 +420,63 @@
     <div class="wrap foot">
       <div>
         <div class="brand" style="margin-bottom:8px; font-size:17px;"><img src="/logo.png" alt="" width="26" height="26" /> HQ<b>Vault</b></div>
-        <span>© 2026 HQVault — Software gestionale per reseller.</span>
+        <span data-i18n="foot_copy">© 2026 HQVault — Software gestionale per reseller.</span>
       </div>
       <nav aria-label="Link del sito">
-        <a href="#funzioni">Funzioni</a>
-        <a href="#faq">FAQ</a>
-        <a href="/waitlist?src=home">Lista d'attesa</a>
-        <a href="/waitlist?src=home">Iscriviti</a>
-        <a href="/privacy" rel="nofollow">Privacy</a>
+        <a href="#funzioni" data-i18n="nav1">Funzioni</a>
+        <a href="#faq" data-i18n="nav3">FAQ</a>
+        <a href="/waitlist?src=home" data-i18n="nav4">Lista d'attesa</a>
+        <a href="/waitlist?src=home" data-i18n="foot_reg">Iscriviti</a>
+        <a href="/privacy" rel="nofollow" data-i18n="foot_privacy">Privacy</a>
       </nav>
     </div>
   </footer>
 
+  <script>
+    window.HQ_EN = {
+      nav1: 'Features', nav2: 'Why HQVault', nav3: 'FAQ', nav4: 'Waitlist',
+      pill: 'Pre-launch · made by resellers, for resellers',
+      h1: 'No more Excel.<br>Always know <span class="hl">what you earn.</span>',
+      sub: 'The management tool for sneaker and streetwear resellers: <b>official photos automatically</b>, inventory always in order and <b>real profit computed on every sale</b>.',
+      ph: 'Your email', heroBtn: 'Join the list →',
+      micro: 'Leave your email: we’ll notify you at launch. No spam · no card · iPhone, Android and desktop',
+      ap_eye: 'Inside the app', ap_h2: 'Your whole inventory, at a glance',
+      ap_lead: 'Dashboard, inventory with photos, sales and profits: clean, fast, always synced on phone and desktop.',
+      ap_t1: 'Dashboard', ap_t2: 'Inventory', ap_t3: 'Analytics', ap_t4: 'Settings',
+      pe_eye: 'Ditch Excel', pe_h2: 'The best Excel alternative for resellers',
+      pe_lead: 'Lists that break, prices from memory, reselling profits impossible to track. We know because we lived it: that’s why HQVault does the boring work for you.',
+      pe_c1: '<h3><span class="x">✕</span> Before: Excel and chaos</h3><p>Formulas that break, no photos, and figuring out the real margin is a struggle.</p>',
+      pe_c2: '<h3><span class="v">✓</span> With HQVault: all in order</h3><p>Clear inventory, official photos automatically, profit and margin already computed on every sale.</p>',
+      pe_c3: '<h3><span class="x">✕</span> Before: hours entering items</h3><p>Brand, model, size, price for each one, one at a time.</p>',
+      pe_c4: '<h3><span class="v">✓</span> With HQVault: add in one tap</h3><p>Photo or catalog and the item is in, with official image and market value. Even by voice.</p>',
+      fn_eye: 'Features', fn_h2: 'Stock management, sneaker inventory and sales, all in one place',
+      fn_lead: 'From managing stock and sneaker inventory to sales, all the way to automatic profit tracking with AI.',
+      fn_1h: 'Smart inventory', fn_1p: 'Items in stock and sold, grouped, with stock value and status in real time.',
+      fn_2h: 'Automatic catalog', fn_2p: 'Search a model and add it with the official photo: sneakers, streetwear, bags, cards, electronics.',
+      fn_3h: 'AI assistant "HQ"', fn_3p: 'Ask it to add, edit, sell or list products. Even by voice.',
+      fn_4h: 'Sales and profits', fn_4p: 'Record the sale and the app computes profit, margin and fees. Clear analytics per category.',
+      fn_5h: 'Import from Excel', fn_5p: 'Upload your file, map the columns and import everything: names and prices recognized automatically.',
+      fn_6h: 'Team and partners', fn_6p: 'Manage the inventory with several people, with automatic split of costs, revenue and profits.',
+      st_eye: 'Why you need it now', st_h2: 'Today only 47% of releases turn a profit. Do you know which of yours do?',
+      st_1: 'of releases actually turn a profit: without numbers, you’re guessing',
+      st_2: 'time to manage inventory, versus Excel', st_3: 'to add a product, official photo included',
+      quote: '“I moved 200 pairs from Excel to HQVault in one afternoon: photos and prices loaded by themselves. Now I always know how much I really earn, pair by pair.”',
+      who: 'Sneaker reseller · beta tester',
+      fq_eye: 'FAQ', fq_h2: 'Frequently asked questions',
+      fq_1s: 'What is reseller software?', fq_1p: 'It’s a management tool that centralizes inventory, costs, sales and profits of your reselling business, replacing Excel sheets and automating product cards and photos.',
+      fq_2s: 'Is HQVault free?', fq_2p: 'Yes, you can start for free. Add products, manage inventory and sales, and move to a higher plan only if you need more capacity.',
+      fq_3s: 'Can I import my Excel?', fq_3p: 'Yes. Upload your Excel and map the columns: HQVault recognizes name and price by itself and automatically attaches official product photos.',
+      fq_4s: 'Which categories does it work for?', fq_4p: 'Sneakers, streetwear, bags, accessories, trading cards (Pokémon) and electronics: catalog and AI recognize products by category.',
+      fq_5s: 'Can I manage inventory with several people?', fq_5p: 'Yes: HQVault manages team and partners with automatic split of costs, revenue and profits for each member.',
+      fq_6s: 'What’s the best software to track sold sneakers?', fq_6p: 'HQVault is built exactly for this: every sold pair records price, profit, margin and fees, so you always have the full history of sold sneakers and how much you really earned.',
+      fq_7s: 'How do I automate streetwear sales tracking?', fq_7p: 'Add items from the catalog or with a photo, record the sale in one tap and HQVault computes and tracks profits and margins automatically, with analytics by category and period.',
+      fq_8s: 'Is there an app to manage a reseller’s inventory?', fq_8p: 'Yes: HQVault is an app to manage a reseller’s inventory on iPhone, Android and desktop, with inventory, sales, profits and official photos always synced.',
+      fin_h2: 'Be the first to try it', fin_lead: 'HQVault is coming. Leave your email and we’ll notify you as soon as the app is ready.', fin_btn: 'Notify me',
+      fin_consent: 'By leaving your email you agree to a single notification at launch. No spam. <a href="/privacy">Privacy</a>',
+      foot_copy: '© 2026 HQVault — Management software for resellers.', foot_reg: 'Join', foot_privacy: 'Privacy'
+    };
+  </script>
+  <script src="/lang.js"></script>
   <script>
     // Carosello: foto reali di prodotti dal catalogo (endpoint pubblico).
     (function () {
@@ -497,26 +543,31 @@
     // Conta la visita (pre-lancio, senza cookie).
     try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=home') : fetch('/api/hit?p=home'); } catch (e) {}
 
-    // Waitlist: un solo handler per TUTTI i form (.js-wl-form) — hero + CTA finale.
+    // Waitlist: un solo handler per TUTTI i form (.js-wl-form) — hero + CTA finale (bilingue).
     (function () {
+      var WL = {
+        it: { invalid: "Inserisci un'email valida.", sending: 'Invio…', err: 'Qualcosa è andato storto, riprova.', already: '✓ Sei già in lista: ti avviseremo al lancio.', ok: "✓ Sei in lista! Ti scriviamo appena l'app è pronta." },
+        en: { invalid: 'Enter a valid email.', sending: 'Sending…', err: 'Something went wrong, please try again.', already: "✓ You're already on the list: we'll notify you at launch.", ok: "✓ You're on the list! We'll write to you as soon as the app is ready." }
+      };
+      function wt(k) { var l; try { l = localStorage.getItem('hqLang') || 'it'; } catch (e) { l = 'it'; } return (WL[l] || WL.it)[k]; }
       var RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       document.querySelectorAll('.js-wl-form').forEach(function (form) {
         var emailEl = form.querySelector('.js-wl-email');
         var btn = form.querySelector('.js-wl-btn');
         var msg = form.parentNode.querySelector('.js-wl-msg');
-        var label = btn ? btn.textContent : 'Invia';
         form.addEventListener('submit', function (e) {
           e.preventDefault();
           var email = (emailEl.value || '').trim().toLowerCase();
-          if (!RE.test(email)) { if (msg) { msg.style.color = '#e08a6a'; msg.textContent = 'Inserisci un\'email valida.'; } return; }
-          btn.disabled = true; btn.textContent = 'Invio…'; if (msg) msg.textContent = '';
+          if (!RE.test(email)) { if (msg) { msg.style.color = '#e08a6a'; msg.textContent = wt('invalid'); } return; }
+          var label = btn ? btn.textContent : '';
+          btn.disabled = true; btn.textContent = wt('sending'); if (msg) msg.textContent = '';
           fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: form.getAttribute('data-src') || 'home' }) })
             .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
             .then(function (d) {
               form.style.display = 'none';
-              if (msg) { msg.style.color = ''; msg.textContent = (d && d.already) ? '✓ Sei già in lista: ti avviseremo al lancio.' : '✓ Sei in lista! Ti scriviamo appena l\'app è pronta.'; }
+              if (msg) { msg.style.color = ''; msg.textContent = (d && d.already) ? wt('already') : wt('ok'); }
             })
-            .catch(function () { btn.disabled = false; btn.textContent = label; if (msg) { msg.style.color = '#e08a6a'; msg.textContent = 'Qualcosa è andato storto, riprova.'; } });
+            .catch(function () { btn.disabled = false; btn.textContent = label; if (msg) { msg.style.color = '#e08a6a'; msg.textContent = wt('err'); } });
         });
       });
     })();
