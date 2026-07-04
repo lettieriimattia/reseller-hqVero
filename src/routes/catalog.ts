@@ -379,11 +379,35 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
     // productType in cache da filtrare → cerco dal vivo combinando categoria + query e
     // restituisco i candidati senza filtro di categoria.
     if (type && !KNOWN_TYPES.has(type) && (isCatalogConfigured())) {
+      // CACHE-FIRST anche per le categorie personalizzate (Profumi/Vinili/…): se ho già abbastanza
+      // foto in cache per questa categoria+query, NON chiamo KicksDB → risparmio la quota mensile.
+      const cachedC = await prisma.catalogItem.findMany({
+        where: { AND: [
+          { productType: type },
+          { OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { sku: { contains: q, mode: 'insensitive' } },
+            { brand: { contains: q, mode: 'insensitive' } },
+          ] },
+        ] },
+        take: 20,
+      });
+      const cachedRes: CatalogResult[] = cachedC.map(it => ({ key: it.key, brand: it.brand, name: it.name, sku: it.sku, image: it.image, productType: it.productType }));
+      if (cachedRes.filter(r => r.image).length >= 5) {
+        const wi = cachedRes.filter(r => r.image);
+        return res.json((wi.length >= 3 ? wi : cachedRes).sort(byRelevance(q)).slice(0, 20));
+      }
+      // Cache insufficiente → interrogo la fonte (KicksDB/StockX) e unisco coi cache.
       const cands = await providerSearch(`${type} ${q}`.trim(), { limit: 20 });
       for (const c of cands) await upsertCandidate(c, undefined, type).catch(() => {});
-      const out = candsToResults(cands);
-      const withImg = out.filter(r => r.image);
-      return res.json((withImg.length >= 3 ? withImg : out).sort(byRelevance(q)).slice(0, 20));
+      const merged = new Map<string, CatalogResult>();
+      for (const r of [...cachedRes, ...candsToResults(cands)]) {
+        const ex = merged.get(r.key);
+        if (!ex) merged.set(r.key, r); else if (!ex.image && r.image) merged.set(r.key, { ...ex, image: r.image });
+      }
+      const all = Array.from(merged.values());
+      const withImg = all.filter(r => r.image);
+      return res.json((withImg.length >= 3 ? withImg : all).sort(byRelevance(q)).slice(0, 20));
     }
 
     const byKey = new Map<string, CatalogResult>();
@@ -447,14 +471,16 @@ async function ensureCatalogVersion(): Promise<void> {
   try {
     const s = await prisma.setting.findUnique({ where: { key: 'catalogVersion' } });
     if (s?.value !== CATALOG_VERSION) {
-      const r = await prisma.catalogItem.deleteMany({});
+      // PHOTO-SAFE: al cambio versione NON buttiamo le foto (costano quota KicksDB da rifare).
+      // Puliamo solo i placeholder SENZA immagine (righe inutili). Le foto restano per sempre.
+      const r = await prisma.catalogItem.deleteMany({ where: { image: null } });
       seededAt.clear();
       await prisma.setting.upsert({
         where: { key: 'catalogVersion' },
         create: { key: 'catalogVersion', value: CATALOG_VERSION },
         update: { value: CATALOG_VERSION },
       });
-      logger.info('Catalog cache svuotata (bump versione)', { deleted: r.count, version: CATALOG_VERSION });
+      logger.info('Catalog: puliti solo i placeholder senza foto (le foto restano)', { deleted: r.count, version: CATALOG_VERSION });
     }
   } catch (e: any) {
     logger.warn('ensureCatalogVersion', { err: e.message });
@@ -498,6 +524,15 @@ router.get('/popular', async (req: AuthRequest, res: Response) => {
     // CATEGORIA PERSONALIZZATA: nessun seed/cache per productType → uso il nome categoria
     // come query e cerco i prodotti giusti dal vivo (poi li tengo in cache, best-effort).
     if (type && !KNOWN_TYPES.has(type) && isCatalogConfigured()) {
+      // CACHE-FIRST: se la categoria personalizzata ha già abbastanza foto in cache, le servo
+      // dal TUO DB senza toccare KicksDB (ad ogni apertura della scheda si risparmia la quota).
+      const cachedP = await prisma.catalogItem.findMany({
+        where: { productType: type, image: { not: null } },
+        orderBy: [{ createdAt: 'asc' }], take: 60,
+      });
+      if (cachedP.length >= 6) {
+        return res.json(cachedP.map(it => ({ key: it.key, brand: it.brand, name: it.name, sku: it.sku, image: it.image, productType: it.productType })));
+      }
       const cands = await providerSearch(type, { limit: 30 });
       for (const c of cands) await upsertCandidate(c, undefined, type).catch(() => {});
       const out = candsToResults(cands);
