@@ -65,7 +65,7 @@
     /* Form hero (checker prezzo + email) */
     .hero-form { display:flex; gap:10px; max-width:520px; margin:0 auto; }
     @media (max-width:480px) { .hero-form { flex-direction:column; } }
-    .hero-form input { flex:1; background:rgba(255,255,255,.08); border:1.5px solid rgba(255,255,255,.18); border-radius:12px; padding:15px 18px; color:#fff; font-size:16px; outline:none; transition:border-color .15s; }
+    .hero-form input { flex:1; min-width:0; background:rgba(255,255,255,.08); border:1.5px solid rgba(255,255,255,.18); border-radius:12px; padding:15px 18px; color:#fff; font-size:16px; outline:none; transition:border-color .15s; }
     .hero-form input:focus { border-color:var(--teal); background:rgba(255,255,255,.12); }
     .hero-form input::placeholder { color:#8a929c; }
     .hero-form .btn { border:none; cursor:pointer; white-space:nowrap; }
@@ -84,12 +84,23 @@
     .hero-msg { min-height:22px; margin-top:14px; font-weight:700; font-size:15px; color:#5fb9ae; }
     /* Risultato del checker "quanto vale" */
     .pc-result { margin-top:18px; min-height:8px; }
-    .pc-card { display:inline-block; max-width:92vw; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.16); border-radius:16px; padding:16px 24px; }
+    /* Block (non inline-block) + stessa max-width del box iscrizione sotto: le due card restano
+       allineate alla stessa larghezza invece che una più stretta dell'altra ("fuoriesce"). */
+    .pc-card { display:block; max-width:520px; margin:0 auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.16); border-radius:16px; padding:16px 24px; }
     @media (max-width:480px) { .pc-card { padding:14px 18px; } }
     .pc-name { color:#c9d0d8; font-weight:700; font-size:14px; }
     .pc-val { color:#5fb9ae; font-weight:900; font-size:32px; letter-spacing:-.02em; margin-top:3px; }
     .pc-src { color:#7e8893; font-size:11.5px; margin-top:5px; }
     .pc-warn { color:#e0b16a; font-weight:600; font-size:14.5px; }
+    /* Variante ORIZZONTALE: foto a sinistra, nome+valore+fonte a destra (solo quando c'è una foto,
+       cioè solo per la ricerca via testo — mai per la ricerca via foto, che non ne ha una propria). */
+    .pc-card-h { display:flex; align-items:center; gap:16px; text-align:left; }
+    .pc-card-h img { flex:0 0 auto; }
+    .pc-card-h .pc-info { flex:1; min-width:0; }
+    @media (max-width:480px) { .pc-card-h { flex-direction:column; text-align:center; gap:10px; } }
+    /* Link "cerca un altro prodotto": torna al form dopo un risultato */
+    .pc-again { display:block; margin:16px auto 0; background:transparent; border:none; color:#8a929c; font-weight:700; font-size:13.5px; cursor:pointer; padding:6px; }
+    .pc-again:hover { color:#c9d0d8; }
     /* Gate: finite le ricerche gratis → iscrizione */
     .pc-gate { max-width:520px; margin:18px auto 0; background:rgba(13,148,136,.10); border:1px solid rgba(95,185,174,.35); border-radius:18px; padding:22px; }
     .pc-gate-title { font-weight:800; font-size:19px; color:#fff; }
@@ -218,30 +229,33 @@
         <span class="crumb"><span class="dot"></span> <span data-i18n="crumb">Valuta gratis · reseller</span></span>
         <h1 data-i18n="h1">Quanto <span class="hl">vale?</span></h1>
         <p class="sub" data-i18n="sub">Scegli la categoria, inserisci i dati e scopri il <b>valore di mercato</b> — sneaker, carte, streetwear, orologi, borse.</p>
-        <!-- CHECKER LIVE: prima la categoria (crea i campi giusti), poi i dettagli -->
-        <form id="pcForm" class="pc-form" novalidate>
-          <label class="pc-lbl" data-i18n="lbl1">1 · Categoria</label>
-          <select id="pcCat" class="pc-cat" aria-label="Categoria">
-            <option value="scarpe" data-i18n="cat_scarpe">Sneaker</option>
-            <option value="streetwear" data-i18n="cat_street">Streetwear / Abbigliamento</option>
-            <option value="carte" data-i18n="cat_carte">Carte Pokémon</option>
-            <option value="orologi" data-i18n="cat_oro">Orologi</option>
-            <option value="borse" data-i18n="cat_borse">Borse / lusso</option>
-            <option value="altro" data-i18n="cat_altro">Altro (scrivi cosa)</option>
-          </select>
-          <label class="pc-lbl" data-i18n="lbl2">2 · Dettagli</label>
-          <div class="pc-fields">
-            <input id="pcQuery" class="f-name" type="text" autocomplete="off" placeholder="Modello (es. Jordan 4 Bred)" required />
-            <input id="pcDetail" class="f-size" type="text" autocomplete="off" placeholder="Taglia" />
-            <select id="pcCond" class="f-cond" aria-label="Condizione"></select>
-          </div>
-          <button type="submit" class="btn btn-primary pc-go" data-i18n="go">Quanto vale? →</button>
-        </form>
-        <button type="button" id="pcPhotoBtn" style="display:flex;align-items:center;justify-content:center;gap:9px;width:100%;max-width:520px;margin:12px auto 0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:#c9d0d8;font-weight:700;font-size:14.5px;padding:13px 18px;border-radius:14px;cursor:pointer;transition:.15s">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4l-1.5-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>
-          <span data-i18n="photoBtn">…oppure valuta da una foto</span>
-        </button>
-        <input type="file" id="pcPhotoInput" accept="image/*" capture="environment" style="display:none">
+        <!-- CHECKER LIVE: prima la categoria (crea i campi giusti), poi i dettagli.
+             Tutto il form (+ bottone foto) si nasconde durante/dopo la ricerca: focus sul risultato. -->
+        <div id="pcFormArea">
+          <form id="pcForm" class="pc-form" novalidate>
+            <label class="pc-lbl" data-i18n="lbl1">1 · Categoria</label>
+            <select id="pcCat" class="pc-cat" aria-label="Categoria">
+              <option value="scarpe" data-i18n="cat_scarpe">Sneaker</option>
+              <option value="streetwear" data-i18n="cat_street">Streetwear / Abbigliamento</option>
+              <option value="carte" data-i18n="cat_carte">Carte Pokémon</option>
+              <option value="orologi" data-i18n="cat_oro">Orologi</option>
+              <option value="borse" data-i18n="cat_borse">Borse / lusso</option>
+              <option value="altro" data-i18n="cat_altro">Altro (scrivi cosa)</option>
+            </select>
+            <label class="pc-lbl" data-i18n="lbl2">2 · Dettagli</label>
+            <div class="pc-fields">
+              <input id="pcQuery" class="f-name" type="text" autocomplete="off" placeholder="Modello (es. Jordan 4 Bred)" required />
+              <input id="pcDetail" class="f-size" type="text" autocomplete="off" placeholder="Taglia" />
+              <select id="pcCond" class="f-cond" aria-label="Condizione"></select>
+            </div>
+            <button type="submit" class="btn btn-primary pc-go" data-i18n="go">Quanto vale? →</button>
+          </form>
+          <button type="button" id="pcPhotoBtn" style="display:flex;align-items:center;justify-content:center;gap:9px;width:100%;max-width:520px;margin:12px auto 0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:#c9d0d8;font-weight:700;font-size:14.5px;padding:13px 18px;border-radius:14px;cursor:pointer;transition:.15s">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4l-1.5-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            <span data-i18n="photoBtn">…oppure valuta da una foto</span>
+          </button>
+          <input type="file" id="pcPhotoInput" accept="image/*" capture="environment" style="display:none">
+        </div>
         <div id="pcResult" class="pc-result" role="status"></div>
         <!-- Box iscrizione INLINE (niente popup): appare sotto il risultato appena esce una stima -->
         <div id="pcJoinBox" class="pc-joinbox" hidden>
@@ -253,6 +267,7 @@
           </form>
           <p class="js-wl-msg msg" role="status"></p>
         </div>
+        <button type="button" id="pcAgainBtn" class="pc-again" hidden data-i18n="again">← Cerca un altro prodotto</button>
         <!-- Gate: appare quando finiscono le ricerche gratis del giorno -->
         <div id="pcGate" class="pc-gate" hidden>
           <p class="pc-gate-title" data-i18n="gate_t">Hai finito le ricerche gratis di oggi 👀</p>
@@ -418,6 +433,7 @@
       sub: 'Pick the category, enter the details and find the <b>market value</b> — sneakers, cards, streetwear, watches, bags.',
       lbl1: '1 · Category', lbl2: '2 · Details', go: 'What’s it worth? →',
       photoBtn: '…or value it from a photo',
+      again: '← Search another product',
       cat_scarpe: 'Sneakers', cat_street: 'Streetwear / Clothing', cat_carte: 'Pokémon cards', cat_oro: 'Watches', cat_borse: 'Bags / luxury', cat_altro: 'Other (type it)',
       gate_t: 'You’ve used today’s free searches 👀',
       gate_s: 'Sign up for HQVault and at launch see prices <b>with no limits</b>, plus inventory and profits.',
@@ -517,6 +533,24 @@
         var wait = new Promise(function (res) { setTimeout(res, ms); });
         return Promise.all([promise, wait]).then(function (r) { return r[0]; });
       }
+      // Il form (+ bottone foto) si nasconde durante/dopo la ricerca: focus tutto sul risultato.
+      // "Cerca un altro prodotto" lo rimette in vista.
+      var formArea = document.getElementById('pcFormArea'), againBtn = document.getElementById('pcAgainBtn');
+      function startSearch() {
+        if (formArea) formArea.hidden = true;
+        if (againBtn) againBtn.hidden = false;
+        out.innerHTML = LOADER_HTML;
+        if (joinBox) joinBox.hidden = true;
+        gate.hidden = true;
+      }
+      if (againBtn) againBtn.addEventListener('click', function () {
+        if (formArea) formArea.hidden = false;
+        againBtn.hidden = true;
+        out.innerHTML = '';
+        if (joinBox) joinBox.hidden = true;
+        gate.hidden = true;
+        q.focus();
+      });
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         var query = (q.value || '').trim();
@@ -529,21 +563,23 @@
         var body = { category: cat.value, query: query, condition: (cond && cond.value) || '' };
         if (c.detailKey && det.value.trim()) body[c.detailKey] = det.value.trim();
         var btn = form.querySelector('button'); var lbl = btn.textContent;
-        btn.disabled = true; btn.textContent = tv('searching'); out.innerHTML = LOADER_HTML;
-        if (joinBox) joinBox.hidden = true; gate.hidden = true;
+        btn.disabled = true; btn.textContent = tv('searching');
+        startSearch();
         withMinDelay(fetch('/api/price-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); }), 1300)
           .then(function (d) {
             btn.disabled = false; btn.textContent = lbl;
             // Finite le valutazioni gratis: il form RESTA usabile ma esce la schermata iscrizione.
-            if (d.limited) { out.innerHTML = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+            if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
             var detHtml = d.detected ? '<div class="pc-src">' + tv('detected') + ' <b style="color:#c9d0d8">' + esc(d.detected) + '</b></div>' : '';
             if (d.value != null) {
               var cur = (d.currency && d.currency !== 'EUR') ? (' ' + d.currency) : '€';
               var sub = (sizeVal ? (tv('size') + esc(sizeVal) + ' · ') : '') + (condLabel ? esc(condLabel) : '');
               var baseLine = (d.base && Math.round(d.base) !== Math.round(d.value)) ? '<div class="pc-src">' + tv('fromNew') + ' ' + Math.round(d.base) + cur + '</div>' : '';
-              // Foto ufficiale del prodotto (StockX/Cardmarket/…) via proxy pubblico → niente hotlink/CSP.
-              var img = d.image ? '<img src="/api/catalog/img-public?u=' + encodeURIComponent(d.image) + '" alt="" style="width:120px;height:120px;object-fit:contain;background:#fff;border-radius:14px;display:block;margin:0 auto 12px;padding:6px" onerror="this.style.display=\'none\'">' : '';
-              out.innerHTML = '<div class="pc-card">' + img + '<div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
+              // Foto ufficiale del prodotto (dal catalogo/KicksDB) via proxy pubblico → niente hotlink/CSP.
+              // SOLO qui (ricerca da testo): la ricerca via foto non mostra una foto del catalogo.
+              var img = d.image ? '<img src="/api/catalog/img-public?u=' + encodeURIComponent(d.image) + '" alt="" style="width:96px;height:96px;object-fit:contain;background:#fff;border-radius:14px;flex-shrink:0;padding:6px">' : '';
+              var info = '<div class="pc-info"><div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
+              out.innerHTML = '<div class="' + (img ? 'pc-card pc-card-h' : 'pc-card') + '">' + img + info + '</div>';
               showJoinBox(); // appena esce il valore → invito a iscriversi (inline, non più popup)
             } else if (d.range && d.range.low) {
               // Categorie coperte da StockX (sneaker/streetwear): se esce solo la stima IA, quasi
@@ -562,15 +598,16 @@
 
       // ---- VALUTA DA UNA FOTO (vision IA, 1 scan/giorno per IP) ----
       function renderPhoto(d) {
-        if (d.limited) { out.innerHTML = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+        if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
         if (!d.recognized && d.value == null && !(d.range && d.range.low)) {
           out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notRecognized') + '</span></div>'; return;
         }
         var detHtml = d.detected ? '<div class="pc-src">' + tv('detected') + ' <b style="color:#c9d0d8">' + esc(d.detected) + '</b></div>' : '';
         if (d.value != null) {
           var cur = (d.currency && d.currency !== 'EUR') ? (' ' + d.currency) : '€';
-          var img = d.image ? '<img src="/api/catalog/img-public?u=' + encodeURIComponent(d.image) + '" alt="" style="width:120px;height:120px;object-fit:contain;background:#fff;border-radius:14px;display:block;margin:0 auto 12px;padding:6px" onerror="this.style.display=\'none\'">' : '';
-          out.innerHTML = '<div class="pc-card">' + img + '<div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
+          // Niente foto di catalogo qui: la ricerca via foto usa già la foto scattata dall'utente,
+          // non ha senso mostrarne un'altra presa dal catalogo (solo la ricerca da testo la mostra).
+          out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
           showJoinBox();
         } else if (d.range && d.range.low) {
           // Come nel checker testuale: se la categoria è del tipo coperto da StockX (sneaker/streetwear)
@@ -602,7 +639,7 @@
         photoInput.addEventListener('change', function () {
           var f = photoInput.files && photoInput.files[0]; photoInput.value = '';
           if (!f) return;
-          out.innerHTML = LOADER_HTML; if (joinBox) joinBox.hidden = true; gate.hidden = true;
+          startSearch();
           compressImg(f, function (dataUrl) {
             if (!dataUrl) { out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('error') + '</span></div>'; return; }
             withMinDelay(fetch('/api/photo-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: dataUrl }) }).then(function (r) { return r.json(); }), 1300)

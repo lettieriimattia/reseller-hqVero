@@ -192,8 +192,9 @@ router.post('/photo-check', async (req: Request, res: Response) => {
     const val = await getValuation({ category, name, brand: '', game: isCards ? 'pokemon' : undefined, relaxed: true });
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: ('📷 ' + name).slice(0, 80), found: val.value != null } }).catch(() => {});
     if (val.value != null) {
-      const photoImage = val.image || await findCachedImage(val.itemName || name);
-      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || name, source: val.source, image: photoImage, recognized: true, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
+      // Niente foto di catalogo qui: chi cerca via FOTO ha già la sua immagine, non serve
+      // mostrarne un'altra presa dal catalogo (quella resta solo per la ricerca da testo).
+      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || name, source: val.source, image: null, recognized: true, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
     }
     const range = await estimatePriceRange(name).catch(() => null);
     return res.json({ value: null, range, name, source: 'Stima indicativa (IA)', recognized: true, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
