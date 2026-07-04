@@ -170,34 +170,8 @@ export async function searchStockXCandidates(query: string, opts?: { sneakersOnl
 }
 
 // Recupera l'URL immagine di un prodotto dal DETTAGLIO StockX (/v2/catalog/products/{id}).
-// La ricerca (/catalog/search) NON include le foto: stanno solo nel dettaglio. Difensivo: null su errore.
-// DEBUG: perché la foto StockX non esce? Ritorna cosa dà la ricerca e il dettaglio prodotto.
-export async function stockxImageDebug(query: string): Promise<any> {
-  if (!isStockXConfigured()) return { configured: false };
-  const token = await getStockXAccessToken();
-  if (!token) return { configured: true, connected: false };
-  const headers = { Authorization: `Bearer ${token}`, 'x-api-key': process.env.STOCKX_API_KEY || '', Accept: 'application/json' };
-  const cands = await searchStockXCandidates(query, { limit: 3 }).catch(() => []);
-  const first: any = cands[0] || null;
-  const pid = first?.productId || null;
-  const out: any = { candidatesCount: cands.length, firstTitle: first?.title, productId: pid, searchImage: first?.image || null };
-  if (pid) {
-    try {
-      const r = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(pid)}`, { headers });
-      out.detailStatus = r.status;
-      if (r.ok) {
-        const p: any = await r.json();
-        out.detailTopKeys = Object.keys(p || {});
-        out.mediaKeys = p?.media ? Object.keys(p.media) : null;
-        out.detailImage = p?.media?.imageUrl || p?.media?.thumbUrl || p?.media?.smallImageUrl || p?.image || p?.thumbUrl || null;
-      } else {
-        out.detailBody = (await r.text().catch(() => '')).slice(0, 200);
-      }
-    } catch (e: any) { out.detailError = e?.message; }
-  }
-  return out;
-}
-
+// NOTA (verificata dal vivo, 2026-07-05): il dettaglio prodotto StockX NON restituisce foto
+// utilizzabili in questa integrazione. La fonte foto vera è il catalogo (KicksDB/SKU), non StockX.
 export async function getStockXImage(productId?: string | null): Promise<string | null> {
   const id = (productId || '').toString().trim();
   if (!id) return null;
@@ -375,12 +349,9 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
       }
     }
 
-    // La ricerca StockX NON include la foto: sta solo nel dettaglio prodotto. Riuso getStockXImage
-    // (stessa logica di "Trova foto"). Così il checker mostra la foto anche se KicksDB è giù.
-    if (!image && productId && value != null) {
-      image = await getStockXImage(productId);
-    }
-
+    // NOTA (verificato dal vivo): il dettaglio prodotto StockX NON restituisce foto utilizzabili
+    // in questa integrazione — niente fetch aggiuntivo qui. La foto nel checker arriva solo dalla
+    // cache locale CatalogItem (immagini reali già scaricate da KicksDB durante l'uso dell'app).
     return { configured: true, connected: true, value, source: value != null ? 'StockX' : (mdError || 'StockX (nessun prezzo)'), itemName, brand, model, image, styleId, sample: 1 };
   } catch (err: any) {
     logger.error('Errore getStockXValuation', { err: err.message });
