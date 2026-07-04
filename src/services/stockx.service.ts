@@ -304,7 +304,7 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
     const brand = product.brand || undefined;
     const model = product.model || product.styleId || product.title || undefined;
     // Immagine prodotto (per la conferma visiva del riconoscimento IA). Campi variabili → difensivo.
-    const image = product.media?.imageUrl || product.media?.thumbUrl || product.media?.smallImageUrl
+    let image = product.media?.imageUrl || product.media?.thumbUrl || product.media?.smallImageUrl
       || product.image || product.thumbUrl || product.productAttributes?.image || null;
     const styleId = product.styleId || product.productAttributes?.styleId || null;
 
@@ -340,6 +340,20 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
         else mdError = `StockX (market-data ${md.status})`;
         logger.warn('StockX market-data non ok', { status: md.status, productId });
       }
+    }
+
+    // La ricerca StockX spesso NON include la foto: se manca e abbiamo un valore, prendila dal
+    // dettaglio prodotto (una chiamata sola, solo quando serve mostrarla nel checker/app).
+    if (!image && productId && value != null) {
+      try {
+        const pr = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(productId)}`, { headers });
+        if (pr.ok) {
+          const pd = await pr.json() as any;
+          const p2 = pd?.product || pd?.data || pd || {};
+          image = p2.media?.imageUrl || p2.media?.thumbUrl || p2.media?.smallImageUrl
+            || p2.image || p2.thumbUrl || p2.productAttributes?.image || null;
+        }
+      } catch { /* nessuna foto, non è un problema bloccante */ }
     }
 
     return { configured: true, connected: true, value, source: value != null ? 'StockX' : (mdError || 'StockX (nessun prezzo)'), itemName, brand, model, image, styleId, sample: 1 };
