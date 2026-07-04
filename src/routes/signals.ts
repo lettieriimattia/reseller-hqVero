@@ -173,7 +173,7 @@ router.post('/price-check', async (req: Request, res: Response) => {
     // Traccia l'uso (anonimo) per le statistiche admin: riutilizzi per visitatore.
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: query.slice(0, 80), found: val.value != null } }).catch(() => {});
     if (val.value != null) {
-      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, detected, remaining, freeLimit: FREE_CHECKS });
+      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, image: val.image || null, detected, remaining, freeLimit: FREE_CHECKS });
     }
     // Nessuna fonte ha un prezzo → stima IA indicativa in un RANGE (chiaramente etichettata).
     const range = await estimatePriceRange(query).catch(() => null);

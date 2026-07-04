@@ -528,7 +528,9 @@
               var cur = (d.currency && d.currency !== 'EUR') ? (' ' + d.currency) : '€';
               var sub = (sizeVal ? (tv('size') + esc(sizeVal) + ' · ') : '') + (condLabel ? esc(condLabel) : '');
               var baseLine = (d.base && Math.round(d.base) !== Math.round(d.value)) ? '<div class="pc-src">' + tv('fromNew') + ' ' + Math.round(d.base) + cur + '</div>' : '';
-              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
+              // Foto ufficiale del prodotto (StockX/Cardmarket/…) via proxy pubblico → niente hotlink/CSP.
+              var img = d.image ? '<img src="/api/catalog/img-public?u=' + encodeURIComponent(d.image) + '" alt="" style="width:120px;height:120px;object-fit:contain;background:#fff;border-radius:14px;display:block;margin:0 auto 12px;padding:6px" onerror="this.style.display=\'none\'">' : '';
+              out.innerHTML = '<div class="pc-card">' + img + '<div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
               maybePopup(); // appena esce il valore → invito a iscriversi
             } else if (d.range && d.range.low) {
               // Categorie coperte da StockX (sneaker/streetwear): se esce solo la stima IA, quasi

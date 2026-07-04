@@ -22,6 +22,7 @@ export interface UnifiedValuation {
   low?: number | null;
   itemName?: string;
   extra?: string;      // set / titolo
+  image?: string | null;  // foto ufficiale del prodotto (StockX/Cardmarket/Apify) per la card visiva
 }
 
 const CARD_KEYS = ['pokemon', 'pokémon', 'carte', 'card', 'tcg', 'magic', 'mtg', 'yugioh', 'yu-gi-oh', 'ygo'];
@@ -79,12 +80,12 @@ export async function getValuation(opts: {
         // (blocked) o nessun valore → fallback al prezzo RAW dichiarando "NON gradata".
         const gr = await getGradedCardValue({ name: opts.name, number: opts.number, game: opts.game, grade: g.grade });
         if (gr.value != null) {
-          return { value: gr.value, currency: gr.currency, source: gr.source, reliable: true, sample: v.sample, low: v.value, itemName: v.cardName, extra: v.setName };
+          return { value: gr.value, currency: gr.currency, source: gr.source, reliable: true, sample: v.sample, low: v.value, itemName: v.cardName, extra: v.setName, image: v.image };
         }
         const note = gr.blocked ? ' · limite gradati/giorno raggiunto → prezzo NON gradata' : ' · prezzo NON gradata';
-        return { value: v.value, currency: v.currency, source: v.source + note, reliable: false, sample: v.sample, low: v.low, itemName: v.cardName, extra: v.setName };
+        return { value: v.value, currency: v.currency, source: v.source + note, reliable: false, sample: v.sample, low: v.low, itemName: v.cardName, extra: v.setName, image: v.image };
       }
-      return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, low: v.low, itemName: v.cardName, extra: v.setName };
+      return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, low: v.low, itemName: v.cardName, extra: v.setName, image: v.image };
     }
     // niente match nel catalogo → non inventiamo: nessun valore (meglio di uno falso)
     return { value: null, currency: 'EUR', source: v.source, reliable: true, sample: 0 };
@@ -97,14 +98,14 @@ export async function getValuation(opts: {
   if (matches(cat, BAG_KEYS) && isVestiaireConfigured()) {
     const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
     const v = await getBagValue({ query: q });
-    if (v) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
+    if (v) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName, image: v.image };
   }
 
   // 1c) OROLOGI → Apify/Chrono24 (stessa logica, tetto condiviso).
   if (matches(cat, WATCH_KEYS) && isChrono24Configured()) {
     const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
     const v = await getWatchValue({ query: q });
-    if (v) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
+    if (v) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName, image: v.image };
   }
 
   // 1c-bis) LEGO → in ordine di preferenza:
@@ -139,7 +140,7 @@ export async function getValuation(opts: {
         const cm = conditionMultiplier(opts.condition);
         const adjusted = Math.round((v.value as number) * cm.pct);
         const src = cm.pct !== 1 ? `Valutazione di mercato · ${Math.round(cm.pct * 100)}% (${cm.label})` : 'Valutazione di mercato';
-        return { value: adjusted, currency: 'EUR', source: src, reliable: true, sample: v.sample || 1, itemName: v.itemName, low: cm.pct !== 1 ? v.value : undefined };
+        return { value: adjusted, currency: 'EUR', source: src, reliable: true, sample: v.sample || 1, itemName: v.itemName, low: cm.pct !== 1 ? v.value : undefined, image: v.image };
       }
     }
   }
@@ -149,7 +150,7 @@ export async function getValuation(opts: {
     const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
     const v = await getVinylValue({ query: q });
     if (v && v.value != null) {
-      return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
+      return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName, image: v.image };
     }
     // se Discogs non trova/non configurato → cade su eBay indicativo qui sotto
   }
@@ -166,7 +167,7 @@ export async function getValuation(opts: {
         const cm = conditionMultiplier(opts.condition);
         const adjusted = Math.round((v.value as number) * cm.pct);
         const src = cm.pct !== 1 ? `Valutazione di mercato · ${Math.round(cm.pct * 100)}% (${cm.label})` : 'Valutazione di mercato';
-        return { value: adjusted, currency: 'EUR', source: src, reliable: true, sample: v.sample || 1, itemName: v.itemName, low: cm.pct !== 1 ? v.value : undefined };
+        return { value: adjusted, currency: 'EUR', source: src, reliable: true, sample: v.sample || 1, itemName: v.itemName, low: cm.pct !== 1 ? v.value : undefined, image: v.image };
       }
     }
   }
