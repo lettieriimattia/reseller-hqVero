@@ -24,6 +24,8 @@
     try { localStorage.setItem('hqLang', lang); } catch (e) {}
     var b = document.getElementById('hqLangBtn');
     if (b) b.textContent = lang === 'en' ? 'IT' : 'EN';
+    // Avvisa la pagina (es. il checker "quanto vale") per ri-tradurre i campi generati via JS.
+    try { document.dispatchEvent(new CustomEvent('hqlangchange', { detail: { lang: lang } })); } catch (e) {}
   }
   window.hqToggleLang = function () {
     var cur = 'it';

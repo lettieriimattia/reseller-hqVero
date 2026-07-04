@@ -188,9 +188,10 @@
     <div class="wrap nav">
       <a href="/" class="brand" aria-label="HQVault home">HQ<b>Vault</b></a>
       <nav class="nav-links" aria-label="Navigazione principale">
-        <a href="/#funzioni">Funzioni</a>
-        <a href="/#faq">FAQ</a>
-        <a href="#join" class="btn btn-ghost" style="padding:9px 18px;">Entra in lista</a>
+        <a href="/#funzioni" data-i18n="nav1">Funzioni</a>
+        <a href="/#faq" data-i18n="nav2">FAQ</a>
+        <a href="#join" class="btn btn-ghost" style="padding:9px 18px;" data-i18n="nav3">Entra in lista</a>
+        <button id="hqLangBtn" onclick="hqToggleLang()" style="font-size:12.5px;font-weight:800;letter-spacing:.03em;color:#e9ecef;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);padding:8px 13px;border-radius:999px;cursor:pointer;">EN</button>
       </nav>
     </div>
   </header>
@@ -200,40 +201,40 @@
       <div class="hero-fx" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
       <div class="hero-bloom" aria-hidden="true"></div>
       <div class="wrap">
-        <span class="crumb"><span class="dot"></span> Valuta gratis · reseller</span>
-        <h1>Quanto <span class="hl">vale?</span></h1>
-        <p class="sub">Scegli la categoria, inserisci i dati e scopri il <b>valore di mercato</b> — sneaker, carte, streetwear, orologi, borse.</p>
+        <span class="crumb"><span class="dot"></span> <span data-i18n="crumb">Valuta gratis · reseller</span></span>
+        <h1 data-i18n="h1">Quanto <span class="hl">vale?</span></h1>
+        <p class="sub" data-i18n="sub">Scegli la categoria, inserisci i dati e scopri il <b>valore di mercato</b> — sneaker, carte, streetwear, orologi, borse.</p>
         <!-- CHECKER LIVE: prima la categoria (crea i campi giusti), poi i dettagli -->
         <form id="pcForm" class="pc-form" novalidate>
-          <label class="pc-lbl">1 · Categoria</label>
+          <label class="pc-lbl" data-i18n="lbl1">1 · Categoria</label>
           <select id="pcCat" class="pc-cat" aria-label="Categoria">
-            <option value="scarpe">👟 Sneaker</option>
-            <option value="streetwear">🧥 Streetwear / Abbigliamento</option>
-            <option value="carte">🃏 Carte Pokémon</option>
-            <option value="orologi">⌚ Orologi</option>
-            <option value="borse">👜 Borse / lusso</option>
-            <option value="altro">🔎 Altro (scrivi cosa)</option>
+            <option value="scarpe" data-i18n="cat_scarpe">👟 Sneaker</option>
+            <option value="streetwear" data-i18n="cat_street">🧥 Streetwear / Abbigliamento</option>
+            <option value="carte" data-i18n="cat_carte">🃏 Carte Pokémon</option>
+            <option value="orologi" data-i18n="cat_oro">⌚ Orologi</option>
+            <option value="borse" data-i18n="cat_borse">👜 Borse / lusso</option>
+            <option value="altro" data-i18n="cat_altro">🔎 Altro (scrivi cosa)</option>
           </select>
-          <label class="pc-lbl">2 · Dettagli</label>
+          <label class="pc-lbl" data-i18n="lbl2">2 · Dettagli</label>
           <div class="pc-fields">
             <input id="pcQuery" class="f-name" type="text" autocomplete="off" placeholder="Modello (es. Jordan 4 Bred)" required />
             <input id="pcDetail" class="f-size" type="text" autocomplete="off" placeholder="Taglia" />
             <select id="pcCond" class="f-cond" aria-label="Condizione"></select>
           </div>
-          <button type="submit" class="btn btn-primary pc-go">Quanto vale? →</button>
+          <button type="submit" class="btn btn-primary pc-go" data-i18n="go">Quanto vale? →</button>
         </form>
         <div id="pcResult" class="pc-result" role="status"></div>
-        <!-- Gate: appare quando finiscono le 3 ricerche gratis del giorno -->
+        <!-- Gate: appare quando finiscono le ricerche gratis del giorno -->
         <div id="pcGate" class="pc-gate" hidden>
-          <p class="pc-gate-title">Hai finito le ricerche gratis di oggi 👀</p>
-          <p class="pc-gate-sub">Iscriviti a HQVault e al lancio scopri i prezzi <b>senza limiti</b>, con magazzino e profitti.</p>
+          <p class="pc-gate-title" data-i18n="gate_t">Hai finito le ricerche gratis di oggi 👀</p>
+          <p class="pc-gate-sub" data-i18n="gate_s">Iscriviti a HQVault e al lancio scopri i prezzi <b>senza limiti</b>, con magazzino e profitti.</p>
           <form class="js-wl-form hero-form" data-src="quanto-vale-gate" data-redirect="/waitlist?joined=1" novalidate>
-            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
-            <button class="js-wl-btn btn btn-primary" type="submit">Sbloccalo al lancio →</button>
+            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" data-i18n-ph="ph" required />
+            <button class="js-wl-btn btn btn-primary" type="submit" data-i18n="gate_btn">Sbloccalo al lancio →</button>
           </form>
           <p class="js-wl-msg hero-msg" role="status"></p>
         </div>
-        <p class="micro" id="pcMicro">Valore di mercato · fonti ufficiali per categoria (StockX, Cardmarket…)</p>
+        <p class="micro" id="pcMicro" data-i18n="micro">Valore di mercato · fonti ufficiali per categoria (StockX, Cardmarket…)</p>
       </div>
     </section>
 
@@ -241,8 +242,8 @@
     <section style="padding-top:44px; padding-bottom:8px">
       <div class="wrap narrow">
         <div class="answer">
-          <p class="answer-label">La risposta veloce</p>
-          <p class="answer-text">Per sapere <b>quanto vale</b> una sneaker — e a quanto rivenderla — guarda i prezzi <b>VENDUTI</b> (non quelli richiesti) per lo stesso <b>modello, taglia e condizione</b>: su <b>StockX</b> per l'hype, sui <b>venduti di eBay</b> per il resto. Il valore giusto è la media recente dei venduti, meno le commissioni. <b>HQVault lo fa al posto tuo</b>: riconosce il pezzo e aggancia il valore di mercato, senza cercare a mano.</p>
+          <p class="answer-label" data-i18n="ans_l">La risposta veloce</p>
+          <p class="answer-text" data-i18n="ans_t">Per sapere <b>quanto vale</b> una sneaker — e a quanto rivenderla — guarda i prezzi <b>VENDUTI</b> (non quelli richiesti) per lo stesso <b>modello, taglia e condizione</b>: su <b>StockX</b> per l'hype, sui <b>venduti di eBay</b> per il resto. Il valore giusto è la media recente dei venduti, meno le commissioni. <b>HQVault lo fa al posto tuo</b>: riconosce il pezzo e aggancia il valore di mercato, senza cercare a mano.</p>
         </div>
       </div>
     </section>
@@ -250,11 +251,11 @@
     <!-- PROBLEMA -->
     <section style="padding-top:36px">
       <div class="wrap">
-        <p class="eyebrow">Il problema</p>
-        <h2>La domanda che ti fai ogni giorno: "vale? e quanto?"</h2>
-        <p class="lead">Prima di comprare e prima di vendere, la risposta ti serve subito — non dopo 10 minuti di ricerche.</p>
+        <p class="eyebrow" data-i18n="p_eye">Il problema</p>
+        <h2 data-i18n="p_h2">La domanda che ti fai ogni giorno: "vale? e quanto?"</h2>
+        <p class="lead" data-i18n="p_lead">Prima di comprare e prima di vendere, la risposta ti serve subito — non dopo 10 minuti di ricerche.</p>
         <div class="prob">
-          <ul>
+          <ul data-i18n="p_list">
             <li><span class="x">✕</span><span><b>Prezzi a memoria:</b> tiri a indovinare e lasci soldi sul piatto (o resti col pezzo invenduto).</span></li>
             <li><span class="x">✕</span><span><b>Comps a mano su eBay/StockX:</b> aprire, cercare, filtrare i venduti… per ogni singolo pezzo.</span></li>
             <li><span class="x">✕</span><span><b>Non sai il valore del tuo magazzino:</b> quanto vale davvero lo stock, oggi?</span></li>
@@ -267,26 +268,26 @@
     <!-- SOLUZIONE -->
     <section id="come" style="background:var(--soft-bg); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
       <div class="wrap">
-        <p class="eyebrow">Con HQVault</p>
-        <h2>Il valore, senza cercarlo a mano</h2>
-        <p class="lead">Tre cose, in automatico, dal telefono.</p>
+        <p class="eyebrow" data-i18n="s_eye">Con HQVault</p>
+        <h2 data-i18n="s_h2">Il valore, senza cercarlo a mano</h2>
+        <p class="lead" data-i18n="s_lead">Tre cose, in automatico, dal telefono.</p>
         <div class="feat-grid">
-          <article class="feat"><div class="ico" aria-hidden="true">🔎</div><h3>Riconosce e valuta</h3><p>Aggiungi dal catalogo o con una foto: HQ riconosce il modello e aggancia il <b>valore di mercato</b> (StockX per sneaker e streetwear). Niente comps a mano.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">💰</div><h3>Valore del magazzino</h3><p>Vedi in tempo reale <b>quanto vale il tuo stock</b> e quanto incasseresti liquidandolo subito.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">📈</div><h3>Profitto reale</h3><p>A ogni vendita, <b>profitto e margine</b> calcolati con fee e spedizione già sottratte. Sai sempre se hai guadagnato.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">🔎</div><h3 data-i18n="s_f1h">Riconosce e valuta</h3><p data-i18n="s_f1p">Aggiungi dal catalogo o con una foto: HQ riconosce il modello e aggancia il <b>valore di mercato</b> (StockX per sneaker e streetwear). Niente comps a mano.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">💰</div><h3 data-i18n="s_f2h">Valore del magazzino</h3><p data-i18n="s_f2p">Vedi in tempo reale <b>quanto vale il tuo stock</b> e quanto incasseresti liquidandolo subito.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">📈</div><h3 data-i18n="s_f3h">Profitto reale</h3><p data-i18n="s_f3p">A ogni vendita, <b>profitto e margine</b> calcolati con fee e spedizione già sottratte. Sai sempre se hai guadagnato.</p></article>
         </div>
         <!-- Esempio concreto: quando aggiungi/modifichi una scarpa, HQ mostra il valore di mercato -->
         <div class="ex">
-          <div class="ex-tag">Esempio · come appare quando aggiungi una scarpa</div>
+          <div class="ex-tag" data-i18n="ex_tag">Esempio · come appare quando aggiungi una scarpa</div>
           <div class="ex-card">
             <div class="ex-ph">👟</div>
             <div class="ex-info">
               <p class="ex-name">Air Jordan 4 Retro “Bred”</p>
-              <p class="ex-sub">Valore di mercato · da nuova · fonte StockX</p>
+              <p class="ex-sub" data-i18n="ex_sub">Valore di mercato · da nuova · fonte StockX</p>
             </div>
-            <div class="ex-val"><div class="v">≈ 210 €</div><div class="k">oggi</div></div>
+            <div class="ex-val"><div class="v">≈ 210 €</div><div class="k" data-i18n="ex_today">oggi</div></div>
           </div>
-          <p style="text-align:center; font-size:12px; color:var(--muted); margin-top:10px;">Valore indicativo · fonte StockX · esempio</p>
+          <p style="text-align:center; font-size:12px; color:var(--muted); margin-top:10px;" data-i18n="ex_note">Valore indicativo · fonte StockX · esempio</p>
         </div>
       </div>
     </section>
@@ -294,13 +295,13 @@
     <!-- CREDIBILITÀ / DATI -->
     <section>
       <div class="wrap">
-        <p class="eyebrow">Perché conta</p>
-        <h2>Sul valore giusto si gioca tutto il margine</h2>
-        <p class="lead">Dati reali di mercato: piccoli errori di prezzo, grandi differenze di guadagno.</p>
+        <p class="eyebrow" data-i18n="st_eye">Perché conta</p>
+        <h2 data-i18n="st_h2">Sul valore giusto si gioca tutto il margine</h2>
+        <p class="lead" data-i18n="st_lead">Dati reali di mercato: piccoli errori di prezzo, grandi differenze di guadagno.</p>
         <div class="stats">
-          <div class="stat"><div class="n">+54%</div><div class="l">rincaro medio sul retail per le Air Jordan sul resell</div></div>
-          <div class="stat"><div class="n">+86%</div><div class="l">premio della Air Jordan 1, la sneaker più rivenduta</div></div>
-          <div class="stat"><div class="n">47%</div><div class="l">delle release va davvero a profitto: sbagliare prezzo costa</div></div>
+          <div class="stat"><div class="n">+54%</div><div class="l" data-i18n="st1">rincaro medio sul retail per le Air Jordan sul resell</div></div>
+          <div class="stat"><div class="n">+86%</div><div class="l" data-i18n="st2">premio della Air Jordan 1, la sneaker più rivenduta</div></div>
+          <div class="stat"><div class="n">47%</div><div class="l" data-i18n="st3">delle release va davvero a profitto: sbagliare prezzo costa</div></div>
         </div>
       </div>
     </section>
@@ -308,17 +309,17 @@
     <!-- METODO / TRASPARENZA -->
     <section style="background:var(--soft-bg); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
       <div class="wrap">
-        <p class="eyebrow">Come funziona il valore</p>
-        <h2>Numeri veri, non inventati</h2>
+        <p class="eyebrow" data-i18n="m_eye">Come funziona il valore</p>
+        <h2 data-i18n="m_h2">Numeri veri, non inventati</h2>
         <div class="method" style="margin-top:22px">
-          <h3>Da dove arriva il valore</h3>
-          <ul>
+          <h3 data-i18n="m_h3">Da dove arriva il valore</h3>
+          <ul data-i18n="m_list">
             <li><b>Sneaker e streetwear:</b> valore di mercato reale da <b>StockX</b> — la fonte ufficiale del settore. La foto pulita si aggancia da sola.</li>
             <li><b>Carte Pokémon:</b> prezzo da <b>Cardmarket</b>. È il prezzo della carta <b>non gradata (raw)</b>: una carta gradata (PSA/BGS) vale di più, tienilo presente.</li>
             <li>Il valore del magazzino è la somma aggiornata dei tuoi pezzi; il profitto è: prezzo di vendita − acquisto − commissioni − spedizione.</li>
             <li>È una <b>stima di mercato</b> per decidere meglio, non una promessa di vendita: il prezzo finale lo fai tu.</li>
           </ul>
-          <p style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line); font-size:13.5px; color:var(--muted);">
+          <p style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line); font-size:13.5px; color:var(--muted);" data-i18n="m_note">
             <b style="color:var(--ink)">Fonti dei dati:</b> StockX (sneaker e streetwear) · Cardmarket (carte Pokémon). I valori sono presi da queste fonti ufficiali, non inventati. Le carte <b style="color:var(--ink)">gradate</b> sono una stima calcolata sul prezzo raw × il grado di gradazione (PSA/BGS).
           </p>
         </div>
@@ -328,15 +329,15 @@
     <!-- FAQ -->
     <section id="faq">
       <div class="wrap">
-        <p class="eyebrow">Domande frequenti</p>
-        <h2>Le domande sul valore</h2>
+        <p class="eyebrow" data-i18n="q_eye">Domande frequenti</p>
+        <h2 data-i18n="q_h2">Le domande sul valore</h2>
         <div class="faq" style="margin-top:24px">
-          <details open><summary>Come faccio a sapere quanto vale una sneaker?</summary><p>Aggiungi il modello dal catalogo o con una foto: HQVault lo riconosce e mostra il valore di mercato aggiornato (fonte StockX per sneaker e streetwear), così sai subito a quanto rivenderlo.</p></details>
-          <details><summary>Da dove prendete i prezzi?</summary><p>Da fonti ufficiali del settore: <b>StockX</b> per sneaker e streetwear, <b>Cardmarket</b> per le carte Pokémon. Sono valori di mercato reali, non stime inventate.</p></details>
-          <details><summary>E se la carta è gradata (PSA/BGS)?</summary><p>Lo diciamo chiaramente: Cardmarket dà il prezzo della carta <b>raw (non gradata)</b>. Se indichi che è gradata e il grado, HQVault stima il valore moltiplicando il prezzo raw per il grado — una gradata alta vale molto di più. Resta una stima, non il prezzo di un singolo annuncio.</p></details>
-          <details><summary>Posso sapere quanto vale tutto il mio magazzino?</summary><p>Sì: HQVault somma il valore dei tuoi pezzi in tempo reale e ti mostra anche quanto incasseresti liquidando subito lo stock.</p></details>
-          <details><summary>Mi dice se ci sto guadagnando?</summary><p>Sì. A ogni vendita calcola profitto e margine con commissioni e spedizione già sottratte: niente più dubbi sul guadagno reale.</p></details>
-          <details><summary>Funziona dal telefono?</summary><p>Sì, è un'app installabile (PWA): controlli valore, magazzino e profitti ovunque, anche mentre sei a comprare.</p></details>
+          <details open><summary data-i18n="q1s">Come faccio a sapere quanto vale una sneaker?</summary><p data-i18n="q1p">Aggiungi il modello dal catalogo o con una foto: HQVault lo riconosce e mostra il valore di mercato aggiornato (fonte StockX per sneaker e streetwear), così sai subito a quanto rivenderlo.</p></details>
+          <details><summary data-i18n="q2s">Da dove prendete i prezzi?</summary><p data-i18n="q2p">Da fonti ufficiali del settore: <b>StockX</b> per sneaker e streetwear, <b>Cardmarket</b> per le carte Pokémon. Sono valori di mercato reali, non stime inventate.</p></details>
+          <details><summary data-i18n="q3s">E se la carta è gradata (PSA/BGS)?</summary><p data-i18n="q3p">Lo diciamo chiaramente: Cardmarket dà il prezzo della carta <b>raw (non gradata)</b>. Se indichi che è gradata e il grado, HQVault stima il valore moltiplicando il prezzo raw per il grado — una gradata alta vale molto di più. Resta una stima, non il prezzo di un singolo annuncio.</p></details>
+          <details><summary data-i18n="q4s">Posso sapere quanto vale tutto il mio magazzino?</summary><p data-i18n="q4p">Sì: HQVault somma il valore dei tuoi pezzi in tempo reale e ti mostra anche quanto incasseresti liquidando subito lo stock.</p></details>
+          <details><summary data-i18n="q5s">Mi dice se ci sto guadagnando?</summary><p data-i18n="q5p">Sì. A ogni vendita calcola profitto e margine con commissioni e spedizione già sottratte: niente più dubbi sul guadagno reale.</p></details>
+          <details><summary data-i18n="q6s">Funziona dal telefono?</summary><p data-i18n="q6p">Sì, è un'app installabile (PWA): controlli valore, magazzino e profitti ovunque, anche mentre sei a comprare.</p></details>
         </div>
       </div>
     </section>
@@ -345,14 +346,14 @@
     <section>
       <div class="wrap narrow">
         <div class="final" id="join">
-          <h2>Scopri quanto vale, per primo</h2>
-          <p>HQVault sta arrivando. Lascia l'email e ti avvisiamo appena l'app è pronta.</p>
+          <h2 data-i18n="fin_h2">Scopri quanto vale, per primo</h2>
+          <p data-i18n="fin_p">HQVault sta arrivando. Lascia l'email e ti avvisiamo appena l'app è pronta.</p>
           <form class="js-wl-form wl-form" data-src="quanto-vale-bottom" novalidate>
-            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
-            <button class="js-wl-btn btn btn-white" type="submit">Avvisami</button>
+            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" data-i18n-ph="ph" required />
+            <button class="js-wl-btn btn btn-white" type="submit" data-i18n="wl_btn">Avvisami</button>
           </form>
           <p class="js-wl-msg wl-msg" role="status"></p>
-          <p class="wl-consent">Un solo avviso al lancio · niente spam. <a href="/privacy">Privacy</a></p>
+          <p class="wl-consent" data-i18n="fin_consent">Un solo avviso al lancio · niente spam. <a href="/privacy">Privacy</a></p>
         </div>
       </div>
     </section>
@@ -362,13 +363,13 @@
     <div class="wrap foot">
       <div>
         <div class="brand" style="margin-bottom:8px; font-size:17px; color:var(--ink);">HQ<b style="color:var(--muted)">Vault</b></div>
-        <span>© 2026 HQVault — Software gestionale per reseller.</span>
+        <span data-i18n="foot_copy">© 2026 HQVault — Software gestionale per reseller.</span>
       </div>
       <nav aria-label="Link del sito">
-        <a href="/#funzioni">Funzioni</a>
-        <a href="/#faq">FAQ</a>
-        <a href="/soluzioni/magazzino">Magazzino</a>
-        <a href="/soluzioni/quanto-costa-spedizione">Spedizioni</a>
+        <a href="/#funzioni" data-i18n="nav1">Funzioni</a>
+        <a href="/#faq" data-i18n="nav2">FAQ</a>
+        <a href="/soluzioni/magazzino" data-i18n="foot_mag">Magazzino</a>
+        <a href="/soluzioni/quanto-costa-spedizione" data-i18n="foot_ship">Spedizioni</a>
       </nav>
     </div>
   </footer>
@@ -378,11 +379,11 @@
     <div class="vpop-card">
       <button class="vpop-x" id="vpopX" aria-label="Chiudi">✕</button>
       <div class="vpop-ic">💸</div>
-      <h3>Fallo in automatico con HQVault</h3>
-      <p>Hai appena visto il valore. Con <b>HQVault</b> valuti i prodotti, tieni il magazzino in ordine e sai il <b>profitto reale a ogni vendita</b> — tutto in un tap, senza cercare a mano.</p>
+      <h3 data-i18n="vpop_h">Fallo in automatico con HQVault</h3>
+      <p data-i18n="vpop_p">Hai appena visto il valore. Con <b>HQVault</b> valuti i prodotti, tieni il magazzino in ordine e sai il <b>profitto reale a ogni vendita</b> — tutto in un tap, senza cercare a mano.</p>
       <div class="vpop-btns">
-        <button class="vpop-join" id="vpopJoin">Mettiti in lista d'attesa →</button>
-        <button class="vpop-close" id="vpopClose">Continua a valutare</button>
+        <button class="vpop-join" id="vpopJoin" data-i18n="vpop_join">Mettiti in lista d'attesa →</button>
+        <button class="vpop-close" id="vpopClose" data-i18n="vpop_close">Continua a valutare</button>
       </div>
     </div>
   </div>
@@ -395,32 +396,101 @@
   ]}
   </script>
   <script>
+    window.HQ_EN = {
+      nav1: 'Features', nav2: 'FAQ', nav3: 'Join the list',
+      crumb: 'Free valuation · resellers',
+      h1: 'How much is it <span class="hl">worth?</span>',
+      sub: 'Pick the category, enter the details and find the <b>market value</b> — sneakers, cards, streetwear, watches, bags.',
+      lbl1: '1 · Category', lbl2: '2 · Details', go: 'What’s it worth? →',
+      cat_scarpe: '👟 Sneakers', cat_street: '🧥 Streetwear / Clothing', cat_carte: '🃏 Pokémon cards', cat_oro: '⌚ Watches', cat_borse: '👜 Bags / luxury', cat_altro: '🔎 Other (type it)',
+      gate_t: 'You’ve used today’s free searches 👀',
+      gate_s: 'Sign up for HQVault and at launch see prices <b>with no limits</b>, plus inventory and profits.',
+      ph: 'Your email', gate_btn: 'Unlock it at launch →',
+      micro: 'Market value · official sources per category (StockX, Cardmarket…)',
+      ans_l: 'The quick answer',
+      ans_t: 'To know <b>what a sneaker is worth</b> — and what to resell it for — look at <b>SOLD</b> prices (not asking prices) for the same <b>model, size and condition</b>: on <b>StockX</b> for hyped pairs, on <b>eBay sold</b> for the rest. The right value is the recent average of sold ones, minus fees. <b>HQVault does it for you</b>: it recognizes the item and pulls the market value, no manual searching.',
+      p_eye: 'The problem',
+      p_h2: 'The question you ask yourself every day: "worth it? how much?"',
+      p_lead: 'Before buying and before selling, you need the answer now — not after 10 minutes of research.',
+      p_list: '<li><span class="x">✕</span><span><b>Prices from memory:</b> you guess and leave money on the table (or get stuck with the item).</span></li><li><span class="x">✕</span><span><b>Manual comps on eBay/StockX:</b> open, search, filter the sold ones… for every single item.</span></li><li><span class="x">✕</span><span><b>You don’t know your inventory value:</b> how much is the stock really worth today?</span></li><li><span class="x">✕</span><span><b>Margin in doubt:</b> after fees and shipping, did you actually make money?</span></li>',
+      s_eye: 'With HQVault',
+      s_h2: 'The value, without hunting for it',
+      s_lead: 'Three things, automatic, from your phone.',
+      s_f1h: 'Recognizes & values', s_f1p: 'Add from the catalog or with a photo: HQ recognizes the model and pulls the <b>market value</b> (StockX for sneakers and streetwear). No manual comps.',
+      s_f2h: 'Inventory value', s_f2p: 'See in real time <b>how much your stock is worth</b> and how much you’d cash in by liquidating it now.',
+      s_f3h: 'Real profit', s_f3p: 'On every sale, <b>profit and margin</b> with fees and shipping already subtracted. You always know if you earned.',
+      ex_tag: 'Example · how it looks when you add a sneaker',
+      ex_sub: 'Market value · when new · source StockX',
+      ex_today: 'today', ex_note: 'Indicative value · source StockX · example',
+      st_eye: 'Why it matters',
+      st_h2: 'The whole margin rides on the right value',
+      st_lead: 'Real market data: small pricing errors, big differences in profit.',
+      st1: 'average markup over retail for Air Jordans on the resell market',
+      st2: 'premium on the Air Jordan 1, the most resold sneaker',
+      st3: 'of releases actually turn a profit: mispricing costs you',
+      m_eye: 'How the value works',
+      m_h2: 'Real numbers, not made up',
+      m_h3: 'Where the value comes from',
+      m_list: '<li><b>Sneakers and streetwear:</b> real market value from <b>StockX</b> — the industry’s official source. The clean photo attaches by itself.</li><li><b>Pokémon cards:</b> price from <b>Cardmarket</b>. It’s the <b>raw (ungraded)</b> card price: a graded card (PSA/BGS) is worth more, keep that in mind.</li><li>Inventory value is the updated sum of your items; profit is: sale price − purchase − fees − shipping.</li><li>It’s a <b>market estimate</b> to decide better, not a promise of sale: you set the final price.</li>',
+      m_note: '<b style="color:var(--ink)">Data sources:</b> StockX (sneakers and streetwear) · Cardmarket (Pokémon cards). Values are taken from these official sources, not made up. <b style="color:var(--ink)">Graded</b> cards are an estimate computed as the raw price × the grade (PSA/BGS).',
+      q_eye: 'Frequently asked questions',
+      q_h2: 'The value questions',
+      q1s: 'How do I know what a sneaker is worth?', q1p: 'Add the model from the catalog or with a photo: HQVault recognizes it and shows the updated market value (StockX for sneakers and streetwear), so you instantly know what to resell it for.',
+      q2s: 'Where do you get the prices?', q2p: 'From the industry’s official sources: <b>StockX</b> for sneakers and streetwear, <b>Cardmarket</b> for Pokémon cards. Real market values, not made-up estimates.',
+      q3s: 'What if the card is graded (PSA/BGS)?', q3p: 'We say it clearly: Cardmarket gives the <b>raw (ungraded)</b> card price. If you specify it’s graded and the grade, HQVault estimates the value by multiplying the raw price by the grade — a high grade is worth much more. It stays an estimate, not the price of a single listing.',
+      q4s: 'Can I know what my whole inventory is worth?', q4p: 'Yes: HQVault sums the value of your items in real time and also shows how much you’d cash in by liquidating the stock now.',
+      q5s: 'Does it tell me if I’m making money?', q5p: 'Yes. On every sale it computes profit and margin with fees and shipping already subtracted: no more doubts about real earnings.',
+      q6s: 'Does it work from a phone?', q6p: 'Yes, it’s an installable app (PWA): check value, inventory and profits anywhere, even while you’re out buying.',
+      fin_h2: 'Be the first to know what it’s worth',
+      fin_p: 'HQVault is coming. Leave your email and we’ll notify you as soon as the app is ready.',
+      wl_btn: 'Notify me',
+      fin_consent: 'One notification at launch · no spam. <a href="/privacy">Privacy</a>',
+      foot_copy: '© 2026 HQVault — Management software for resellers.',
+      foot_mag: 'Inventory', foot_ship: 'Shipping',
+      vpop_h: 'Do it automatically with HQVault',
+      vpop_p: 'You just saw the value. With <b>HQVault</b> you value products, keep your inventory tidy and know your <b>real profit on every sale</b> — all in one tap, no manual searching.',
+      vpop_join: 'Join the waitlist →', vpop_close: 'Keep valuing'
+    };
+  </script>
+  <script src="/lang.js"></script>
+  <script>
     try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=valore') : fetch('/api/hit?p=valore'); } catch (e) {}
+    function curLang() { try { return localStorage.getItem('hqLang') || 'it'; } catch (e) { return 'it'; } }
 
-    // CHECKER "quanto vale una scarpa": 3 gratis/giorno per IP, poi gate → iscrizione.
+    // CHECKER "quanto vale": ricerche gratis/giorno per IP, poi gate → iscrizione.
     (function () {
       var form = document.getElementById('pcForm'); if (!form) return;
       var cat = document.getElementById('pcCat'), q = document.getElementById('pcQuery'), det = document.getElementById('pcDetail'),
           cond = document.getElementById('pcCond'), out = document.getElementById('pcResult'), gate = document.getElementById('pcGate'), micro = document.getElementById('pcMicro');
       function esc(s) { return (s || '').replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
-      // Config per categoria: placeholder del nome, campo dettaglio (taglia/numero), condizioni.
-      var SNEAKER_COND = [['Nuovo', 'Nuovo / DS'], ['Come nuovo', 'Come nuovo'], ['Usato ottimo', 'Usato ottimo'], ['Usato buono', 'Usato buono'], ['Usato discreto', 'Usato discreto']];
+      // Testi bilingui del risultato (IT/EN). Il VALORE della condizione resta in italiano
+      // (lo capisce il backend); si traduce solo l'etichetta mostrata.
+      var T = {
+        it: { writeBrand: 'Scrivi marca e modello.', searching: 'Cerco…', detected: 'categoria rilevata:', fromNew: 'da nuovo ≈', marketVal: 'valore di mercato ·', aiEst: '⚠️ stima indicativa (IA) · non un prezzo di mercato reale', notFoundA: 'Non ho trovato un valore per “', notFoundB: '”. Prova col nome esatto del modello.', remaining: 'Ricerche gratis rimaste oggi: ', lastUsed: 'Ultima ricerca gratis di oggi usata', error: 'Errore, riprova tra poco.', size: 'Taglia ' },
+        en: { writeBrand: 'Enter brand and model.', searching: 'Searching…', detected: 'detected category:', fromNew: 'when new ≈', marketVal: 'market value ·', aiEst: '⚠️ rough estimate (AI) · not a real market price', notFoundA: 'No value found for “', notFoundB: '”. Try the exact model name.', remaining: 'Free searches left today: ', lastUsed: 'Today’s last free search used', error: 'Error, please try again shortly.', size: 'Size ' }
+      };
+      function tv(k) { return (T[curLang()] || T.it)[k]; }
+      // Config per categoria: nome/dettaglio localizzati; nelle condizioni [valore-backend, {it,en}].
+      var COND_SNK = [['Nuovo', { it: 'Nuovo / DS', en: 'New / DS' }], ['Come nuovo', { it: 'Come nuovo', en: 'Like new' }], ['Usato ottimo', { it: 'Usato ottimo', en: 'Used – excellent' }], ['Usato buono', { it: 'Usato buono', en: 'Used – good' }], ['Usato discreto', { it: 'Usato discreto', en: 'Used – fair' }]];
+      var COND_CARD = [['Raw (Non Gradata)', { it: 'Non gradata', en: 'Raw (ungraded)' }], ['Gradata 10', { it: 'Gradata PSA 10', en: 'Graded PSA 10' }], ['Gradata 9', { it: 'Gradata PSA 9', en: 'Graded PSA 9' }], ['Gradata 8', { it: 'Gradata PSA 8', en: 'Graded PSA 8' }]];
       var CATS = {
-        scarpe:     { name: 'Modello (es. Jordan 4 Bred)', detail: 'Taglia', detailKey: 'size', cond: SNEAKER_COND },
-        streetwear: { name: 'Capo (es. Supreme Box Logo Hoodie)', detail: 'Taglia (S/M/L)', detailKey: 'size', cond: SNEAKER_COND },
-        carte:      { name: 'Nome carta (es. Charizard)', detail: 'N° carta', detailKey: 'number', cond: [['Raw (Non Gradata)', 'Non gradata'], ['Gradata 10', 'Gradata PSA 10'], ['Gradata 9', 'Gradata PSA 9'], ['Gradata 8', 'Gradata PSA 8']] },
-        orologi:    { name: 'Marca e modello (es. Rolex Submariner)', detail: '', detailKey: '', cond: [] },
-        borse:      { name: 'Marca e modello (es. Louis Vuitton Speedy)', detail: '', detailKey: '', cond: [] },
-        altro:      { name: 'Scrivi cosa vuoi valutare (es. iPhone 15 Pro)', detail: '', detailKey: '', cond: [] }
+        scarpe:     { name: { it: 'Modello (es. Jordan 4 Bred)', en: 'Model (e.g. Jordan 4 Bred)' }, detail: { it: 'Taglia', en: 'Size' }, detailKey: 'size', cond: COND_SNK },
+        streetwear: { name: { it: 'Capo (es. Supreme Box Logo Hoodie)', en: 'Item (e.g. Supreme Box Logo Hoodie)' }, detail: { it: 'Taglia (S/M/L)', en: 'Size (S/M/L)' }, detailKey: 'size', cond: COND_SNK },
+        carte:      { name: { it: 'Nome carta (es. Charizard)', en: 'Card name (e.g. Charizard)' }, detail: { it: 'N° carta', en: 'Card no.' }, detailKey: 'number', cond: COND_CARD },
+        orologi:    { name: { it: 'Marca e modello (es. Rolex Submariner)', en: 'Brand & model (e.g. Rolex Submariner)' }, detail: { it: '', en: '' }, detailKey: '', cond: [] },
+        borse:      { name: { it: 'Marca e modello (es. Louis Vuitton Speedy)', en: 'Brand & model (e.g. Louis Vuitton Speedy)' }, detail: { it: '', en: '' }, detailKey: '', cond: [] },
+        altro:      { name: { it: 'Scrivi cosa vuoi valutare (es. iPhone 15 Pro)', en: 'Type what to value (e.g. iPhone 15 Pro)' }, detail: { it: '', en: '' }, detailKey: '', cond: [] }
       };
       function applyCat() {
-        var c = CATS[cat.value] || CATS.scarpe;
-        q.placeholder = c.name;
-        if (c.detail) { det.style.display = ''; det.placeholder = c.detail; } else { det.style.display = 'none'; det.value = ''; }
-        if (c.cond.length) { cond.style.display = ''; cond.innerHTML = c.cond.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join(''); }
+        var L = curLang(); var c = CATS[cat.value] || CATS.scarpe;
+        q.placeholder = c.name[L] || c.name.it;
+        var dl = c.detail[L] || c.detail.it;
+        if (dl) { det.style.display = ''; det.placeholder = dl; } else { det.style.display = 'none'; det.value = ''; }
+        if (c.cond.length) { cond.style.display = ''; cond.innerHTML = c.cond.map(function (o) { return '<option value="' + o[0] + '">' + (o[1][L] || o[1].it) + '</option>'; }).join(''); }
         else { cond.style.display = 'none'; cond.innerHTML = ''; }
       }
       cat.addEventListener('change', applyCat); applyCat();
+      document.addEventListener('hqlangchange', applyCat); // ritraduce i campi al cambio lingua
       // Popup "iscriviti" dopo il valore (una volta). Il bottone porta alla waitlist (rivela il form email).
       var vpop = document.getElementById('vpop'), vpopShown = false;
       function maybePopup() { if (vpopShown || !vpop) return; vpopShown = true; setTimeout(function () { vpop.classList.add('on'); }, 900); }
@@ -434,49 +504,57 @@
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         var query = (q.value || '').trim();
-        if (query.length < 2) { out.innerHTML = '<span class="pc-warn">Scrivi marca e modello.</span>'; return; }
+        if (query.length < 2) { out.innerHTML = '<span class="pc-warn">' + tv('writeBrand') + '</span>'; return; }
         var c = CATS[cat.value] || CATS.scarpe;
-        var body = { category: cat.value, query: query, condition: (cond && cond.value || '') };
+        // Taglia mostrata nel risultato: presa dal campo dettaglio SOLO se è una taglia.
+        var sizeVal = (c.detailKey === 'size' && det.value.trim()) ? det.value.trim() : '';
+        // Etichetta condizione localizzata (per il sottotitolo); al backend va cond.value (in IT).
+        var condLabel = (cond && cond.value && cond.selectedIndex >= 0) ? cond.options[cond.selectedIndex].text : '';
+        var body = { category: cat.value, query: query, condition: (cond && cond.value) || '' };
         if (c.detailKey && det.value.trim()) body[c.detailKey] = det.value.trim();
         var btn = form.querySelector('button'); var lbl = btn.textContent;
-        btn.disabled = true; btn.textContent = 'Cerco…'; out.innerHTML = '';
+        btn.disabled = true; btn.textContent = tv('searching'); out.innerHTML = '';
         fetch('/api/price-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
           .then(function (r) { return r.json(); })
           .then(function (d) {
             btn.disabled = false; btn.textContent = lbl;
-            // Finite le valutazioni gratis: il form RESTA usabile (puoi cercare/scegliere categoria)
-            // ma invece del prezzo esce la schermata iscrizione (waitlist).
+            // Finite le valutazioni gratis: il form RESTA usabile ma esce la schermata iscrizione.
             if (d.limited) { out.innerHTML = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
-            var det = d.detected ? '<div class="pc-src">categoria rilevata: <b style="color:#c9d0d8">' + esc(d.detected) + '</b></div>' : '';
+            var detHtml = d.detected ? '<div class="pc-src">' + tv('detected') + ' <b style="color:#c9d0d8">' + esc(d.detected) + '</b></div>' : '';
             if (d.value != null) {
               var cur = (d.currency && d.currency !== 'EUR') ? (' ' + d.currency) : '€';
-              var sub = (det && sz && sz.value ? ('Taglia ' + esc(sz.value) + ' · ') : (sz && sz.value ? ('Taglia ' + esc(sz.value) + ' · ') : '')) + (cond && cond.value ? esc(cond.value) : '');
-              var baseLine = (d.base && Math.round(d.base) !== Math.round(d.value)) ? '<div class="pc-src">da nuovo ≈ ' + Math.round(d.base) + cur + '</div>' : '';
-              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + det + '<div class="pc-src">valore di mercato · ' + esc(d.source || 'StockX') + '</div></div>';
+              var sub = (sizeVal ? (tv('size') + esc(sizeVal) + ' · ') : '') + (condLabel ? esc(condLabel) : '');
+              var baseLine = (d.base && Math.round(d.base) !== Math.round(d.value)) ? '<div class="pc-src">' + tv('fromNew') + ' ' + Math.round(d.base) + cur + '</div>' : '';
+              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
               maybePopup(); // appena esce il valore → invito a iscriversi
             } else if (d.range && d.range.low) {
-              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + det + '<div class="pc-src">⚠️ stima indicativa (IA) · non un prezzo di mercato reale</div></div>';
+              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + detHtml + '<div class="pc-src">' + tv('aiEst') + '</div></div>';
             } else {
-              out.innerHTML = '<div class="pc-card"><span class="pc-warn">Non ho trovato un valore per “' + esc(query) + '”. Prova col nome esatto del modello.</span>' + det + '</div>';
+              out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notFoundA') + esc(query) + tv('notFoundB') + '</span>' + detHtml + '</div>';
             }
-            if (typeof d.remaining === 'number' && micro) { micro.textContent = d.remaining > 0 ? ('Ricerche gratis rimaste oggi: ' + d.remaining) : 'Ultima ricerca gratis di oggi usata'; }
+            if (typeof d.remaining === 'number' && micro) { micro.textContent = d.remaining > 0 ? (tv('remaining') + d.remaining) : tv('lastUsed'); }
           })
-          .catch(function () { btn.disabled = false; btn.textContent = lbl; out.innerHTML = '<span class="pc-warn">Errore, riprova tra poco.</span>'; });
+          .catch(function () { btn.disabled = false; btn.textContent = lbl; out.innerHTML = '<span class="pc-warn">' + tv('error') + '</span>'; });
       });
     })();
 
     (function () {
+      var WL = {
+        it: { invalid: "Inserisci un'email valida.", sending: 'Invio…', err: 'Qualcosa è andato storto, riprova.', already: '✓ Sei già in lista: ti avviseremo al lancio.', ok: '✓ Sei in lista! Ti scriviamo al lancio.' },
+        en: { invalid: 'Enter a valid email.', sending: 'Sending…', err: 'Something went wrong, please try again.', already: "✓ You're already on the list: we'll notify you at launch.", ok: "✓ You're on the list! We'll write to you at launch." }
+      };
+      function wt(k) { return (WL[curLang()] || WL.it)[k]; }
       var RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       document.querySelectorAll('.js-wl-form').forEach(function (form) {
         var emailEl = form.querySelector('.js-wl-email');
         var btn = form.querySelector('.js-wl-btn');
         var msg = form.parentNode.querySelector('.js-wl-msg');
-        var label = btn ? btn.textContent : 'Invia';
         form.addEventListener('submit', function (e) {
           e.preventDefault();
           var email = (emailEl.value || '').trim().toLowerCase();
-          if (!RE.test(email)) { if (msg) { msg.style.color = '#e08a6a'; msg.textContent = 'Inserisci un\'email valida.'; } return; }
-          btn.disabled = true; btn.textContent = 'Invio…'; if (msg) msg.textContent = '';
+          if (!RE.test(email)) { if (msg) { msg.style.color = '#e08a6a'; msg.textContent = wt('invalid'); } return; }
+          var label = btn ? btn.textContent : '';
+          btn.disabled = true; btn.textContent = wt('sending'); if (msg) msg.textContent = '';
           fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: form.getAttribute('data-src') || 'quanto-vale' }) })
             .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
             .then(function (d) {
@@ -484,9 +562,9 @@
               var redirect = form.getAttribute('data-redirect');
               if (redirect) { location.href = redirect + (d && d.already ? '&already=1' : ''); return; }
               form.style.display = 'none';
-              if (msg) { msg.style.color = ''; msg.textContent = (d && d.already) ? '✓ Sei già in lista: ti avviseremo al lancio.' : '✓ Sei in lista! Ti scriviamo al lancio.'; }
+              if (msg) { msg.style.color = ''; msg.textContent = (d && d.already) ? wt('already') : wt('ok'); }
             })
-            .catch(function () { btn.disabled = false; btn.textContent = label; if (msg) { msg.style.color = '#e08a6a'; msg.textContent = 'Qualcosa è andato storto, riprova.'; } });
+            .catch(function () { btn.disabled = false; btn.textContent = label; if (msg) { msg.style.color = '#e08a6a'; msg.textContent = wt('err'); } });
         });
       });
       var sticky = document.querySelector('.sticky-cta'), join = document.getElementById('join');
