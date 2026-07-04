@@ -36,7 +36,10 @@ const router = Router();
 
 // PROVA GRATIS "quanto vale" sulla landing: N valutazioni al giorno PER IP, poi il risultato
 // diventa l'iscrizione (waitlist). L'admin loggato è illimitato. Modificabile con PUBLIC_PRICE_CHECKS_PER_DAY.
-const FREE_CHECKS = Math.max(1, parseInt(process.env.PUBLIC_PRICE_CHECKS_PER_DAY || '2', 10) || 2);
+// ⚠️ TEMPORANEO (fase test): default 0 = NESSUN limite, così si prova liberamente.
+// Prima del lancio pubblico: rimettere '2' qui sotto (o impostare PUBLIC_PRICE_CHECKS_PER_DAY su Render).
+const FREE_CHECKS = Math.max(0, parseInt(process.env.PUBLIC_PRICE_CHECKS_PER_DAY || '0', 10) || 0);
+const UNLIMITED_CHECKS = FREE_CHECKS === 0;
 const pcByIp = new Map<string, { date: string; count: number }>();
 function clientIp(req: Request): string {
   const xff = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
@@ -144,7 +147,7 @@ router.post('/price-check', async (req: Request, res: Response) => {
   const today = new Date().toISOString().slice(0, 10);
   const rec = pcByIp.get(ip);
   const used = rec && rec.date === today ? rec.count : 0;
-  if (!admin && used >= FREE_CHECKS) return res.json({ limited: true, freeLimit: FREE_CHECKS });
+  if (!admin && !UNLIMITED_CHECKS && used >= FREE_CHECKS) return res.json({ limited: true, freeLimit: FREE_CHECKS });
 
   const query = String(req.body?.query || '').trim();
   const size = String(req.body?.size || '').trim();
@@ -157,12 +160,13 @@ router.post('/price-check', async (req: Request, res: Response) => {
   if (category === 'altro') { const d = detectCategory(query); if (d) { category = d.cat; detected = d.label; } }
   const isCards = /cart|pok|tcg/.test(category);
 
-  // consuma una ricerca (l'admin no: prova illimitata)
-  if (!admin) {
+  // consuma una ricerca (l'admin e la modalità illimitata no)
+  if (!admin && !UNLIMITED_CHECKS) {
     pcByIp.set(ip, { date: today, count: used + 1 });
     if (pcByIp.size > 8000) { for (const [k, vv] of pcByIp) if (vv.date !== today) pcByIp.delete(k); } // pulizia
   }
-  const remaining = admin ? 999 : Math.max(0, FREE_CHECKS - (used + 1));
+  // remaining null = non mostrare il contatore (admin o modalità illimitata di test)
+  const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - (used + 1));
 
   try {
     const val = await getValuation({ category, name: query, brand: '', size: size || undefined, condition: condition || undefined, number: number || undefined, game: isCards ? 'pokemon' : undefined });
