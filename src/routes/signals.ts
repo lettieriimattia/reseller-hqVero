@@ -106,7 +106,6 @@ router.get('/hit', async (req: Request, res: Response) => {
 // null → fallback generico (StockX prova qualsiasi cosa). Euristica leggera, niente IA.
 function detectCategory(q: string): { cat: string; label: string } | null {
   const s = q.toLowerCase();
-  if (/\blego\b|minifig|bricklink|mattoncini/.test(s)) return { cat: 'lego', label: 'LEGO' };
   if (/pokemon|pokémon|pikachu|charizard|\bcarta\b|\bcard\b|\bpsa\b|\btcg\b|magic|yu-?gi-?oh/.test(s)) return { cat: 'carte', label: 'Carte' };
   if (/rolex|omega|seiko|casio|patek|audemars|tudor|orolog|\bwatch\b|submariner|daytona|nautilus/.test(s)) return { cat: 'orologi', label: 'Orologi' };
   if (/louis vuitton|\blv\b|gucci|prada|chanel|hermes|hermès|dior|\bborsa\b|handbag|speedy|birkin|neverfull/.test(s)) return { cat: 'borse', label: 'Borse' };
