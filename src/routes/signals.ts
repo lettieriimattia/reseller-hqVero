@@ -15,6 +15,7 @@ import { estimatePriceRange } from '../services/ai.service';
 import { getLegoRaw, isLegoConfigured } from '../services/apify.service';
 import { getBrickLinkRaw, isBrickLinkConfigured } from '../services/bricklink.service';
 import { getBrickEconomyRaw, isBrickEconomyConfigured } from '../services/brickeconomy.service';
+import { stockxImageDebug } from '../services/stockx.service';
 import { isAdminEmail } from '../config/admins';
 
 // L'ADMIN (loggato nel browser) NON è soggetto al limite di ricerche: così puoi provare liberamente.
@@ -138,6 +139,14 @@ router.get('/lego-debug', async (req: Request, res: Response) => {
     bricklink,    // 2ª scelta: API ufficiale (serve venditore)
     apify,        // 3ª scelta: actor (spesso bloccato da CAPTCHA)
   });
+});
+
+// DEBUG foto StockX (pubblico, protetto da chiave): /api/stockx-debug?key=hqlego2026&q=Jordan 4 Bred
+router.get('/stockx-debug', async (req: Request, res: Response) => {
+  if (String(req.query.key || '') !== 'hqlego2026') return res.status(403).json({ error: 'chiave mancante' });
+  const q = String(req.query.q || 'Jordan 4 Bred').trim();
+  const out = await stockxImageDebug(q).catch((e: any) => ({ error: e?.message }));
+  return res.json(out);
 });
 
 // POST /api/price-check — { query, category?, size?, condition?, number? } → valore di mercato.

@@ -171,6 +171,33 @@ export async function searchStockXCandidates(query: string, opts?: { sneakersOnl
 
 // Recupera l'URL immagine di un prodotto dal DETTAGLIO StockX (/v2/catalog/products/{id}).
 // La ricerca (/catalog/search) NON include le foto: stanno solo nel dettaglio. Difensivo: null su errore.
+// DEBUG: perché la foto StockX non esce? Ritorna cosa dà la ricerca e il dettaglio prodotto.
+export async function stockxImageDebug(query: string): Promise<any> {
+  if (!isStockXConfigured()) return { configured: false };
+  const token = await getStockXAccessToken();
+  if (!token) return { configured: true, connected: false };
+  const headers = { Authorization: `Bearer ${token}`, 'x-api-key': process.env.STOCKX_API_KEY || '', Accept: 'application/json' };
+  const cands = await searchStockXCandidates(query, { limit: 3 }).catch(() => []);
+  const first: any = cands[0] || null;
+  const pid = first?.productId || null;
+  const out: any = { candidatesCount: cands.length, firstTitle: first?.title, productId: pid, searchImage: first?.image || null };
+  if (pid) {
+    try {
+      const r = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(pid)}`, { headers });
+      out.detailStatus = r.status;
+      if (r.ok) {
+        const p: any = await r.json();
+        out.detailTopKeys = Object.keys(p || {});
+        out.mediaKeys = p?.media ? Object.keys(p.media) : null;
+        out.detailImage = p?.media?.imageUrl || p?.media?.thumbUrl || p?.media?.smallImageUrl || p?.image || p?.thumbUrl || null;
+      } else {
+        out.detailBody = (await r.text().catch(() => '')).slice(0, 200);
+      }
+    } catch (e: any) { out.detailError = e?.message; }
+  }
+  return out;
+}
+
 export async function getStockXImage(productId?: string | null): Promise<string | null> {
   const id = (productId || '').toString().trim();
   if (!id) return null;
