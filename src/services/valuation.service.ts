@@ -10,6 +10,7 @@ import { getVinylValue } from './discogs.service';
 import { getBagValue, getWatchValue, getLegoValue, isVestiaireConfigured, isChrono24Configured, isLegoConfigured } from './apify.service';
 import { getStockXValuation, isStockXConfigured } from './stockx.service';
 import { getGradedCardValue } from './tcggraded.service';
+import { getBrickLinkValue, isBrickLinkConfigured } from './bricklink.service';
 
 export interface UnifiedValuation {
   value: number | null;
@@ -105,11 +106,18 @@ export async function getValuation(opts: {
     if (v) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
   }
 
-  // 1c-bis) LEGO → BrickLink Price Guide (via Apify). Valuta il SET per numero (es. 10300).
-  if (matches(cat, LEGO_KEYS) && isLegoConfigured()) {
+  // 1c-bis) LEGO → BrickLink. PRIMA l'API UFFICIALE (niente CAPTCHA, prezzi reali); se non
+  // configurata, ripiego sull'actor Apify (che però BrickLink spesso blocca con "Human Verification").
+  if (matches(cat, LEGO_KEYS)) {
     const q = [opts.name, opts.brand].filter(Boolean).join(' ').trim();
-    const v = await getLegoValue({ query: q, condition: opts.condition });
-    if (v && v.value != null) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
+    if (isBrickLinkConfigured()) {
+      const v = await getBrickLinkValue({ query: q, condition: opts.condition });
+      if (v && v.value != null) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName, low: v.low };
+    }
+    if (isLegoConfigured()) {
+      const v = await getLegoValue({ query: q, condition: opts.condition });
+      if (v && v.value != null) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
+    }
   }
 
   // 1d) SNEAKER → StockX (fonte di prezzo affidabile, in EUR). Se configurato e

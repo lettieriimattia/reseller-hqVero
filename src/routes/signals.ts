@@ -13,6 +13,7 @@ import { logger } from '../utils/logger';
 import { getValuation } from '../services/valuation.service';
 import { estimatePriceRange } from '../services/ai.service';
 import { getLegoRaw, isLegoConfigured } from '../services/apify.service';
+import { getBrickLinkRaw, isBrickLinkConfigured } from '../services/bricklink.service';
 import { isAdminEmail } from '../config/admins';
 
 // L'ADMIN (loggato nel browser) NON è soggetto al limite di ricerche: così puoi provare liberamente.
@@ -121,8 +122,16 @@ function detectCategory(q: string): { cat: string; label: string } | null {
 router.get('/lego-debug', async (req: Request, res: Response) => {
   if (String(req.query.key || '') !== 'hqlego2026') return res.status(403).json({ error: 'chiave mancante' });
   const set = String(req.query.set || '10300').trim();
-  const raw = await getLegoRaw(set);
-  return res.json({ configured: isLegoConfigured(), ...raw });
+  const [apify, bricklink] = await Promise.all([
+    getLegoRaw(set).catch((e: any) => ({ error: e?.message })),
+    getBrickLinkRaw(set).catch((e: any) => ({ error: e?.message })),
+  ]);
+  return res.json({
+    apifyConfigured: isLegoConfigured(),
+    bricklinkConfigured: isBrickLinkConfigured(),
+    bricklink,   // API UFFICIALE (la fonte buona)
+    apify,       // actor (spesso bloccato da BrickLink)
+  });
 });
 
 // POST /api/price-check — { query, category?, size?, condition?, number? } → valore di mercato.
