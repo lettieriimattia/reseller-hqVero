@@ -11,6 +11,7 @@ import { getBagValue, getWatchValue, getLegoValue, isVestiaireConfigured, isChro
 import { getStockXValuation, isStockXConfigured } from './stockx.service';
 import { getGradedCardValue } from './tcggraded.service';
 import { getBrickLinkValue, isBrickLinkConfigured } from './bricklink.service';
+import { getBrickEconomyValue, isBrickEconomyConfigured } from './brickeconomy.service';
 
 export interface UnifiedValuation {
   value: number | null;
@@ -106,10 +107,16 @@ export async function getValuation(opts: {
     if (v) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
   }
 
-  // 1c-bis) LEGO → BrickLink. PRIMA l'API UFFICIALE (niente CAPTCHA, prezzi reali); se non
-  // configurata, ripiego sull'actor Apify (che però BrickLink spesso blocca con "Human Verification").
+  // 1c-bis) LEGO → in ordine di preferenza:
+  //   1) BrickEconomy (valore di mercato, chiave semplice, NIENTE vincolo venditore)
+  //   2) BrickLink API ufficiale (prezzi reali, ma richiede account venditore)
+  //   3) Apify scraper (spesso bloccato da BrickLink con "Human Verification")
   if (matches(cat, LEGO_KEYS)) {
     const q = [opts.name, opts.brand].filter(Boolean).join(' ').trim();
+    if (isBrickEconomyConfigured()) {
+      const v = await getBrickEconomyValue({ query: q, condition: opts.condition });
+      if (v && v.value != null) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName, low: v.low };
+    }
     if (isBrickLinkConfigured()) {
       const v = await getBrickLinkValue({ query: q, condition: opts.condition });
       if (v && v.value != null) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName, low: v.low };

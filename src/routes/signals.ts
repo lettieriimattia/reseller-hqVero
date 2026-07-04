@@ -14,6 +14,7 @@ import { getValuation } from '../services/valuation.service';
 import { estimatePriceRange } from '../services/ai.service';
 import { getLegoRaw, isLegoConfigured } from '../services/apify.service';
 import { getBrickLinkRaw, isBrickLinkConfigured } from '../services/bricklink.service';
+import { getBrickEconomyRaw, isBrickEconomyConfigured } from '../services/brickeconomy.service';
 import { isAdminEmail } from '../config/admins';
 
 // L'ADMIN (loggato nel browser) NON è soggetto al limite di ricerche: così puoi provare liberamente.
@@ -122,15 +123,18 @@ function detectCategory(q: string): { cat: string; label: string } | null {
 router.get('/lego-debug', async (req: Request, res: Response) => {
   if (String(req.query.key || '') !== 'hqlego2026') return res.status(403).json({ error: 'chiave mancante' });
   const set = String(req.query.set || '10300').trim();
-  const [apify, bricklink] = await Promise.all([
-    getLegoRaw(set).catch((e: any) => ({ error: e?.message })),
+  const [brickeconomy, bricklink, apify] = await Promise.all([
+    getBrickEconomyRaw(set).catch((e: any) => ({ error: e?.message })),
     getBrickLinkRaw(set).catch((e: any) => ({ error: e?.message })),
+    getLegoRaw(set).catch((e: any) => ({ error: e?.message })),
   ]);
   return res.json({
-    apifyConfigured: isLegoConfigured(),
+    brickeconomyConfigured: isBrickEconomyConfigured(),
     bricklinkConfigured: isBrickLinkConfigured(),
-    bricklink,   // API UFFICIALE (la fonte buona)
-    apify,       // actor (spesso bloccato da BrickLink)
+    apifyConfigured: isLegoConfigured(),
+    brickeconomy, // 1ª scelta: valore di mercato, niente vincolo venditore
+    bricklink,    // 2ª scelta: API ufficiale (serve venditore)
+    apify,        // 3ª scelta: actor (spesso bloccato da CAPTCHA)
   });
 });
 
