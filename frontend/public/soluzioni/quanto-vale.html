@@ -469,8 +469,8 @@
       // Testi bilingui del risultato (IT/EN). Il VALORE della condizione resta in italiano
       // (lo capisce il backend); si traduce solo l'etichetta mostrata.
       var T = {
-        it: { writeBrand: 'Scrivi marca e modello.', searching: 'Cerco…', detected: 'categoria rilevata:', fromNew: 'da nuovo ≈', marketVal: 'valore di mercato ·', aiEst: '⚠️ stima indicativa (IA) · non un prezzo di mercato reale', notFoundA: 'Non ho trovato un valore per “', notFoundB: '”. Prova col nome esatto del modello.', remaining: 'Ricerche gratis rimaste oggi: ', lastUsed: 'Ultima ricerca gratis di oggi usata', error: 'Errore, riprova tra poco.', size: 'Taglia ' },
-        en: { writeBrand: 'Enter brand and model.', searching: 'Searching…', detected: 'detected category:', fromNew: 'when new ≈', marketVal: 'market value ·', aiEst: '⚠️ rough estimate (AI) · not a real market price', notFoundA: 'No value found for “', notFoundB: '”. Try the exact model name.', remaining: 'Free searches left today: ', lastUsed: 'Today’s last free search used', error: 'Error, please try again shortly.', size: 'Size ' }
+        it: { writeBrand: 'Scrivi marca e modello.', searching: 'Cerco…', detected: 'categoria rilevata:', fromNew: 'da nuovo ≈', marketVal: 'valore di mercato ·', aiEst: '⚠️ stima indicativa (IA) · non un prezzo di mercato reale', hintModel: '💡 Scrivi il <b>modello esatto</b> (es. Corteiz Alcatraz Hoodie) per il prezzo reale StockX', notFoundA: 'Non ho trovato un valore per “', notFoundB: '”. Prova col nome esatto del modello.', remaining: 'Ricerche gratis rimaste oggi: ', lastUsed: 'Ultima ricerca gratis di oggi usata', error: 'Errore, riprova tra poco.', size: 'Taglia ' },
+        en: { writeBrand: 'Enter brand and model.', searching: 'Searching…', detected: 'detected category:', fromNew: 'when new ≈', marketVal: 'market value ·', aiEst: '⚠️ rough estimate (AI) · not a real market price', hintModel: '💡 Enter the <b>exact model</b> (e.g. Corteiz Alcatraz Hoodie) for the real StockX price', notFoundA: 'No value found for “', notFoundB: '”. Try the exact model name.', remaining: 'Free searches left today: ', lastUsed: 'Today’s last free search used', error: 'Error, please try again shortly.', size: 'Size ' }
       };
       function tv(k) { return (T[curLang()] || T.it)[k]; }
       // Config per categoria: nome/dettaglio localizzati; nelle condizioni [valore-backend, {it,en}].
@@ -531,7 +531,11 @@
               out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
               maybePopup(); // appena esce il valore → invito a iscriversi
             } else if (d.range && d.range.low) {
-              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + detHtml + '<div class="pc-src">' + tv('aiEst') + '</div></div>';
+              // Categorie coperte da StockX (sneaker/streetwear): se esce solo la stima IA, quasi
+              // sempre è perché la query è generica → suggerisci il modello esatto.
+              var stockxCat = (cat.value === 'scarpe' || cat.value === 'streetwear');
+              var hint = stockxCat ? '<div class="pc-src" style="margin-top:6px">' + tv('hintModel') + '</div>' : '';
+              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + detHtml + '<div class="pc-src">' + tv('aiEst') + '</div>' + hint + '</div>';
             } else {
               out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notFoundA') + esc(query) + tv('notFoundB') + '</span>' + detHtml + '</div>';
             }
