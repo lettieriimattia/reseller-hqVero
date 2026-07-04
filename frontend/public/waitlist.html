@@ -23,6 +23,8 @@
     .top { position: relative; z-index: 2; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 960px; margin: 0 auto; width: 100%; }
     .brand { font-weight: 900; font-size: 19px; letter-spacing: -.02em; color: #f4f6f8; }
     .brand b { color: #c2c9d2; }
+    .langbtn { font-size: 12.5px; font-weight: 800; letter-spacing: .03em; color: #e9ecef; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); padding: 8px 14px; border-radius: 999px; cursor: pointer; transition: background .15s; }
+    .langbtn:hover { background: rgba(255,255,255,.16); }
     .home-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #e9ecef; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); padding: 11px 20px; border-radius: 13px; transition: background .15s, border-color .15s, transform .15s; }
     .home-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.32); transform: translateY(-1px); }
     main { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px 20px 60px; }
@@ -38,9 +40,9 @@
     input[type=email] { flex: 1; background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.16); border-radius: 14px; padding: 15px 18px; color: #fff; font-size: 16px; outline: none; transition: border-color .15s; }
     input[type=email]:focus { border-color: var(--teal); }
     input::placeholder { color: #8a929c; }
-    button { background: var(--teal); color: #fff; font-weight: 800; font-size: 16px; padding: 15px 26px; border-radius: 14px; border: none; cursor: pointer; transition: background .15s, transform .15s; white-space: nowrap; }
-    button:hover:not(:disabled) { background: var(--teal-d); transform: translateY(-1px); }
-    button:disabled { opacity: .55; cursor: default; }
+    button.submit { background: var(--teal); color: #fff; font-weight: 800; font-size: 16px; padding: 15px 26px; border-radius: 14px; border: none; cursor: pointer; transition: background .15s, transform .15s; white-space: nowrap; }
+    button.submit:hover:not(:disabled) { background: var(--teal-d); transform: translateY(-1px); }
+    button.submit:disabled { opacity: .55; cursor: default; }
     .consent { margin-top: 16px; font-size: 12.5px; color: #7e8893; max-width: 460px; }
     .consent a { color: #9aa2ab; text-decoration: underline; }
     .msg { margin-top: 22px; font-size: 15px; font-weight: 600; min-height: 22px; }
@@ -56,18 +58,19 @@
 
   <div class="top">
     <a href="/" class="brand">HQ<b>Vault</b></a>
+    <button id="hqLangBtn" class="langbtn" onclick="hqToggleLang()">EN</button>
   </div>
 
   <main>
     <div id="formView">
-      <span class="pill"><span class="dot"></span> In arrivo · accesso in preparazione</span>
-      <h1>HQVault sta arrivando</h1>
-      <p class="sub">Il gestionale premium per reseller è in fase finale. <b>Lascia la tua email</b> e ti avvisiamo per primo appena l'app è pronta.</p>
+      <span class="pill"><span class="dot"></span> <span data-i18n="pill">In arrivo · accesso in preparazione</span></span>
+      <h1 data-i18n="h1">HQVault sta arrivando</h1>
+      <p class="sub" data-i18n="sub">Il gestionale premium per reseller è in fase finale. <b>Lascia la tua email</b> e ti avvisiamo per primo appena l'app è pronta.</p>
       <form id="wlForm" novalidate>
-        <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
-        <button id="submitBtn" type="submit">Avvisami</button>
+        <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" data-i18n-ph="ph" required />
+        <button id="submitBtn" class="submit" type="submit" data-i18n="btn">Avvisami</button>
       </form>
-      <p class="consent">Lasciando l'email acconsenti a ricevere un unico avviso quando l'app sarà disponibile. Niente spam, puoi cancellarti quando vuoi. <a href="/privacy">Privacy</a></p>
+      <p class="consent" data-i18n="consent">Lasciando l'email acconsenti a ricevere un unico avviso quando l'app sarà disponibile. Niente spam, puoi cancellarti quando vuoi. <a href="/privacy">Privacy</a></p>
       <p class="msg" id="msg" role="status"></p>
     </div>
 
@@ -75,15 +78,48 @@
       <div class="ico">✓</div>
       <h1 id="doneTitle">Sei in lista!</h1>
       <p class="sub" id="doneSub">Ti scriviamo appena l'app è pronta. Grazie per l'interesse.</p>
-      <a href="/" class="home-btn" style="margin-top: 4px;">← Pagina principale</a>
+      <a href="/" class="home-btn" style="margin-top: 4px;" data-i18n="home">← Pagina principale</a>
     </div>
   </main>
 
-  <footer>© 2026 HQVault · <a href="/">Torna al sito</a></footer>
+  <footer data-i18n="foot">© 2026 HQVault · <a href="/">Torna al sito</a></footer>
 
+  <script>
+    window.HQ_EN = {
+      pill: 'Coming soon · early access in the works',
+      h1: 'HQVault is coming',
+      sub: "The premium management tool for resellers is in its final stretch. <b>Leave your email</b> and we'll notify you first as soon as the app is ready.",
+      ph: 'Your email',
+      btn: 'Notify me',
+      consent: 'By leaving your email you agree to receive a single notification when the app becomes available. No spam, unsubscribe anytime. <a href="/privacy">Privacy</a>',
+      home: '← Home',
+      foot: '© 2026 HQVault · <a href="/">Back to site</a>'
+    };
+  </script>
+  <script src="/lang.js"></script>
   <script>
     // Da quale pagina è partito (per capire quale landing converte di più).
     var source = new URLSearchParams(location.search).get('src') || 'diretto';
+
+    // Messaggi dinamici bilingui: seguono la lingua scelta col toggle.
+    function curLang() { try { return localStorage.getItem('hqLang') || 'it'; } catch (e) { return 'it'; } }
+    var STR = {
+      it: {
+        invalid: "Inserisci un'email valida.", sending: 'Invio…', btn: 'Avvisami',
+        err: 'Qualcosa è andato storto, riprova tra poco.',
+        inListT: 'Sei in lista!', inListS: "Ti scriviamo appena l'app è pronta. Grazie per l'interesse.",
+        alreadyT: 'Sei già in lista ✓', alreadyS: "Questa email è già registrata: ti avviseremo appena l'app è pronta.",
+        alreadyS2: 'Questa email è già registrata: ti avviseremo al lancio.'
+      },
+      en: {
+        invalid: 'Enter a valid email.', sending: 'Sending…', btn: 'Notify me',
+        err: 'Something went wrong, please try again shortly.',
+        inListT: "You're on the list!", inListS: "We'll write to you as soon as the app is ready. Thanks for your interest.",
+        alreadyT: "You're already on the list ✓", alreadyS: "This email is already registered: we'll notify you as soon as the app is ready.",
+        alreadyS2: "This email is already registered: we'll notify you at launch."
+      }
+    };
+    function tt(k) { return (STR[curLang()] || STR.it)[k]; }
 
     var form = document.getElementById('wlForm');
     var emailEl = document.getElementById('email');
@@ -103,23 +139,22 @@
       e.preventDefault();
       var email = (emailEl.value || '').trim().toLowerCase();
       msg.className = 'msg';
-      if (!EMAIL_RE.test(email)) { msg.textContent = 'Inserisci un\'email valida.'; msg.className = 'msg err'; return; }
-      btn.disabled = true; btn.textContent = 'Invio…'; msg.textContent = '';
+      if (!EMAIL_RE.test(email)) { msg.textContent = tt('invalid'); msg.className = 'msg err'; return; }
+      btn.disabled = true; btn.textContent = tt('sending'); msg.textContent = '';
       fetch('/api/waitlist', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email, source: source })
       }).then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
         .then(function (d) {
           if (d && d.already) {
-            // Email GIÀ registrata → lo diciamo chiaramente.
-            msg.textContent = ''; showDone('Sei già in lista ✓', 'Questa email è già registrata: ti avviseremo appena l\'app è pronta.');
+            msg.textContent = ''; showDone(tt('alreadyT'), tt('alreadyS'));
           } else {
-            showDone('Sei in lista!', 'Ti scriviamo appena l\'app è pronta. Grazie per l\'interesse.');
+            showDone(tt('inListT'), tt('inListS'));
           }
         })
         .catch(function () {
-          btn.disabled = false; btn.textContent = 'Avvisami';
-          msg.textContent = 'Qualcosa è andato storto, riprova tra poco.'; msg.className = 'msg err';
+          btn.disabled = false; btn.textContent = tt('btn');
+          msg.textContent = tt('err'); msg.className = 'msg err';
         });
     });
 
@@ -127,7 +162,7 @@
     (function () {
       var p = new URLSearchParams(location.search);
       if (p.get('joined') === '1') {
-        showDone(p.get('already') === '1' ? 'Sei già in lista ✓' : 'Sei in lista!', p.get('already') === '1' ? 'Questa email è già registrata: ti avviseremo al lancio.' : 'Ti scriviamo appena l\'app è pronta. Grazie per l\'interesse.');
+        showDone(p.get('already') === '1' ? tt('alreadyT') : tt('inListT'), p.get('already') === '1' ? tt('alreadyS2') : tt('inListS'));
       }
     })();
 
