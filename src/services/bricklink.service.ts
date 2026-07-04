@@ -1,7 +1,7 @@
 // src/services/bricklink.service.ts
 // Valutazione LEGO tramite l'API UFFICIALE di BrickLink (niente scraping, niente CAPTCHA).
 // BrickLink usa OAuth 1.0a (firma HMAC-SHA1). Servono 4 credenziali, gratuite, dal tuo account:
-//   https://www.bricklink.com/v3/api/register_consumer.page  → registra IP "0.0.0.0" (= qualsiasi IP, così Render funziona)
+//   https://www.bricklink.com/v2/api/register_consumer.page  → registra IP "0.0.0.0" (= qualsiasi IP, così Render funziona)
 // Env su Render:
 //   BRICKLINK_CONSUMER_KEY, BRICKLINK_CONSUMER_SECRET, BRICKLINK_TOKEN, BRICKLINK_TOKEN_SECRET
 //
