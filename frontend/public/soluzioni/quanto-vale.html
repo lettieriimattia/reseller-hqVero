@@ -129,7 +129,7 @@
     @media (max-width:820px) { .feat-grid { grid-template-columns:1fr; } }
     .feat { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:26px; transition:transform .15s, box-shadow .2s; }
     .feat:hover { transform:translateY(-3px); box-shadow:0 16px 40px -20px rgba(15,23,42,.3); }
-    .feat .ico { width:46px; height:46px; border-radius:12px; background:#e6f5f3; color:var(--teal-d); display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:16px; }
+    .feat .ico { width:46px; height:46px; border-radius:13px; background:#f4f6f8; border:1px solid var(--line); color:var(--ink); display:flex; align-items:center; justify-content:center; margin-bottom:16px; }
     .feat h3 { font-size:18px; font-weight:800; color:var(--ink); margin-bottom:8px; }
     .feat p { color:var(--muted); font-size:15px; }
     /* Esempio concreto "come appare in HQ" */
@@ -211,12 +211,12 @@
         <form id="pcForm" class="pc-form" novalidate>
           <label class="pc-lbl" data-i18n="lbl1">1 · Categoria</label>
           <select id="pcCat" class="pc-cat" aria-label="Categoria">
-            <option value="scarpe" data-i18n="cat_scarpe">👟 Sneaker</option>
-            <option value="streetwear" data-i18n="cat_street">🧥 Streetwear / Abbigliamento</option>
-            <option value="carte" data-i18n="cat_carte">🃏 Carte Pokémon</option>
-            <option value="orologi" data-i18n="cat_oro">⌚ Orologi</option>
-            <option value="borse" data-i18n="cat_borse">👜 Borse / lusso</option>
-            <option value="altro" data-i18n="cat_altro">🔎 Altro (scrivi cosa)</option>
+            <option value="scarpe" data-i18n="cat_scarpe">Sneaker</option>
+            <option value="streetwear" data-i18n="cat_street">Streetwear / Abbigliamento</option>
+            <option value="carte" data-i18n="cat_carte">Carte Pokémon</option>
+            <option value="orologi" data-i18n="cat_oro">Orologi</option>
+            <option value="borse" data-i18n="cat_borse">Borse / lusso</option>
+            <option value="altro" data-i18n="cat_altro">Altro (scrivi cosa)</option>
           </select>
           <label class="pc-lbl" data-i18n="lbl2">2 · Dettagli</label>
           <div class="pc-fields">
@@ -275,9 +275,9 @@
         <h2 data-i18n="s_h2">Il valore, senza cercarlo a mano</h2>
         <p class="lead" data-i18n="s_lead">Tre cose, in automatico, dal telefono.</p>
         <div class="feat-grid">
-          <article class="feat"><div class="ico" aria-hidden="true">🔎</div><h3 data-i18n="s_f1h">Riconosce e valuta</h3><p data-i18n="s_f1p">Aggiungi dal catalogo o con una foto: HQ riconosce il modello e aggancia il <b>valore di mercato</b> (StockX per sneaker e streetwear). Niente comps a mano.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">💰</div><h3 data-i18n="s_f2h">Valore del magazzino</h3><p data-i18n="s_f2p">Vedi in tempo reale <b>quanto vale il tuo stock</b> e quanto incasseresti liquidandolo subito.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">📈</div><h3 data-i18n="s_f3h">Profitto reale</h3><p data-i18n="s_f3p">A ogni vendita, <b>profitto e margine</b> calcolati con fee e spedizione già sottratte. Sai sempre se hai guadagnato.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg></div><h3 data-i18n="s_f1h">Riconosce e valuta</h3><p data-i18n="s_f1p">Aggiungi dal catalogo o con una foto: HQ riconosce il modello e aggancia il <b>valore di mercato</b> (StockX per sneaker e streetwear). Niente comps a mano.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-2"/><path d="M21 11h-4a2 2 0 0 0 0 4h4Z"/></svg></div><h3 data-i18n="s_f2h">Valore del magazzino</h3><p data-i18n="s_f2p">Vedi in tempo reale <b>quanto vale il tuo stock</b> e quanto incasseresti liquidandolo subito.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg></div><h3 data-i18n="s_f3h">Profitto reale</h3><p data-i18n="s_f3p">A ogni vendita, <b>profitto e margine</b> calcolati con fee e spedizione già sottratte. Sai sempre se hai guadagnato.</p></article>
         </div>
         <!-- Esempio concreto: quando aggiungi/modifichi una scarpa, HQ mostra il valore di mercato -->
         <div class="ex">
@@ -381,7 +381,7 @@
   <div id="vpop" class="vpop">
     <div class="vpop-card">
       <button class="vpop-x" id="vpopX" aria-label="Chiudi">✕</button>
-      <div class="vpop-ic">💸</div>
+      <div class="vpop-ic"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#5fb9ae" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.7 4.8L18.5 9.5 13.7 11.2 12 16l-1.7-4.8L5.5 9.5 10.3 7.8 12 3Z"/><path d="M19 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></svg></div>
       <h3 data-i18n="vpop_h">Fallo in automatico con HQVault</h3>
       <p data-i18n="vpop_p">Hai appena visto il valore. Con <b>HQVault</b> valuti i prodotti, tieni il magazzino in ordine e sai il <b>profitto reale a ogni vendita</b> — tutto in un tap, senza cercare a mano.</p>
       <div class="vpop-btns">
@@ -405,7 +405,7 @@
       h1: 'How much is it <span class="hl">worth?</span>',
       sub: 'Pick the category, enter the details and find the <b>market value</b> — sneakers, cards, streetwear, watches, bags.',
       lbl1: '1 · Category', lbl2: '2 · Details', go: 'What’s it worth? →',
-      cat_scarpe: '👟 Sneakers', cat_street: '🧥 Streetwear / Clothing', cat_carte: '🃏 Pokémon cards', cat_oro: '⌚ Watches', cat_borse: '👜 Bags / luxury', cat_altro: '🔎 Other (type it)',
+      cat_scarpe: 'Sneakers', cat_street: 'Streetwear / Clothing', cat_carte: 'Pokémon cards', cat_oro: 'Watches', cat_borse: 'Bags / luxury', cat_altro: 'Other (type it)',
       gate_t: 'You’ve used today’s free searches 👀',
       gate_s: 'Sign up for HQVault and at launch see prices <b>with no limits</b>, plus inventory and profits.',
       ph: 'Your email', gate_btn: 'Unlock it at launch →',
