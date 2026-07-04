@@ -18,13 +18,37 @@ import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { audit } from '../services/audit.service';
 import { logger } from '../utils/logger';
+import jwt from 'jsonwebtoken';
+import { isAdminEmail } from '../config/admins';
+import { isVestiaireConfigured, isChrono24Configured, isLegoConfigured, getLegoRaw } from '../services/apify.service';
 
 const router = Router();
 
-// Diagnostica pubblica (nessun segreto): quale provider/modello vision è attivo.
-// Apri in browser: /api/ai/vision-status
+// Diagnostica pubblica (nessun segreto): quale provider/modello vision è attivo + quali
+// fonti Apify sono configurate (solo true/false, nessuna chiave). Apri: /api/ai/vision-status
 router.get('/vision-status', (_req, res) => {
-  res.json(getVisionStatus());
+  res.json({
+    ...getVisionStatus(),
+    apify: { vestiaire: isVestiaireConfigured(), chrono24: isChrono24Configured(), lego: isLegoConfigured() },
+  });
+});
+
+function isAdminReq(req: any): boolean {
+  try {
+    const token = req.cookies?.access_token;
+    if (!token || !process.env.JWT_ACCESS_SECRET) return false;
+    const p: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    return isAdminEmail(p?.email);
+  } catch { return false; }
+}
+
+// DEBUG LEGO (solo admin, loggato): mostra la risposta grezza dell'actor per capire i campi prezzo.
+// Apri da loggato: /api/ai/lego-debug?set=10300
+router.get('/lego-debug', async (req: any, res) => {
+  if (!isAdminReq(req)) return res.status(403).json({ error: 'solo admin' });
+  const set = String(req.query.set || '10300').trim();
+  const raw = await getLegoRaw(set);
+  res.json(raw);
 });
 
 router.use(authenticate);

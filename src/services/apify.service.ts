@@ -155,6 +155,26 @@ function normalizeSetId(q: string): string | null {
   if (!m) return null;
   return m[2] ? `${m[1]}${m[2]}` : `${m[1]}-1`; // BrickLink vuole il suffisso variante (-1)
 }
+// DEBUG (solo admin): restituisce la risposta GREZZA dell'actor per un set, così vediamo i nomi
+// esatti dei campi prezzo (i set BrickLink possono differire dalle part/minifig). Costa 1 evento Apify.
+export async function getLegoRaw(query: string): Promise<{ ok: boolean; configured: boolean; setId: string | null; status?: number; count?: number; firstItemKeys?: string[]; firstItem?: any; error?: string }> {
+  const configured = isLegoConfigured();
+  if (!configured) return { ok: false, configured, setId: null, error: 'APIFY_TOKEN o APIFY_LEGO_ACTOR mancanti' };
+  const setId = normalizeSetId(query);
+  if (!setId) return { ok: false, configured, setId: null, error: 'numero set non riconosciuto' };
+  try {
+    const url = `https://api.apify.com/v2/acts/${encodeURIComponent(LEGO_ACTOR)}/run-sync-get-dataset-items?token=${TOKEN}&timeout=120`;
+    const r = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ setIds: [setId], condition: 'both', currency: 'EUR', maxItems: 3 }),
+    });
+    if (!r.ok) { const body = await r.text().catch(() => ''); return { ok: false, configured, setId, status: r.status, error: body.slice(0, 300) }; }
+    const items = await r.json() as any[];
+    const first = Array.isArray(items) && items.length ? items[0] : null;
+    return { ok: true, configured, setId, status: r.status, count: Array.isArray(items) ? items.length : 0, firstItemKeys: first ? Object.keys(first) : [], firstItem: first };
+  } catch (err: any) { return { ok: false, configured, setId, error: err?.message || 'errore' }; }
+}
+
 export async function getLegoValue(opts: { query: string; condition?: string }): Promise<ApifyValuation | null> {
   if (!isLegoConfigured()) return null;
   const setId = normalizeSetId(opts.query);
