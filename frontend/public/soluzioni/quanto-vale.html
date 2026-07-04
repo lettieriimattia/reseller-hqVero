@@ -226,6 +226,11 @@
           </div>
           <button type="submit" class="btn btn-primary pc-go" data-i18n="go">Quanto vale? →</button>
         </form>
+        <button type="button" id="pcPhotoBtn" style="display:flex;align-items:center;justify-content:center;gap:9px;width:100%;max-width:520px;margin:12px auto 0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:#c9d0d8;font-weight:700;font-size:14.5px;padding:13px 18px;border-radius:14px;cursor:pointer;transition:.15s">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4l-1.5-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <span data-i18n="photoBtn">…oppure valuta da una foto</span>
+        </button>
+        <input type="file" id="pcPhotoInput" accept="image/*" capture="environment" style="display:none">
         <div id="pcResult" class="pc-result" role="status"></div>
         <!-- Gate: appare quando finiscono le ricerche gratis del giorno -->
         <div id="pcGate" class="pc-gate" hidden>
@@ -405,6 +410,7 @@
       h1: 'How much is it <span class="hl">worth?</span>',
       sub: 'Pick the category, enter the details and find the <b>market value</b> — sneakers, cards, streetwear, watches, bags.',
       lbl1: '1 · Category', lbl2: '2 · Details', go: 'What’s it worth? →',
+      photoBtn: '…or value it from a photo',
       cat_scarpe: 'Sneakers', cat_street: 'Streetwear / Clothing', cat_carte: 'Pokémon cards', cat_oro: 'Watches', cat_borse: 'Bags / luxury', cat_altro: 'Other (type it)',
       gate_t: 'You’ve used today’s free searches 👀',
       gate_s: 'Sign up for HQVault and at launch see prices <b>with no limits</b>, plus inventory and profits.',
@@ -469,8 +475,8 @@
       // Testi bilingui del risultato (IT/EN). Il VALORE della condizione resta in italiano
       // (lo capisce il backend); si traduce solo l'etichetta mostrata.
       var T = {
-        it: { writeBrand: 'Scrivi marca e modello.', searching: 'Cerco…', detected: 'categoria rilevata:', fromNew: 'da nuovo ≈', marketVal: 'valore di mercato ·', aiEst: '⚠️ stima indicativa (IA) · non un prezzo di mercato reale', hintModel: '💡 Scrivi il <b>modello esatto</b> (es. Corteiz Alcatraz Hoodie) per il prezzo reale StockX', notFoundA: 'Non ho trovato un valore per “', notFoundB: '”. Prova col nome esatto del modello.', remaining: 'Ricerche gratis rimaste oggi: ', lastUsed: 'Ultima ricerca gratis di oggi usata', error: 'Errore, riprova tra poco.', size: 'Taglia ' },
-        en: { writeBrand: 'Enter brand and model.', searching: 'Searching…', detected: 'detected category:', fromNew: 'when new ≈', marketVal: 'market value ·', aiEst: '⚠️ rough estimate (AI) · not a real market price', hintModel: '💡 Enter the <b>exact model</b> (e.g. Corteiz Alcatraz Hoodie) for the real StockX price', notFoundA: 'No value found for “', notFoundB: '”. Try the exact model name.', remaining: 'Free searches left today: ', lastUsed: 'Today’s last free search used', error: 'Error, please try again shortly.', size: 'Size ' }
+        it: { writeBrand: 'Scrivi marca e modello.', searching: 'Cerco…', detected: 'categoria rilevata:', fromNew: 'da nuovo ≈', marketVal: 'valore di mercato ·', aiEst: '⚠️ stima indicativa (IA) · non un prezzo di mercato reale', hintModel: '💡 Scrivi il <b>modello esatto</b> (es. Corteiz Alcatraz Hoodie) per il prezzo reale StockX', notFoundA: 'Non ho trovato un valore per “', notFoundB: '”. Prova col nome esatto del modello.', remaining: 'Ricerche gratis rimaste oggi: ', lastUsed: 'Ultima ricerca gratis di oggi usata', error: 'Errore, riprova tra poco.', size: 'Taglia ', analyzing: 'Analizzo la foto…', notRecognized: 'Non ho riconosciuto il prodotto. Riprova con una foto più chiara e ravvicinata.' },
+        en: { writeBrand: 'Enter brand and model.', searching: 'Searching…', detected: 'detected category:', fromNew: 'when new ≈', marketVal: 'market value ·', aiEst: '⚠️ rough estimate (AI) · not a real market price', hintModel: '💡 Enter the <b>exact model</b> (e.g. Corteiz Alcatraz Hoodie) for the real StockX price', notFoundA: 'No value found for “', notFoundB: '”. Try the exact model name.', remaining: 'Free searches left today: ', lastUsed: 'Today’s last free search used', error: 'Error, please try again shortly.', size: 'Size ', analyzing: 'Analyzing the photo…', notRecognized: 'I couldn’t recognize the product. Try a clearer, closer photo.' }
       };
       function tv(k) { return (T[curLang()] || T.it)[k]; }
       // Config per categoria: nome/dettaglio localizzati; nelle condizioni [valore-backend, {it,en}].
@@ -545,6 +551,54 @@
           })
           .catch(function () { btn.disabled = false; btn.textContent = lbl; out.innerHTML = '<span class="pc-warn">' + tv('error') + '</span>'; });
       });
+
+      // ---- VALUTA DA UNA FOTO (vision IA, 1 scan/giorno per IP) ----
+      function renderPhoto(d) {
+        if (d.limited) { out.innerHTML = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+        if (!d.recognized && d.value == null && !(d.range && d.range.low)) {
+          out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notRecognized') + '</span></div>'; return;
+        }
+        var detHtml = d.detected ? '<div class="pc-src">' + tv('detected') + ' <b style="color:#c9d0d8">' + esc(d.detected) + '</b></div>' : '';
+        if (d.value != null) {
+          var cur = (d.currency && d.currency !== 'EUR') ? (' ' + d.currency) : '€';
+          var img = d.image ? '<img src="/api/catalog/img-public?u=' + encodeURIComponent(d.image) + '" alt="" style="width:120px;height:120px;object-fit:contain;background:#fff;border-radius:14px;display:block;margin:0 auto 12px;padding:6px" onerror="this.style.display=\'none\'">' : '';
+          out.innerHTML = '<div class="pc-card">' + img + '<div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
+          maybePopup();
+        } else if (d.range && d.range.low) {
+          out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + detHtml + '<div class="pc-src">' + tv('aiEst') + '</div></div>';
+        } else {
+          out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notFoundA') + esc(d.name || '') + tv('notFoundB') + '</span>' + detHtml + '</div>';
+        }
+        if (typeof d.remaining === 'number' && micro) micro.textContent = d.remaining > 0 ? (tv('remaining') + d.remaining) : tv('lastUsed');
+      }
+      function compressImg(file, cb) {
+        var img = new Image();
+        img.onload = function () {
+          var max = 1024, w = img.width, h = img.height;
+          if (w > h && w > max) { h = Math.round(h * max / w); w = max; } else if (h > max) { w = Math.round(w * max / h); h = max; }
+          var c = document.createElement('canvas'); c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          try { cb(c.toDataURL('image/jpeg', 0.6)); } catch (e) { cb(null); }
+        };
+        img.onerror = function () { cb(null); };
+        var fr = new FileReader(); fr.onload = function (e) { img.src = e.target.result; }; fr.readAsDataURL(file);
+      }
+      var photoBtn = document.getElementById('pcPhotoBtn'), photoInput = document.getElementById('pcPhotoInput');
+      if (photoBtn && photoInput) {
+        photoBtn.addEventListener('click', function () { photoInput.click(); });
+        photoInput.addEventListener('change', function () {
+          var f = photoInput.files && photoInput.files[0]; photoInput.value = '';
+          if (!f) return;
+          out.innerHTML = '<div class="pc-card"><span class="pc-src">' + tv('analyzing') + '</span></div>';
+          compressImg(f, function (dataUrl) {
+            if (!dataUrl) { out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('error') + '</span></div>'; return; }
+            fetch('/api/photo-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: dataUrl }) })
+              .then(function (r) { return r.json(); })
+              .then(renderPhoto)
+              .catch(function () { out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('error') + '</span></div>'; });
+          });
+        });
+      }
     })();
 
     (function () {

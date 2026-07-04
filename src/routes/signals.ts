@@ -11,7 +11,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { getValuation } from '../services/valuation.service';
-import { estimatePriceRange } from '../services/ai.service';
+import { estimatePriceRange, scanProductAuto } from '../services/ai.service';
 import { getLegoRaw, isLegoConfigured } from '../services/apify.service';
 import { getBrickLinkRaw, isBrickLinkConfigured } from '../services/bricklink.service';
 import { getBrickEconomyRaw, isBrickEconomyConfigured } from '../services/brickeconomy.service';
@@ -41,6 +41,9 @@ const router = Router();
 // Prima del lancio pubblico: rimettere '2' qui sotto (o impostare PUBLIC_PRICE_CHECKS_PER_DAY su Render).
 const FREE_CHECKS = Math.max(0, parseInt(process.env.PUBLIC_PRICE_CHECKS_PER_DAY || '0', 10) || 0);
 const UNLIMITED_CHECKS = FREE_CHECKS === 0;
+// Scan FOTO (vision IA, costa): limite STRETTO e separato. Default 1/giorno per IP. Admin illimitato.
+const PHOTO_FREE = Math.max(1, parseInt(process.env.PUBLIC_PHOTO_SCANS_PER_DAY || '1', 10) || 1);
+const photoByIp = new Map<string, { date: string; count: number }>();
 const pcByIp = new Map<string, { date: string; count: number }>();
 function clientIp(req: Request): string {
   const xff = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
@@ -147,6 +150,48 @@ router.get('/stockx-debug', async (req: Request, res: Response) => {
   const q = String(req.query.q || 'Jordan 4 Bred').trim();
   const out = await stockxImageDebug(q).catch((e: any) => ({ error: e?.message }));
   return res.json(out);
+});
+
+// POST /api/photo-check — { image: dataURL } → riconosce il prodotto dalla FOTO (vision IA) e
+// lo valuta. Limite STRETTO (default 1/giorno per IP) perché la vision costa. Admin illimitato.
+router.post('/photo-check', async (req: Request, res: Response) => {
+  const ip = clientIp(req);
+  const admin = isAdminRequest(req);
+  const today = new Date().toISOString().slice(0, 10);
+  const rec = photoByIp.get(ip);
+  const used = rec && rec.date === today ? rec.count : 0;
+  if (!admin && used >= PHOTO_FREE) return res.json({ limited: true, freeLimit: PHOTO_FREE });
+
+  const image = String(req.body?.image || '');
+  if (!/^data:image\//.test(image) || image.length < 100) return res.status(400).json({ error: 'Foto non valida.' });
+  if (image.length > 9_000_000) return res.status(413).json({ error: 'Foto troppo grande.' });
+
+  if (!admin) {
+    photoByIp.set(ip, { date: today, count: used + 1 });
+    if (photoByIp.size > 8000) { for (const [k, vv] of photoByIp) if (vv.date !== today) photoByIp.delete(k); }
+  }
+  const remaining = admin ? null : Math.max(0, PHOTO_FREE - (used + 1));
+
+  try {
+    const scan = await scanProductAuto(image, []);
+    const brand = (scan.brand || '').trim();
+    const model = (scan.model || '').trim();
+    const name = [brand, model].filter(Boolean).join(' ').trim();
+    const category = (scan.category || scan.detectedCategory || 'altro').toString();
+    const shownCat = scan.detectedCategory || category;
+    if (!name) return res.json({ value: null, recognized: false, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
+    const isCards = /cart|pok|tcg/i.test(category + ' ' + shownCat);
+    const val = await getValuation({ category, name, brand: '', game: isCards ? 'pokemon' : undefined });
+    prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: ('📷 ' + name).slice(0, 80), found: val.value != null } }).catch(() => {});
+    if (val.value != null) {
+      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || name, source: val.source, image: val.image || null, recognized: true, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
+    }
+    const range = await estimatePriceRange(name).catch(() => null);
+    return res.json({ value: null, range, name, source: 'Stima indicativa (IA)', recognized: true, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
+  } catch (e: any) {
+    logger.warn('photo-check errore', { err: e?.message });
+    return res.json({ value: null, error: true, remaining, freeLimit: PHOTO_FREE });
+  }
 });
 
 // POST /api/price-check — { query, category?, size?, condition?, number? } → valore di mercato.
