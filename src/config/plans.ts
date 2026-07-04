@@ -16,6 +16,7 @@ export type Feature =
   | 'marketplace'         // vendere in vetrina pubblica + chat + pagamenti in-app
   | 'stockx_pricing'      // prezzi reali StockX
   | 'accounting'          // costi extra + export CSV commercialista
+  | 'returns'             // gestione resi (riporta un venduto in magazzino)
   | 'no_sale_fee';        // fee di servizio sulle vendite azzerata
 
 export interface Plan {
@@ -58,9 +59,10 @@ export const PLANS: Record<PlanId, Plan> = {
       'Analytics: ROI, andamento, sell-through, giorni medi',
       'Generatore annunci IA + lettura SKU/barcode dalla scatola',
       '1 socio: magazzino condiviso con divisione costi/utili',
+      'Gestione resi: riporti un venduto in magazzino',
       'Fino a 150 prodotti · 2 persone',
     ],
-    features: ['marketplace', 'listing_ai', 'partners', 'advanced_analytics'],
+    features: ['marketplace', 'listing_ai', 'partners', 'advanced_analytics', 'returns'],
     maxProducts: 150,
     maxTeamMembers: 2,
   },
@@ -79,7 +81,7 @@ export const PLANS: Record<PlanId, Plan> = {
       'Etichette di spedizione + QR magazzino',
       'Fino a 2000 prodotti · 5 soci',
     ],
-    features: ['marketplace', 'listing_ai', 'partners', 'stockx_pricing', 'accounting', 'advanced_analytics', 'repricing', 'offer_assistant', 'crossposting', 'shipping', 'no_sale_fee', 'labels'],
+    features: ['marketplace', 'listing_ai', 'partners', 'stockx_pricing', 'accounting', 'advanced_analytics', 'repricing', 'offer_assistant', 'crossposting', 'shipping', 'no_sale_fee', 'labels', 'returns'],
     maxProducts: 2000,
     maxTeamMembers: 5,
   },
@@ -94,7 +96,7 @@ export const PLANS: Record<PlanId, Plan> = {
       'Prodotti, soci e magazzini illimitati',
       'Priorità supporto',
     ],
-    features: ['marketplace', 'listing_ai', 'partners', 'stockx_pricing', 'accounting', 'advanced_analytics', 'repricing', 'offer_assistant', 'crossposting', 'shipping', 'no_sale_fee', 'labels'],
+    features: ['marketplace', 'listing_ai', 'partners', 'stockx_pricing', 'accounting', 'advanced_analytics', 'repricing', 'offer_assistant', 'crossposting', 'shipping', 'no_sale_fee', 'labels', 'returns'],
     maxProducts: null,
     maxTeamMembers: null,
   },

@@ -4075,6 +4075,11 @@ export default function App() {
   // Reso di UNO o più pezzi SPECIFICI (per id) — così si rende il paio giusto, non l'ultimo/primo.
   const handleReturnIds = async (ids: string[], label?: string) => {
     if (!ids.length) return;
+    // GATING: il reso è dal piano Starter in su. Nel Free il tasto c'è ma al tap invita all'upgrade.
+    if (!hasFeature('returns')) {
+      showToast(t('plan.returnsLocked'), 'warn', { label: t('set.seePlans'), onClick: () => openPlanModal() });
+      return;
+    }
     const results = await Promise.allSettled(ids.map(id => apiCall(`/products/${id}/return`, { method: 'POST' })));
     const okCount = results.filter(r => r.status === 'fulfilled' && (r.value as any).ok).length;
     await fetchProducts();

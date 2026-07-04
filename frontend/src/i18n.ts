@@ -589,6 +589,7 @@ const it: Dict = {
   'cookie.accept': 'Accetta e Continua',
   // Modale Piani & Pro
   'plan.tabPlans': 'Piani',
+  'plan.returnsLocked': 'Il reso è disponibile dal piano Starter',
   'plan.tabRepricing': 'Stock fermo',
   'plan.tabOffer': 'Trattative',
   'plan.tabChannels': 'Multi-canale',
@@ -1556,6 +1557,7 @@ const en: Dict = {
   'cookie.accept': 'Accept and Continue',
   // Plans & Pro modal
   'plan.tabPlans': 'Plans',
+  'plan.returnsLocked': 'Returns are available from the Starter plan',
   'plan.tabRepricing': 'Stale stock',
   'plan.tabOffer': 'Negotiations',
   'plan.tabChannels': 'Multi-channel',

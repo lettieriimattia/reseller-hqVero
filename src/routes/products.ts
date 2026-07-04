@@ -705,7 +705,7 @@ router.put('/:id', validate(sellProductSchema), async (req: AuthRequest, res: Re
 // POST /products/:id/return — reso: VENDUTO → IN STOCK
 // Operazione inversa della vendita: ripulisce i dati di vendita.
 // ==========================================
-router.post('/:id/return', async (req: AuthRequest, res: Response) => {
+router.post('/:id/return', requireFeature('returns'), async (req: AuthRequest, res: Response) => {
   try {
     const { allowed, product } = await canAccessProduct(req.user!.userId, req.params.id);
     if (!allowed || !product) {
