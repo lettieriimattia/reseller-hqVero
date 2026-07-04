@@ -3233,11 +3233,12 @@ export default function App() {
     }
     }
 
-    // === Conferma visiva StockX (qualsiasi categoria): StockX copre anche elettronica,
-    // console e collezionabili. Mostra foto+nome del modello che StockX ritiene corrisponda,
-    // così si verifica se l'IA ha azzeccato (es. iPhone 12 Mini vs Pro). ===
+    // === Conferma visiva StockX: SOLO per categorie che StockX copre davvero (scarpe/streetwear/
+    // elettronica/generico). NON per carte, LEGO, orologi, borse, vinili: hanno la LORO fonte
+    // (Cardmarket, BrickLink, Chrono24, Vestiaire, Discogs) e StockX darebbe un match SBAGLIATO. ===
+    const stockxUsefulCat = !/pokemon|cart|\bcard\b|tcg|lego|minifig|orolog|watch|bors|\bbag\b|vinil/i.test(effCat);
     const matchQuery = [scan.brand, scan.model || fallbackName].filter(Boolean).join(' ').trim();
-    if (matchQuery.length >= 2) {
+    if (stockxUsefulCat && matchQuery.length >= 2) {
       apiCall<any>('/api/ai/stockx-match', {
         method: 'POST',
         signal,
