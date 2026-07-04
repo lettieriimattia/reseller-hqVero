@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="apple-touch-icon" href="/logoHQCromato.png" />
 
   <!-- ===== SEO core ===== -->
   <title>HQVault — Software gestionale per reseller di sneaker</title>
@@ -283,7 +286,7 @@
         <a href="#funzioni">Funzioni</a>
         <a href="#perche">Perché HQVault</a>
         <a href="#faq">FAQ</a>
-        <a href="/waitlist?src=home" class="btn btn-ghost" style="padding:9px 18px;">Accedi</a>
+        <a href="/waitlist?src=home" class="btn btn-ghost" style="padding:9px 18px;">Lista d'attesa</a>
       </nav>
     </div>
   </header>
@@ -421,8 +424,8 @@
       <nav aria-label="Link del sito">
         <a href="#funzioni">Funzioni</a>
         <a href="#faq">FAQ</a>
-        <a href="/waitlist?src=home">Accedi</a>
-        <a href="/waitlist?src=home">Registrati</a>
+        <a href="/waitlist?src=home">Lista d'attesa</a>
+        <a href="/waitlist?src=home">Iscriviti</a>
         <a href="/privacy" rel="nofollow">Privacy</a>
       </nav>
     </div>
@@ -518,9 +521,8 @@
       });
     })();
 
-    // Se sei già loggato, vai dritto all'app: la landing non la rivedi.
-    fetch('/auth/refresh', { method: 'POST', credentials: 'include' })
-      .then(function (r) { if (r.ok) location.replace('/app'); }).catch(function () {});
+    // ⚠️ TEMPORANEO (fase test): niente auto-redirect all'app, così la landing è sempre visibile.
+    // Al go-live rimetti: fetch('/auth/refresh',{method:'POST',credentials:'include'}).then(r=>{if(r.ok)location.replace('/app')});
   </script>
 </body>
 </html>

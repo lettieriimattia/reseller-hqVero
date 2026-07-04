@@ -192,11 +192,10 @@ if (isProduction) {
   // Landing pubblica SEO alla ROOT (statica, indicizzabile); l'app gira sotto /app e ogni altra
   // route SPA. Deve stare PRIMA di express.static (che altrimenti servirebbe index.html su "/").
   // Se l'utente è GIÀ loggato (cookie access valido) → va dritto all'app, niente landing.
-  app.get('/', (req: Request, res: Response) => {
-    const token = (req as any).cookies?.access_token;
-    if (token && process.env.JWT_ACCESS_SECRET) {
-      try { jwt.verify(token, process.env.JWT_ACCESS_SECRET); return res.redirect('/app'); } catch { /* token non valido → landing */ }
-    }
+  app.get('/', (_req: Request, res: Response) => {
+    // ⚠️ TEMPORANEO (fase test): la ROOT mostra SEMPRE la landing, anche se sei loggato,
+    // così puoi vedere/provare la landing (prima ti sbatteva sull'app). Al go-live rimetti il
+    // redirect: se access_token valido → res.redirect('/app'). L'app resta comunque su /app.
     res.sendFile(path.join(frontendDist, 'landing.html'));
   });
   // L'app SPA vive sotto /app (e sottopercorsi). Servila SUBITO, PRIMA dei router API:
