@@ -65,6 +65,10 @@ function parseGrade(condition?: string): { graded: boolean; grade: number | null
 export async function getValuation(opts: {
   category?: string; game?: string; brand?: string; name?: string;
   size?: string; number?: string; setName?: string; condition?: string; sku?: string;
+  // relaxed: SOLO per il checker pubblico della landing (mai per il magazzino reale!). Se lo
+  // StockX generico non trova un match preciso, mostra comunque il modello reale più vicino
+  // (prezzo vero, non inventato) invece di arrendersi alla stima IA.
+  relaxed?: boolean;
 }): Promise<UnifiedValuation> {
   const cat = (opts.category || '').toLowerCase();
 
@@ -133,7 +137,7 @@ export async function getValuation(opts: {
   if (matches(cat, SHOE_KEYS) && isStockXConfigured()) {
     const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
     if (q.length >= 2) {
-      const v = await getStockXValuation({ query: q, name: opts.name, size: opts.size, category: opts.category || 'scarpe', sku: opts.sku });
+      const v = await getStockXValuation({ query: q, name: opts.name, size: opts.size, category: opts.category || 'scarpe', sku: opts.sku, relaxed: opts.relaxed });
       if (v.value != null) {
         // StockX dà il prezzo del NUOVO/DS. Se la scarpa è usata, applichiamo la % per condizione
         // (mostrata in trasparenza nella fonte). ⚠️ Percentuali PROVVISORIE — da confermare col socio.
@@ -161,7 +165,7 @@ export async function getValuation(opts: {
   if (isStockXConfigured()) {
     const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
     if (q.length >= 2) {
-      const v = await getStockXValuation({ query: q, name: opts.name, size: opts.size, category: opts.category, sku: opts.sku });
+      const v = await getStockXValuation({ query: q, name: opts.name, size: opts.size, category: opts.category, sku: opts.sku, relaxed: opts.relaxed });
       if (v.value != null) {
         // Anche qui applichiamo la % per condizione (vestiti/streetwear passano di qui).
         const cm = conditionMultiplier(opts.condition);

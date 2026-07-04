@@ -232,7 +232,7 @@ export async function findStockXByStyleCode(code: string): Promise<StockXCandida
 
 // Valutazione StockX REALE: catalog search → (variant per taglia) → market data in EUR.
 // Difensiva: in caso di errore/forma diversa ritorna value null senza rompere l'app.
-export async function getStockXValuation(opts: { query: string; name?: string; size?: string; sku?: string; category?: string }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; brand?: string; model?: string; image?: string | null; styleId?: string | null; sample?: number }> {
+export async function getStockXValuation(opts: { query: string; name?: string; size?: string; sku?: string; category?: string; relaxed?: boolean }): Promise<{ configured: boolean; connected?: boolean; value: number | null; source: string; itemName?: string; brand?: string; model?: string; image?: string | null; styleId?: string | null; sample?: number }> {
   if (!isStockXConfigured()) return { configured: false, value: null, source: 'StockX (non configurato)' };
   const token = await getStockXAccessToken();
   if (!token) return { configured: true, connected: false, value: null, source: 'StockX (non connesso)' };
@@ -268,7 +268,11 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
   // Se non c'è uno SKU e il nome è SOLO parole generiche → non diamo un prezzo (sarebbe a caso).
   const GENERIC = new Set(['nike', 'jordan', 'air', 'sb', 'dunk', 'low', 'high', 'mid', 'force', 'max', 'retro', 'og', 'sp', 'new', 'balance', 'nb', 'adidas', 'yeezy', 'boost', 'samba', 'gazelle', 'spezial', 'campus', 'asics', 'gel', 'scarpe', 'scarpa', 'sneaker', 'sneakers', 'shoe', 'shoes', 'pro', 'wmns', 'gs', 'ps', 'td']);
   const distinctive = Array.from(qSet).filter(t => !GENERIC.has(t) && !/^\d+$/.test(t));
-  if (!opts.sku && distinctive.length === 0) {
+  // MODALITÀ RELAXED (solo checker pubblico landing, MAI per la valutazione reale del magazzino):
+  // invece di rifiutarsi su una query generica, mostra il modello REALE più popolare/vicino di
+  // quel brand+tipo (es. "Corteiz Hoodie" → la Corteiz Alcatraz Hoodie, prezzo vero StockX).
+  // Meno preciso ma sempre "vero" (mai un numero inventato) — effetto wow per la landing.
+  if (!opts.relaxed && !opts.sku && distinctive.length === 0) {
     return { configured: true, connected: true, value: null, source: 'StockX (modello troppo generico — specifica la colorway)' };
   }
   // Collab/edizioni speciali: se sono nel titolo StockX ma NON nel nome riconosciuto,
@@ -319,8 +323,10 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
       }
     }
     // Soglia di affidabilità: serve un minimo di parole in comune e niente collab "intrusa".
-    const minMatch = Math.max(2, Math.ceil(qSet.size * 0.5));
-    if (product && (best.matched < minMatch || best.final < 2)) {
+    // In relaxed basta ALMENO una parola in comune (di solito il brand) — niente di totalmente
+    // scollegato, ma non pretendiamo il modello esatto: prendiamo il migliore trovato.
+    const minMatch = opts.relaxed ? 1 : Math.max(2, Math.ceil(qSet.size * 0.5));
+    if (product && (best.matched < minMatch || (!opts.relaxed && best.final < 2))) {
       return { configured: true, connected: true, value: null, source: 'StockX (nessun match affidabile)' };
     }
     if (!product) {

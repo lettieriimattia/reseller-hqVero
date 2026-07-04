@@ -78,6 +78,13 @@ export default defineConfig({
         navigateFallback: '/index.html',
         // /^\/$/ = la ROOT non è gestita dal SW → la landing pubblica arriva sempre dal server.
         navigateFallbackDenylist: [/^\/$/, /^\/api/, /^\/auth/, /^\/products/, /^\/team/, /^\/notifications/, /^\/tracking/, /^\/health/, /^\/admin/, /^\/landing/, /^\/waitlist/, /^\/privacy/, /^\/termini/, /^\/s\//, /^\/soluzioni\//],
+        // BUG TROVATO: Workbox di default mappa "/" al precache di "index.html" (opzione
+        // "directoryIndex", default 'index.html') PRIMA ancora di guardare navigateFallbackDenylist
+        // (sono due meccanismi diversi: quello è un match diretto sul precache, il denylist
+        // riguarda solo il fallback SPA). Risultato: chi ha MAI aperto /app in questo browser
+        // si ritrova "/" servita dalla cache dell'app (shell/login) invece che dal server, a
+        // prescindere dal denylist. Disattivandolo, "/" passa sempre dalla rete → server → landing.
+        directoryIndex: null,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.pokemontcg\.io\/.*/i,

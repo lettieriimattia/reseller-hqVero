@@ -50,6 +50,23 @@ function clientIp(req: Request): string {
   return xff || (req.socket && req.socket.remoteAddress) || 'unknown';
 }
 
+// Foto di ripiego dalla cache LOCALE (CatalogItem: immagini già scaricate da KicksDB/StockX
+// durante l'uso dell'app). Nessuna chiamata esterna → costo ZERO, sicura per la quota KicksDB.
+async function findCachedImage(name: string): Promise<string | null> {
+  const q = (name || '').trim();
+  if (q.length < 2) return null;
+  try {
+    const hit = await prisma.catalogItem.findFirst({
+      where: { AND: [{ image: { not: null } }, { OR: [
+        { name: { contains: q, mode: 'insensitive' } },
+        { brand: { contains: q, mode: 'insensitive' } },
+      ] }] },
+      orderBy: { useCount: 'desc' },
+    });
+    return hit?.image || null;
+  } catch { return null; }
+}
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ALLOWED_PATHS = new Set(['home', 'magazzino', 'spedizione', 'valore', 'waitlist', 'privacy']);
 
@@ -181,10 +198,11 @@ router.post('/photo-check', async (req: Request, res: Response) => {
     const shownCat = scan.detectedCategory || category;
     if (!name) return res.json({ value: null, recognized: false, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
     const isCards = /cart|pok|tcg/i.test(category + ' ' + shownCat);
-    const val = await getValuation({ category, name, brand: '', game: isCards ? 'pokemon' : undefined });
+    const val = await getValuation({ category, name, brand: '', game: isCards ? 'pokemon' : undefined, relaxed: true });
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: ('📷 ' + name).slice(0, 80), found: val.value != null } }).catch(() => {});
     if (val.value != null) {
-      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || name, source: val.source, image: val.image || null, recognized: true, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
+      const photoImage = val.image || await findCachedImage(val.itemName || name);
+      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || name, source: val.source, image: photoImage, recognized: true, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
     }
     const range = await estimatePriceRange(name).catch(() => null);
     return res.json({ value: null, range, name, source: 'Stima indicativa (IA)', recognized: true, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
@@ -223,11 +241,14 @@ router.post('/price-check', async (req: Request, res: Response) => {
   const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - (used + 1));
 
   try {
-    const val = await getValuation({ category, name: query, brand: '', size: size || undefined, condition: condition || undefined, number: number || undefined, game: isCards ? 'pokemon' : undefined });
+    const val = await getValuation({ category, name: query, brand: '', size: size || undefined, condition: condition || undefined, number: number || undefined, game: isCards ? 'pokemon' : undefined, relaxed: true });
     // Traccia l'uso (anonimo) per le statistiche admin: riutilizzi per visitatore.
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: query.slice(0, 80), found: val.value != null } }).catch(() => {});
     if (val.value != null) {
-      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, image: val.image || null, detected, remaining, freeLimit: FREE_CHECKS });
+      // Se la fonte (es. StockX) non ha dato una foto, provo la cache locale (immagini KicksDB
+      // già scaricate durante l'uso dell'app) — zero chiamate esterne, zero costo di quota.
+      const image = val.image || await findCachedImage(val.itemName || query);
+      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, image, detected, remaining, freeLimit: FREE_CHECKS });
     }
     // Nessuna fonte ha un prezzo → stima IA indicativa in un RANGE (chiaramente etichettata).
     const range = await estimatePriceRange(query).catch(() => null);
