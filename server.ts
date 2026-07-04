@@ -198,10 +198,34 @@ if (isProduction) {
     // redirect: se access_token valido → res.redirect('/app'). L'app resta comunque su /app.
     res.sendFile(path.join(frontendDist, 'landing.html'));
   });
+  // CANCELLO BETA: "la gente non deve sapere dell'app". Un visitatore anonimo che apre /app
+  // (indovinando l'URL) NON deve vedere il form di login — va rimandato alla waitlist. Solo chi
+  // ha già una sessione valida (già loggato) O il link segreto una tantum (BETA_ACCESS_KEY) entra.
+  // Il link segreto pianta un cookie lungo: dopo la prima volta basta aprire /app normalmente.
+  const BETA_COOKIE = 'hq_beta';
+  function hasAppAccess(req: Request): boolean {
+    if (req.cookies?.[BETA_COOKIE] === '1') return true;
+    const token = req.cookies?.access_token;
+    if (token && process.env.JWT_ACCESS_SECRET) {
+      try { jwt.verify(token, process.env.JWT_ACCESS_SECRET); return true; } catch { /* scaduto/non valido */ }
+    }
+    // Nessun access_token valido ma potrebbe avere un refresh_token: lascia passare, ci pensa
+    // il flusso normale dell'app (refresh silenzioso) a rimandarla al login SE serve davvero.
+    if (req.cookies?.refresh_token) return true;
+    return false;
+  }
   // L'app SPA vive sotto /app (e sottopercorsi). Servila SUBITO, PRIMA dei router API:
   // altrimenti un visitatore SLOGGATO che apre /app (i bottoni della landing!) verrebbe
   // intercettato da `app.use('/', teamRoutes)` → middleware authenticate → 401 JSON.
-  app.get(/^\/app(\/.*)?$/, (_req, res) => res.sendFile(path.join(frontendDist, 'index.html')));
+  app.get(/^\/app(\/.*)?$/, (req: Request, res: Response) => {
+    const betaKey = process.env.BETA_ACCESS_KEY || '';
+    if (betaKey && req.query.beta === betaKey) {
+      res.cookie(BETA_COOKIE, '1', { httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'lax', maxAge: 365 * 24 * 60 * 60 * 1000 });
+      return res.redirect('/app');
+    }
+    if (betaKey && !hasAppAccess(req)) return res.redirect('/waitlist');
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
   // Vetrina pubblica condivisa: /s/<token> → pagina statica che carica i prodotti condivisi.
   app.get(/^\/s\/[^/]+$/, (_req, res) => res.sendFile(path.join(frontendDist, 'vetrina.html')));
   // Waitlist pre-lancio (PUBBLICA, no login): "lascia l'email, ti avvisiamo".
