@@ -62,6 +62,23 @@
     .hero .sub { color:#aeb6c0; font-size:clamp(16px,2.3vw,20px); max-width:640px; margin:0 auto 26px; }
     .hero .sub b { color:#e9ecef; font-weight:700; }
     .micro { margin-top:16px; font-size:13.5px; color:#7e8893; }
+    /* MOBILE COMPATTO: categoria → dettagli → risposta → email devono stare senza scroll.
+       La pill e il sottotitolo si nascondono anche via JS appena parte una ricerca (vedi script). */
+    @media (max-width:600px) {
+      .hero { padding:18px 0 30px; }
+      .crumb { display:none; }
+      .hero h1 { font-size:28px; margin:0 auto 8px; }
+      .hero .sub { font-size:14.5px; margin:0 auto 16px; line-height:1.45; }
+      .pc-loader { padding:22px 0 8px; }
+      .pc-loader .hq-logo-area { min-height:44px; }
+      .pc-card { padding:12px 16px; }
+      .pc-result { margin-top:12px; }
+      .pc-joinbox { padding:14px 16px; margin-top:12px; }
+      .pc-joinbox h4 { font-size:15px; margin-bottom:4px; }
+      .pc-joinbox p { font-size:12.5px; margin-bottom:10px; }
+      .pc-again { margin-top:10px; font-size:12.5px; }
+      .micro { margin-top:10px; font-size:12px; }
+    }
     /* Form hero (checker prezzo + email) */
     .hero-form { display:flex; gap:10px; max-width:520px; margin:0 auto; }
     @media (max-width:480px) { .hero-form { flex-direction:column; } }
@@ -597,7 +614,7 @@
       });
 
       // ---- VALUTA DA UNA FOTO (vision IA, 1 scan/giorno per IP) ----
-      function renderPhoto(d) {
+      function renderPhoto(d, userImg) {
         if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
         if (!d.recognized && d.value == null && !(d.range && d.range.low)) {
           out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notRecognized') + '</span></div>'; return;
@@ -605,9 +622,11 @@
         var detHtml = d.detected ? '<div class="pc-src">' + tv('detected') + ' <b style="color:#c9d0d8">' + esc(d.detected) + '</b></div>' : '';
         if (d.value != null) {
           var cur = (d.currency && d.currency !== 'EUR') ? (' ' + d.currency) : '€';
-          // Niente foto di catalogo qui: la ricerca via foto usa già la foto scattata dall'utente,
-          // non ha senso mostrarne un'altra presa dal catalogo (solo la ricerca da testo la mostra).
-          out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
+          // Qui la foto è quella SCATTATA/CARICATA dall'utente (non una di catalogo): la abbiamo
+          // già in memoria (compressa) dal passo precedente, nessuna chiamata in più.
+          var img = userImg ? '<img src="' + userImg + '" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:14px;flex-shrink:0;">' : '';
+          var info = '<div class="pc-info"><div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
+          out.innerHTML = '<div class="' + (img ? 'pc-card pc-card-h' : 'pc-card') + '">' + img + info + '</div>';
           showJoinBox();
         } else if (d.range && d.range.low) {
           // Come nel checker testuale: se la categoria è del tipo coperto da StockX (sneaker/streetwear)
@@ -643,7 +662,7 @@
           compressImg(f, function (dataUrl) {
             if (!dataUrl) { out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('error') + '</span></div>'; return; }
             withMinDelay(fetch('/api/photo-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: dataUrl }) }).then(function (r) { return r.json(); }), 1300)
-              .then(renderPhoto)
+              .then(function (d) { renderPhoto(d, dataUrl); })
               .catch(function () { out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('error') + '</span></div>'; });
           });
         });
