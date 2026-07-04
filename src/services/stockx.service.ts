@@ -342,18 +342,10 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
       }
     }
 
-    // La ricerca StockX spesso NON include la foto: se manca e abbiamo un valore, prendila dal
-    // dettaglio prodotto (una chiamata sola, solo quando serve mostrarla nel checker/app).
+    // La ricerca StockX NON include la foto: sta solo nel dettaglio prodotto. Riuso getStockXImage
+    // (stessa logica di "Trova foto"). Così il checker mostra la foto anche se KicksDB è giù.
     if (!image && productId && value != null) {
-      try {
-        const pr = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(productId)}`, { headers });
-        if (pr.ok) {
-          const pd = await pr.json() as any;
-          const p2 = pd?.product || pd?.data || pd || {};
-          image = p2.media?.imageUrl || p2.media?.thumbUrl || p2.media?.smallImageUrl
-            || p2.image || p2.thumbUrl || p2.productAttributes?.image || null;
-        }
-      } catch { /* nessuna foto, non è un problema bloccante */ }
+      image = await getStockXImage(productId);
     }
 
     return { configured: true, connected: true, value, source: value != null ? 'StockX' : (mdError || 'StockX (nessun prezzo)'), itemName, brand, model, image, styleId, sample: 1 };
