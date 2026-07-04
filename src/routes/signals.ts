@@ -51,18 +51,34 @@ function clientIp(req: Request): string {
 
 // Foto di ripiego dalla cache LOCALE (CatalogItem: immagini già scaricate da KicksDB/StockX
 // durante l'uso dell'app). Nessuna chiamata esterna → costo ZERO, sicura per la quota KicksDB.
+// NB: brand e name sono salvati SEPARATI (es. brand="Jordan", name="1 Retro Low OG SP...") quindi
+// cercare l'intero nome come UNA sottostringa unica non trova mai nulla. Cerchiamo per PAROLE
+// distintive (OR) e poi scegliamo il candidato con più parole in comune (punteggio), come fa
+// già il catalogo interno.
 async function findCachedImage(name: string): Promise<string | null> {
-  const q = (name || '').trim();
-  if (q.length < 2) return null;
+  const words = (name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+  if (!words.length) return null;
+  // Le parole più LUNGHE sono di solito le più specifiche (nome modello/collab) → filtrano meglio.
+  const distinctive = [...words].sort((a, b) => b.length - a.length).slice(0, 3);
   try {
-    const hit = await prisma.catalogItem.findFirst({
-      where: { AND: [{ image: { not: null } }, { OR: [
-        { name: { contains: q, mode: 'insensitive' } },
-        { brand: { contains: q, mode: 'insensitive' } },
-      ] }] },
-      orderBy: { useCount: 'desc' },
+    const cands = await prisma.catalogItem.findMany({
+      where: { AND: [
+        { image: { not: null } },
+        { OR: distinctive.map(w => ({ OR: [
+          { name: { contains: w, mode: 'insensitive' as const } },
+          { brand: { contains: w, mode: 'insensitive' as const } },
+        ] })) },
+      ] },
+      take: 20,
     });
-    return hit?.image || null;
+    if (!cands.length) return null;
+    let best: typeof cands[number] | null = null; let bestScore = -1;
+    for (const c of cands) {
+      const hay = `${c.brand} ${c.name}`.toLowerCase();
+      const score = words.reduce((s, w) => s + (hay.includes(w) ? 1 : 0), 0);
+      if (score > bestScore) { bestScore = score; best = c; }
+    }
+    return best?.image || null;
   } catch { return null; }
 }
 

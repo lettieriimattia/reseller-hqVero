@@ -146,6 +146,11 @@
     .pc-joinbox h4 { color:#fff; font-size:16.5px; font-weight:800; margin-bottom:6px; }
     .pc-joinbox p { color:#aeb6c0; font-size:13.5px; line-height:1.5; margin-bottom:14px; }
     .pc-joinbox .msg { margin-top:10px; font-size:13.5px; font-weight:700; color:#5fb9ae; }
+    /* Rete di sicurezza anti-overflow: il form email+bottone qui dentro ha MENO spazio del form
+       dell'hero (il box ha 22px di padding per lato) — impila prima (560px, non 480px) così
+       input e bottone non rischiano mai di "sborare" fuori dal box su schermi medio-piccoli. */
+    .pc-joinbox .hero-form { max-width:100%; }
+    @media (max-width:560px) { .pc-joinbox .hero-form { flex-direction:column; } }
     @media (max-width:480px) { .pc-joinbox { padding:18px; border-radius:16px; } }
 
     section { padding:58px 0; }
@@ -245,7 +250,7 @@
       <div class="wrap">
         <span class="crumb"><span class="dot"></span> <span data-i18n="crumb">Valuta gratis · reseller</span></span>
         <h1 data-i18n="h1">Quanto <span class="hl">vale?</span></h1>
-        <p class="sub" data-i18n="sub">Scegli la categoria, inserisci i dati e scopri il <b>valore di mercato</b> — sneaker, carte, streetwear, orologi, borse.</p>
+        <p class="sub" id="pcSub" data-i18n="sub">Scegli la categoria, inserisci i dati e scopri il <b>valore di mercato</b> — sneaker, carte, streetwear, orologi, borse.</p>
         <!-- CHECKER LIVE: prima la categoria (crea i campi giusti), poi i dettagli.
              Tutto il form (+ bottone foto) si nasconde durante/dopo la ricerca: focus sul risultato. -->
         <div id="pcFormArea">
@@ -551,11 +556,15 @@
         return Promise.all([promise, wait]).then(function (r) { return r[0]; });
       }
       // Il form (+ bottone foto) si nasconde durante/dopo la ricerca: focus tutto sul risultato.
-      // "Cerca un altro prodotto" lo rimette in vista.
+      // "Cerca un altro prodotto" lo rimette in vista. Su MOBILE nascondiamo anche il sottotitolo
+      // (già visto, non serve più) per stare senza scroll fino al box email.
       var formArea = document.getElementById('pcFormArea'), againBtn = document.getElementById('pcAgainBtn');
+      var pcSub = document.getElementById('pcSub');
+      var isMobile = window.matchMedia && window.matchMedia('(max-width:600px)').matches;
       function startSearch() {
         if (formArea) formArea.hidden = true;
         if (againBtn) againBtn.hidden = false;
+        if (isMobile && pcSub) pcSub.style.display = 'none';
         out.innerHTML = LOADER_HTML;
         if (joinBox) joinBox.hidden = true;
         gate.hidden = true;
@@ -563,6 +572,7 @@
       if (againBtn) againBtn.addEventListener('click', function () {
         if (formArea) formArea.hidden = false;
         againBtn.hidden = true;
+        if (pcSub) pcSub.style.display = '';
         out.innerHTML = '';
         if (joinBox) joinBox.hidden = true;
         gate.hidden = true;
@@ -586,7 +596,7 @@
           .then(function (d) {
             btn.disabled = false; btn.textContent = lbl;
             // Finite le valutazioni gratis: il form RESTA usabile ma esce la schermata iscrizione.
-            if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+            if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; if (pcSub) pcSub.style.display = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
             var detHtml = d.detected ? '<div class="pc-src">' + tv('detected') + ' <b style="color:#c9d0d8">' + esc(d.detected) + '</b></div>' : '';
             if (d.value != null) {
               var cur = (d.currency && d.currency !== 'EUR') ? (' ' + d.currency) : '€';
@@ -615,7 +625,7 @@
 
       // ---- VALUTA DA UNA FOTO (vision IA, 1 scan/giorno per IP) ----
       function renderPhoto(d, userImg) {
-        if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+        if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; if (pcSub) pcSub.style.display = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
         if (!d.recognized && d.value == null && !(d.range && d.range.low)) {
           out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notRecognized') + '</span></div>'; return;
         }
