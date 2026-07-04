@@ -77,7 +77,7 @@ export default defineConfig({
         globIgnores: ['**/vosk-*.js', '**/vosk/**'],
         navigateFallback: '/index.html',
         // /^\/$/ = la ROOT non è gestita dal SW → la landing pubblica arriva sempre dal server.
-        navigateFallbackDenylist: [/^\/$/, /^\/api/, /^\/auth/, /^\/products/, /^\/team/, /^\/notifications/, /^\/tracking/, /^\/health/, /^\/admin/, /^\/landing/, /^\/privacy/, /^\/termini/, /^\/s\//, /^\/soluzioni\//],
+        navigateFallbackDenylist: [/^\/$/, /^\/api/, /^\/auth/, /^\/products/, /^\/team/, /^\/notifications/, /^\/tracking/, /^\/health/, /^\/admin/, /^\/landing/, /^\/waitlist/, /^\/privacy/, /^\/termini/, /^\/s\//, /^\/soluzioni\//],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.pokemontcg\.io\/.*/i,
