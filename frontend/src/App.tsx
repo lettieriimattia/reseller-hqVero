@@ -11327,22 +11327,22 @@ export default function App() {
                 <Trash2 className="text-red-400" size={20} />
               </div>
               <div>
-                <h3 className="font-semibold text-base">Elimina prodotto</h3>
-                <p className="text-xs text-[var(--text-soft)]">Questa azione è irreversibile</p>
+                <h3 className="font-semibold text-base">{t('delp.title')}</h3>
+                <p className="text-xs text-[var(--text-soft)]">{t('delp.irreversible')}</p>
               </div>
             </div>
             <p className="text-sm text-[var(--text-muted)] mb-6">
-              Stai eliminando <span className="text-[var(--text)] font-bold">{productToDelete.brand} {productToDelete.name}</span>
-              {productToDelete.quantity > 1 && ` (${productToDelete.quantity} pezzi)`}.
+              {t('delp.removing')} <span className="text-[var(--text)] font-bold">{productToDelete.brand} {productToDelete.name}</span>
+              {productToDelete.quantity > 1 && ` (${productToDelete.quantity} ${t('delp.pieces')})`}.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConfirmOpen(false)}
                 className="flex-1 bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
-                Annulla
+                {t('common.cancel')}
               </button>
               <button onClick={handleDeleteProduct}
                 className="flex-1 bg-red-600 hover:bg-red-500 py-3 rounded-xl font-bold text-sm transition-colors">
-                Elimina
+                {t('common.delete')}
               </button>
             </div>
           </div>
