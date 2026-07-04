@@ -7,7 +7,7 @@
 
 import { getCardValue } from './cards.service';
 import { getVinylValue } from './discogs.service';
-import { getBagValue, getWatchValue, isVestiaireConfigured, isChrono24Configured } from './apify.service';
+import { getBagValue, getWatchValue, getLegoValue, isVestiaireConfigured, isChrono24Configured, isLegoConfigured } from './apify.service';
 import { getStockXValuation, isStockXConfigured } from './stockx.service';
 import { getGradedCardValue } from './tcggraded.service';
 
@@ -23,6 +23,7 @@ export interface UnifiedValuation {
 }
 
 const CARD_KEYS = ['pokemon', 'pokémon', 'carte', 'card', 'tcg', 'magic', 'mtg', 'yugioh', 'yu-gi-oh', 'ygo'];
+const LEGO_KEYS = ['lego', 'brickset', 'bricklink', 'mattoncini', 'minifig'];
 const VINYL_KEYS = ['vinil', 'disco', 'dischi', 'vinyl', 'record', 'lp', '33 giri', '45 giri'];
 const BAG_KEYS = ['bors', 'bag', 'pochette', 'zaino', 'tracoll', 'clutch', 'handbag', 'shopper'];
 const WATCH_KEYS = ['orolog', 'watch', 'chrono'];
@@ -102,6 +103,13 @@ export async function getValuation(opts: {
     const q = [opts.brand, opts.name].filter(Boolean).join(' ').trim();
     const v = await getWatchValue({ query: q });
     if (v) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
+  }
+
+  // 1c-bis) LEGO → BrickLink Price Guide (via Apify). Valuta il SET per numero (es. 10300).
+  if (matches(cat, LEGO_KEYS) && isLegoConfigured()) {
+    const q = [opts.name, opts.brand].filter(Boolean).join(' ').trim();
+    const v = await getLegoValue({ query: q, condition: opts.condition });
+    if (v && v.value != null) return { value: v.value, currency: v.currency, source: v.source, reliable: true, sample: v.sample, itemName: v.itemName };
   }
 
   // 1d) SNEAKER → StockX (fonte di prezzo affidabile, in EUR). Se configurato e

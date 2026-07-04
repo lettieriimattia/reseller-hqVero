@@ -20,6 +20,7 @@ import { logger } from '../utils/logger';
 const TOKEN = (process.env.APIFY_TOKEN || '').trim();
 const VESTIAIRE_ACTOR = (process.env.APIFY_VESTIAIRE_ACTOR || '').trim();
 const CHRONO24_ACTOR = (process.env.APIFY_CHRONO24_ACTOR || '').trim();
+const LEGO_ACTOR = (process.env.APIFY_LEGO_ACTOR || '').trim(); // es. jungle_synthesizer/bricklink-lego-part-minifig-price-scraper
 const MONTHLY_LIMIT = parseInt(process.env.APIFY_MONTHLY_LIMIT || '30', 10);
 
 export interface ApifyCandidate { title: string; image: string | null; price: number | null; }
@@ -35,6 +36,7 @@ export interface ApifyValuation {
 
 export function isVestiaireConfigured(): boolean { return !!(TOKEN && VESTIAIRE_ACTOR); }
 export function isChrono24Configured(): boolean { return !!(TOKEN && CHRONO24_ACTOR); }
+export function isLegoConfigured(): boolean { return !!(TOKEN && LEGO_ACTOR); }
 
 // ---- Contatore mensile UNICO (tabella Setting) — condiviso tra tutte le fonti Apify ----
 function monthKey(): string {
@@ -143,4 +145,45 @@ export async function getWatchValue(opts: { query: string }): Promise<ApifyValua
   if (!isChrono24Configured() || !opts.query || opts.query.trim().length < 2) return null;
   const startUrl = `https://www.chrono24.it/search/index.htm?query=${encodeURIComponent(opts.query)}`;
   return runScraper(CHRONO24_ACTOR, startUrl, 'Chrono24 (Apify)');
+}
+
+// ---- LEGO (BrickLink Price Guide via Apify) ----
+// Input diverso dagli altri actor: prende setIds[] (non uno startUrl). Il valore = prezzo VENDUTO
+// negli ultimi 6 mesi (pg_*), preferendo NUOVO/SIGILLATO (il valore da investimento), o usato.
+function normalizeSetId(q: string): string | null {
+  const m = String(q || '').match(/\b(\d{3,7})(-\d+)?\b/); // es. "10300", "75192-1", "lego 10300 modular"
+  if (!m) return null;
+  return m[2] ? `${m[1]}${m[2]}` : `${m[1]}-1`; // BrickLink vuole il suffisso variante (-1)
+}
+export async function getLegoValue(opts: { query: string; condition?: string }): Promise<ApifyValuation | null> {
+  if (!isLegoConfigured()) return null;
+  const setId = normalizeSetId(opts.query);
+  if (!setId) return null;
+  if ((await getMonthlyCount()) >= MONTHLY_LIMIT) { logger.info('Apify LEGO: tetto mensile raggiunto'); return null; }
+  try {
+    await bumpMonthlyCount();
+    const url = `https://api.apify.com/v2/acts/${encodeURIComponent(LEGO_ACTOR)}/run-sync-get-dataset-items?token=${TOKEN}&timeout=120`;
+    const r = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ setIds: [setId], condition: 'both', currency: 'EUR', maxItems: 3 }),
+    });
+    if (!r.ok) { logger.error('Apify LEGO run error', { status: r.status }); return null; }
+    const items = await r.json() as any[];
+    if (!Array.isArray(items) || items.length === 0) return { value: null, currency: 'EUR', source: 'BrickLink', sample: 0 };
+    const it: any = items[0] || {};
+    const num = (...keys: string[]) => { for (const k of keys) { const v = Number(it[k]); if (isFinite(v) && v > 0) return v; } return null; };
+    const wantUsed = /usa|used/i.test(opts.condition || '');
+    // pg_* = venduti reali ultimi 6 mesi (qty_avg = media pesata sulle quantità, più robusta). fs_* = in vendita ora.
+    const value = wantUsed
+      ? num('pg_used_qty_avg_price', 'pg_used_avg_price', 'fs_used_avg_price', 'pg_new_qty_avg_price')
+      : num('pg_new_qty_avg_price', 'pg_new_avg_price', 'fs_new_avg_price', 'pg_used_qty_avg_price', 'pg_used_avg_price');
+    return {
+      value: value != null ? Math.round(value) : null,
+      currency: (it.currency || 'EUR').toString().toUpperCase(),
+      source: `BrickLink Price Guide · ${wantUsed ? 'usato' : 'nuovo'}`,
+      itemName: it.item_name || undefined,
+      image: it.image_url || undefined,
+      sample: Number(it.pg_new_times_sold || it.pg_used_times_sold || 0),
+    };
+  } catch (err: any) { logger.error('Errore getLegoValue', { err: err.message }); return null; }
 }
