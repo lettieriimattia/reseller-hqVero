@@ -18,8 +18,11 @@
     .nav { display:flex; align-items:center; justify-content:space-between; height:66px; max-width:1120px; margin:0 auto; padding:0 20px; }
     .brand { font-weight:900; font-size:19px; letter-spacing:-.02em; color:#f4f6f8; }
     .brand b { color:#c2c9d2; }
+    .nav-r { display:flex; align-items:center; gap:14px; }
     .nav a.back { color:#9aa2ab; font-weight:600; font-size:14.5px; }
     .nav a.back:hover { color:#fff; text-decoration:none; }
+    .langbtn { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); color:#e6e9ee; font-weight:800; font-size:12.5px; letter-spacing:.03em; padding:6px 12px; border-radius:999px; cursor:pointer; transition:.15s; }
+    .langbtn:hover { background:rgba(255,255,255,.16); }
     .hero { padding:56px 0 8px; }
     .hero h1 { font-size:clamp(28px,4.6vw,42px); font-weight:900; letter-spacing:-.03em; color:var(--ink); margin-bottom:10px; }
     .hero .upd { color:var(--muted); font-size:14px; }
@@ -38,55 +41,83 @@
   <header>
     <div class="nav">
       <a href="/" class="brand">HQ<b>Vault</b></a>
-      <a href="/" class="back">← Torna al sito</a>
+      <div class="nav-r">
+        <a href="/" class="back" data-i18n="back">← Torna al sito</a>
+        <button id="hqLangBtn" class="langbtn" onclick="hqToggleLang()">EN</button>
+      </div>
     </div>
   </header>
 
   <div class="hero"><div class="wrap">
-    <h1>Informativa sulla privacy</h1>
-    <p class="upd">Ultimo aggiornamento: luglio 2026</p>
+    <h1 data-i18n="h1">Informativa sulla privacy</h1>
+    <p class="upd" data-i18n="upd">Ultimo aggiornamento: luglio 2026</p>
   </div></div>
 
   <main><div class="wrap">
-    <p>Questa informativa spiega quali dati personali tratta <strong>HQVault</strong> ("noi"), con quali finalità e come puoi esercitare i tuoi diritti ai sensi del Regolamento UE 2016/679 (GDPR).</p>
+    <p data-i18n="intro">Questa informativa spiega quali dati personali tratta <strong>HQVault</strong> ("noi"), con quali finalità e come puoi esercitare i tuoi diritti ai sensi del Regolamento UE 2016/679 (GDPR).</p>
 
-    <div class="box">
+    <div class="box" data-i18n="box">
       <b>Titolare del trattamento:</b> HQVault<br>
       <b>Contatto per la privacy:</b> <a href="mailto:noreply.hq.app@gmail.com">noreply.hq.app@gmail.com</a>
     </div>
 
-    <h2>1. Quali dati raccogliamo</h2>
-    <ul>
+    <h2 data-i18n="s1h">1. Quali dati raccogliamo</h2>
+    <ul data-i18n="s1b">
       <li><strong>Lista d'attesa (waitlist):</strong> solo il tuo <strong>indirizzo email</strong>, se scegli di lasciarlo per essere avvisato al lancio, insieme alla pagina da cui è partita l'iscrizione.</li>
       <li><strong>Account dell'app</strong> (quando il servizio sarà attivo): email, nome e i dati che inserisci per gestire il tuo magazzino (prodotti, vendite, note).</li>
       <li><strong>Statistiche di visita:</strong> conteggi anonimi e aggregati delle pagine viste e della provenienza (es. motore di ricerca), <strong>senza cookie di tracciamento e senza identificarti</strong>.</li>
     </ul>
 
-    <h2>2. Perché li trattiamo (finalità e base giuridica)</h2>
-    <ul>
+    <h2 data-i18n="s2h">2. Perché li trattiamo (finalità e base giuridica)</h2>
+    <ul data-i18n="s2b">
       <li><strong>Avviso di lancio</strong> — ti scriviamo una volta quando l'app è pronta. Base giuridica: il tuo <strong>consenso</strong>, che dai lasciando l'email.</li>
       <li><strong>Erogazione del servizio</strong> — gestione del tuo account e del magazzino. Base giuridica: esecuzione del contratto.</li>
       <li><strong>Miglioramento del sito</strong> — capire quali pagine interessano, tramite statistiche aggregate e anonime. Base giuridica: legittimo interesse.</li>
     </ul>
 
-    <h2>3. Per quanto tempo li conserviamo</h2>
-    <p>L'email della waitlist è conservata fino al lancio dell'app o finché non chiedi la cancellazione (o ti disiscrivi). I dati dell'account restano finché mantieni il profilo; puoi chiederne la cancellazione in qualsiasi momento. Le statistiche di visita sono anonime e aggregate.</p>
+    <h2 data-i18n="s3h">3. Per quanto tempo li conserviamo</h2>
+    <p data-i18n="s3b">L'email della waitlist è conservata fino al lancio dell'app o finché non chiedi la cancellazione (o ti disiscrivi). I dati dell'account restano finché mantieni il profilo; puoi chiederne la cancellazione in qualsiasi momento. Le statistiche di visita sono anonime e aggregate.</p>
 
-    <h2>4. Con chi li condividiamo</h2>
-    <p>Non vendiamo i tuoi dati. Possono essere trattati da fornitori che ci aiutano a erogare il servizio (hosting e infrastruttura, invio email), esclusivamente per nostro conto e con adeguate garanzie. Non c'è alcuna profilazione pubblicitaria.</p>
+    <h2 data-i18n="s4h">4. Con chi li condividiamo</h2>
+    <p data-i18n="s4b">Non vendiamo i tuoi dati. Possono essere trattati da fornitori che ci aiutano a erogare il servizio (hosting e infrastruttura, invio email), esclusivamente per nostro conto e con adeguate garanzie. Non c'è alcuna profilazione pubblicitaria.</p>
 
-    <h2>5. Cookie</h2>
-    <p>Il sito <strong>non usa cookie di profilazione o pubblicitari</strong>. Le statistiche di visita non usano cookie. All'interno dell'app usiamo solo cookie tecnici necessari (ad esempio per tenerti autenticato).</p>
+    <h2 data-i18n="s5h">5. Cookie</h2>
+    <p data-i18n="s5b">Il sito <strong>non usa cookie di profilazione o pubblicitari</strong>. Le statistiche di visita non usano cookie. All'interno dell'app usiamo solo cookie tecnici necessari (ad esempio per tenerti autenticato).</p>
 
-    <h2>6. I tuoi diritti</h2>
-    <p>Hai il diritto di accedere ai tuoi dati, correggerli, cancellarli, limitarne o opporti al trattamento, e ottenerne la portabilità. Puoi <strong>revocare il consenso</strong> in ogni momento e disiscriverti dagli avvisi tramite il link presente in ogni email. Per esercitare questi diritti scrivi a <a href="mailto:noreply.hq.app@gmail.com">noreply.hq.app@gmail.com</a>. Hai inoltre il diritto di reclamo all'Autorità Garante per la protezione dei dati personali.</p>
+    <h2 data-i18n="s6h">6. I tuoi diritti</h2>
+    <p data-i18n="s6b">Hai il diritto di accedere ai tuoi dati, correggerli, cancellarli, limitarne o opporti al trattamento, e ottenerne la portabilità. Puoi <strong>revocare il consenso</strong> in ogni momento e disiscriverti dagli avvisi tramite il link presente in ogni email. Per esercitare questi diritti scrivi a <a href="mailto:noreply.hq.app@gmail.com">noreply.hq.app@gmail.com</a>. Hai inoltre il diritto di reclamo all'Autorità Garante per la protezione dei dati personali.</p>
 
-    <h2>7. Modifiche</h2>
-    <p>Potremmo aggiornare questa informativa; la versione in vigore è sempre quella pubblicata su questa pagina, con la data di aggiornamento in alto.</p>
+    <h2 data-i18n="s7h">7. Modifiche</h2>
+    <p data-i18n="s7b">Potremmo aggiornare questa informativa; la versione in vigore è sempre quella pubblicata su questa pagina, con la data di aggiornamento in alto.</p>
   </div></main>
 
-  <footer><div class="wrap">© 2026 HQVault — <a href="/">Home</a> · <a href="/waitlist">Lista d'attesa</a></div></footer>
+  <footer><div class="wrap" data-i18n="foot">© 2026 HQVault — <a href="/">Home</a> · <a href="/waitlist">Lista d'attesa</a></div></footer>
 
+  <script>
+    window.HQ_EN = {
+      back: '← Back to site',
+      h1: 'Privacy Policy',
+      upd: 'Last updated: July 2026',
+      intro: 'This policy explains which personal data <strong>HQVault</strong> ("we") processes, for what purposes, and how you can exercise your rights under EU Regulation 2016/679 (GDPR).',
+      box: '<b>Data controller:</b> HQVault<br><b>Privacy contact:</b> <a href="mailto:noreply.hq.app@gmail.com">noreply.hq.app@gmail.com</a>',
+      s1h: '1. What data we collect',
+      s1b: '<li><strong>Waitlist:</strong> only your <strong>email address</strong>, if you choose to leave it to be notified at launch, together with the page the sign-up came from.</li><li><strong>App account</strong> (once the service is live): email, name and the data you enter to manage your inventory (products, sales, notes).</li><li><strong>Visit statistics:</strong> anonymous, aggregated counts of pages viewed and where visitors come from (e.g. a search engine), <strong>with no tracking cookies and without identifying you</strong>.</li>',
+      s2h: '2. Why we process it (purpose and legal basis)',
+      s2b: "<li><strong>Launch notification</strong> — we write to you once, when the app is ready. Legal basis: your <strong>consent</strong>, given by leaving your email.</li><li><strong>Providing the service</strong> — managing your account and inventory. Legal basis: performance of the contract.</li><li><strong>Improving the site</strong> — understanding which pages are of interest, via aggregated and anonymous statistics. Legal basis: legitimate interest.</li>",
+      s3h: '3. How long we keep it',
+      s3b: 'The waitlist email is kept until the app launches or until you ask for it to be deleted (or you unsubscribe). Account data is kept as long as you keep your profile; you can ask for it to be deleted at any time. Visit statistics are anonymous and aggregated.',
+      s4h: '4. Who we share it with',
+      s4b: "We do not sell your data. It may be processed by providers who help us run the service (hosting and infrastructure, email delivery), solely on our behalf and with appropriate safeguards. There is no advertising profiling.",
+      s5h: '5. Cookies',
+      s5b: 'The site <strong>does not use profiling or advertising cookies</strong>. Visit statistics do not use cookies. Inside the app we only use the technical cookies that are strictly necessary (for example to keep you signed in).',
+      s6h: '6. Your rights',
+      s6b: 'You have the right to access your data, correct it, delete it, restrict or object to its processing, and obtain its portability. You can <strong>withdraw consent</strong> at any time and unsubscribe from notifications via the link in every email. To exercise these rights write to <a href="mailto:noreply.hq.app@gmail.com">noreply.hq.app@gmail.com</a>. You also have the right to lodge a complaint with your data protection authority.',
+      s7h: '7. Changes',
+      s7b: 'We may update this policy; the version in force is always the one published on this page, with the update date shown at the top.',
+      foot: '© 2026 HQVault — <a href="/">Home</a> · <a href="/waitlist">Waitlist</a>'
+    };
+  </script>
+  <script src="/lang.js"></script>
   <script>try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=privacy') : fetch('/api/hit?p=privacy'); } catch (e) {}</script>
 </body>
 </html>

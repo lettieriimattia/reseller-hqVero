@@ -12,6 +12,7 @@ import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { getValuation } from '../services/valuation.service';
 import { estimatePriceRange } from '../services/ai.service';
+import { getLegoRaw, isLegoConfigured } from '../services/apify.service';
 import { isAdminEmail } from '../config/admins';
 
 // L'ADMIN (loggato nel browser) NON è soggetto al limite di ricerche: così puoi provare liberamente.
@@ -112,6 +113,17 @@ function detectCategory(q: string): { cat: string; label: string } | null {
   if (/supreme|palace|hoodie|felpa|maglia|\btee\b|giacca|jeans|streetwear|abbigliamento|stone island/.test(s)) return { cat: 'streetwear', label: 'Streetwear' };
   return null;
 }
+
+// DEBUG LEGO (pubblico ma protetto da chiave): funziona anche in incognito/non loggato.
+// Mostra se APIFY è configurato + la risposta GREZZA dell'actor (status, campi, primo item),
+// così capiamo perché un set non viene valutato. Apri:
+//   /api/lego-debug?key=hqlego2026&set=10300
+router.get('/lego-debug', async (req: Request, res: Response) => {
+  if (String(req.query.key || '') !== 'hqlego2026') return res.status(403).json({ error: 'chiave mancante' });
+  const set = String(req.query.set || '10300').trim();
+  const raw = await getLegoRaw(set);
+  return res.json({ configured: isLegoConfigured(), ...raw });
+});
 
 // POST /api/price-check — { query, category?, size?, condition?, number? } → valore di mercato.
 router.post('/price-check', async (req: Request, res: Response) => {
