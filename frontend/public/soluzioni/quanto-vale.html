@@ -93,21 +93,30 @@
     .pc-gate { max-width:520px; margin:18px auto 0; background:rgba(13,148,136,.10); border:1px solid rgba(95,185,174,.35); border-radius:18px; padding:22px; }
     .pc-gate-title { font-weight:800; font-size:19px; color:#fff; }
     .pc-gate-sub { color:#aeb6c0; font-size:14.5px; margin:6px 0 14px; }
-    /* Popup dopo il valore: invito a iscriversi */
-    .vpop { position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(3,4,7,.72); backdrop-filter:blur(6px); }
-    .vpop.on { display:flex; }
-    .vpop-card { position:relative; background:#12151b; border:1px solid #2a2f3a; border-radius:22px; padding:28px 24px; max-width:400px; width:100%; text-align:center; box-shadow:0 30px 80px -20px rgba(0,0,0,.7); }
-    .vpop-x { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:9px; border:none; background:rgba(255,255,255,.06); color:#9aa2ab; font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-    .vpop-x:hover { background:rgba(255,255,255,.12); color:#fff; }
-    .vpop-ic { width:56px; height:56px; border-radius:16px; background:rgba(13,148,136,.14); border:1px solid rgba(95,185,174,.4); display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 14px; }
-    .vpop-card h3 { color:#fff; font-size:20px; font-weight:900; letter-spacing:-.01em; margin-bottom:8px; }
-    .vpop-card p { color:#aeb6c0; font-size:14.5px; line-height:1.55; margin-bottom:18px; }
-    .vpop-card p b { color:#e9ecef; }
-    .vpop-btns { display:flex; flex-direction:column; gap:8px; }
-    .vpop-join { background:var(--teal); color:#fff; font-weight:800; font-size:15px; padding:14px; border-radius:13px; border:none; cursor:pointer; }
-    .vpop-join:hover { background:var(--teal-d); }
-    .vpop-close { background:transparent; color:#8a929c; font-weight:700; font-size:13.5px; padding:8px; border:none; cursor:pointer; }
-    .vpop-close:hover { color:#c9d0d8; }
+    /* Stesso splash "HEADQUARTERS → HQ" cromato dell'app (index.html), riusato qui per il
+       caricamento del checker — inline nella card invece che fullscreen. */
+    .pc-loader { padding:36px 0 14px; text-align:center; }
+    .pc-loader .hq-logo-area { position:relative; display:flex; align-items:center; justify-content:center; min-height:60px; }
+    .pc-loader .hq-word { font-weight:800; font-size:clamp(20px,5vw,32px); letter-spacing:.04em; white-space:nowrap; opacity:0; transform-origin:center;
+      animation:hqWord 1.2s cubic-bezier(.5,.1,.2,1) forwards; filter:drop-shadow(0 3px 14px rgba(0,0,0,.5)); }
+    .pc-loader .hq-word span { background:linear-gradient(177deg,#fbfbfc 0%,#d2d5d9 24%,#83878f 48%,#34373d 58%,#9aa0a8 74%,#eceef0 100%);
+      -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
+    .pc-loader .hq-word .fl { display:inline-block; overflow:hidden; vertical-align:bottom; max-width:12ch; animation:hqFill 1.2s cubic-bezier(.7,0,.2,1) forwards; }
+    @keyframes hqWord { 0%{opacity:0; transform:scale(.96)} 12%{opacity:1; transform:scale(1)} 48%{transform:scale(1)} 74%{transform:scale(1.3)} 100%{opacity:1; transform:scale(1.26)} }
+    @keyframes hqFill { 0%,16%{max-width:12ch; opacity:1} 48%{max-width:0; opacity:0} 100%{max-width:0; opacity:0} }
+    .pc-loader .hq-bar { width:min(150px,50vw); height:3px; border-radius:99px; background:rgba(255,255,255,.10); overflow:hidden; margin:22px auto 0; }
+    .pc-loader .hq-bar > i { display:block; height:100%; width:0; border-radius:99px; background:linear-gradient(90deg,#6a6e76,#eceef0,#6a6e76); animation:hqBar 1.2s ease-out forwards; }
+    @keyframes hqBar { 0%{width:0} 68%{width:76%} 100%{width:100%} }
+    @media (prefers-reduced-motion: reduce) {
+      .pc-loader .hq-word { animation:none; opacity:1; transform:scale(1.15); }
+      .pc-loader .hq-word .fl { animation:none; max-width:0; opacity:0; }
+      .pc-loader .hq-bar > i { animation:none; width:100%; }
+    }
+    /* Box iscrizione INLINE sotto il risultato (niente popup) */
+    .pc-joinbox { max-width:520px; margin:18px auto 0; background:rgba(13,148,136,.10); border:1px solid rgba(95,185,174,.30); border-radius:18px; padding:22px; text-align:center; }
+    .pc-joinbox h4 { color:#fff; font-size:16.5px; font-weight:800; margin-bottom:6px; }
+    .pc-joinbox p { color:#aeb6c0; font-size:13.5px; line-height:1.5; margin-bottom:14px; }
+    .pc-joinbox .msg { margin-top:10px; font-size:13.5px; font-weight:700; color:#5fb9ae; }
 
     section { padding:58px 0; }
     .eyebrow { color:var(--teal-d); font-weight:800; font-size:13px; letter-spacing:.08em; text-transform:uppercase; text-align:center; margin-bottom:12px; }
@@ -232,6 +241,16 @@
         </button>
         <input type="file" id="pcPhotoInput" accept="image/*" capture="environment" style="display:none">
         <div id="pcResult" class="pc-result" role="status"></div>
+        <!-- Box iscrizione INLINE (niente popup): appare sotto il risultato appena esce una stima -->
+        <div id="pcJoinBox" class="pc-joinbox" hidden>
+          <h4 data-i18n="join_h">Fallo in automatico con HQVault</h4>
+          <p data-i18n="join_p">Valuti i prodotti, tieni il magazzino in ordine e sai il <b>profitto reale a ogni vendita</b> — tutto in un tap.</p>
+          <form class="js-wl-form hero-form" data-src="quanto-vale-inline" novalidate>
+            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" data-i18n-ph="ph" required />
+            <button class="js-wl-btn btn btn-primary" type="submit" data-i18n="join_btn">Mettiti in lista d'attesa →</button>
+          </form>
+          <p class="js-wl-msg msg" role="status"></p>
+        </div>
         <!-- Gate: appare quando finiscono le ricerche gratis del giorno -->
         <div id="pcGate" class="pc-gate" hidden>
           <p class="pc-gate-title" data-i18n="gate_t">Hai finito le ricerche gratis di oggi 👀</p>
@@ -382,20 +401,6 @@
     </div>
   </footer>
 
-  <!-- Popup dopo il valore: invito a iscriversi -->
-  <div id="vpop" class="vpop">
-    <div class="vpop-card">
-      <button class="vpop-x" id="vpopX" aria-label="Chiudi">✕</button>
-      <div class="vpop-ic"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#5fb9ae" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.7 4.8L18.5 9.5 13.7 11.2 12 16l-1.7-4.8L5.5 9.5 10.3 7.8 12 3Z"/><path d="M19 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></svg></div>
-      <h3 data-i18n="vpop_h">Fallo in automatico con HQVault</h3>
-      <p data-i18n="vpop_p">Hai appena visto il valore. Con <b>HQVault</b> valuti i prodotti, tieni il magazzino in ordine e sai il <b>profitto reale a ogni vendita</b> — tutto in un tap, senza cercare a mano.</p>
-      <div class="vpop-btns">
-        <button class="vpop-join" id="vpopJoin" data-i18n="vpop_join">Mettiti in lista d'attesa →</button>
-        <button class="vpop-close" id="vpopClose" data-i18n="vpop_close">Continua a valutare</button>
-      </div>
-    </div>
-  </div>
-
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
     {"@type":"Question","name":"Come faccio a sapere quanto vale una sneaker?","acceptedAnswer":{"@type":"Answer","text":"Aggiungi il modello dal catalogo o con una foto: HQVault lo riconosce e mostra il valore di mercato aggiornato (fonte StockX per sneaker e streetwear), così sai a quanto rivenderlo."}},
@@ -456,9 +461,9 @@
       fin_consent: 'One notification at launch · no spam. <a href="/privacy">Privacy</a>',
       foot_copy: '© 2026 HQVault — Management software for resellers.',
       foot_mag: 'Inventory', foot_ship: 'Shipping',
-      vpop_h: 'Do it automatically with HQVault',
-      vpop_p: 'You just saw the value. With <b>HQVault</b> you value products, keep your inventory tidy and know your <b>real profit on every sale</b> — all in one tap, no manual searching.',
-      vpop_join: 'Join the waitlist →', vpop_close: 'Keep valuing'
+      join_h: 'Do it automatically with HQVault',
+      join_p: 'You value products, keep your inventory tidy and know your <b>real profit on every sale</b> — all in one tap.',
+      join_btn: 'Join the waitlist →'
     };
   </script>
   <script src="/lang.js"></script>
@@ -500,16 +505,16 @@
       }
       cat.addEventListener('change', applyCat); applyCat();
       document.addEventListener('hqlangchange', applyCat); // ritraduce i campi al cambio lingua
-      // Popup "iscriviti" dopo il valore (una volta). Il bottone porta alla waitlist (rivela il form email).
-      var vpop = document.getElementById('vpop'), vpopShown = false;
-      function maybePopup() { if (vpopShown || !vpop) return; vpopShown = true; setTimeout(function () { vpop.classList.add('on'); }, 900); }
-      function closePopup() { if (vpop) vpop.classList.remove('on'); }
-      var vj = document.getElementById('vpopJoin'), vc = document.getElementById('vpopClose');
-      if (vj) vj.addEventListener('click', function () { location.href = '/waitlist?src=quanto-vale'; });
-      if (vc) vc.addEventListener('click', closePopup);
-      var vx = document.getElementById('vpopX'); if (vx) vx.addEventListener('click', closePopup);
-      if (vpop) vpop.addEventListener('click', function (e) { if (e.target === vpop) closePopup(); }); // tap fuori (mobile)
-      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePopup(); });   // ESC (pc)
+      // Box iscrizione INLINE (niente popup): appare sotto il risultato appena esce una stima.
+      var joinBox = document.getElementById('pcJoinBox');
+      function showJoinBox() { if (joinBox) joinBox.hidden = false; }
+      // Caricamento brandizzato (stesso splash "HEADQUARTERS → HQ" dell'app): mostrato mentre
+      // aspettiamo la risposta, con una durata minima garantita così si vede sempre per intero.
+      var LOADER_HTML = '<div class="pc-loader"><div class="hq-logo-area"><div class="hq-word"><span>H</span><span class="fl">EAD</span><span>Q</span><span class="fl">UARTERS</span></div></div><div class="hq-bar"><i></i></div></div>';
+      function withMinDelay(promise, ms) {
+        var wait = new Promise(function (res) { setTimeout(res, ms); });
+        return Promise.all([promise, wait]).then(function (r) { return r[0]; });
+      }
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         var query = (q.value || '').trim();
@@ -522,9 +527,9 @@
         var body = { category: cat.value, query: query, condition: (cond && cond.value) || '' };
         if (c.detailKey && det.value.trim()) body[c.detailKey] = det.value.trim();
         var btn = form.querySelector('button'); var lbl = btn.textContent;
-        btn.disabled = true; btn.textContent = tv('searching'); out.innerHTML = '';
-        fetch('/api/price-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-          .then(function (r) { return r.json(); })
+        btn.disabled = true; btn.textContent = tv('searching'); out.innerHTML = LOADER_HTML;
+        if (joinBox) joinBox.hidden = true; gate.hidden = true;
+        withMinDelay(fetch('/api/price-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); }), 1300)
           .then(function (d) {
             btn.disabled = false; btn.textContent = lbl;
             // Finite le valutazioni gratis: il form RESTA usabile ma esce la schermata iscrizione.
@@ -537,13 +542,14 @@
               // Foto ufficiale del prodotto (StockX/Cardmarket/…) via proxy pubblico → niente hotlink/CSP.
               var img = d.image ? '<img src="/api/catalog/img-public?u=' + encodeURIComponent(d.image) + '" alt="" style="width:120px;height:120px;object-fit:contain;background:#fff;border-radius:14px;display:block;margin:0 auto 12px;padding:6px" onerror="this.style.display=\'none\'">' : '';
               out.innerHTML = '<div class="pc-card">' + img + '<div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
-              maybePopup(); // appena esce il valore → invito a iscriversi
+              showJoinBox(); // appena esce il valore → invito a iscriversi (inline, non più popup)
             } else if (d.range && d.range.low) {
               // Categorie coperte da StockX (sneaker/streetwear): se esce solo la stima IA, quasi
               // sempre è perché la query è generica → suggerisci il modello esatto.
               var stockxCat = (cat.value === 'scarpe' || cat.value === 'streetwear');
               var hint = stockxCat ? '<div class="pc-src" style="margin-top:6px">' + tv('hintModel') + '</div>' : '';
               out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + detHtml + '<div class="pc-src">' + tv('aiEst') + '</div>' + hint + '</div>';
+              showJoinBox();
             } else {
               out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notFoundA') + esc(query) + tv('notFoundB') + '</span>' + detHtml + '</div>';
             }
@@ -563,13 +569,14 @@
           var cur = (d.currency && d.currency !== 'EUR') ? (' ' + d.currency) : '€';
           var img = d.image ? '<img src="/api/catalog/img-public?u=' + encodeURIComponent(d.image) + '" alt="" style="width:120px;height:120px;object-fit:contain;background:#fff;border-radius:14px;display:block;margin:0 auto 12px;padding:6px" onerror="this.style.display=\'none\'">' : '';
           out.innerHTML = '<div class="pc-card">' + img + '<div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
-          maybePopup();
+          showJoinBox();
         } else if (d.range && d.range.low) {
           // Come nel checker testuale: se la categoria è del tipo coperto da StockX (sneaker/streetwear)
           // e otteniamo solo la stima IA, quasi sempre serve il MODELLO ESATTO (non il tipo generico).
           var stockxLike = /sneak|scarp|shoe|street|abbigli|vestit|felp|maglia|hoodie|shirt|jacket|jeans/i.test(d.detected || d.name || '');
           var hintP = stockxLike ? '<div class="pc-src" style="margin-top:6px">' + tv('hintModel') + '</div>' : '';
           out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + detHtml + '<div class="pc-src">' + tv('aiEst') + '</div>' + hintP + '</div>';
+          showJoinBox();
         } else {
           out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notFoundA') + esc(d.name || '') + tv('notFoundB') + '</span>' + detHtml + '</div>';
         }
@@ -593,11 +600,10 @@
         photoInput.addEventListener('change', function () {
           var f = photoInput.files && photoInput.files[0]; photoInput.value = '';
           if (!f) return;
-          out.innerHTML = '<div class="pc-card"><span class="pc-src">' + tv('analyzing') + '</span></div>';
+          out.innerHTML = LOADER_HTML; if (joinBox) joinBox.hidden = true; gate.hidden = true;
           compressImg(f, function (dataUrl) {
             if (!dataUrl) { out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('error') + '</span></div>'; return; }
-            fetch('/api/photo-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: dataUrl }) })
-              .then(function (r) { return r.json(); })
+            withMinDelay(fetch('/api/photo-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: dataUrl }) }).then(function (r) { return r.json(); }), 1300)
               .then(renderPhoto)
               .catch(function () { out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('error') + '</span></div>'; });
           });
