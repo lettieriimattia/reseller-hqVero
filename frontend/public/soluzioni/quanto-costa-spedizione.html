@@ -155,14 +155,14 @@
       <div class="hero-fx" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
       <div class="hero-bloom" aria-hidden="true"></div>
       <div class="wrap narrow">
-        <span class="crumb"><span class="dot"></span> Strumenti reseller · Spedizioni</span>
-        <h1>Quanto costa spedire e quanto guadagni davvero?</h1>
-        <p class="sub">Due calcolatori: una stima del costo di spedizione per corriere e il <b>profitto netto reale</b> di una vendita, con commissioni e spedizione già scontate.</p>
+        <span class="crumb"><span class="dot"></span> <span data-i18n="crumb">Strumenti reseller · Spedizioni</span></span>
+        <h1 data-i18n="h1">Quanto costa spedire e quanto guadagni davvero?</h1>
+        <p class="sub" data-i18n="sub">Due calcolatori: una stima del costo di spedizione per corriere e il <b>profitto netto reale</b> di una vendita, con commissioni e spedizione già scontate.</p>
         <div class="cta-row">
-          <a href="#tools" class="btn btn-primary">Prova i calcolatori</a>
-          <a href="/waitlist?src=spedizione" class="btn btn-ghost">Entra in lista</a>
+          <a href="#tools" class="btn btn-primary" data-i18n="cta1">Prova i calcolatori</a>
+          <a href="/waitlist?src=spedizione" class="btn btn-ghost" data-i18n="cta2">Entra in lista</a>
         </div>
-        <p class="micro">Gratis · nessun dato salvato · prezzi indicativi 2026</p>
+        <p class="micro" data-i18n="micro">Gratis · nessun dato salvato · prezzi indicativi 2026</p>
       </div>
     </section>
 
@@ -170,60 +170,60 @@
       <div class="wrap narrow">
         <!-- CALCOLATORE SPEDIZIONE -->
         <div class="calc">
-          <div class="ctag">Calcolatore spedizione</div>
-          <h3>Stima del costo di spedizione</h3>
+          <div class="ctag" data-i18n="sc_tag">Calcolatore spedizione</div>
+          <h3 data-i18n="sc_h">Stima del costo di spedizione</h3>
           <div class="fields">
-            <div class="field"><label>Destinazione</label>
+            <div class="field"><label data-i18n="sc_dest">Destinazione</label>
               <select id="dest">
-                <option value="it">Italia</option>
-                <option value="eu">Europa (UE)</option>
-                <option value="extra">Fuori UE</option>
+                <option value="it" data-i18n="sc_it">Italia</option>
+                <option value="eu" data-i18n="sc_eu">Europa (UE)</option>
+                <option value="extra" data-i18n="sc_extra">Fuori UE</option>
               </select>
             </div>
-            <div class="field"><label>Peso del pacco</label>
+            <div class="field"><label data-i18n="sc_weight">Peso del pacco</label>
               <select id="weight">
-                <option value="s">Piccolo (fino a 2 kg)</option>
-                <option value="m">Medio (2–5 kg)</option>
-                <option value="l">Grande (5–10 kg)</option>
+                <option value="s" data-i18n="sc_ws">Piccolo (fino a 2 kg)</option>
+                <option value="m" data-i18n="sc_wm">Medio (2–5 kg)</option>
+                <option value="l" data-i18n="sc_wl">Grande (5–10 kg)</option>
               </select>
             </div>
-            <div class="field"><label>Corriere / metodo</label>
+            <div class="field"><label data-i18n="sc_courier">Corriere / metodo</label>
               <select id="courier">
                 <option value="inpost">InPost / Locker</option>
-                <option value="brt">BRT / GLS (con contratto)</option>
+                <option value="brt" data-i18n="sc_brt">BRT / GLS (con contratto)</option>
                 <option value="poste">Poste Italiane</option>
-                <option value="aggr">Aggregatore (Sendcloud/Packlink)</option>
+                <option value="aggr" data-i18n="sc_aggr">Aggregatore (Sendcloud/Packlink)</option>
                 <option value="vinted">Vinted / Wallapop</option>
               </select>
             </div>
-            <div class="field" style="display:flex;align-items:flex-end"><span class="note">Prezzi indicativi 2026. Variano per zona, volume e contratto.</span></div>
+            <div class="field" style="display:flex;align-items:flex-end"><span class="note" data-i18n="sc_note">Prezzi indicativi 2026. Variano per zona, volume e contratto.</span></div>
           </div>
           <div class="res">
-            <div><div class="lbl">Costo stimato</div><div class="big" id="shipOut">5–9 €</div></div>
+            <div><div class="lbl" data-i18n="sc_est">Costo stimato</div><div class="big" id="shipOut">5–9 €</div></div>
             <div class="side" id="shipNote">Italia · pacco piccolo</div>
           </div>
         </div>
 
         <!-- CALCOLATORE PROFITTO -->
         <div class="calc">
-          <div class="ctag">Calcolatore profitto netto</div>
-          <h3>Il margine reale di una vendita</h3>
+          <div class="ctag" data-i18n="pc_tag">Calcolatore profitto netto</div>
+          <h3 data-i18n="pc_h">Il margine reale di una vendita</h3>
           <div class="fields">
-            <div class="field"><label>Prezzo d'acquisto (€)</label><input id="buy" type="number" inputmode="decimal" value="120" /></div>
-            <div class="field"><label>Prezzo di vendita (€)</label><input id="sell" type="number" inputmode="decimal" value="180" /></div>
-            <div class="field"><label>Commissione piattaforma (%)</label><input id="fee" type="number" inputmode="decimal" value="5" /></div>
-            <div class="field"><label>Spedizione a tuo carico (€)</label><input id="ship" type="number" inputmode="decimal" value="7" /></div>
+            <div class="field"><label data-i18n="pc_buy">Prezzo d'acquisto (€)</label><input id="buy" type="number" inputmode="decimal" value="120" /></div>
+            <div class="field"><label data-i18n="pc_sell">Prezzo di vendita (€)</label><input id="sell" type="number" inputmode="decimal" value="180" /></div>
+            <div class="field"><label data-i18n="pc_fee">Commissione piattaforma (%)</label><input id="fee" type="number" inputmode="decimal" value="5" /></div>
+            <div class="field"><label data-i18n="pc_ship">Spedizione a tuo carico (€)</label><input id="ship" type="number" inputmode="decimal" value="7" /></div>
           </div>
           <div class="res">
-            <div><div class="lbl">Profitto netto</div><div class="big pos" id="profitOut">+43 €</div></div>
-            <div class="side">Margine <b id="marginOut">36%</b><br>ROI <b id="roiOut">36%</b></div>
+            <div><div class="lbl" data-i18n="pc_net">Profitto netto</div><div class="big pos" id="profitOut">+43 €</div></div>
+            <div class="side"><span data-i18n="pc_margin">Margine</span> <b id="marginOut">36%</b><br>ROI <b id="roiOut">36%</b></div>
           </div>
           <div class="breakdown" id="bd"></div>
         </div>
 
         <div class="method">
-          <h3>Come sono calcolati questi numeri</h3>
-          <ul>
+          <h3 data-i18n="m_h">Come sono calcolati questi numeri</h3>
+          <ul data-i18n="m_list">
             <li>Il costo di spedizione parte da tariffe pubbliche indicative 2026 ed è scalato per il peso — è una stima, non un preventivo.</li>
             <li>Profitto netto = prezzo di vendita − prezzo d'acquisto − commissione della piattaforma − spedizione a tuo carico.</li>
             <li>Il margine è sul ricavo, il ROI è sul capitale investito. Nessun dato viene salvato: i conti restano sul tuo dispositivo.</li>
@@ -231,24 +231,24 @@
         </div>
 
         <div class="final" id="join">
-          <h2>Tieni sotto controllo margini e spedizioni</h2>
-          <p>HQVault fa questo calcolo su ogni vendita. Lascia l'email: ti avvisiamo al lancio.</p>
+          <h2 data-i18n="fin_h">Tieni sotto controllo margini e spedizioni</h2>
+          <p data-i18n="fin_p">HQVault fa questo calcolo su ogni vendita. Lascia l'email: ti avvisiamo al lancio.</p>
           <form class="js-wl-form wl-form" data-src="spedizione" novalidate>
-            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
-            <button class="js-wl-btn btn btn-white" type="submit">Avvisami</button>
+            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" data-i18n-ph="ph" required />
+            <button class="js-wl-btn btn btn-white" type="submit" data-i18n="wl_btn">Avvisami</button>
           </form>
           <p class="js-wl-msg wl-msg" role="status"></p>
-          <p class="wl-consent">Un solo avviso al lancio · niente spam. <a href="/privacy">Privacy</a></p>
+          <p class="wl-consent" data-i18n="fin_consent">Un solo avviso al lancio · niente spam. <a href="/privacy">Privacy</a></p>
         </div>
       </div>
     </section>
 
     <section style="background:var(--soft-bg); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
       <div class="wrap narrow">
-        <p class="eyebrow">Riferimento</p>
-        <h2>Costi indicativi per corriere</h2>
-        <p class="lead">Italia, pacco piccolo. Fascia di prezzo tipica per un reseller con volumi medi.</p>
-        <div class="tbl"><table>
+        <p class="eyebrow" data-i18n="ref_eye">Riferimento</p>
+        <h2 data-i18n="ref_h">Costi indicativi per corriere</h2>
+        <p class="lead" data-i18n="ref_lead">Italia, pacco piccolo. Fascia di prezzo tipica per un reseller con volumi medi.</p>
+        <div class="tbl"><table data-i18n="ref_table">
           <tr><th>Metodo</th><th>Uso tipico</th><th>Costo</th></tr>
           <tr><td>InPost (Locker)</td><td>Sneaker, abbigliamento</td><td>4–6 €</td></tr>
           <tr><td>BRT / GLS (contratto)</td><td>Volumi frequenti</td><td>5–8 €</td></tr>
@@ -256,7 +256,7 @@
           <tr><td>Aggregatori</td><td>Sconti senza contratto</td><td>4–7 €</td></tr>
           <tr><td>Vinted / Wallapop</td><td>La paga il compratore</td><td>3–5 €</td></tr>
         </table></div>
-        <p class="note">Estero: Europa da ~12–20 €, fuori UE 20–45 € oltre a dazi e IVA di destinazione.</p>
+        <p class="note" data-i18n="ref_note">Estero: Europa da ~12–20 €, fuori UE 20–45 € oltre a dazi e IVA di destinazione.</p>
       </div>
     </section>
 
@@ -265,8 +265,8 @@
         <div class="hq">
           <div class="ico" aria-hidden="true">⚡</div>
           <div>
-            <h3>Questo calcolo, automatico su ogni vendita</h3>
-            <p>HQVault applica profitto netto, margine e spedizione a ogni prodotto che vendi e ne conserva lo storico, così non rifai i conti a mano. <a href="/waitlist?src=spedizione">Scopri come funziona →</a></p>
+            <h3 data-i18n="hq_h">Questo calcolo, automatico su ogni vendita</h3>
+            <p data-i18n="hq_p">HQVault applica profitto netto, margine e spedizione a ogni prodotto che vendi e ne conserva lo storico, così non rifai i conti a mano. <a href="/waitlist?src=spedizione">Scopri come funziona →</a></p>
           </div>
         </div>
       </div>
@@ -277,18 +277,60 @@
     <div class="wrap foot">
       <div>
         <div class="brand" style="margin-bottom:8px; font-size:17px; color:var(--ink);">HQ<b style="color:var(--muted)">Vault</b></div>
-        <span>© 2026 HQVault — Software gestionale per reseller.</span>
+        <span data-i18n="foot_copy">© 2026 HQVault — Software gestionale per reseller.</span>
       </div>
       <nav aria-label="Link del sito">
-        <a href="/#funzioni">Funzioni</a>
-        <a href="/#faq">FAQ</a>
-        <a href="/waitlist?src=spedizione">Lista d'attesa</a>
-        <a href="/waitlist?src=spedizione">Iscriviti</a>
+        <a href="/#funzioni" data-i18n="nav1">Funzioni</a>
+        <a href="/#faq" data-i18n="nav2">FAQ</a>
+        <a href="/waitlist?src=spedizione" data-i18n="nav3">Lista d'attesa</a>
+        <a href="/waitlist?src=spedizione" data-i18n="foot_reg">Iscriviti</a>
       </nav>
     </div>
   </footer>
 
   <script>
+    window.HQ_EN = {
+      nav1: 'Features', nav2: 'FAQ', nav3: 'Waitlist', foot_reg: 'Join',
+      crumb: 'Reseller tools · Shipping',
+      h1: 'How much does shipping cost and what do you really earn?',
+      sub: 'Two calculators: an estimate of the shipping cost per courier and the <b>real net profit</b> of a sale, with fees and shipping already deducted.',
+      cta1: 'Try the calculators', cta2: 'Join the list',
+      micro: 'Free · no data saved · indicative 2026 prices',
+      sc_tag: 'Shipping calculator', sc_h: 'Shipping cost estimate',
+      sc_dest: 'Destination', sc_it: 'Italy', sc_eu: 'Europe (EU)', sc_extra: 'Outside EU',
+      sc_weight: 'Parcel weight', sc_ws: 'Small (up to 2 kg)', sc_wm: 'Medium (2–5 kg)', sc_wl: 'Large (5–10 kg)',
+      sc_courier: 'Courier / method', sc_brt: 'BRT / GLS (with contract)', sc_aggr: 'Aggregator (Sendcloud/Packlink)',
+      sc_note: 'Indicative 2026 prices. They vary by area, volume and contract.',
+      sc_est: 'Estimated cost',
+      pc_tag: 'Net profit calculator', pc_h: 'The real margin of a sale',
+      pc_buy: 'Purchase price (€)', pc_sell: 'Sale price (€)', pc_fee: 'Platform fee (%)', pc_ship: 'Shipping on you (€)',
+      pc_net: 'Net profit', pc_margin: 'Margin',
+      ph: 'Your email', wl_btn: 'Notify me',
+      m_h: 'How these numbers are calculated',
+      m_list: '<li>The shipping cost starts from indicative 2026 public rates and is scaled by weight — it’s an estimate, not a quote.</li><li>Net profit = sale price − purchase price − platform fee − shipping on you.</li><li>Margin is on revenue, ROI is on invested capital. Nothing is saved: the math stays on your device.</li>',
+      fin_h: 'Keep margins and shipping under control',
+      fin_p: 'HQVault does this calculation on every sale. Leave your email: we’ll notify you at launch.',
+      fin_consent: 'One notification at launch · no spam. <a href="/privacy">Privacy</a>',
+      ref_eye: 'Reference', ref_h: 'Indicative costs per courier',
+      ref_lead: 'Italy, small parcel. Typical price range for a reseller with medium volumes.',
+      ref_table: '<tr><th>Method</th><th>Typical use</th><th>Cost</th></tr><tr><td>InPost (Locker)</td><td>Sneakers, clothing</td><td>4–6 €</td></tr><tr><td>BRT / GLS (contract)</td><td>Frequent volumes</td><td>5–8 €</td></tr><tr><td>Poste — Standard Parcel</td><td>Occasional shipments</td><td>8–12 €</td></tr><tr><td>Aggregators</td><td>Discounts without a contract</td><td>4–7 €</td></tr><tr><td>Vinted / Wallapop</td><td>Buyer pays</td><td>3–5 €</td></tr>',
+      ref_note: 'Abroad: Europe from ~12–20 €, outside EU 20–45 € plus duties and destination VAT.',
+      hq_h: 'This calculation, automatic on every sale',
+      hq_p: 'HQVault applies net profit, margin and shipping to every product you sell and keeps the history, so you don’t redo the math by hand. <a href="/waitlist?src=spedizione">See how it works →</a>',
+      foot_copy: '© 2026 HQVault — Management software for resellers.',
+      sticky: '📩 Join the waitlist →'
+    };
+  </script>
+  <script src="/lang.js"></script>
+  <script>
+    function curLang() { try { return localStorage.getItem('hqLang') || 'it'; } catch (e) { return 'it'; } }
+    // Etichette bilingui dei calcolatori (i numeri restano uguali).
+    var CT = {
+      it: { dest: { it: 'Italia', eu: 'Europa (UE)', extra: 'Fuori UE' }, custom: ' · oltre a dogana', noVinted: 'Vinted non spedisce fuori UE', na: 'n/d', rev: 'Ricavo', buy: '− Acquisto', fee: '− Commissione', ship: '− Spedizione', net: 'Profitto netto' },
+      en: { dest: { it: 'Italy', eu: 'Europe (EU)', extra: 'Outside EU' }, custom: ' · plus customs', noVinted: 'Vinted doesn’t ship outside the EU', na: 'n/a', rev: 'Revenue', buy: '− Purchase', fee: '− Fee', ship: '− Shipping', net: 'Net profit' }
+    };
+    function ct() { return CT[curLang()] || CT.it; }
+
     // ---- Calcolatore spedizione ----
     var SHIP = {
       it:    { inpost:[4,6],  brt:[5,8],   poste:[8,12],  aggr:[4,7],  vinted:[3,5] },
@@ -296,19 +338,17 @@
       extra: { inpost:[22,40],brt:[24,45], poste:[28,50], aggr:[20,38],vinted:[0,0] }
     };
     var WMUL = { s:1, m:1.6, l:2.4 };
-    var DLBL = { it:'Italia', eu:'Europa (UE)', extra:'Fuori UE' };
     function calcShip(){
       var d=document.getElementById('dest').value, w=document.getElementById('weight').value, c=document.getElementById('courier').value;
       var base = (SHIP[d] && SHIP[d][c]) || [0,0];
       var m = WMUL[w]||1;
       var lo=Math.round(base[0]*m), hi=Math.round(base[1]*m);
       var out=document.getElementById('shipOut'), note=document.getElementById('shipNote');
-      if(hi===0){ out.textContent='n/d'; note.textContent='Vinted non spedisce fuori UE'; return; }
+      if(hi===0){ out.textContent=ct().na; note.textContent=ct().noVinted; return; }
       out.textContent = lo+'–'+hi+' €';
-      note.textContent = DLBL[d] + (d==='extra'?' · oltre a dogana':'');
+      note.textContent = ct().dest[d] + (d==='extra'?ct().custom:'');
     }
     ['dest','weight','courier'].forEach(function(id){ document.getElementById(id).addEventListener('change',calcShip); });
-    calcShip();
 
     // ---- Calcolatore profitto ----
     function n(id){ var v=parseFloat(document.getElementById(id).value); return isNaN(v)?0:v; }
@@ -324,14 +364,15 @@
       document.getElementById('marginOut').textContent = Math.round(margin)+'%';
       document.getElementById('roiOut').textContent = Math.round(roi)+'%';
       document.getElementById('bd').innerHTML =
-        '<div class="row"><span>Ricavo</span><b>'+Math.round(sell)+' €</b></div>'+
-        '<div class="row"><span>− Acquisto</span><b>'+Math.round(buy)+' €</b></div>'+
-        '<div class="row"><span>− Commissione ('+feePct+'%)</span><b>'+Math.round(fee)+' €</b></div>'+
-        '<div class="row"><span>− Spedizione</span><b>'+Math.round(ship)+' €</b></div>'+
-        '<div class="row tot"><span>Profitto netto</span><b>'+(profit>=0?'+':'')+Math.round(profit)+' €</b></div>';
+        '<div class="row"><span>'+ct().rev+'</span><b>'+Math.round(sell)+' €</b></div>'+
+        '<div class="row"><span>'+ct().buy+'</span><b>'+Math.round(buy)+' €</b></div>'+
+        '<div class="row"><span>'+ct().fee+' ('+feePct+'%)</span><b>'+Math.round(fee)+' €</b></div>'+
+        '<div class="row"><span>'+ct().ship+'</span><b>'+Math.round(ship)+' €</b></div>'+
+        '<div class="row tot"><span>'+ct().net+'</span><b>'+(profit>=0?'+':'')+Math.round(profit)+' €</b></div>';
     }
     ['buy','sell','fee','ship'].forEach(function(id){ document.getElementById(id).addEventListener('input',calcProfit); });
-    calcProfit();
+    calcShip(); calcProfit();
+    document.addEventListener('hqlangchange', function(){ calcShip(); calcProfit(); }); // ricalcola in lingua
   </script>
 
   <script type="application/ld+json">
@@ -340,31 +381,36 @@
     {"@type":"Question","name":"Come si calcola il profitto netto di una vendita?","acceptedAnswer":{"@type":"Answer","text":"Profitto netto = prezzo di vendita − prezzo d'acquisto − commissione della piattaforma − spedizione a tuo carico. HQVault lo calcola in automatico su ogni vendita."}}
   ]}
   </script>
-  <a href="#join" class="sticky-cta">📩 Entra in lista d'attesa →</a>
+  <a href="#join" class="sticky-cta" data-i18n="sticky">📩 Entra in lista d'attesa →</a>
 
   <script>
     // Beacon visita (senza cookie)
     try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=spedizione') : fetch('/api/hit?p=spedizione'); } catch (e) {}
-    // Waitlist inline: un handler per tutti i .js-wl-form della pagina
+    // Waitlist inline: un handler per tutti i .js-wl-form della pagina (bilingue)
     (function () {
+      var WL = {
+        it: { invalid: "Inserisci un'email valida.", sending: 'Invio…', err: 'Qualcosa è andato storto, riprova.', already: '✓ Sei già in lista: ti avviseremo al lancio.', ok: '✓ Sei in lista! Ti scriviamo al lancio.' },
+        en: { invalid: 'Enter a valid email.', sending: 'Sending…', err: 'Something went wrong, please try again.', already: "✓ You're already on the list: we'll notify you at launch.", ok: "✓ You're on the list! We'll write to you at launch." }
+      };
+      function wt(k) { return (WL[curLang()] || WL.it)[k]; }
       var RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       document.querySelectorAll('.js-wl-form').forEach(function (form) {
         var emailEl = form.querySelector('.js-wl-email');
         var btn = form.querySelector('.js-wl-btn');
         var msg = form.parentNode.querySelector('.js-wl-msg');
-        var label = btn ? btn.textContent : 'Invia';
         form.addEventListener('submit', function (e) {
           e.preventDefault();
           var email = (emailEl.value || '').trim().toLowerCase();
-          if (!RE.test(email)) { if (msg) { msg.style.color = '#ffe0d0'; msg.textContent = 'Inserisci un\'email valida.'; } return; }
-          btn.disabled = true; btn.textContent = 'Invio…'; if (msg) msg.textContent = '';
+          if (!RE.test(email)) { if (msg) { msg.style.color = '#ffe0d0'; msg.textContent = wt('invalid'); } return; }
+          var label = btn ? btn.textContent : '';
+          btn.disabled = true; btn.textContent = wt('sending'); if (msg) msg.textContent = '';
           fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: form.getAttribute('data-src') || 'spedizione' }) })
             .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
             .then(function (d) {
               form.style.display = 'none';
-              if (msg) msg.textContent = (d && d.already) ? '✓ Sei già in lista: ti avviseremo al lancio.' : '✓ Sei in lista! Ti scriviamo al lancio.';
+              if (msg) { msg.style.color = ''; msg.textContent = (d && d.already) ? wt('already') : wt('ok'); }
             })
-            .catch(function () { btn.disabled = false; btn.textContent = label; if (msg) { msg.style.color = '#ffe0d0'; msg.textContent = 'Qualcosa è andato storto, riprova.'; } });
+            .catch(function () { btn.disabled = false; btn.textContent = label; if (msg) { msg.style.color = '#ffe0d0'; msg.textContent = wt('err'); } });
         });
       });
       // Nascondi la barra sticky quando il form d'iscrizione è già in vista (non lo coprire).
