@@ -41,6 +41,8 @@
     .brand b { color: #c2c9d2; }
     .nav-links { display: flex; align-items: center; gap: 24px; font-size: 14.5px; color: #9aa2ab; font-weight: 600; }
     .nav-links a:hover { color: #fff; }
+    .langbtn { font-size: 12.5px; font-weight: 800; letter-spacing: .03em; color: #e9ecef; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); padding: 8px 13px; border-radius: 999px; cursor: pointer; transition: background .15s; }
+    .langbtn:hover { background: rgba(255,255,255,.16); }
     @media (max-width: 760px) { .nav-links a:not(.btn) { display: none; } }
 
     /* Hero scuro con aurora — stesso pattern della landing principale */
@@ -137,9 +139,10 @@
     <div class="wrap nav">
       <a href="/" class="brand" aria-label="HQVault home">HQ<b>Vault</b></a>
       <nav class="nav-links" aria-label="Navigazione principale">
-        <a href="/#funzioni">Funzioni</a>
-        <a href="/#faq">FAQ</a>
-        <a href="/waitlist?src=magazzino" class="btn btn-ghost" style="padding:9px 18px;">Accedi</a>
+        <a href="/#funzioni" data-i18n="nav1">Funzioni</a>
+        <a href="/#faq" data-i18n="nav2">FAQ</a>
+        <a href="/waitlist?src=magazzino" class="btn btn-ghost" style="padding:9px 18px;" data-i18n="nav3">Accedi</a>
+        <button id="hqLangBtn" class="langbtn" onclick="hqToggleLang()">EN</button>
       </nav>
     </div>
   </header>
@@ -149,25 +152,25 @@
       <div class="hero-fx" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
       <div class="hero-bloom" aria-hidden="true"></div>
       <div class="wrap narrow">
-        <span class="crumb"><span class="dot"></span> Gestionale magazzino reseller</span>
-        <h1>Il tuo magazzino di rivendita, in automatico</h1>
-        <p class="sub">Sneaker, streetwear, carte, lusso. Basta Excel e note sparse: <b>scansiona la foto, l'IA compila tutto</b> — nome, foto ufficiale, prezzo di mercato — e tu torni a vendere.</p>
+        <span class="crumb"><span class="dot"></span> <span data-i18n="crumb">Gestionale magazzino reseller</span></span>
+        <h1 data-i18n="h1">Il tuo magazzino di rivendita, in automatico</h1>
+        <p class="sub" data-i18n="sub">Sneaker, streetwear, carte, lusso. Basta Excel e note sparse: <b>scansiona la foto, l'IA compila tutto</b> — nome, foto ufficiale, prezzo di mercato — e tu torni a vendere.</p>
         <div class="cta-row">
-          <a href="/waitlist?src=magazzino" class="btn btn-primary">Prova gratis</a>
-          <a href="#come" class="btn btn-ghost">Come funziona</a>
+          <a href="/waitlist?src=magazzino" class="btn btn-primary" data-i18n="cta1">Prova gratis</a>
+          <a href="#come" class="btn btn-ghost" data-i18n="cta2">Come funziona</a>
         </div>
-        <p class="micro">Aggiungi un prodotto in 3 secondi · foto ufficiali incluse · funziona da telefono</p>
+        <p class="micro" data-i18n="micro">Aggiungi un prodotto in 3 secondi · foto ufficiali incluse · funziona da telefono</p>
       </div>
     </section>
 
     <!-- PROBLEMA -->
     <section>
       <div class="wrap">
-        <p class="eyebrow">Il problema</p>
-        <h2>Gestire il magazzino a mano ti ruba il tempo di vendere</h2>
-        <p class="lead">Liste che si rompono, pezzi che non ritrovi, costi da dividere a mano. Lo conosciamo bene.</p>
+        <p class="eyebrow" data-i18n="p_eye">Il problema</p>
+        <h2 data-i18n="p_h2">Gestire il magazzino a mano ti ruba il tempo di vendere</h2>
+        <p class="lead" data-i18n="p_lead">Liste che si rompono, pezzi che non ritrovi, costi da dividere a mano. Lo conosciamo bene.</p>
         <div class="prob">
-          <ul>
+          <ul data-i18n="p_list">
             <li><span class="x">✕</span><span><b>Excel infinito:</b> una riga per paio, formule che si rompono, foto da nessuna parte.</span></li>
             <li><span class="x">✕</span><span><b>Non ricordi cosa hai:</b> 200 pezzi in scatole, zero ricerca.</span></li>
             <li><span class="x">✕</span><span><b>Aggiungere ogni articolo è lentissimo:</b> scrivi marca, modello, taglia, cerchi la foto…</span></li>
@@ -181,16 +184,16 @@
     <!-- SOLUZIONE / FEATURES -->
     <section id="come" style="background:var(--soft-bg); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
       <div class="wrap">
-        <p class="eyebrow">Con HQVault</p>
-        <h2>Scansiona. L'IA compila. Tu vendi.</h2>
-        <p class="lead">Ogni funzione toglie un lavoro manuale dal tuo magazzino.</p>
+        <p class="eyebrow" data-i18n="s_eye">Con HQVault</p>
+        <h2 data-i18n="s_h2">Scansiona. L'IA compila. Tu vendi.</h2>
+        <p class="lead" data-i18n="s_lead">Ogni funzione toglie un lavoro manuale dal tuo magazzino.</p>
         <div class="feat-grid">
-          <article class="feat"><div class="ico" aria-hidden="true">📸</div><h3>Aggiungi con la foto</h3><p>Scatta il prodotto: l'IA riconosce marca e modello e compila la scheda. Anche più pezzi in una foto.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">🖼️</div><h3>Foto ufficiali incluse</h3><p>Catalogo integrato: la foto pulita del prodotto (sfondo bianco) arriva da sola, niente screenshot.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">📦</div><h3>Lotti col costo diviso</h3><p>Compri uno stock a prezzo unico? Inserisci i pezzi e HQ divide il costo in automatico, a cascata.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">⏰</div><h3>Alert sui pezzi fermi</h3><p>HQ ti avvisa sui prodotti in stock da oltre 30 giorni: capitale immobilizzato sotto controllo.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">🔍</div><h3>Magazzino cercabile</h3><p>Cerca per marca, modello o SKU. Ritrovi qualsiasi pezzo in un secondo, con foto e quantità.</p></article>
-          <article class="feat"><div class="ico" aria-hidden="true">💶</div><h3>Valore sempre aggiornato</h3><p>Vedi il valore del tuo stock e quanto incasseresti svendendo tutto subito, in tempo reale.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">📸</div><h3 data-i18n="f1h">Aggiungi con la foto</h3><p data-i18n="f1p">Scatta il prodotto: l'IA riconosce marca e modello e compila la scheda. Anche più pezzi in una foto.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">🖼️</div><h3 data-i18n="f2h">Foto ufficiali incluse</h3><p data-i18n="f2p">Catalogo integrato: la foto pulita del prodotto (sfondo bianco) arriva da sola, niente screenshot.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">📦</div><h3 data-i18n="f3h">Lotti col costo diviso</h3><p data-i18n="f3p">Compri uno stock a prezzo unico? Inserisci i pezzi e HQ divide il costo in automatico, a cascata.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">⏰</div><h3 data-i18n="f4h">Alert sui pezzi fermi</h3><p data-i18n="f4p">HQ ti avvisa sui prodotti in stock da oltre 30 giorni: capitale immobilizzato sotto controllo.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">🔍</div><h3 data-i18n="f5h">Magazzino cercabile</h3><p data-i18n="f5p">Cerca per marca, modello o SKU. Ritrovi qualsiasi pezzo in un secondo, con foto e quantità.</p></article>
+          <article class="feat"><div class="ico" aria-hidden="true">💶</div><h3 data-i18n="f6h">Valore sempre aggiornato</h3><p data-i18n="f6p">Vedi il valore del tuo stock e quanto incasseresti svendendo tutto subito, in tempo reale.</p></article>
         </div>
       </div>
     </section>
@@ -198,23 +201,23 @@
     <!-- CONFRONTO -->
     <section>
       <div class="wrap">
-        <p class="eyebrow">Il prima e il dopo</p>
-        <h2>Da 2 minuti a scheda… a 3 secondi</h2>
-        <p class="lead">Lo stesso prodotto, inserito a mano o con HQVault.</p>
+        <p class="eyebrow" data-i18n="v_eye">Il prima e il dopo</p>
+        <h2 data-i18n="v_h2">Da 2 minuti a scheda… a 3 secondi</h2>
+        <p class="lead" data-i18n="v_lead">Lo stesso prodotto, inserito a mano o con HQVault.</p>
         <div class="vs">
           <div class="old">
-            <h4>A mano / con Excel</h4>
-            <p><span class="dot">•</span> Scrivi marca, modello, taglia, condizione</p>
-            <p><span class="dot">•</span> Cerchi la foto ufficiale su Google</p>
-            <p><span class="dot">•</span> Copi-incolli tra fogli diversi</p>
-            <p><span class="dot">•</span> Nessun alert, nessuna ricerca, nessun valore</p>
+            <h4 data-i18n="v_old_h">A mano / con Excel</h4>
+            <p><span class="dot">•</span> <span data-i18n="v_old1">Scrivi marca, modello, taglia, condizione</span></p>
+            <p><span class="dot">•</span> <span data-i18n="v_old2">Cerchi la foto ufficiale su Google</span></p>
+            <p><span class="dot">•</span> <span data-i18n="v_old3">Copi-incolli tra fogli diversi</span></p>
+            <p><span class="dot">•</span> <span data-i18n="v_old4">Nessun alert, nessuna ricerca, nessun valore</span></p>
           </div>
           <div class="new">
-            <h4>Con HQVault</h4>
-            <p><span class="tick">✓</span> Scatti una foto → scheda compilata dall'IA</p>
-            <p><span class="tick">✓</span> Foto ufficiale agganciata da sola</p>
-            <p><span class="tick">✓</span> Tutto in un posto, anche da telefono</p>
-            <p><span class="tick">✓</span> Alert, ricerca e valore stock automatici</p>
+            <h4 data-i18n="v_new_h">Con HQVault</h4>
+            <p><span class="tick">✓</span> <span data-i18n="v_new1">Scatti una foto → scheda compilata dall'IA</span></p>
+            <p><span class="tick">✓</span> <span data-i18n="v_new2">Foto ufficiale agganciata da sola</span></p>
+            <p><span class="tick">✓</span> <span data-i18n="v_new3">Tutto in un posto, anche da telefono</span></p>
+            <p><span class="tick">✓</span> <span data-i18n="v_new4">Alert, ricerca e valore stock automatici</span></p>
           </div>
         </div>
       </div>
@@ -223,14 +226,14 @@
     <!-- FAQ -->
     <section id="faq" style="background:var(--soft-bg); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
       <div class="wrap">
-        <p class="eyebrow">Domande frequenti</p>
-        <h2>Tutto quello che vuoi sapere</h2>
+        <p class="eyebrow" data-i18n="q_eye">Domande frequenti</p>
+        <h2 data-i18n="q_h2">Tutto quello che vuoi sapere</h2>
         <div class="faq" style="margin-top:24px">
-          <details open><summary>Devo caricare i prodotti a mano?</summary><p>No: scatti una foto e l'IA riconosce il prodotto e compila la scheda. Puoi anche fotografare più articoli insieme.</p></details>
-          <details><summary>Da dove arrivano le foto dei prodotti?</summary><p>Da un catalogo ufficiale integrato (StockX/KicksDB per sneaker e streetwear, Cardmarket per le carte): la foto pulita si aggancia da sola.</p></details>
-          <details><summary>Posso gestire lotti e stock d'acquisto?</summary><p>Sì. Inserisci i pezzi del lotto e il prezzo totale: HQ divide il costo su ogni pezzo automaticamente.</p></details>
-          <details><summary>Funziona dal telefono?</summary><p>Sì, è un'app installabile (PWA): aggiungi prodotti, vendi e controlli il magazzino ovunque, anche al mercato.</p></details>
-          <details><summary>I miei dati sono al sicuro?</summary><p>Sì: connessione cifrata, autenticazione, 2FA opzionale. I tuoi dati sono solo tuoi.</p></details>
+          <details open><summary data-i18n="q1s">Devo caricare i prodotti a mano?</summary><p data-i18n="q1p">No: scatti una foto e l'IA riconosce il prodotto e compila la scheda. Puoi anche fotografare più articoli insieme.</p></details>
+          <details><summary data-i18n="q2s">Da dove arrivano le foto dei prodotti?</summary><p data-i18n="q2p">Da un catalogo ufficiale integrato (StockX/KicksDB per sneaker e streetwear, Cardmarket per le carte): la foto pulita si aggancia da sola.</p></details>
+          <details><summary data-i18n="q3s">Posso gestire lotti e stock d'acquisto?</summary><p data-i18n="q3p">Sì. Inserisci i pezzi del lotto e il prezzo totale: HQ divide il costo su ogni pezzo automaticamente.</p></details>
+          <details><summary data-i18n="q4s">Funziona dal telefono?</summary><p data-i18n="q4p">Sì, è un'app installabile (PWA): aggiungi prodotti, vendi e controlli il magazzino ovunque, anche al mercato.</p></details>
+          <details><summary data-i18n="q5s">I miei dati sono al sicuro?</summary><p data-i18n="q5p">Sì: connessione cifrata, autenticazione, 2FA opzionale. I tuoi dati sono solo tuoi.</p></details>
         </div>
       </div>
     </section>
@@ -239,14 +242,14 @@
     <section>
       <div class="wrap narrow">
         <div class="final" id="join">
-          <h2>Smetti di gestire. Inizia a vendere.</h2>
-          <p>HQVault sta arrivando. Lascia l'email e ti avvisiamo appena l'app è pronta.</p>
+          <h2 data-i18n="fin_h2">Smetti di gestire. Inizia a vendere.</h2>
+          <p data-i18n="fin_p">HQVault sta arrivando. Lascia l'email e ti avvisiamo appena l'app è pronta.</p>
           <form class="js-wl-form wl-form" data-src="magazzino" novalidate>
-            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" required />
-            <button class="js-wl-btn btn btn-white" type="submit">Avvisami</button>
+            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" data-i18n-ph="ph" required />
+            <button class="js-wl-btn btn btn-white" type="submit" data-i18n="wl_btn">Avvisami</button>
           </form>
           <p class="js-wl-msg wl-msg" role="status"></p>
-          <p class="wl-consent">Un solo avviso al lancio · niente spam. <a href="/privacy">Privacy</a></p>
+          <p class="wl-consent" data-i18n="fin_consent">Un solo avviso al lancio · niente spam. <a href="/privacy">Privacy</a></p>
         </div>
       </div>
     </section>
@@ -256,13 +259,13 @@
     <div class="wrap foot">
       <div>
         <div class="brand" style="margin-bottom:8px; font-size:17px; color:var(--ink);">HQ<b style="color:var(--muted)">Vault</b></div>
-        <span>© 2026 HQVault — Software gestionale per reseller.</span>
+        <span data-i18n="foot_copy">© 2026 HQVault — Software gestionale per reseller.</span>
       </div>
       <nav aria-label="Link del sito">
-        <a href="/#funzioni">Funzioni</a>
-        <a href="/#faq">FAQ</a>
-        <a href="/waitlist?src=magazzino">Accedi</a>
-        <a href="/waitlist?src=magazzino">Registrati</a>
+        <a href="/#funzioni" data-i18n="nav1">Funzioni</a>
+        <a href="/#faq" data-i18n="nav2">FAQ</a>
+        <a href="/waitlist?src=magazzino" data-i18n="nav3">Accedi</a>
+        <a href="/waitlist?src=magazzino" data-i18n="foot_reg">Registrati</a>
       </nav>
     </div>
   </footer>
@@ -278,32 +281,85 @@
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"SoftwareApplication","name":"HQVault","applicationCategory":"BusinessApplication","operatingSystem":"Web, iOS, Android","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}}
   </script>
-  <a href="#join" class="sticky-cta">📩 Entra in lista d'attesa →</a>
+  <a href="#join" class="sticky-cta" data-i18n="sticky">📩 Entra in lista d'attesa →</a>
+
+  <script>
+    window.HQ_EN = {
+      nav1: 'Features', nav2: 'FAQ', nav3: 'Sign in',
+      crumb: 'Inventory manager for resellers',
+      h1: 'Your reselling inventory, on autopilot',
+      sub: "Sneakers, streetwear, cards, luxury. No more Excel and scattered notes: <b>scan the photo, the AI fills everything in</b> — name, official photo, market price — and you get back to selling.",
+      cta1: 'Try it free', cta2: 'How it works',
+      micro: 'Add a product in 3 seconds · official photos included · works from your phone',
+      p_eye: 'The problem',
+      p_h2: 'Managing inventory by hand steals the time you should spend selling',
+      p_lead: 'Lists that break, items you can’t find, costs to split by hand. We know it well.',
+      p_list: '<li><span class="x">✕</span><span><b>Endless Excel:</b> one row per pair, formulas that break, photos nowhere.</span></li><li><span class="x">✕</span><span><b>You forget what you own:</b> 200 items in boxes, zero search.</span></li><li><span class="x">✕</span><span><b>Adding each item is painfully slow:</b> type brand, model, size, hunt for the photo…</span></li><li><span class="x">✕</span><span><b>Dead stock you don’t notice:</b> money locked in items unsold for months.</span></li><li><span class="x">✕</span><span><b>Lots and bulk buys:</b> splitting the cost across 30 items by hand is a nightmare.</span></li>',
+      s_eye: 'With HQVault',
+      s_h2: 'Scan. The AI fills it in. You sell.',
+      s_lead: 'Every feature removes one manual job from your inventory.',
+      f1h: 'Add with a photo', f1p: 'Snap the product: the AI recognizes brand and model and fills the card. Even several items in one photo.',
+      f2h: 'Official photos included', f2p: 'Built-in catalog: the clean product photo (white background) comes automatically — no screenshots.',
+      f3h: 'Lots with split cost', f3p: 'Buy a bulk lot at a single price? Enter the items and HQ splits the cost automatically, across all of them.',
+      f4h: 'Dead-stock alerts', f4p: 'HQ warns you about products in stock for over 30 days: locked-up capital under control.',
+      f5h: 'Searchable inventory', f5p: 'Search by brand, model or SKU. Find any item in a second, with photo and quantity.',
+      f6h: 'Always-updated value', f6p: 'See the value of your stock and how much you’d cash in by selling everything now, in real time.',
+      v_eye: 'Before and after',
+      v_h2: 'From 2 minutes per card… to 3 seconds',
+      v_lead: 'The same product, entered by hand or with HQVault.',
+      v_old_h: 'By hand / with Excel',
+      v_old1: 'Type brand, model, size, condition', v_old2: 'Hunt for the official photo on Google',
+      v_old3: 'Copy-paste between different sheets', v_old4: 'No alerts, no search, no value',
+      v_new_h: 'With HQVault',
+      v_new1: 'Snap a photo → card filled in by the AI', v_new2: 'Official photo attached automatically',
+      v_new3: 'Everything in one place, even from your phone', v_new4: 'Alerts, search and stock value automatic',
+      q_eye: 'Frequently asked questions',
+      q_h2: 'Everything you want to know',
+      q1s: 'Do I have to enter products by hand?', q1p: 'No: you snap a photo and the AI recognizes the product and fills the card. You can also photograph several items together.',
+      q2s: 'Where do the product photos come from?', q2p: 'From a built-in official catalog (StockX/KicksDB for sneakers and streetwear, Cardmarket for cards): the clean photo attaches by itself.',
+      q3s: 'Can I manage lots and bulk buys?', q3p: 'Yes. Enter the lot items and the total price: HQ splits the cost across each item automatically.',
+      q4s: 'Does it work from a phone?', q4p: 'Yes, it’s an installable app (PWA): add products, sell and check your inventory anywhere, even at the market.',
+      q5s: 'Is my data safe?', q5p: 'Yes: encrypted connection, authentication, optional 2FA. Your data is yours alone.',
+      fin_h2: 'Stop managing. Start selling.',
+      fin_p: 'HQVault is coming. Leave your email and we’ll notify you as soon as the app is ready.',
+      ph: 'Your email', wl_btn: 'Notify me',
+      fin_consent: 'One notification at launch · no spam. <a href="/privacy">Privacy</a>',
+      foot_copy: '© 2026 HQVault — Management software for resellers.',
+      foot_reg: 'Sign up',
+      sticky: '📩 Join the waitlist →'
+    };
+  </script>
+  <script src="/lang.js"></script>
 
   <script>
     try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=magazzino') : fetch('/api/hit?p=magazzino'); } catch (e) {}
+    function curLang() { try { return localStorage.getItem('hqLang') || 'it'; } catch (e) { return 'it'; } }
+    var WLSTR = {
+      it: { invalid: "Inserisci un'email valida.", sending: 'Invio…', err: 'Qualcosa è andato storto, riprova.', already: '✓ Sei già in lista: ti avviseremo al lancio.', ok: '✓ Sei in lista! Ti scriviamo al lancio.' },
+      en: { invalid: 'Enter a valid email.', sending: 'Sending…', err: 'Something went wrong, please try again.', already: "✓ You're already on the list: we'll notify you at launch.", ok: "✓ You're on the list! We'll write to you at launch." }
+    };
+    function wt(k) { return (WLSTR[curLang()] || WLSTR.it)[k]; }
     (function () {
       var RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       document.querySelectorAll('.js-wl-form').forEach(function (form) {
         var emailEl = form.querySelector('.js-wl-email');
         var btn = form.querySelector('.js-wl-btn');
         var msg = form.parentNode.querySelector('.js-wl-msg');
-        var label = btn ? btn.textContent : 'Invia';
         form.addEventListener('submit', function (e) {
           e.preventDefault();
           var email = (emailEl.value || '').trim().toLowerCase();
-          if (!RE.test(email)) { if (msg) { msg.style.color = '#ffe0d0'; msg.textContent = 'Inserisci un\'email valida.'; } return; }
-          btn.disabled = true; btn.textContent = 'Invio…'; if (msg) msg.textContent = '';
+          if (!RE.test(email)) { if (msg) { msg.style.color = '#ffe0d0'; msg.textContent = wt('invalid'); } return; }
+          var label = btn ? btn.textContent : '';
+          btn.disabled = true; btn.textContent = wt('sending'); if (msg) msg.textContent = '';
           fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: form.getAttribute('data-src') || 'magazzino' }) })
             .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
             .then(function (d) {
               form.style.display = 'none';
-              if (msg) msg.textContent = (d && d.already) ? '✓ Sei già in lista: ti avviseremo al lancio.' : '✓ Sei in lista! Ti scriviamo al lancio.';
+              if (msg) { msg.style.color = ''; msg.textContent = (d && d.already) ? wt('already') : wt('ok'); }
             })
-            .catch(function () { btn.disabled = false; btn.textContent = label; if (msg) { msg.style.color = '#ffe0d0'; msg.textContent = 'Qualcosa è andato storto, riprova.'; } });
+            .catch(function () { btn.disabled = false; btn.textContent = label; if (msg) { msg.style.color = '#ffe0d0'; msg.textContent = wt('err'); } });
         });
       });
-      // Nascondi la barra sticky quando il form d'iscrizione è già in vista.
       var sticky = document.querySelector('.sticky-cta'), join = document.getElementById('join');
       if (sticky && join && 'IntersectionObserver' in window) {
         new IntersectionObserver(function (es) { es.forEach(function (en) { sticky.style.opacity = en.isIntersecting ? '0' : '1'; sticky.style.pointerEvents = en.isIntersecting ? 'none' : 'auto'; }); }, { threshold: .2 }).observe(join);
