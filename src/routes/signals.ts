@@ -17,6 +17,7 @@ import { getBrickLinkRaw, isBrickLinkConfigured } from '../services/bricklink.se
 import { getBrickEconomyRaw, isBrickEconomyConfigured } from '../services/brickeconomy.service';
 import { isAdminEmail } from '../config/admins';
 import { imageMatchesTitle } from '../utils/imageConsistency';
+import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
 
 // L'ADMIN (loggato nel browser) NON è soggetto al limite di ricerche: così puoi provare liberamente.
 function isAdminRequest(req: Request): boolean {
@@ -97,6 +98,40 @@ async function findCachedImage(name: string): Promise<string | null> {
       prisma.catalogItem.update({ where: { id: best.id }, data: { image: null } }).catch(() => {});
       return null;
     }
+    return best.image;
+  } catch { return null; }
+}
+
+// Ultima spiaggia: ricerca KicksDB DAL VIVO (solo se cache e StockX non hanno dato nulla di
+// coerente). Tetto giornaliero DEDICATO e prudente (oltre a quello già globale in kicksdb.service):
+// il checker è pubblico/senza login, un picco di traffico non deve poter bruciare la quota
+// mensile (1000 richieste) che serve soprattutto all'uso reale dentro l'app.
+const KICKS_PUBLIC_DAILY_CAP = Number(process.env.KICKSDB_PUBLIC_DAILY_CAP || 60);
+let kicksPublicCalls = 0;
+let kicksPublicDay = new Date().toDateString();
+function kicksPublicUnderCap(): boolean {
+  const today = new Date().toDateString();
+  if (today !== kicksPublicDay) { kicksPublicDay = today; kicksPublicCalls = 0; }
+  if (kicksPublicCalls >= KICKS_PUBLIC_DAILY_CAP) return false;
+  kicksPublicCalls++;
+  return true;
+}
+async function findLiveKicksImage(name: string): Promise<string | null> {
+  if (!isKicksConfigured() || !kicksPublicUnderCap()) return null;
+  const words = (name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+  if (!words.length) return null;
+  try {
+    const cands = await kicksSearch(name, { limit: 5 });
+    let best: typeof cands[number] | null = null; let bestScore = -1;
+    for (const c of cands) {
+      const hay = (c.title || '').toLowerCase();
+      const score = words.reduce((s, w) => s + (hay.includes(w) ? 1 : 0), 0);
+      if (score > bestScore) { bestScore = score; best = c; }
+    }
+    if (!best || !best.image) return null;
+    const minScore = Math.max(2, Math.ceil(words.length * 0.6));
+    if (bestScore < minScore) return null;
+    if (!imageMatchesTitle(best.image, best.title)) return null;
     return best.image;
   } catch { return null; }
 }
@@ -298,11 +333,11 @@ router.post('/price-check', async (req: Request, res: Response) => {
         if (pcByIp.size > 8000) { for (const [k, vv] of pcByIp) if (vv.date !== today) pcByIp.delete(k); } // pulizia
       }
       const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - (used + 1));
-      // Foto: PRIMA la cache locale (immagini KicksDB già scaricate durante l'uso dell'app — zero
-      // chiamate esterne, zero costo quota, già filtrata per match affidabile). Solo se la cache
-      // non ha nulla, ripiego sulla foto della fonte (es. StockX), che può avere colorway sbagliate
-      // rispetto al titolo (dato StockX stesso inconsistente in alcuni prodotti).
-      const image = (await findCachedImage(val.itemName || query)) || val.image;
+      // Foto, in ordine: 1) cache locale (gratis, già filtrata) 2) foto della fonte prezzo (es.
+      // StockX, che può avere colorway sbagliate) 3) ULTIMA SPIAGGIA: KicksDB dal vivo, con tetto
+      // giornaliero dedicato (vedi findLiveKicksImage) — solo se le prime due non hanno dato nulla.
+      const itemName = val.itemName || query;
+      const image = (await findCachedImage(itemName)) || val.image || (await findLiveKicksImage(itemName));
       return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, image, detected, remaining, freeLimit: FREE_CHECKS });
     }
     // Nessun valore affidabile: "troppo generico, riprova" — non consuma la prova giornaliera.
