@@ -5497,10 +5497,6 @@ export default function App() {
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-1 px-4 py-3 bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl text-sm">
                   <span className="text-[var(--text-soft)]"><span className="font-extrabold text-[var(--text)] num">{pezzi}</span> {t('mag.pieces')} · <span className="font-extrabold text-[var(--text)] num">{groupedInStockArray.length}</span> {t('mag.models')}</span>
                   <span className="sm:ml-auto flex items-baseline gap-1.5"><span className="sys-label">{t('mag.stockValue')}</span> <span className="font-extrabold text-[var(--teal)] num text-base">{costo.toFixed(0)}€</span></span>
-                  <button onClick={() => enrichMissingPhotos()} disabled={enrichingPhotos}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--teal-soft)] text-[var(--teal)] hover:opacity-80 text-xs font-bold transition-opacity disabled:opacity-50">
-                    {enrichingPhotos ? <Loader2 size={13} className="animate-spin" /> : <ImageIcon size={13} />} Trova foto
-                  </button>
                   <button onClick={() => setSmartLotOpen(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#6b54c6]/15 text-[#6b54c6] hover:bg-[#6b54c6]/25 text-xs font-bold transition-colors">
                     <Sparkles size={13} /> Lotto smart

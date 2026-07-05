@@ -129,6 +129,8 @@ router.get('/', async (req: AuthRequest, res: Response) => {
       return s;
     });
     res.json(sanitized);
+    // Aggancio foto automatico in background (rate-limitato): nessun impatto sulla risposta.
+    maybeAutoSweepPhotos(req.user!.userId);
   } catch (err: any) {
     logger.error('Errore GET /products', { err: err.message });
     res.status(500).json({ error: 'Errore database' });
