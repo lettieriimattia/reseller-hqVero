@@ -11,7 +11,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { getValuation } from '../services/valuation.service';
-import { estimatePriceRange, scanProductAuto } from '../services/ai.service';
+import { scanProductAuto } from '../services/ai.service';
 import { getLegoRaw, isLegoConfigured } from '../services/apify.service';
 import { getBrickLinkRaw, isBrickLinkConfigured } from '../services/bricklink.service';
 import { getBrickEconomyRaw, isBrickEconomyConfigured } from '../services/brickeconomy.service';
@@ -190,12 +190,8 @@ router.post('/photo-check', async (req: Request, res: Response) => {
   if (!/^data:image\//.test(image) || image.length < 100) return res.status(400).json({ error: 'Foto non valida.' });
   if (image.length > 9_000_000) return res.status(413).json({ error: 'Foto troppo grande.' });
 
-  if (!admin) {
-    photoByIp.set(ip, { date: today, count: used + 1 });
-    if (photoByIp.size > 8000) { for (const [k, vv] of photoByIp) if (vv.date !== today) photoByIp.delete(k); }
-  }
-  const remaining = admin ? null : Math.max(0, PHOTO_FREE - (used + 1));
-
+  // La ricerca si CONSUMA solo se troviamo un valore vero (sotto). Un "troppo generico" non conta:
+  // l'utente può riprovare subito senza perdere una delle sue prove giornaliere.
   try {
     const scan = await scanProductAuto(image, []);
     const brand = (scan.brand || '').trim();
@@ -203,20 +199,25 @@ router.post('/photo-check', async (req: Request, res: Response) => {
     const name = [brand, model].filter(Boolean).join(' ').trim();
     const category = (scan.category || scan.detectedCategory || 'altro').toString();
     const shownCat = scan.detectedCategory || category;
-    if (!name) return res.json({ value: null, recognized: false, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
+    if (!name) return res.json({ value: null, recognized: false, detected: shownCat, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
     const isCards = /cart|pok|tcg/i.test(category + ' ' + shownCat);
-    const val = await getValuation({ category, name, brand: '', game: isCards ? 'pokemon' : undefined, relaxed: true });
+    const val = await getValuation({ category, name, brand: '', game: isCards ? 'pokemon' : undefined });
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: ('📷 ' + name).slice(0, 80), found: val.value != null } }).catch(() => {});
     if (val.value != null) {
+      if (!admin) {
+        photoByIp.set(ip, { date: today, count: used + 1 });
+        if (photoByIp.size > 8000) { for (const [k, vv] of photoByIp) if (vv.date !== today) photoByIp.delete(k); }
+      }
+      const remaining = admin ? null : Math.max(0, PHOTO_FREE - (used + 1));
       // Niente foto di catalogo qui: chi cerca via FOTO ha già la sua immagine, non serve
       // mostrarne un'altra presa dal catalogo (quella resta solo per la ricerca da testo).
       return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || name, source: val.source, image: null, recognized: true, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
     }
-    const range = await estimatePriceRange(name).catch(() => null);
-    return res.json({ value: null, range, name, source: 'Stima indicativa (IA)', recognized: true, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
+    // Nessun valore affidabile: "troppo generico, riprova" — non consuma la prova giornaliera.
+    return res.json({ value: null, tooGeneric: true, name, recognized: true, detected: shownCat, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
   } catch (e: any) {
     logger.warn('photo-check errore', { err: e?.message });
-    return res.json({ value: null, error: true, remaining, freeLimit: PHOTO_FREE });
+    return res.json({ value: null, error: true, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
   }
 });
 
@@ -240,30 +241,29 @@ router.post('/price-check', async (req: Request, res: Response) => {
   if (category === 'altro') { const d = detectCategory(query); if (d) { category = d.cat; detected = d.label; } }
   const isCards = /cart|pok|tcg/.test(category);
 
-  // consuma una ricerca (l'admin e la modalità illimitata no)
-  if (!admin && !UNLIMITED_CHECKS) {
-    pcByIp.set(ip, { date: today, count: used + 1 });
-    if (pcByIp.size > 8000) { for (const [k, vv] of pcByIp) if (vv.date !== today) pcByIp.delete(k); } // pulizia
-  }
-  // remaining null = non mostrare il contatore (admin o modalità illimitata di test)
-  const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - (used + 1));
-
+  // La ricerca si CONSUMA solo se troviamo un valore vero (sotto). Un "troppo generico" non conta:
+  // l'utente può riprovare subito con un nome più preciso senza perdere una prova.
   try {
-    const val = await getValuation({ category, name: query, brand: '', size: size || undefined, condition: condition || undefined, number: number || undefined, game: isCards ? 'pokemon' : undefined, relaxed: true });
+    const val = await getValuation({ category, name: query, brand: '', size: size || undefined, condition: condition || undefined, number: number || undefined, game: isCards ? 'pokemon' : undefined });
     // Traccia l'uso (anonimo) per le statistiche admin: riutilizzi per visitatore.
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: query.slice(0, 80), found: val.value != null } }).catch(() => {});
     if (val.value != null) {
+      if (!admin && !UNLIMITED_CHECKS) {
+        pcByIp.set(ip, { date: today, count: used + 1 });
+        if (pcByIp.size > 8000) { for (const [k, vv] of pcByIp) if (vv.date !== today) pcByIp.delete(k); } // pulizia
+      }
+      const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - (used + 1));
       // Se la fonte (es. StockX) non ha dato una foto, provo la cache locale (immagini KicksDB
       // già scaricate durante l'uso dell'app) — zero chiamate esterne, zero costo di quota.
       const image = val.image || await findCachedImage(val.itemName || query);
       return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, image, detected, remaining, freeLimit: FREE_CHECKS });
     }
-    // Nessuna fonte ha un prezzo → stima IA indicativa in un RANGE (chiaramente etichettata).
-    const range = await estimatePriceRange(query).catch(() => null);
-    return res.json({ value: null, range, name: query, source: 'Stima indicativa (IA)', detected, remaining, freeLimit: FREE_CHECKS });
+    // Nessun valore affidabile: "troppo generico, riprova" — non consuma la prova giornaliera.
+    const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - used);
+    return res.json({ value: null, tooGeneric: true, name: query, detected, remaining, freeLimit: FREE_CHECKS });
   } catch (e: any) {
     logger.warn('price-check errore', { err: e?.message });
-    return res.json({ value: null, remaining, freeLimit: FREE_CHECKS });
+    return res.json({ value: null, remaining: (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - used), freeLimit: FREE_CHECKS });
   }
 });
 

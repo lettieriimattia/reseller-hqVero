@@ -520,8 +520,8 @@
       // Testi bilingui del risultato (IT/EN). Il VALORE della condizione resta in italiano
       // (lo capisce il backend); si traduce solo l'etichetta mostrata.
       var T = {
-        it: { writeBrand: 'Scrivi marca e modello.', searching: 'Cerco…', detected: 'categoria rilevata:', fromNew: 'da nuovo ≈', marketVal: 'valore di mercato ·', aiEst: '⚠️ stima indicativa (IA) · non un prezzo di mercato reale', hintModel: '💡 Scrivi il <b>modello esatto</b> (es. Corteiz Alcatraz Hoodie) per il prezzo reale StockX', notFoundA: 'Non ho trovato un valore per “', notFoundB: '”. Prova col nome esatto del modello.', remaining: 'Ricerche gratis rimaste oggi: ', lastUsed: 'Ultima ricerca gratis di oggi usata', error: 'Errore, riprova tra poco.', size: 'Taglia ', analyzing: 'Analizzo la foto…', notRecognized: 'Non ho riconosciuto il prodotto. Riprova con una foto più chiara e ravvicinata.' },
-        en: { writeBrand: 'Enter brand and model.', searching: 'Searching…', detected: 'detected category:', fromNew: 'when new ≈', marketVal: 'market value ·', aiEst: '⚠️ rough estimate (AI) · not a real market price', hintModel: '💡 Enter the <b>exact model</b> (e.g. Corteiz Alcatraz Hoodie) for the real StockX price', notFoundA: 'No value found for “', notFoundB: '”. Try the exact model name.', remaining: 'Free searches left today: ', lastUsed: 'Today’s last free search used', error: 'Error, please try again shortly.', size: 'Size ', analyzing: 'Analyzing the photo…', notRecognized: 'I couldn’t recognize the product. Try a clearer, closer photo.' }
+        it: { writeBrand: 'Scrivi marca e modello.', searching: 'Cerco…', detected: 'categoria rilevata:', fromNew: 'da nuovo ≈', marketVal: 'valore di mercato ·', tooGenericMsg: 'Modello troppo generico, non trovo un prezzo preciso. Scrivi il nome esatto (es. "Corteiz Alcatraz Hoodie", non solo "Corteiz Hoodie") e riprova.', remaining: 'Ricerche gratis rimaste oggi: ', lastUsed: 'Ultima ricerca gratis di oggi usata', error: 'Errore, riprova tra poco.', size: 'Taglia ', analyzing: 'Analizzo la foto…', notRecognized: 'Non ho riconosciuto il prodotto. Riprova con una foto più chiara e ravvicinata.' },
+        en: { writeBrand: 'Enter brand and model.', searching: 'Searching…', detected: 'detected category:', fromNew: 'when new ≈', marketVal: 'market value ·', tooGenericMsg: 'Model too generic, can’t find a precise price. Write the exact name (e.g. "Corteiz Alcatraz Hoodie", not just "Corteiz Hoodie") and try again.', remaining: 'Free searches left today: ', lastUsed: 'Today’s last free search used', error: 'Error, please try again shortly.', size: 'Size ', analyzing: 'Analyzing the photo…', notRecognized: 'I couldn’t recognize the product. Try a clearer, closer photo.' }
       };
       function tv(k) { return (T[curLang()] || T.it)[k]; }
       // Config per categoria: nome/dettaglio localizzati; nelle condizioni [valore-backend, {it,en}].
@@ -608,15 +608,10 @@
               var info = '<div class="pc-info"><div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
               out.innerHTML = '<div class="' + (img ? 'pc-card pc-card-h' : 'pc-card') + '">' + img + info + '</div>';
               showJoinBox(); // appena esce il valore → invito a iscriversi (inline, non più popup)
-            } else if (d.range && d.range.low) {
-              // Categorie coperte da StockX (sneaker/streetwear): se esce solo la stima IA, quasi
-              // sempre è perché la query è generica → suggerisci il modello esatto.
-              var stockxCat = (cat.value === 'scarpe' || cat.value === 'streetwear');
-              var hint = stockxCat ? '<div class="pc-src" style="margin-top:6px">' + tv('hintModel') + '</div>' : '';
-              out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name || query) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + detHtml + '<div class="pc-src">' + tv('aiEst') + '</div>' + hint + '</div>';
-              showJoinBox();
             } else {
-              out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notFoundA') + esc(query) + tv('notFoundB') + '</span>' + detHtml + '</div>';
+              // Troppo generico (o nessuna fonte affidabile): non consuma una ricerca, l'utente
+              // può riprovare subito con un nome più preciso. Niente stima IA vaga: solo dati veri.
+              out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('tooGenericMsg') + '</span>' + detHtml + '</div>';
             }
             if (typeof d.remaining === 'number' && micro) { micro.textContent = d.remaining > 0 ? (tv('remaining') + d.remaining) : tv('lastUsed'); }
           })
@@ -626,7 +621,7 @@
       // ---- VALUTA DA UNA FOTO (vision IA, 1 scan/giorno per IP) ----
       function renderPhoto(d, userImg) {
         if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; if (pcSub) pcSub.style.display = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
-        if (!d.recognized && d.value == null && !(d.range && d.range.low)) {
+        if (!d.recognized && d.value == null) {
           out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notRecognized') + '</span></div>'; return;
         }
         var detHtml = d.detected ? '<div class="pc-src">' + tv('detected') + ' <b style="color:#c9d0d8">' + esc(d.detected) + '</b></div>' : '';
@@ -638,15 +633,10 @@
           var info = '<div class="pc-info"><div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
           out.innerHTML = '<div class="' + (img ? 'pc-card pc-card-h' : 'pc-card') + '">' + img + info + '</div>';
           showJoinBox();
-        } else if (d.range && d.range.low) {
-          // Come nel checker testuale: se la categoria è del tipo coperto da StockX (sneaker/streetwear)
-          // e otteniamo solo la stima IA, quasi sempre serve il MODELLO ESATTO (non il tipo generico).
-          var stockxLike = /sneak|scarp|shoe|street|abbigli|vestit|felp|maglia|hoodie|shirt|jacket|jeans/i.test(d.detected || d.name || '');
-          var hintP = stockxLike ? '<div class="pc-src" style="margin-top:6px">' + tv('hintModel') + '</div>' : '';
-          out.innerHTML = '<div class="pc-card"><div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.range.low) + '–' + Math.round(d.range.high) + '€</div>' + detHtml + '<div class="pc-src">' + tv('aiEst') + '</div>' + hintP + '</div>';
-          showJoinBox();
         } else {
-          out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notFoundA') + esc(d.name || '') + tv('notFoundB') + '</span>' + detHtml + '</div>';
+          // Troppo generico (o nessuna fonte affidabile): non consuma la prova giornaliera,
+          // l'utente può riprovare subito (con una foto più chiara o un altro angolo).
+          out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('tooGenericMsg') + '</span>' + detHtml + '</div>';
         }
         if (typeof d.remaining === 'number' && micro) micro.textContent = d.remaining > 0 ? (tv('remaining') + d.remaining) : tv('lastUsed');
       }
