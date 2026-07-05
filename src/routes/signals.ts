@@ -11,7 +11,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { getValuation } from '../services/valuation.service';
-import { scanProductAuto } from '../services/ai.service';
+import { scanProductAuto, confirmVisualMatch } from '../services/ai.service';
 import { getLegoRaw, isLegoConfigured } from '../services/apify.service';
 import { getBrickLinkRaw, isBrickLinkConfigured } from '../services/bricklink.service';
 import { getBrickEconomyRaw, isBrickEconomyConfigured } from '../services/brickeconomy.service';
@@ -203,12 +203,14 @@ router.post('/photo-check', async (req: Request, res: Response) => {
     const isCards = /cart|pok|tcg/i.test(category + ' ' + shownCat);
     const val = await getValuation({ category, name, brand: '', game: isCards ? 'pokemon' : undefined });
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: ('📷 ' + name).slice(0, 80), found: val.value != null } }).catch(() => {});
-    // Rete di sicurezza anti-allucinazione: sneaker/streetwear + prezzo alto + scan NON ad alta
-    // confidenza (l'IA non era sicura del modello) → troppo rischioso mostrarlo come certo (es. una
-    // Dunk qualsiasi scambiata per una rara "De La Soul" da 674€). Meglio chiedere di riprovare.
+    // Rete di sicurezza anti-allucinazione: "confidence HIGH" è un'AUTO-valutazione dell'IA e può
+    // essere sicura ma SBAGLIATA (confonde due grail SB Dunk diversi tra loro, es. "De La Soul" per
+    // "Freddy Krueger" — entrambi reali, prezzi molto diversi). Per sneaker/streetwear con un
+    // valore trovato, verifica INDIPENDENTE: una seconda domanda mirata "è ESATTAMENTE questo?"
+    // invece di fidarsi del solo riconoscimento iniziale.
     const isSneakerLike = /scarp|sneaker|shoe|street|abbigli|vestit/i.test(category + ' ' + shownCat);
-    const uncertainHighValue = isSneakerLike && val.value != null && val.value > 300 && scan.confidence !== 'HIGH';
-    if (val.value != null && !uncertainHighValue) {
+    const visualOk = val.value == null || !isSneakerLike || await confirmVisualMatch(image, val.itemName || name).catch(() => false);
+    if (val.value != null && visualOk) {
       if (!admin) {
         photoByIp.set(ip, { date: today, count: used + 1 });
         if (photoByIp.size > 8000) { for (const [k, vv] of photoByIp) if (vv.date !== today) photoByIp.delete(k); }

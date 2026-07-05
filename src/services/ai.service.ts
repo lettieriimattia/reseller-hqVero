@@ -248,6 +248,24 @@ export async function estimatePriceRange(query: string): Promise<{ low: number; 
   } catch { return null; }
 }
 
+// Verifica visiva INDIPENDENTE (seconda chiamata, domanda CHIUSA sì/no) — usata come rete di
+// sicurezza dopo il riconoscimento sneaker: "confidence HIGH" è un'auto-valutazione dell'IA e può
+// essere sicura ma SBAGLIATA (es. confonde due grail SB Dunk diversi, "De La Soul" per "Freddy
+// Krueger"). Una domanda ristretta ("è ESATTAMENTE questo?") è molto più affidabile di una aperta
+// ("cos'è?"), perché costringe l'IA a confrontare invece di generare da zero.
+export async function confirmVisualMatch(imageBase64: string, claimedModel: string): Promise<boolean> {
+  const model = (claimedModel || '').trim();
+  if (model.length < 2) return false;
+  const prompt = `Guarda ATTENTAMENTE questa foto. Mostra ESATTAMENTE questo prodotto: "${model.slice(0, 150)}"? Confronta colori, pattern, grafica e dettagli specifici — non basta una somiglianza generica di silhouette.
+Rispondi SOLO con JSON: {"match": true|false}. Se hai anche un minimo dubbio, rispondi false.`;
+  try {
+    const raw = await visionComplete({ prompt, imageBase64, temperature: 0, maxTokens: 60, groqModel: 'meta-llama/llama-4-scout-17b-16e-instruct' });
+    const m = raw.match(/\{[\s\S]*\}/);
+    const j = m ? JSON.parse(m[0]) : null;
+    return j?.match === true;
+  } catch { return false; } // in dubbio/errore → NON confermare, prudenza
+}
+
 export interface ScanResult {
   category: string;
   brand?: string;
