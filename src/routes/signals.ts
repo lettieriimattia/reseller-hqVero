@@ -12,9 +12,6 @@ import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { getValuation } from '../services/valuation.service';
 import { scanProductAuto, confirmVisualMatch } from '../services/ai.service';
-import { getLegoRaw, isLegoConfigured } from '../services/apify.service';
-import { getBrickLinkRaw, isBrickLinkConfigured } from '../services/bricklink.service';
-import { getBrickEconomyRaw, isBrickEconomyConfigured } from '../services/brickeconomy.service';
 import { isAdminEmail } from '../config/admins';
 import { imageMatchesTitle } from '../utils/imageConsistency';
 import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
@@ -243,28 +240,6 @@ function mapScanCategory(cat: string): string {
   if (c.includes('bors') || c.includes('bag')) return 'borse';
   return 'altro';
 }
-
-// DEBUG LEGO (pubblico ma protetto da chiave): funziona anche in incognito/non loggato.
-// Mostra se APIFY è configurato + la risposta GREZZA dell'actor (status, campi, primo item),
-// così capiamo perché un set non viene valutato. Apri:
-//   /api/lego-debug?key=hqlego2026&set=10300
-router.get('/lego-debug', async (req: Request, res: Response) => {
-  if (String(req.query.key || '') !== 'hqlego2026') return res.status(403).json({ error: 'chiave mancante' });
-  const set = String(req.query.set || '10300').trim();
-  const [brickeconomy, bricklink, apify] = await Promise.all([
-    getBrickEconomyRaw(set).catch((e: any) => ({ error: e?.message })),
-    getBrickLinkRaw(set).catch((e: any) => ({ error: e?.message })),
-    getLegoRaw(set).catch((e: any) => ({ error: e?.message })),
-  ]);
-  return res.json({
-    brickeconomyConfigured: isBrickEconomyConfigured(),
-    bricklinkConfigured: isBrickLinkConfigured(),
-    apifyConfigured: isLegoConfigured(),
-    brickeconomy, // 1ª scelta: valore di mercato, niente vincolo venditore
-    bricklink,    // 2ª scelta: API ufficiale (serve venditore)
-    apify,        // 3ª scelta: actor (spesso bloccato da CAPTCHA)
-  });
-});
 
 // POST /api/photo-check — { image: dataURL } → riconosce il prodotto dalla FOTO (vision IA) e
 // lo valuta. Limite STRETTO (default 1/giorno per IP) perché la vision costa. Admin illimitato.

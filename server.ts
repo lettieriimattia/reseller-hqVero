@@ -214,18 +214,26 @@ if (isProduction) {
     if (req.cookies?.refresh_token) return true;
     return false;
   }
-  // L'app SPA vive sotto /app (e sottopercorsi). Servila SUBITO, PRIMA dei router API:
-  // altrimenti un visitatore SLOGGATO che apre /app (i bottoni della landing!) verrebbe
-  // intercettato da `app.use('/', teamRoutes)` → middleware authenticate → 401 JSON.
-  app.get(/^\/app(\/.*)?$/, (req: Request, res: Response) => {
+  // GATE UNICO della shell dell'app: chi non ha accesso NON deve MAI vedere la pagina di login
+  // (né dell'app né dell'admin). Vale per /app, ma ANCHE per l'accesso DIRETTO ai file statici
+  // index.html/admin.html (altrimenti li servirebbe express.static saltando il cancello beta).
+  function serveGatedApp(req: Request, res: Response, file: 'index.html' | 'admin.html') {
     const betaKey = process.env.BETA_ACCESS_KEY || '';
     if (betaKey && req.query.beta === betaKey) {
       res.cookie(BETA_COOKIE, '1', { httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'lax', maxAge: 365 * 24 * 60 * 60 * 1000 });
-      return res.redirect('/app');
+      return res.redirect(file === 'admin.html' ? '/admin' : '/app');
     }
     if (betaKey && !hasAppAccess(req)) return res.redirect('/waitlist');
-    res.sendFile(path.join(frontendDist, 'index.html'));
-  });
+    res.sendFile(path.join(frontendDist, file));
+  }
+  // L'app SPA vive sotto /app (e sottopercorsi). Servila SUBITO, PRIMA dei router API:
+  // altrimenti un visitatore SLOGGATO che apre /app (i bottoni della landing!) verrebbe
+  // intercettato da `app.use('/', teamRoutes)` → middleware authenticate → 401 JSON.
+  app.get(/^\/app(\/.*)?$/, (req: Request, res: Response) => serveGatedApp(req, res, 'index.html'));
+  // ANTI-BYPASS: l'accesso DIRETTO alla shell statica salterebbe il gate /app. Intercettiamo
+  // index.html/admin.html (e /admin) PRIMA di express.static e li facciamo passare dal gate.
+  app.get('/index.html', (req: Request, res: Response) => serveGatedApp(req, res, 'index.html'));
+  app.get(['/admin', '/admin/', '/admin.html'], (req: Request, res: Response) => serveGatedApp(req, res, 'admin.html'));
   // Vetrina pubblica condivisa: /s/<token>. La pagina è statica (il contenuto lo carica il JS
   // client-side), MA i crawler di WhatsApp/Instagram/Telegram che generano l'anteprima del link
   // NON eseguono JavaScript: leggono solo i <meta og:...> nell'HTML grezzo. Per questo qui
@@ -261,7 +269,10 @@ if (isProduction) {
       if (err) res.status(404).sendFile(path.join(frontendDist, 'landing.html'));
     });
   });
-  app.use(express.static(frontendDist));
+  // index:false → express.static non serve MAI index.html da solo (né per "/" né come indice
+  // di directory): la shell dell'app passa SEMPRE dal gate sopra. Gli asset (JS/CSS/img) restano
+  // serviti normalmente (necessari all'app una volta dentro; non espongono la pagina di login).
+  app.use(express.static(frontendDist, { index: false }));
 }
 
 // ==========================================
@@ -367,11 +378,22 @@ app.use('/api/assistant', assistantRoutes);
 // ==========================================
 if (isProduction) {
   const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
-  // Pannello admin separato: /admin → admin.html (entry Vite dedicata).
-  app.get(['/admin', '/admin/'], (_req, res) => {
-    res.sendFile(path.join(frontendDist, 'admin.html'));
-  });
-  app.get('*', (_req, res) => {
+  // NB: /admin è ora servito (col gate beta) nel blocco statico più in alto, PRIMA dei router API.
+  // Catch-all: qualsiasi path non gestito serve la shell SPA. Per un ANONIMO questo ramo non è
+  // raggiungibile (teamRoutes montato su '/' risponde 401 prima), ma per sicurezza — se un domani
+  // l'ordine cambiasse — questo NON deve diventare una scorciatoia per la pagina di login: il gate
+  // vero resta /app, /index.html e /admin qui sopra. Serviamo la shell solo a chi ha già accesso.
+  app.get('*', (req: Request, res: Response) => {
+    const betaKey = process.env.BETA_ACCESS_KEY || '';
+    if (betaKey) {
+      if (req.cookies?.hq_beta === '1') { /* ok */ }
+      else {
+        const tk = req.cookies?.access_token;
+        let ok = !!req.cookies?.refresh_token;
+        if (!ok && tk && process.env.JWT_ACCESS_SECRET) { try { jwt.verify(tk, process.env.JWT_ACCESS_SECRET); ok = true; } catch {} }
+        if (!ok) return res.redirect('/waitlist');
+      }
+    }
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
 } else {

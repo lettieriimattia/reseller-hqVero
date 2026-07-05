@@ -144,7 +144,16 @@ export async function issueTokens(res: Response, user: { id: string; email: stri
 // ==========================================
 router.post('/register', authLimiter, validate(registerSchema), async (req, res) => {
   const { email, password, name, categories, joinCode, marketingConsent } = req.body;
-  
+
+  // BETA CHIUSA: creare un account è possibile SOLO a chi ha il codice beta (cookie hq_beta,
+  // piantato entrando da /app?beta=CODICE). Chi si unisce a un team via codice invito (joinCode)
+  // è comunque legittimo. Così non si può creare un account "scoprendo" l'API senza il codice.
+  const betaKey = process.env.BETA_ACCESS_KEY || '';
+  if (betaKey && !joinCode && (req as any).cookies?.hq_beta !== '1') {
+    await audit({ action: 'REGISTER', success: false, req, metadata: { reason: 'beta_gate', email } });
+    return res.status(403).json({ error: 'Registrazioni su invito. Serve il codice di accesso.' });
+  }
+
   try {
     // Password policy
     const pwValidation = validatePassword(password);
@@ -285,6 +294,13 @@ async function seedDemoProducts(userId: string, warehouseId: string | null) {
 
 router.get('/demo-login', authLimiter, async (req: Request, res: Response) => {
   if (!DEMO_ENABLED) return res.status(404).send('Demo non attiva.');
+  // ANTI-BYPASS del cancello beta: la demo crea una sessione valida → senza protezione sarebbe
+  // una porta aperta per ENTRARE nell'app senza il codice. Se BETA_ACCESS_KEY è impostata, la
+  // demo è accessibile SOLO con quel codice (?beta=CODICE) o col cookie beta già piantato.
+  const betaKey = process.env.BETA_ACCESS_KEY || '';
+  if (betaKey && req.query.beta !== betaKey && (req as any).cookies?.hq_beta !== '1') {
+    return res.status(404).send('Demo non attiva.');
+  }
   try {
     let user = await prisma.user.findUnique({ where: { email: DEMO_EMAIL }, include: { memberships: true } });
     if (!user) {
