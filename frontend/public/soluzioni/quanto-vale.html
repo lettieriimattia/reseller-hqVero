@@ -297,11 +297,11 @@
         <button type="button" id="pcAgainBtn" class="pc-again" hidden data-i18n="again">← Cerca un altro prodotto</button>
         <!-- Gate: appare quando finiscono le ricerche gratis del giorno -->
         <div id="pcGate" class="pc-gate" hidden>
-          <p class="pc-gate-title" data-i18n="gate_t">Hai finito le ricerche gratis di oggi 👀</p>
-          <p class="pc-gate-sub" data-i18n="gate_s">Iscriviti a HQVault e al lancio scopri i prezzi <b>senza limiti</b>, con magazzino e profitti.</p>
-          <form class="js-wl-form hero-form" data-src="quanto-vale-gate" data-redirect="/waitlist?joined=1" novalidate>
+          <p class="pc-gate-title" data-i18n="gate_t">Hai finito le valutazioni gratis di oggi 👀</p>
+          <p class="pc-gate-sub" data-i18n="gate_s">Lascia la tua email e sblocchi <b>+1 valutazione gratis ogni giorno</b> — e al lancio magazzino e profitti.</p>
+          <form class="js-wl-form hero-form" data-src="quanto-vale-gate" data-unlock="1" novalidate>
             <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" data-i18n-ph="ph" required />
-            <button class="js-wl-btn btn btn-primary" type="submit" data-i18n="gate_btn">Sbloccalo al lancio →</button>
+            <button class="js-wl-btn btn btn-primary" type="submit" data-i18n="gate_btn">Sblocca +1 al giorno →</button>
           </form>
           <p class="js-wl-msg hero-msg" role="status"></p>
         </div>
@@ -462,9 +462,9 @@
       photoBtn: '…or value it from a photo',
       again: '← Search another product',
       cat_scarpe: 'Sneakers', cat_street: 'Streetwear / Clothing', cat_carte: 'Pokémon cards', cat_oro: 'Watches', cat_borse: 'Bags / luxury', cat_altro: 'Other (type it)',
-      gate_t: 'You’ve used today’s free searches 👀',
-      gate_s: 'Sign up for HQVault and at launch see prices <b>with no limits</b>, plus inventory and profits.',
-      ph: 'Your email', gate_btn: 'Unlock it at launch →',
+      gate_t: 'You’ve used today’s free valuations 👀',
+      gate_s: 'Leave your email and unlock <b>+1 free valuation every day</b> — plus inventory and profits at launch.',
+      ph: 'Your email', gate_btn: 'Unlock +1 a day →',
       micro: 'Market value · official sources per category (StockX, Cardmarket…)',
       ans_l: 'The quick answer',
       ans_t: 'To know <b>what a sneaker is worth</b> — and what to resell it for — look at <b>SOLD</b> prices (not asking prices) for the same <b>model, size and condition</b>: on <b>StockX</b> for hyped pairs, on <b>eBay sold</b> for the rest. The right value is the recent average of sold ones, minus fees. <b>HQVault does it for you</b>: it recognizes the item and pulls the market value, no manual searching.',
@@ -717,8 +717,8 @@
 
     (function () {
       var WL = {
-        it: { invalid: "Inserisci un'email valida.", sending: 'Invio…', err: 'Qualcosa è andato storto, riprova.', already: '✓ Sei già in lista: ti avviseremo al lancio.', ok: '✓ Sei in lista! Ti scriviamo al lancio.' },
-        en: { invalid: 'Enter a valid email.', sending: 'Sending…', err: 'Something went wrong, please try again.', already: "✓ You're already on the list: we'll notify you at launch.", ok: "✓ You're on the list! We'll write to you at launch." }
+        it: { invalid: "Inserisci un'email valida.", sending: 'Invio…', err: 'Qualcosa è andato storto, riprova.', already: '✓ Sei già in lista: ti avviseremo al lancio.', ok: '✓ Sei in lista! Ti scriviamo al lancio.', unlockOk: '✓ Sbloccato! Hai +1 valutazione gratis ogni giorno.' },
+        en: { invalid: 'Enter a valid email.', sending: 'Sending…', err: 'Something went wrong, please try again.', already: "✓ You're already on the list: we'll notify you at launch.", ok: "✓ You're on the list! We'll write to you at launch.", unlockOk: '✓ Unlocked! You get +1 free valuation every day.' }
       };
       function wt(k) { return (WL[curLang()] || WL.it)[k]; }
       var RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -735,7 +735,15 @@
           fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: form.getAttribute('data-src') || 'quanto-vale' }) })
             .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
             .then(function (d) {
-              // Se il form ha data-redirect (es. il gate), portiamo l'utente sulla pagina waitlist.
+              // GATE (data-unlock): l'email ha piantato il cookie → +1 valutazione/giorno. NON
+              // mandiamo via l'utente: mostriamo il messaggio di sblocco e ricarichiamo così può
+              // subito rifare una valutazione (il backend ora gli concede la prova extra).
+              if (form.getAttribute('data-unlock')) {
+                if (msg) { msg.style.color = ''; msg.textContent = wt('unlockOk'); }
+                setTimeout(function () { location.reload(); }, 1300);
+                return;
+              }
+              // Se il form ha data-redirect, portiamo l'utente sulla pagina waitlist.
               var redirect = form.getAttribute('data-redirect');
               if (redirect) { location.href = redirect + (d && d.already ? '&already=1' : ''); return; }
               form.style.display = 'none';

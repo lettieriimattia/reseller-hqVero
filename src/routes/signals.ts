@@ -58,6 +58,11 @@ function clientIp(req: Request): string {
 //  - PUBLIC_CARDS_MONTHLY_CAP (prezzi carte)                → superato: carte non valutate
 // NB: i contatori sono in memoria e si azzerano a inizio mese (e ad ogni redeploy). Sono un tetto
 // di SICUREZZA prudente; i limiti giornalieri per IP restano la prima linea di difesa.
+// Cookie "iscritto alla waitlist": piantato dopo aver lasciato l'email → dà +N valutazioni
+// GRATIS OGNI GIORNO (incentivo a lasciare l'email e a tornare). I tetti budget MENSILI restano.
+const WL_COOKIE = 'hq_wl';
+const WL_BONUS_PER_DAY = Math.max(0, parseInt(process.env.PUBLIC_WL_BONUS_PER_DAY || '1', 10) || 0);
+function isSubscribed(req: Request): boolean { return (req as any).cookies?.[WL_COOKIE] === '1'; }
 const PUBLIC_CHECKER_ENABLED = process.env.PUBLIC_CHECKER_ENABLED !== 'false';
 const MONTHLY_CAPS: Record<'ai' | 'kicks' | 'cards', number> = {
   ai: Number(process.env.PUBLIC_AI_MONTHLY_CAP || 3000),
@@ -214,6 +219,10 @@ router.post('/waitlist', async (req: Request, res: Response) => {
     if (!EMAIL_RE.test(email) || email.length > 160) return res.status(400).json({ error: 'Email non valida.' });
     const source = String(req.body?.source || '').trim().slice(0, 40) || null;
     const referrer = refLabel(req.get('referer') || undefined);
+    // INCENTIVO: chi lascia l'email ottiene +N valutazioni GRATIS OGNI GIORNO → cookie che il
+    // price-check/photo-check riconosce per alzare il limite giornaliero (i tetti budget MENSILI
+    // globali restano comunque attivi, così i costi non esplodono).
+    res.cookie(WL_COOKIE, '1', { httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'lax', maxAge: 365 * 24 * 60 * 60 * 1000 });
     // Email univoca: se c'è già, avviso che è GIÀ iscritta (niente doppioni).
     const existing = await prisma.waitlist.findUnique({ where: { email }, select: { id: true } });
     if (existing) return res.json({ ok: true, already: true });
@@ -279,10 +288,12 @@ router.post('/photo-check', async (req: Request, res: Response) => {
   // Interruttore generale + budget AI del mese: la valutazione da FOTO usa la vision (voce più
   // cara). Se il checker è spento o il budget AI è finito → niente scan, l'utente vede la waitlist.
   if (!admin && (!PUBLIC_CHECKER_ENABLED || !budgetLeft('ai'))) return res.json({ limited: true, freeLimit: PHOTO_FREE });
+  // Iscritti (email lasciata) → +N prove GRATIS OGNI GIORNO rispetto agli anonimi.
+  const photoLimit = PHOTO_FREE + (isSubscribed(req) ? WL_BONUS_PER_DAY : 0);
   const today = new Date().toISOString().slice(0, 10);
   const rec = photoByIp.get(ip);
   const used = rec && rec.date === today ? rec.count : 0;
-  if (!admin && used >= PHOTO_FREE) return res.json({ limited: true, freeLimit: PHOTO_FREE });
+  if (!admin && used >= photoLimit) return res.json({ limited: true, freeLimit: photoLimit });
 
   const image = String(req.body?.image || '');
   if (!/^data:image\//.test(image) || image.length < 100) return res.status(400).json({ error: 'Foto non valida.' });
@@ -299,10 +310,10 @@ router.post('/photo-check', async (req: Request, res: Response) => {
     const category = (scan.category || scan.detectedCategory || 'altro').toString();
     const shownCat = scan.detectedCategory || category;
     const suggestedCategory = mapScanCategory(category + ' ' + shownCat);
-    if (!name) return res.json({ value: null, recognized: false, detected: shownCat, suggestedCategory, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
+    if (!name) return res.json({ value: null, recognized: false, detected: shownCat, suggestedCategory, remaining: admin ? null : Math.max(0, photoLimit - used), freeLimit: photoLimit });
     const isCards = /cart|pok|tcg/i.test(category + ' ' + shownCat);
     // Budget carte finito → non interroghiamo la fonte prezzi carte (a pagamento): niente valore.
-    if (isCards && !admin && !budgetLeft('cards')) return res.json({ value: null, tooGeneric: true, name, suggestedName: name, suggestedCategory, recognized: true, detected: shownCat, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
+    if (isCards && !admin && !budgetLeft('cards')) return res.json({ value: null, tooGeneric: true, name, suggestedName: name, suggestedCategory, recognized: true, detected: shownCat, remaining: admin ? null : Math.max(0, photoLimit - used), freeLimit: photoLimit });
     const val = await getValuation({ category, name, brand: '', game: isCards ? 'pokemon' : undefined });
     if (isCards && val.value != null && !admin) budgetSpend('cards');
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: ('📷 ' + name).slice(0, 80), found: val.value != null } }).catch(() => {});
@@ -318,7 +329,7 @@ router.post('/photo-check', async (req: Request, res: Response) => {
         photoByIp.set(ip, { date: today, count: used + 1 });
         if (photoByIp.size > 8000) { for (const [k, vv] of photoByIp) if (vv.date !== today) photoByIp.delete(k); }
       }
-      const remaining = admin ? null : Math.max(0, PHOTO_FREE - (used + 1));
+      const remaining = admin ? null : Math.max(0, photoLimit - (used + 1));
       // Niente foto di catalogo qui: chi cerca via FOTO ha già la sua immagine, non serve
       // mostrarne un'altra presa dal catalogo (quella resta solo per la ricerca da testo).
       return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || name, source: val.source, image: null, recognized: true, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
@@ -330,10 +341,10 @@ router.post('/photo-check', async (req: Request, res: Response) => {
     const details: any = scan.details || {};
     const baseModel = [scan.brand, details.model].filter(Boolean).join(' ').trim();
     const suggestedName = (val.value != null && !visualOk && baseModel) ? baseModel : name;
-    return res.json({ value: null, tooGeneric: true, name, suggestedName, suggestedCategory, recognized: true, detected: shownCat, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
+    return res.json({ value: null, tooGeneric: true, name, suggestedName, suggestedCategory, recognized: true, detected: shownCat, remaining: admin ? null : Math.max(0, photoLimit - used), freeLimit: photoLimit });
   } catch (e: any) {
     logger.warn('photo-check errore', { err: e?.message });
-    return res.json({ value: null, error: true, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
+    return res.json({ value: null, error: true, remaining: admin ? null : Math.max(0, photoLimit - used), freeLimit: photoLimit });
   }
 });
 
@@ -344,9 +355,11 @@ router.post('/price-check', async (req: Request, res: Response) => {
   const today = new Date().toISOString().slice(0, 10);
   const rec = pcByIp.get(ip);
   const used = rec && rec.date === today ? rec.count : 0;
+  // Iscritti (email lasciata) → +N valutazioni GRATIS OGNI GIORNO rispetto agli anonimi.
+  const pcLimit = FREE_CHECKS + (isSubscribed(req) ? WL_BONUS_PER_DAY : 0);
   // Interruttore generale del checker pubblico: spento → mostra la waitlist (niente spesa).
-  if (!admin && !PUBLIC_CHECKER_ENABLED) return res.json({ limited: true, freeLimit: FREE_CHECKS });
-  if (!admin && !UNLIMITED_CHECKS && used >= FREE_CHECKS) return res.json({ limited: true, freeLimit: FREE_CHECKS });
+  if (!admin && !PUBLIC_CHECKER_ENABLED) return res.json({ limited: true, freeLimit: pcLimit });
+  if (!admin && !UNLIMITED_CHECKS && used >= pcLimit) return res.json({ limited: true, freeLimit: pcLimit });
 
   const query = String(req.body?.query || '').trim();
   const size = String(req.body?.size || '').trim();
@@ -359,7 +372,7 @@ router.post('/price-check', async (req: Request, res: Response) => {
   if (category === 'altro') { const d = detectCategory(query); if (d) { category = d.cat; detected = d.label; } }
   const isCards = /cart|pok|tcg/.test(category);
   // Budget carte del mese finito → non interroghiamo la fonte prezzi carte (a pagamento).
-  if (isCards && !admin && !budgetLeft('cards')) return res.json({ value: null, tooGeneric: true, name: query, detected, remaining: (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - used), freeLimit: FREE_CHECKS });
+  if (isCards && !admin && !budgetLeft('cards')) return res.json({ value: null, tooGeneric: true, name: query, detected, remaining: (admin || UNLIMITED_CHECKS) ? null : Math.max(0, pcLimit - used), freeLimit: pcLimit });
 
   // La ricerca si CONSUMA solo se troviamo un valore vero (sotto). Un "troppo generico" non conta:
   // l'utente può riprovare subito con un nome più preciso senza perdere una prova.
@@ -373,7 +386,7 @@ router.post('/price-check', async (req: Request, res: Response) => {
         pcByIp.set(ip, { date: today, count: used + 1 });
         if (pcByIp.size > 8000) { for (const [k, vv] of pcByIp) if (vv.date !== today) pcByIp.delete(k); } // pulizia
       }
-      const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - (used + 1));
+      const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, pcLimit - (used + 1));
       // Foto, in ordine: 1) cache locale (gratis, già filtrata) 2) KicksDB dal vivo (con budget
       // mensile 1000/mese, quindi usato con parsimonia) 3) ultimissimo ripiego: la foto della
       // fonte prezzo (StockX), che a volte ha colorway sbagliate rispetto al titolo.
@@ -382,14 +395,14 @@ router.post('/price-check', async (req: Request, res: Response) => {
       // "base" = prezzo "da nuovo" (concetto SNEAKER: retail nuovo → % per condizione). Per le
       // CARTE non ha senso (hanno un solo valore di mercato Cardmarket) → niente riga "da nuovo".
       const base = isCards ? null : ((val as any).low ?? null);
-      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base, image, detected, remaining, freeLimit: FREE_CHECKS });
+      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base, image, detected, remaining, freeLimit: pcLimit });
     }
     // Nessun valore affidabile: "troppo generico, riprova" — non consuma la prova giornaliera.
-    const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - used);
-    return res.json({ value: null, tooGeneric: true, name: query, detected, remaining, freeLimit: FREE_CHECKS });
+    const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, pcLimit - used);
+    return res.json({ value: null, tooGeneric: true, name: query, detected, remaining, freeLimit: pcLimit });
   } catch (e: any) {
     logger.warn('price-check errore', { err: e?.message });
-    return res.json({ value: null, remaining: (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - used), freeLimit: FREE_CHECKS });
+    return res.json({ value: null, remaining: (admin || UNLIMITED_CHECKS) ? null : Math.max(0, pcLimit - used), freeLimit: pcLimit });
   }
 });
 
