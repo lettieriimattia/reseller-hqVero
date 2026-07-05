@@ -115,3 +115,31 @@ publicShareRouter.get('/:token', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Errore' });
   }
 });
+
+// GET /api/share/:token/photo — foto REALE del primo prodotto condiviso, come immagine servita
+// (non JSON): serve per l'anteprima Open Graph (WhatsApp/Instagram/Telegram leggono <meta
+// og:image>, che deve puntare a un URL pubblico che risponde con bytes immagine veri).
+publicShareRouter.get('/:token/photo', async (req: Request, res: Response) => {
+  try {
+    const share = await prisma.shareList.findUnique({ where: { id: req.params.token } });
+    if (!share || !share.active) return res.status(404).end();
+    const products = await loadShareProducts(share);
+    // Non fermarti al primo prodotto: se non ha foto, prendi il primo TRA TUTTI quelli condivisi
+    // che ce l'ha (per l'anteprima WhatsApp/Instagram è meglio una foto vera di un altro pezzo
+    // della vetrina che nessuna foto).
+    const photo = (products as any[]).map(p => firstPhoto(p.photos)).find(Boolean) || null;
+    if (!photo) return res.status(404).end();
+    // Foto utente (base64 salvato in DB) → decodifica e servi i bytes direttamente.
+    const m = photo.match(/^data:(image\/\w+);base64,(.+)$/);
+    if (m) {
+      res.setHeader('Content-Type', m[1]);
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      return res.send(Buffer.from(m[2], 'base64'));
+    }
+    // Foto di catalogo (link StockX/Cardmarket/...) → passa dal proxy pubblico esistente.
+    return res.redirect(`/api/catalog/img-public?u=${encodeURIComponent(photo)}`);
+  } catch (err: any) {
+    logger.error('GET share photo', { err: err.message });
+    res.status(500).end();
+  }
+});

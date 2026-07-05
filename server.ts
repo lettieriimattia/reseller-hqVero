@@ -226,8 +226,29 @@ if (isProduction) {
     if (betaKey && !hasAppAccess(req)) return res.redirect('/waitlist');
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
-  // Vetrina pubblica condivisa: /s/<token> → pagina statica che carica i prodotti condivisi.
-  app.get(/^\/s\/[^/]+$/, (_req, res) => res.sendFile(path.join(frontendDist, 'vetrina.html')));
+  // Vetrina pubblica condivisa: /s/<token>. La pagina è statica (il contenuto lo carica il JS
+  // client-side), MA i crawler di WhatsApp/Instagram/Telegram che generano l'anteprima del link
+  // NON eseguono JavaScript: leggono solo i <meta og:...> nell'HTML grezzo. Per questo qui
+  // iniettiamo titolo/descrizione/FOTO REALE del primo prodotto prima di servire il file.
+  app.get(/^\/s\/([^/]+)$/, async (req: Request, res: Response) => {
+    const token = (req.params as any)[0];
+    try {
+      const html = fs.readFileSync(path.join(frontendDist, 'vetrina.html'), 'utf8');
+      const share = await prisma.shareList.findUnique({ where: { id: token } });
+      if (!share || !share.active) return res.type('html').send(html);
+      const base = `${req.protocol}://${req.get('host')}`;
+      const title = (share.title || 'Vetrina').replace(/[<>"]/g, '');
+      const seller = share.sellerName ? ` di ${share.sellerName}` : '';
+      const desc = `Vetrina${seller} su HQVault — prodotti in vendita.`;
+      const imgUrl = `${base}/api/share/${encodeURIComponent(token)}/photo`;
+      const ogTags = `\n  <meta property="og:type" content="website" />\n  <meta property="og:title" content="${title} — HQVault" />\n  <meta property="og:description" content="${desc}" />\n  <meta property="og:image" content="${imgUrl}" />\n  <meta name="twitter:card" content="summary_large_image" />\n`;
+      const withTags = html.replace('</head>', ogTags + '</head>').replace(/<title>[^<]*<\/title>/, `<title>${title} — HQVault</title>`);
+      res.type('html').send(withTags);
+    } catch (err) {
+      logger.warn('Errore OG vetrina', { err: (err as any)?.message, token });
+      res.sendFile(path.join(frontendDist, 'vetrina.html'));
+    }
+  });
   // Waitlist pre-lancio (PUBBLICA, no login): "lascia l'email, ti avvisiamo".
   app.get('/waitlist', (_req, res) => res.sendFile(path.join(frontendDist, 'waitlist.html')));
   // Privacy policy pubblica (no login).
