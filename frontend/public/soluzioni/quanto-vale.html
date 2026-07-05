@@ -109,6 +109,8 @@
     .pc-val { color:#5fb9ae; font-weight:900; font-size:32px; letter-spacing:-.02em; margin-top:3px; }
     .pc-src { color:#7e8893; font-size:11.5px; margin-top:5px; }
     .pc-warn { color:#e0b16a; font-weight:600; font-size:14.5px; }
+    /* Banner "riprova" SOPRA il form (categoria/campi), non sotto: si vede subito senza scroll */
+    .pc-retry-banner { background:rgba(224,177,106,.12); border:1px solid rgba(224,177,106,.35); color:#e0b16a; font-weight:700; font-size:13.5px; border-radius:12px; padding:11px 14px; margin-bottom:12px; text-align:left; }
     /* Variante ORIZZONTALE: foto a sinistra, nome+valore+fonte a destra (solo quando c'è una foto,
        cioè solo per la ricerca via testo — mai per la ricerca via foto, che non ne ha una propria). */
     .pc-card-h { display:flex; align-items:center; gap:16px; text-align:left; }
@@ -254,6 +256,7 @@
         <!-- CHECKER LIVE: prima la categoria (crea i campi giusti), poi i dettagli.
              Tutto il form (+ bottone foto) si nasconde durante/dopo la ricerca: focus sul risultato. -->
         <div id="pcFormArea">
+          <div id="pcRetryBanner" class="pc-retry-banner" hidden></div>
           <form id="pcForm" class="pc-form" novalidate>
             <label class="pc-lbl" data-i18n="lbl1">1 · Categoria</label>
             <select id="pcCat" class="pc-cat" aria-label="Categoria">
@@ -520,8 +523,8 @@
       // Testi bilingui del risultato (IT/EN). Il VALORE della condizione resta in italiano
       // (lo capisce il backend); si traduce solo l'etichetta mostrata.
       var T = {
-        it: { writeBrand: 'Scrivi marca e modello.', searching: 'Cerco…', detected: 'categoria rilevata:', fromNew: 'da nuovo ≈', marketVal: 'valore di mercato ·', tooGenericMsg: 'Modello troppo generico, non trovo un prezzo preciso. Scrivi il nome esatto (es. "Corteiz Alcatraz Hoodie", non solo "Corteiz Hoodie") e riprova.', remaining: 'Ricerche gratis rimaste oggi: ', lastUsed: 'Ultima ricerca gratis di oggi usata', error: 'Errore, riprova tra poco.', size: 'Taglia ', analyzing: 'Analizzo la foto…', notRecognized: 'Non ho riconosciuto il prodotto. Riprova con una foto più chiara e ravvicinata.' },
-        en: { writeBrand: 'Enter brand and model.', searching: 'Searching…', detected: 'detected category:', fromNew: 'when new ≈', marketVal: 'market value ·', tooGenericMsg: 'Model too generic, can’t find a precise price. Write the exact name (e.g. "Corteiz Alcatraz Hoodie", not just "Corteiz Hoodie") and try again.', remaining: 'Free searches left today: ', lastUsed: 'Today’s last free search used', error: 'Error, please try again shortly.', size: 'Size ', analyzing: 'Analyzing the photo…', notRecognized: 'I couldn’t recognize the product. Try a clearer, closer photo.' }
+        it: { writeBrand: 'Scrivi marca e modello.', searching: 'Cerco…', detected: 'categoria rilevata:', fromNew: 'da nuovo ≈', marketVal: 'valore di mercato ·', tooGenericMsg: 'Modello troppo generico, non trovo un prezzo preciso. Scrivi il nome esatto e riprova.', remaining: 'Ricerche gratis rimaste oggi: ', lastUsed: 'Ultima ricerca gratis di oggi usata', error: 'Errore, riprova tra poco.', size: 'Taglia ', analyzing: 'Analizzo la foto…', notRecognized: 'Non ho riconosciuto il prodotto. Riprova con una foto più chiara e ravvicinata.' },
+        en: { writeBrand: 'Enter brand and model.', searching: 'Searching…', detected: 'detected category:', fromNew: 'when new ≈', marketVal: 'market value ·', tooGenericMsg: 'Model too generic, can’t find a precise price. Write the exact name and try again.', remaining: 'Free searches left today: ', lastUsed: 'Today’s last free search used', error: 'Error, please try again shortly.', size: 'Size ', analyzing: 'Analyzing the photo…', notRecognized: 'I couldn’t recognize the product. Try a clearer, closer photo.' }
       };
       function tv(k) { return (T[curLang()] || T.it)[k]; }
       // Config per categoria: nome/dettaglio localizzati; nelle condizioni [valore-backend, {it,en}].
@@ -560,23 +563,27 @@
       // (già visto, non serve più) per stare senza scroll fino al box email.
       var formArea = document.getElementById('pcFormArea'), againBtn = document.getElementById('pcAgainBtn');
       var pcSub = document.getElementById('pcSub');
+      var retryBanner = document.getElementById('pcRetryBanner');
       var isMobile = window.matchMedia && window.matchMedia('(max-width:600px)').matches;
       function startSearch() {
         if (formArea) formArea.hidden = true;
         if (againBtn) againBtn.hidden = false;
+        if (retryBanner) retryBanner.hidden = true;
         if (isMobile && pcSub) pcSub.style.display = 'none';
         out.innerHTML = LOADER_HTML;
         if (joinBox) joinBox.hidden = true;
         gate.hidden = true;
       }
       // Quando la ricerca è "troppo generica": invece di un vicolo cieco, riapriamo il form
-      // GIÀ COMPILATO (categoria + nome parziale) così l'utente completa/corregge invece di
-      // ripartire da zero — riduce a zero gli errori: il testo battuto è il metodo più affidabile.
-      function reopenFormWithPrefill(category, name) {
+      // GIÀ COMPILATO (categoria + nome parziale) con il messaggio SOPRA la categoria (si vede
+      // subito, niente scroll) così l'utente completa/corregge invece di ripartire da zero.
+      function reopenFormWithPrefill(category, name, message) {
         if (category && CATS[category]) { cat.value = category; applyCat(); }
         if (formArea) formArea.hidden = false;
         if (againBtn) againBtn.hidden = true;
         if (pcSub) pcSub.style.display = '';
+        if (retryBanner) { retryBanner.textContent = message || ''; retryBanner.hidden = !message; }
+        out.innerHTML = '';
         q.value = name || '';
         q.focus();
         if (q.value) { try { q.setSelectionRange(q.value.length, q.value.length); } catch (e) {} }
@@ -585,6 +592,7 @@
         if (formArea) formArea.hidden = false;
         againBtn.hidden = true;
         if (pcSub) pcSub.style.display = '';
+        if (retryBanner) retryBanner.hidden = true;
         out.innerHTML = '';
         if (joinBox) joinBox.hidden = true;
         gate.hidden = true;
@@ -623,8 +631,7 @@
             } else {
               // Troppo generico (o nessuna fonte affidabile): non consuma una ricerca, l'utente
               // può riprovare subito con un nome più preciso. Niente stima IA vaga: solo dati veri.
-              out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('tooGenericMsg') + '</span>' + detHtml + '</div>';
-              reopenFormWithPrefill(cat.value, query);
+              reopenFormWithPrefill(cat.value, query, tv('tooGenericMsg'));
             }
             if (typeof d.remaining === 'number' && micro) { micro.textContent = d.remaining > 0 ? (tv('remaining') + d.remaining) : tv('lastUsed'); }
           })
@@ -635,8 +642,7 @@
       function renderPhoto(d, userImg) {
         if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; if (pcSub) pcSub.style.display = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
         if (!d.recognized && d.value == null) {
-          out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notRecognized') + '</span></div>';
-          reopenFormWithPrefill(d.suggestedCategory, '');
+          reopenFormWithPrefill(d.suggestedCategory, '', tv('notRecognized'));
           return;
         }
         var detHtml = d.detected ? '<div class="pc-src">' + tv('detected') + ' <b style="color:#c9d0d8">' + esc(d.detected) + '</b></div>' : '';
@@ -652,8 +658,7 @@
           // Troppo generico (o verifica visiva non confermata): non consuma la prova giornaliera.
           // Riapriamo il form pre-compilato (categoria + nome parziale, es. "Nike SB Dunk Low"
           // senza la collab non confermata) così l'utente scrive il dettaglio esatto e riprova.
-          out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('tooGenericMsg') + '</span>' + detHtml + '</div>';
-          reopenFormWithPrefill(d.suggestedCategory, d.suggestedName || d.name);
+          reopenFormWithPrefill(d.suggestedCategory, d.suggestedName || d.name, tv('tooGenericMsg'));
         }
         if (typeof d.remaining === 'number' && micro) micro.textContent = d.remaining > 0 ? (tv('remaining') + d.remaining) : tv('lastUsed');
       }
