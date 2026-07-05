@@ -36,6 +36,19 @@ function imgMatchScore(query: string, title: string): number {
   return hit / qw.length;
 }
 
+// Coerenza nome↔immagine: il nome file dell'immagine di solito rispecchia il titolo/nome
+// (es. "...Velvet-Brown-Product.jpg" per "...Velvet Brown"). Se la parola più specifica del
+// nome non compare nel file, l'immagine è di un'ALTRA colorway (fonte inconsistente, o riga di
+// cache scritta prima che questo controllo esistesse) → meglio nessuna foto che una sbagliata.
+function imageMatchesName(image: string | null | undefined, title: string): boolean {
+  if (!image) return false;
+  const toks = title.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+  const lastTok = toks[toks.length - 1];
+  if (!lastTok) return true;
+  const filePart = (image.split('/').pop() || '').split('?')[0].replace(/\.(jpe?g|png|webp)$/i, '').toLowerCase();
+  return filePart.includes(lastTok);
+}
+
 // Cerca la FOTO ufficiale di un prodotto dal catalogo: prima la cache locale (gratis, niente
 // quota), poi KicksDB→StockX. Sceglie il candidato che COMBACIA MEGLIO col nome (soglia minima):
 // così non aggancia foto sbagliate e per i nomi inventati non mette nulla. Ritorna {image,sku}|null.
@@ -52,7 +65,9 @@ async function findCatalogImage(brand?: string | null, name?: string | null, dee
       });
       let best: any = null, bestS = 0;
       for (const c of cands) { const s = imgMatchScore(q, `${c.brand || ''} ${c.name || ''}`); if (s > bestS) { bestS = s; best = c; } }
-      if (best && bestS >= 0.4) return { image: best.image!, sku: best.sku || null };
+      if (best && bestS >= 0.4 && imageMatchesName(best.image, `${best.brand || ''} ${best.name || ''}`)) {
+        return { image: best.image!, sku: best.sku || null };
+      }
     } catch { /* ignora */ }
   }
   // 2) fonte esterna (KicksDB → StockX), poi sceglie il candidato col punteggio migliore.
@@ -68,7 +83,7 @@ async function findCatalogImage(brand?: string | null, name?: string | null, dee
       let image = best.image;
       // La ricerca StockX NON include la foto: la recupero dal DETTAGLIO col productId del match.
       if (!image && best.productId) image = await getStockXImage(best.productId).catch(() => null);
-      if (image) return { image, sku: best.styleId || null };
+      if (image && imageMatchesName(image, best.title || q)) return { image, sku: best.styleId || null };
     }
   } catch { /* fonte non disponibile */ }
   // 3) DEEP (es. pulsante "Trova foto"): l'IA normalizza il nome al nome ufficiale e ri-cerca.

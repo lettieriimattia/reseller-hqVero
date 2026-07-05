@@ -87,7 +87,16 @@ async function findCachedImage(name: string): Promise<string | null> {
     const hayBest = `${best.brand} ${best.name}`.toLowerCase();
     const minScore = Math.max(2, Math.ceil(words.length * 0.6));
     if (bestScore < minScore || !hayBest.includes(mostDistinctive)) return null;
-    return best.image || null;
+    if (!best.image) return null;
+    // Coerenza nome↔immagine ANCHE per la cache: righe scritte prima che questo controllo
+    // esistesse (es. da una ricerca StockX con title/media già inconsistenti a monte, tipo
+    // "Velvet Brown" salvato con la foto "Sail Tropical Pink") vanno scartate qui, non solo
+    // alla fonte — altrimenti la cache "avvelenata" ripropone la foto sbagliata per sempre.
+    const nameToks = hayBest.replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean);
+    const lastNameTok = nameToks[nameToks.length - 1];
+    const filePart = (best.image.split('/').pop() || '').split('?')[0].replace(/\.(jpe?g|png|webp)$/i, '').toLowerCase();
+    if (lastNameTok && lastNameTok.length > 2 && !filePart.includes(lastNameTok)) return null;
+    return best.image;
   } catch { return null; }
 }
 
