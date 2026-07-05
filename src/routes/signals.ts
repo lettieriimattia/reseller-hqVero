@@ -48,6 +48,31 @@ function clientIp(req: Request): string {
   return xff || (req.socket && req.socket.remoteAddress) || 'unknown';
 }
 
+// ============ BUDGET PUBBLICO: interruttore generale + tetti MENSILI per fonte a costo ============
+// Protegge da traffico anomalo/bot che a fine mese brucerebbe i crediti. Ogni fonte a pagamento ha
+// un tetto mensile: superato, la funzione DEGRADA (niente foto / niente scan da foto) invece di
+// continuare a spendere. L'interruttore generale spegne del tutto il checker (diventa iscrizione).
+//  - PUBLIC_CHECKER_ENABLED=false           → checker pubblico OFF (mostra la waitlist)
+//  - PUBLIC_AI_MONTHLY_CAP    (scan foto, la voce più cara) → superato: valutazione da foto OFF
+//  - PUBLIC_KICKS_MONTHLY_CAP (foto catalogo)               → superato: solo nome+prezzo, niente foto
+//  - PUBLIC_CARDS_MONTHLY_CAP (prezzi carte)                → superato: carte non valutate
+// NB: i contatori sono in memoria e si azzerano a inizio mese (e ad ogni redeploy). Sono un tetto
+// di SICUREZZA prudente; i limiti giornalieri per IP restano la prima linea di difesa.
+const PUBLIC_CHECKER_ENABLED = process.env.PUBLIC_CHECKER_ENABLED !== 'false';
+const MONTHLY_CAPS: Record<'ai' | 'kicks' | 'cards', number> = {
+  ai: Number(process.env.PUBLIC_AI_MONTHLY_CAP || 3000),
+  kicks: Number(process.env.PUBLIC_KICKS_MONTHLY_CAP || 45000),
+  cards: Number(process.env.PUBLIC_CARDS_MONTHLY_CAP || 3000),
+};
+const monthlyUsed: Record<'ai' | 'kicks' | 'cards', number> = { ai: 0, kicks: 0, cards: 0 };
+let budgetMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+function budgetRollover() {
+  const m = new Date().toISOString().slice(0, 7);
+  if (m !== budgetMonth) { budgetMonth = m; monthlyUsed.ai = 0; monthlyUsed.kicks = 0; monthlyUsed.cards = 0; }
+}
+function budgetLeft(kind: 'ai' | 'kicks' | 'cards'): boolean { budgetRollover(); return monthlyUsed[kind] < (MONTHLY_CAPS[kind] || 0); }
+function budgetSpend(kind: 'ai' | 'kicks' | 'cards') { budgetRollover(); monthlyUsed[kind] = (monthlyUsed[kind] || 0) + 1; }
+
 // Parole GENERICHE (brand + silhouette): da sole NON identificano un modello preciso. Tutto il
 // RESTO (collab tipo "travis scott", colorway tipo "velvet brown") sono parole IDENTIFICATIVE:
 // devono combaciare TUTTE, altrimenti stiamo guardando un'ALTRA scarpa. Allineate a stockx.service.
@@ -124,7 +149,11 @@ function kicksPublicUnderCap(): boolean {
   return true;
 }
 async function findLiveKicksImage(name: string): Promise<string | null> {
-  if (!isKicksConfigured() || !kicksPublicUnderCap()) return null;
+  // Tetto MENSILE (budget) + tetto giornaliero: finito il budget KicksDB del mese → niente
+  // chiamata esterna → il checker mostra solo nome+prezzo (il prezzo viene da StockX, non tocca
+  // KicksDB). La cache locale continua a servire foto già scaricate (gratis).
+  if (!isKicksConfigured() || !budgetLeft('kicks') || !kicksPublicUnderCap()) return null;
+  budgetSpend('kicks'); // stiamo per fare una chiamata esterna a pagamento
   const idWords = identifyingWords(name);
   if (!idWords.length) return null;
   try {
@@ -246,6 +275,9 @@ function mapScanCategory(cat: string): string {
 router.post('/photo-check', async (req: Request, res: Response) => {
   const ip = clientIp(req);
   const admin = isAdminRequest(req);
+  // Interruttore generale + budget AI del mese: la valutazione da FOTO usa la vision (voce più
+  // cara). Se il checker è spento o il budget AI è finito → niente scan, l'utente vede la waitlist.
+  if (!admin && (!PUBLIC_CHECKER_ENABLED || !budgetLeft('ai'))) return res.json({ limited: true, freeLimit: PHOTO_FREE });
   const today = new Date().toISOString().slice(0, 10);
   const rec = photoByIp.get(ip);
   const used = rec && rec.date === today ? rec.count : 0;
@@ -259,6 +291,7 @@ router.post('/photo-check', async (req: Request, res: Response) => {
   // l'utente può riprovare subito senza perdere una delle sue prove giornaliere.
   try {
     const scan = await scanProductAuto(image, []);
+    if (!admin) budgetSpend('ai'); // la chiamata vision è avvenuta: conta la spesa AI del mese
     const brand = (scan.brand || '').trim();
     const model = (scan.model || '').trim();
     const name = [brand, model].filter(Boolean).join(' ').trim();
@@ -267,7 +300,10 @@ router.post('/photo-check', async (req: Request, res: Response) => {
     const suggestedCategory = mapScanCategory(category + ' ' + shownCat);
     if (!name) return res.json({ value: null, recognized: false, detected: shownCat, suggestedCategory, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
     const isCards = /cart|pok|tcg/i.test(category + ' ' + shownCat);
+    // Budget carte finito → non interroghiamo la fonte prezzi carte (a pagamento): niente valore.
+    if (isCards && !admin && !budgetLeft('cards')) return res.json({ value: null, tooGeneric: true, name, suggestedName: name, suggestedCategory, recognized: true, detected: shownCat, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
     const val = await getValuation({ category, name, brand: '', game: isCards ? 'pokemon' : undefined });
+    if (isCards && val.value != null && !admin) budgetSpend('cards');
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: ('📷 ' + name).slice(0, 80), found: val.value != null } }).catch(() => {});
     // Rete di sicurezza anti-allucinazione: "confidence HIGH" è un'AUTO-valutazione dell'IA e può
     // essere sicura ma SBAGLIATA (confonde due grail SB Dunk diversi tra loro, es. "De La Soul" per
@@ -307,6 +343,8 @@ router.post('/price-check', async (req: Request, res: Response) => {
   const today = new Date().toISOString().slice(0, 10);
   const rec = pcByIp.get(ip);
   const used = rec && rec.date === today ? rec.count : 0;
+  // Interruttore generale del checker pubblico: spento → mostra la waitlist (niente spesa).
+  if (!admin && !PUBLIC_CHECKER_ENABLED) return res.json({ limited: true, freeLimit: FREE_CHECKS });
   if (!admin && !UNLIMITED_CHECKS && used >= FREE_CHECKS) return res.json({ limited: true, freeLimit: FREE_CHECKS });
 
   const query = String(req.body?.query || '').trim();
@@ -319,6 +357,8 @@ router.post('/price-check', async (req: Request, res: Response) => {
   let detected: string | null = null;
   if (category === 'altro') { const d = detectCategory(query); if (d) { category = d.cat; detected = d.label; } }
   const isCards = /cart|pok|tcg/.test(category);
+  // Budget carte del mese finito → non interroghiamo la fonte prezzi carte (a pagamento).
+  if (isCards && !admin && !budgetLeft('cards')) return res.json({ value: null, tooGeneric: true, name: query, detected, remaining: (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - used), freeLimit: FREE_CHECKS });
 
   // La ricerca si CONSUMA solo se troviamo un valore vero (sotto). Un "troppo generico" non conta:
   // l'utente può riprovare subito con un nome più preciso senza perdere una prova.
@@ -327,6 +367,7 @@ router.post('/price-check', async (req: Request, res: Response) => {
     // Traccia l'uso (anonimo) per le statistiche admin: riutilizzi per visitatore.
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: query.slice(0, 80), found: val.value != null } }).catch(() => {});
     if (val.value != null) {
+      if (isCards && !admin) budgetSpend('cards'); // valutazione carta riuscita = uso della fonte a pagamento
       if (!admin && !UNLIMITED_CHECKS) {
         pcByIp.set(ip, { date: today, count: used + 1 });
         if (pcByIp.size > 8000) { for (const [k, vv] of pcByIp) if (vv.date !== today) pcByIp.delete(k); } // pulizia
