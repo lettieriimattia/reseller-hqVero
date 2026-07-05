@@ -272,7 +272,7 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
 
   try {
     let product: any = null;
-    let best = { final: -Infinity, matched: 0 };
+    let best = { final: -Infinity, matched: 0, penalty: 0 };
     let searchFailed = false;
     for (const q of candidates) {
       const sr = await fetch(`${STOCKX_API_BASE}/v2/catalog/search?query=${encodeURIComponent(q)}&pageNumber=1&pageSize=10`, { headers });
@@ -288,19 +288,24 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
       // Match esatto per style code (SKU): vince su tutto.
       if (opts.sku) {
         const exact = products.find((p: any) => (p.styleId || p.productAttributes?.styleId || '').toString().toLowerCase() === opts.sku!.toLowerCase());
-        if (exact) { product = exact; best = { final: 99, matched: qSet.size }; break; }
+        if (exact) { product = exact; best = { final: 99, matched: qSet.size, penalty: 0 }; break; }
       }
       // Altrimenti scegli il titolo che combacia meglio col nome riconosciuto.
       for (const p of products) {
         const sc = scoreOf(p.title || p.name || '');
-        if (sc.final > best.final) { best = { final: sc.final, matched: sc.matched }; product = p; }
+        if (sc.final > best.final) { best = { final: sc.final, matched: sc.matched, penalty: sc.penalty }; product = p; }
       }
     }
-    // Soglia di affidabilità: serve un minimo di parole in comune e niente collab "intrusa".
-    // In relaxed basta ALMENO una parola in comune (di solito il brand) — niente di totalmente
-    // scollegato, ma non pretendiamo il modello esatto: prendiamo il migliore trovato.
-    const minMatch = opts.relaxed ? 1 : Math.max(2, Math.ceil(qSet.size * 0.5));
-    if (product && (best.matched < minMatch || (!opts.relaxed && best.final < 2))) {
+    // Soglia di affidabilità in DUE PASSI: prima proviamo il match PRECISO (come per il
+    // magazzino reale); solo se fallisce e siamo in modalità relaxed (solo checker pubblico)
+    // ripieghiamo su un match GENERICO (basta una parola in comune, es. il brand).
+    // ⚠️ La penalità collab (Travis Scott/Trophy Room/Off-White/... non richiesti dall'utente)
+    // blocca SEMPRE in entrambi i passi: altrimenti "Jordan 5" generico potrebbe uscire come una
+    // rara F&F da 2000€ invece di un modello normale — un errore, non un "modello simile".
+    const strictMinMatch = Math.max(2, Math.ceil(qSet.size * 0.5));
+    const passesStrict = !!product && best.matched >= strictMinMatch && best.final >= 2 && best.penalty === 0;
+    const passesRelaxed = !!opts.relaxed && !!product && best.matched >= 1 && best.penalty === 0;
+    if (!passesStrict && !passesRelaxed) {
       return { configured: true, connected: true, value: null, source: 'StockX (nessun match affidabile)' };
     }
     if (!product) {
