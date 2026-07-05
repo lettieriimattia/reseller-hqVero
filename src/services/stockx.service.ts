@@ -6,6 +6,7 @@
 import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
+import { imageMatchesTitle } from '../utils/imageConsistency';
 
 
 const STOCKX_AUTHORIZE = 'https://accounts.stockx.com/authorize';
@@ -321,20 +322,12 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
     // Immagine prodotto (per la conferma visiva del riconoscimento IA). Campi variabili → difensivo.
     let image = product.media?.imageUrl || product.media?.thumbUrl || product.media?.smallImageUrl
       || product.image || product.thumbUrl || product.productAttributes?.image || null;
-    // Verifica coerenza titolo↔immagine: il nome file dell'immagine StockX di norma rispecchia il
-    // titolo (es. "...Velvet-Brown-Product.jpg" per il titolo "...Velvet Brown"). Se la colorway
-    // del titolo NON compare nel nome file, l'immagine appartiene a un'ALTRA colorway (dato StockX
-    // stesso inconsistente tra title e media, visto su Travis Scott Jordan 1 Low Velvet Brown →
-    // immagine "Sail-Tropical-Pink"): meglio nessuna foto che una foto sbagliata.
-    if (image) {
-      const titleToks = toks(itemName);
-      const lastTitleTok = titleToks[titleToks.length - 1];
-      const filePart = (image.split('/').pop() || '').split('?')[0].replace(/\.(jpe?g|png|webp)$/i, '');
-      const slugToks = new Set(toks(filePart));
-      if (lastTitleTok && !slugToks.has(lastTitleTok)) {
-        logger.warn('StockX immagine scartata: colorway del titolo assente nel file immagine', { itemName, image });
-        image = null;
-      }
+    // Verifica coerenza titolo↔immagine: StockX a volte ritorna title e media di colorway
+    // diverse per lo stesso prodotto (visto su Travis Scott Jordan 1 Low Velvet Brown → immagine
+    // "Sail-Tropical-Pink"): meglio nessuna foto che una foto sbagliata.
+    if (image && !imageMatchesTitle(image, itemName)) {
+      logger.warn('StockX immagine scartata: colorway del titolo assente nel file immagine', { itemName, image });
+      image = null;
     }
     const styleId = product.styleId || product.productAttributes?.styleId || null;
 

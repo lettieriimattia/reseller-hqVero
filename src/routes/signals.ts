@@ -16,6 +16,7 @@ import { getLegoRaw, isLegoConfigured } from '../services/apify.service';
 import { getBrickLinkRaw, isBrickLinkConfigured } from '../services/bricklink.service';
 import { getBrickEconomyRaw, isBrickEconomyConfigured } from '../services/brickeconomy.service';
 import { isAdminEmail } from '../config/admins';
+import { imageMatchesTitle } from '../utils/imageConsistency';
 
 // L'ADMIN (loggato nel browser) NON è soggetto al limite di ricerche: così puoi provare liberamente.
 function isAdminRequest(req: Request): boolean {
@@ -88,14 +89,14 @@ async function findCachedImage(name: string): Promise<string | null> {
     const minScore = Math.max(2, Math.ceil(words.length * 0.6));
     if (bestScore < minScore || !hayBest.includes(mostDistinctive)) return null;
     if (!best.image) return null;
-    // Coerenza nome↔immagine ANCHE per la cache: righe scritte prima che questo controllo
-    // esistesse (es. da una ricerca StockX con title/media già inconsistenti a monte, tipo
-    // "Velvet Brown" salvato con la foto "Sail Tropical Pink") vanno scartate qui, non solo
-    // alla fonte — altrimenti la cache "avvelenata" ripropone la foto sbagliata per sempre.
-    const nameToks = hayBest.replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean);
-    const lastNameTok = nameToks[nameToks.length - 1];
-    const filePart = (best.image.split('/').pop() || '').split('?')[0].replace(/\.(jpe?g|png|webp)$/i, '').toLowerCase();
-    if (lastNameTok && lastNameTok.length > 2 && !filePart.includes(lastNameTok)) return null;
+    // Coerenza nome↔immagine ANCHE per la cache: righe scritte PRIMA che questo controllo
+    // esistesse (es. da StockX con title/media già inconsistenti a monte) vanno scartate qui,
+    // non solo alla fonte. La riga viene anche ripulita (foto azzerata) invece di restare
+    // "avvelenata" per sempre: così una futura ricerca buona potrà rimpiazzarla.
+    if (!imageMatchesTitle(best.image, hayBest)) {
+      prisma.catalogItem.update({ where: { id: best.id }, data: { image: null } }).catch(() => {});
+      return null;
+    }
     return best.image;
   } catch { return null; }
 }

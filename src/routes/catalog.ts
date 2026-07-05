@@ -16,6 +16,7 @@ import { searchStockXCandidates, isStockXConfigured } from '../services/stockx.s
 import { kicksSearch, isKicksConfigured, type CatalogCandidate } from '../services/kicksdb.service';
 import { pokemonSearch } from '../services/pokemon.service';
 import { logger } from '../utils/logger';
+import { imageMatchesTitle } from '../utils/imageConsistency';
 
 const router = Router();
 
@@ -230,13 +231,16 @@ async function upsertCandidate(c: CatalogCandidate, byKey?: Map<string, CatalogR
     ? c.title.slice(c.brand.length).trim() || c.title  // evita "Jordan Jordan 1": toglie il brand in testa
     : split.name;
   const pt = inferCategory(c.title, c.productType) || forceCategory || null;
+  // Non salvare mai una foto di un'ALTRA colorway (fonte inconsistente, es. StockX con title e
+  // media discordanti): meglio nessuna foto in cache che una sbagliata che poi non si corregge da sola.
+  const image = imageMatchesTitle(c.image, c.title) ? c.image : null;
   if (byKey && !byKey.has(key)) {
-    byKey.set(key, { key, brand, name, sku: c.styleId || null, image: c.image || null, productType: pt });
+    byKey.set(key, { key, brand, name, sku: c.styleId || null, image: image || null, productType: pt });
   }
   await prisma.catalogItem.upsert({
     where: { key },
-    create: { key, brand, name, sku: c.styleId || null, productType: pt, image: c.image || null, stockxProductId: c.productId || null },
-    update: { image: c.image || null, name, brand, productType: pt },
+    create: { key, brand, name, sku: c.styleId || null, productType: pt, image: image || null, stockxProductId: c.productId || null },
+    update: { image: image || null, name, brand, productType: pt },
   }).catch(() => {});
 }
 
