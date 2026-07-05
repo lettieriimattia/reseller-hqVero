@@ -51,18 +51,30 @@ function clientIp(req: Request): string {
   return xff || (req.socket && req.socket.remoteAddress) || 'unknown';
 }
 
+// Parole GENERICHE (brand + silhouette): da sole NON identificano un modello preciso. Tutto il
+// RESTO (collab tipo "travis scott", colorway tipo "velvet brown") sono parole IDENTIFICATIVE:
+// devono combaciare TUTTE, altrimenti stiamo guardando un'ALTRA scarpa. Allineate a stockx.service.
+const GENERIC_WORDS = new Set(['nike', 'jordan', 'air', 'force', 'max', 'dunk', 'low', 'high', 'mid',
+  'retro', 'sneaker', 'sneakers', 'shoe', 'shoes', 'scarpa', 'scarpe', 'adidas', 'yeezy', 'boost',
+  'new', 'balance', 'asics', 'gel', 'pro', 'wmns', 'the', 'and', 'edition']);
+function identifyingWords(name: string): string[] {
+  return (name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/)
+    .filter(w => w.length > 2 && !GENERIC_WORDS.has(w));
+}
+
 // Foto di ripiego dalla cache LOCALE (CatalogItem: immagini già scaricate da KicksDB/StockX
 // durante l'uso dell'app). Nessuna chiamata esterna → costo ZERO, sicura per la quota KicksDB.
-// NB: brand e name sono salvati SEPARATI (es. brand="Jordan", name="1 Retro Low OG SP...") quindi
-// cercare l'intero nome come UNA sottostringa unica non trova mai nulla. Cerchiamo per PAROLE
-// distintive (OR) e poi scegliamo il candidato con più parole in comune (punteggio), come fa
-// già il catalogo interno.
+// NB: brand e name sono salvati SEPARATI (es. brand="Jordan", name="1 Retro Low OG SP...").
 async function findCachedImage(name: string): Promise<string | null> {
   const words = (name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 2);
   if (!words.length) return null;
-  // Le parole più LUNGHE sono di solito le più specifiche (nome modello/collab) → filtrano meglio.
+  // Parole IDENTIFICATIVE della query (colorway/collab, non brand/silhouette): DEVONO esserci
+  // tutte nel candidato. Senza questo, "...Velvet Brown" pescava "...Sail Tropical Pink" (stessa
+  // Travis Scott, colorway diversa): 5 parole in comune bastavano, ma le parole che DISTINGUONO
+  // le due scarpe (velvet/brown vs sail/pink) venivano ignorate.
+  const idWords = identifyingWords(name);
+  if (!idWords.length) return null; // query solo generica (es. "Nike Dunk Low") → niente foto a caso
   const distinctive = [...words].sort((a, b) => b.length - a.length).slice(0, 3);
-  const mostDistinctive = distinctive[0]; // es. "krueger" — la parola che identifica DAVVERO il modello
   try {
     const cands = await prisma.catalogItem.findMany({
       where: { AND: [
@@ -78,22 +90,18 @@ async function findCachedImage(name: string): Promise<string | null> {
     let best: typeof cands[number] | null = null; let bestScore = -1;
     for (const c of cands) {
       const hay = `${c.brand} ${c.name}`.toLowerCase();
+      // Scarta SUBITO i candidati a cui manca anche solo UNA parola identificativa della query:
+      // è un'altra colorway/collab, non il prodotto cercato.
+      if (!idWords.every(w => hay.includes(w))) continue;
       const score = words.reduce((s, w) => s + (hay.includes(w) ? 1 : 0), 0);
       if (score > bestScore) { bestScore = score; best = c; }
     }
-    if (!best) return null;
-    // Soglia minima: senza questa, bastava condividere parole GENERICHE ("nike"/"dunk"/"low")
-    // per prendere la foto di una scarpa completamente diversa (es. "Freddy Krueger" mostrava
-    // una Dunk qualsiasi). Ora serve un punteggio solido E la parola più specifica presente
-    // davvero — altrimenti meglio NESSUNA foto che una sbagliata.
-    const hayBest = `${best.brand} ${best.name}`.toLowerCase();
-    const minScore = Math.max(2, Math.ceil(words.length * 0.6));
-    if (bestScore < minScore || !hayBest.includes(mostDistinctive)) return null;
-    if (!best.image) return null;
+    if (!best || !best.image) return null;
     // Coerenza nome↔immagine ANCHE per la cache: righe scritte PRIMA che questo controllo
     // esistesse (es. da StockX con title/media già inconsistenti a monte) vanno scartate qui,
     // non solo alla fonte. La riga viene anche ripulita (foto azzerata) invece di restare
     // "avvelenata" per sempre: così una futura ricerca buona potrà rimpiazzarla.
+    const hayBest = `${best.brand} ${best.name}`.toLowerCase();
     if (!imageMatchesTitle(best.image, hayBest)) {
       prisma.catalogItem.update({ where: { id: best.id }, data: { image: null } }).catch(() => {});
       return null;
@@ -120,19 +128,19 @@ function kicksPublicUnderCap(): boolean {
 }
 async function findLiveKicksImage(name: string): Promise<string | null> {
   if (!isKicksConfigured() || !kicksPublicUnderCap()) return null;
-  const words = (name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 2);
-  if (!words.length) return null;
+  const idWords = identifyingWords(name);
+  if (!idWords.length) return null;
   try {
     const cands = await kicksSearch(name, { limit: 5 });
     let best: typeof cands[number] | null = null; let bestScore = -1;
     for (const c of cands) {
       const hay = (c.title || '').toLowerCase();
-      const score = words.reduce((s, w) => s + (hay.includes(w) ? 1 : 0), 0);
+      // Stessa regola della cache: tutte le parole identificative (colorway/collab) devono esserci.
+      if (!idWords.every(w => hay.includes(w))) continue;
+      const score = idWords.reduce((s, w) => s + (hay.includes(w) ? 1 : 0), 0);
       if (score > bestScore) { bestScore = score; best = c; }
     }
     if (!best || !best.image) return null;
-    const minScore = Math.max(2, Math.ceil(words.length * 0.6));
-    if (bestScore < minScore) return null;
     if (!imageMatchesTitle(best.image, best.title)) return null;
     // Salva SUBITO in cache: così il tetto giornaliero si consuma solo per prodotti mai cercati
     // prima — una volta trovata, la foto resta gratis (dalla cache) per chiunque la cerchi dopo.
