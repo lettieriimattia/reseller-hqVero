@@ -102,11 +102,13 @@ async function findCachedImage(name: string): Promise<string | null> {
   } catch { return null; }
 }
 
-// Ultima spiaggia: ricerca KicksDB DAL VIVO (solo se cache e StockX non hanno dato nulla di
-// coerente). Tetto giornaliero DEDICATO e prudente (oltre a quello già globale in kicksdb.service):
-// il checker è pubblico/senza login, un picco di traffico non deve poter bruciare la quota
-// mensile (1000 richieste) che serve soprattutto all'uso reale dentro l'app.
-const KICKS_PUBLIC_DAILY_CAP = Number(process.env.KICKSDB_PUBLIC_DAILY_CAP || 60);
+// Fonte foto PRIMARIA (dopo la cache): ricerca KicksDB DAL VIVO. Piano Starter kicks.dev =
+// 50.000 richieste/mese (~1600/giorno) → il checker pubblico può usarla generosamente. Tetto
+// giornaliero DEDICATO comunque presente (oltre a quello già globale in kicksdb.service) come
+// rete di sicurezza contro un picco di traffico imprevisto; ogni foto trovata si mette subito in
+// cache (vedi sotto), quindi il tetto si consuma solo per prodotti MAI cercati prima, non per
+// ogni singola persona che li richiede.
+const KICKS_PUBLIC_DAILY_CAP = Number(process.env.KICKSDB_PUBLIC_DAILY_CAP || 500);
 let kicksPublicCalls = 0;
 let kicksPublicDay = new Date().toDateString();
 function kicksPublicUnderCap(): boolean {
@@ -347,11 +349,11 @@ router.post('/price-check', async (req: Request, res: Response) => {
         if (pcByIp.size > 8000) { for (const [k, vv] of pcByIp) if (vv.date !== today) pcByIp.delete(k); } // pulizia
       }
       const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - (used + 1));
-      // Foto, in ordine: 1) cache locale (gratis, già filtrata) 2) foto della fonte prezzo (es.
-      // StockX, che può avere colorway sbagliate) 3) ULTIMA SPIAGGIA: KicksDB dal vivo, con tetto
-      // giornaliero dedicato (vedi findLiveKicksImage) — solo se le prime due non hanno dato nulla.
+      // Foto, in ordine: 1) cache locale (gratis, già filtrata) 2) KicksDB dal vivo (fonte foto
+      // PRIMARIA — piano Starter 50k richieste/mese, affidabile) 3) ultimissimo ripiego: la foto
+      // della fonte prezzo (StockX), che a volte ha colorway sbagliate rispetto al titolo.
       const itemName = val.itemName || query;
-      const image = (await findCachedImage(itemName)) || val.image || (await findLiveKicksImage(itemName));
+      const image = (await findCachedImage(itemName)) || (await findLiveKicksImage(itemName)) || val.image;
       return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, image, detected, remaining, freeLimit: FREE_CHECKS });
     }
     // Nessun valore affidabile: "troppo generico, riprova" — non consuma la prova giornaliera.
