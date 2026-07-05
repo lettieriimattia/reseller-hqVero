@@ -613,6 +613,9 @@
         if (revealBtn) revealBtn.hidden = true;
         pendingReveal = null;
         gate.hidden = true;
+        // Ripulisci i campi: "cerca un ALTRO prodotto" → si riparte da zero, non col nome di prima.
+        q.value = '';
+        if (det) det.value = '';
         q.focus();
       });
       form.addEventListener('submit', function (e) {
