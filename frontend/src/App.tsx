@@ -11120,6 +11120,7 @@ export default function App() {
                 { icon: Truck, t: 'Spedizioni', d: 'Aggiungi il tracking sia per i pacchi in arrivo (entrano in stock alla consegna) sia per le vendite. Stato aggiornabile a mano + link al corriere.' },
                 { icon: Users, t: 'Team e magazzini', d: 'Crea magazzini/reparti e invita i soci col codice: i profitti si dividono con le percentuali impostate.' },
                 { icon: Bell, t: 'Notifiche', d: 'Attiva le notifiche push dalle Impostazioni per vendite, consegne e prodotti fermi da troppo tempo.' },
+                { icon: Smartphone, t: 'Installa l\'app sul telefono', d: 'HQ funziona come un\'app vera, a schermo intero. Su iPhone (Safari): tocca il tasto Condividi in basso → "Aggiungi a schermata Home". Su Android (Chrome): menu ⋮ in alto a destra → "Installa app" (o "Aggiungi a schermata Home"). Poi la apri dall\'icona come una qualsiasi app.' },
               ].map(s => {
                 const I = s.icon;
                 return (
