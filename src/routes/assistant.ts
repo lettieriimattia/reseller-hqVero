@@ -12,6 +12,7 @@ import { apiLimiter } from '../middleware/rateLimit';
 import { groqAssistantChat, isGroqConfigured, groqTranscribe, summarizeTaskText } from '../services/ai.service';
 import { searchStockXCandidates, getStockXValuation, isStockXConfigured, getStockXImage } from '../services/stockx.service';
 import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
+import { addTracking, CARRIERS } from '../services/tracking.service';
 import { checkProductQuota } from '../middleware/plan';
 import { logger } from '../utils/logger';
 
@@ -140,6 +141,24 @@ const TOOLS = [
           nuova_categoria: { type: 'string', description: 'Nuova categoria/reparto (facoltativo)' },
         },
         required: ['nome'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'aggiungi_tracking',
+      description: 'Aggiunge/aggiorna il NUMERO DI TRACCIAMENTO (spedizione) di un prodotto già in magazzino. Usalo quando l\'utente dà un codice di tracking o dice "traccia", "spedizione", "il pacco di X è YYY", "tracking di X". Individua il prodotto per marca+nome (e taglia se serve).',
+      parameters: {
+        type: 'object',
+        properties: {
+          brand: { type: 'string', description: 'Marca per individuare il prodotto (facoltativo)' },
+          nome: { type: 'string', description: 'Nome del modello a cui aggiungere la spedizione' },
+          taglia: { type: 'string', description: 'Taglia per individuarlo (facoltativo)' },
+          codice_tracking: { type: 'string', description: 'Il numero/codice di tracciamento della spedizione (obbligatorio)' },
+          corriere: { type: 'string', description: 'Corriere (facoltativo): BRT, GLS, Poste Italiane, SDA, DHL, UPS, FedEx, TNT, Amazon Logistics, Nexive. Se non detto, lascia vuoto (auto-rilevamento).' },
+        },
+        required: ['nome', 'codice_tracking'],
       },
     },
   },
@@ -491,6 +510,25 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
       return { ok: true, modificati: prods.length, prodotto: `${prods[0].brand} ${prods[0].name}`, modifiche: upd };
     }
 
+    if (name === 'aggiungi_tracking') {
+      const code = String(args.codice_tracking || '').trim().toUpperCase();
+      if (code.length < 4) return { error: 'Mi serve un numero di tracciamento valido (almeno 4 caratteri).' };
+      // Cerca il prodotto SIA in stock (pacco in arrivo) SIA venduto (spedizione al cliente).
+      const where: any = { userId: ctx.userId, deletedAt: null };
+      if (args.brand) where.brand = { contains: String(args.brand).trim(), mode: 'insensitive' };
+      if (args.nome) where.name = { contains: String(args.nome).trim(), mode: 'insensitive' };
+      if (args.taglia && String(args.taglia).trim() !== '—') where.size = String(args.taglia).trim();
+      const prods = await prisma.product.findMany({ where, orderBy: { createdAt: 'desc' }, take: 5 });
+      if (!prods.length) return { error: 'Non ho trovato quel prodotto in magazzino a cui aggiungere la spedizione.' };
+      const p = prods[0];
+      // Corriere → chiave valida (altrimenti Auto-detect).
+      const carrierKey = args.corriere && CARRIERS[String(args.corriere).trim()] ? String(args.corriere).trim() : 'Auto';
+      const direction = p.status === 'VENDUTO' ? 'OUTBOUND' : 'INBOUND';
+      const r = await addTracking(p.id, code, carrierKey, direction);
+      if (!r.success) return { error: r.error || 'Non sono riuscito a salvare la spedizione.' };
+      return { ok: true, prodotto: `${p.brand} ${p.name}`, taglia: p.size, codice: code, corriere: carrierKey, verso: direction === 'INBOUND' ? 'in arrivo' : 'in uscita' };
+    }
+
     if (name === 'vendi_prodotto') {
       const prezzo = Number(args.prezzo_vendita);
       if (!(prezzo > 0)) return { error: 'Mi serve il prezzo di vendita.' };
@@ -599,6 +637,10 @@ function summarizeToolResult(name: string, result: any): string {
     if (result.modifiche?.category) parti.push(`categoria ${result.modifiche.category}`);
     const n = result.modificati > 1 ? ` (${result.modificati} pezzi)` : '';
     return `✏️ Modificato ${result.prodotto}${n}: ${parti.join(', ')}.`;
+  }
+  if (name === 'aggiungi_tracking' && result?.ok) {
+    const corr = result.corriere && result.corriere !== 'Auto' ? ` (${result.corriere})` : '';
+    return `📦 Spedizione ${result.verso} salvata su ${result.prodotto}: tracking ${result.codice}${corr}.`;
   }
   if (name === 'vendi_prodotto' && result?.ok) {
     const taglia = result.taglia && result.taglia !== '—' ? ` (taglia ${result.taglia})` : '';

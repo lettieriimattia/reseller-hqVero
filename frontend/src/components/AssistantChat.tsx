@@ -148,8 +148,10 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
     const reply = (data?.reply || '').toString().trim() || 'Fatto.';
     setMessages(m => [...m, { role: 'assistant', content: reply }]);
     if (fromVoice) showToast(reply, 'ok'); // a chat chiusa: l'esito appare come notifica
-    // Se ha aggiunto un prodotto, aggiorna il magazzino.
-    if (Array.isArray(data?.actions) && data.actions.some((a: any) => a?.tool === 'aggiungi_prodotto' && a?.result?.ok)) {
+    // Se ha eseguito un'azione che MODIFICA i dati (aggiunta, vendita, modifica, tracking, lotto,
+    // eliminazione), aggiorna il magazzino così l'esito si vede subito senza ricaricare.
+    const MUTATING = ['aggiungi_prodotto', 'aggiungi_tracking', 'vendi_prodotto', 'modifica_prodotto', 'crea_lotto', 'elimina_prodotto'];
+    if (Array.isArray(data?.actions) && data.actions.some((a: any) => MUTATING.includes(a?.tool) && a?.result?.ok)) {
       onAction();
     }
   }, [messages, sending, apiCall, showToast, onAction]);
