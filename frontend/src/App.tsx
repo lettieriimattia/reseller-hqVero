@@ -4946,6 +4946,12 @@ export default function App() {
             className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-semibold text-[#6b54c6] hover:bg-[#6b54c6]/10 transition-colors">
             <Sparkles size={17} /> {t('plan.tabPlans')}
           </button>
+          {/* Notifiche (desktop): qui in GENERAL invece che nel top bar. */}
+          <button onClick={() => setNotifPanelOpen(!notifPanelOpen)}
+            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
+            <Bell size={17} /> {t('set.notifications')}
+            {unreadCount > 0 && <span className="ml-auto min-w-[18px] h-[18px] px-1 bg-[#6b54c6] text-white rounded-full text-[10px] font-bold flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+          </button>
           {MARKETPLACE_ENABLED && (
           <button onClick={() => navigateTo('wallet')}
             className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
@@ -4979,8 +4985,8 @@ export default function App() {
         </div>
       </aside>
 
-      {/* ========== HEADER ========== */}
-      <header className="lux-underline sticky top-0 z-40 lg:static lg:z-30 lg:flex-none bg-[var(--bg-blur)] backdrop-blur-xl lg:border-b lg:border-[var(--border)]"
+      {/* ========== HEADER (solo MOBILE: su desktop Add è sul saluto e le notifiche in sidebar) ========== */}
+      <header className="lux-underline sticky top-0 z-40 lg:hidden bg-[var(--bg-blur)] backdrop-blur-xl"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         {/* Sfumatura sotto lo status bar (orario/batteria): la zona della status bar resta PIENA
             (contenuto invisibile lì) e poi sfuma dolcemente → scorrendo il contenuto svanisce sotto
@@ -5001,11 +5007,7 @@ export default function App() {
 
           {/* Azioni a destra */}
           <div className="flex-1 flex items-center justify-end gap-1.5">
-            {/* Pulsante Aggiungi (solo desktop) */}
-            <button onClick={() => openAddForm()}
-              className="hidden lg:flex items-center gap-2 bg-[#6b54c6] hover:bg-[#5d44b0] px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
-              <Plus size={15} /> {t('common.add')}
-            </button>
+            {/* (Add spostato accanto al saluto della dashboard; Notifiche desktop nella sidebar.) */}
             {/* Portafoglio (solo mobile: icona in alto a destra, accesso rapido agli incassi) */}
             {MARKETPLACE_ENABLED && (
             <button onClick={() => navigateTo('wallet')}
@@ -5019,58 +5021,16 @@ export default function App() {
               <Settings size={18} />
             </button>
 
-            {/* Notifiche */}
-            <div className="relative" ref={notifRef}>
-              <button onClick={() => setNotifPanelOpen(!notifPanelOpen)}
-                className="relative p-2 rounded-xl hover:bg-[var(--fill)] transition-colors">
-                <Bell size={18} className="text-[var(--text-muted)]" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-[#6b54c6] text-[var(--text)] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {notifPanelOpen && (
-                /* Mobile: pannello centrato in alto, largo quasi quanto lo schermo.
-                   Desktop (sm+): dropdown ancorato a destra sotto la campanella.
-                   Chiusura al tap-fuori gestita dal listener globale (vedi useEffect). */
-                <div className="fixed sm:absolute left-1/2 sm:left-auto right-auto sm:right-0 -translate-x-1/2 sm:translate-x-0 top-16 sm:top-12 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 bg-[var(--surface-blur)] backdrop-blur-2xl border border-[var(--border-2)] rounded-2xl shadow-xl overflow-hidden z-50">
-                  <div className="p-4 border-b border-[var(--border)] flex justify-between items-center">
-                    <h3 className="font-semibold text-sm">{t('set.notifications')}</h3>
-                    {unreadCount > 0 && (
-                      <button onClick={markAllNotificationsRead}
-                        className="text-xs text-[var(--text-soft)] hover:text-gray-300 transition-colors">
-                        {t('hdr.markAllRead')}
-                      </button>
-                    )}
-                  </div>
-                  <div className="max-h-96 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <p className="p-8 text-center text-[var(--text-soft)] text-sm">{t('hdr.noNotifs')}</p>
-                    ) : (
-                      notifications.map((n: any) => (
-                        <button key={n.id} onClick={() => markNotificationRead(n.id)}
-                          className={`w-full text-left p-3.5 border-b border-[var(--border)] hover:bg-[var(--fill)] transition-colors ${
-                            !n.read ? 'bg-[var(--fill)]' : ''
-                          }`}>
-                          <div className="flex items-start gap-3">
-                            {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-[#6b54c6] mt-1.5 shrink-0" />}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-[var(--text)] truncate">{n.title}</p>
-                              <p className="text-xs text-[var(--text-soft)] mt-0.5">{n.message}</p>
-                              <p className="text-[10px] text-[var(--text-faint)] mt-1">
-                                {new Date(n.createdAt).toLocaleString('it-IT')}
-                              </p>
-                            </div>
-                          </div>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                </div>
+            {/* Notifiche — SOLO mobile (su desktop la campanella è nella sidebar GENERAL). */}
+            <button onClick={() => setNotifPanelOpen(!notifPanelOpen)}
+              className="lg:hidden relative p-2 rounded-xl hover:bg-[var(--fill)] transition-colors">
+              <Bell size={18} className="text-[var(--text-muted)]" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-[#6b54c6] text-[var(--text)] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
               )}
-            </div>
+            </button>
 
             {/* Pulsante Admin rimosso: la gestione è ora nel pannello separato su /admin */}
 
@@ -5124,26 +5084,68 @@ export default function App() {
           </div>
         </nav>
       </header>
-      
+
+      {/* ===== PANNELLO NOTIFICHE (indipendente): mobile in alto centrato, desktop ancorato in
+           basso a sinistra vicino alla sidebar. Backdrop trasparente per chiudere al tap-fuori. ===== */}
+      {notifPanelOpen && (
+        <>
+          <div className="fixed inset-0 z-[59]" onClick={() => setNotifPanelOpen(false)} />
+          <div className="fixed z-[60] left-1/2 -translate-x-1/2 top-16 w-[calc(100vw-1.5rem)] max-w-sm lg:left-[248px] lg:translate-x-0 lg:top-auto lg:bottom-6 lg:w-96 bg-[var(--surface-blur)] backdrop-blur-2xl border border-[var(--border-2)] rounded-2xl shadow-2xl overflow-hidden">
+            <div className="p-4 border-b border-[var(--border)] flex justify-between items-center">
+              <h3 className="font-semibold text-sm">{t('set.notifications')}</h3>
+              {unreadCount > 0 && (
+                <button onClick={markAllNotificationsRead} className="text-xs text-[var(--text-soft)] hover:text-gray-300 transition-colors">{t('hdr.markAllRead')}</button>
+              )}
+            </div>
+            <div className="max-h-96 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <p className="p-8 text-center text-[var(--text-soft)] text-sm">{t('hdr.noNotifs')}</p>
+              ) : (
+                notifications.map((n: any) => (
+                  <button key={n.id} onClick={() => markNotificationRead(n.id)}
+                    className={`w-full text-left p-3.5 border-b border-[var(--border)] hover:bg-[var(--fill)] transition-colors ${!n.read ? 'bg-[var(--fill)]' : ''}`}>
+                    <div className="flex items-start gap-3">
+                      {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-[#6b54c6] mt-1.5 shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[var(--text)] truncate">{n.title}</p>
+                        <p className="text-xs text-[var(--text-soft)] mt-0.5">{n.message}</p>
+                        <p className="text-[10px] text-[var(--text-faint)] mt-1">{new Date(n.createdAt).toLocaleString('it-IT')}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
       <main key={currentView} className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-5 lg:py-10 pb-28 lg:pb-16 animate-fade-in lg:flex-1 lg:overflow-y-auto lg:min-h-0">
 
         {/* ========== DASHBOARD ========== */}
         {currentView === 'dashboard' && (
           <div className="space-y-5 lg:space-y-7">
 
-            {/* Header: solo saluto a SINISTRA. "This week / To ship / Stale" rimossi. */}
-            <div className="min-w-0">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black leading-snug pb-0.5">
-                {(() => {
-                  const h = new Date().getHours();
-                  return (h >= 5 && h < 12) ? (lang === 'en' ? 'Good morning' : 'Buongiorno')
-                    : (h >= 12 && h < 14) ? (lang === 'en' ? 'Hello' : 'Salve')             // mezzogiorno
-                    : (h >= 14 && h < 18) ? (lang === 'en' ? 'Good afternoon' : 'Buon pomeriggio')
-                    : (h >= 18 && h < 23) ? (lang === 'en' ? 'Good evening' : 'Buonasera')
-                    : (lang === 'en' ? 'Hello' : 'Salve');                                    // notte
-                })()}, <span className="text-[var(--text)] font-black">{user.name.split(' ')[0]}</span>
-              </h2>
-              <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1 capitalize truncate">{new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+            {/* Header: saluto a sinistra + Add sulla STESSA riga (desktop), allineati in alto. */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="text-2xl sm:text-[26px] lg:text-[30px] font-black leading-tight pb-0.5 tracking-tight">
+                  {(() => {
+                    const h = new Date().getHours();
+                    return (h >= 5 && h < 12) ? (lang === 'en' ? 'Good morning' : 'Buongiorno')
+                      : (h >= 12 && h < 14) ? (lang === 'en' ? 'Hello' : 'Salve')             // mezzogiorno
+                      : (h >= 14 && h < 18) ? (lang === 'en' ? 'Good afternoon' : 'Buon pomeriggio')
+                      : (h >= 18 && h < 23) ? (lang === 'en' ? 'Good evening' : 'Buonasera')
+                      : (lang === 'en' ? 'Hello' : 'Salve');                                    // notte
+                  })()}, <span className="text-[var(--text)] font-black">{user.name.split(' ')[0]}</span>
+                </h2>
+                <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1 capitalize truncate">{new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+              </div>
+              {/* Add — sulla riga del saluto (desktop). Su mobile resta il "+" nella chatbox. */}
+              <button onClick={() => openAddForm()}
+                className="hidden lg:flex shrink-0 items-center gap-2 bg-[#6b54c6] hover:bg-[#5d44b0] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors active:scale-95 mt-1">
+                <Plus size={16} /> {t('common.add')}
+              </button>
             </div>
 
             {/* Quanto lo pago? — strumento sourcing (prezzo max d'acquisto). DISATTIVATO finché
