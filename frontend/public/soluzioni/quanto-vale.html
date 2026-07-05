@@ -154,6 +154,7 @@
     .pc-joinbox .hero-form { max-width:100%; }
     @media (max-width:560px) { .pc-joinbox .hero-form { flex-direction:column; } }
     @media (max-width:480px) { .pc-joinbox { padding:18px; border-radius:16px; } }
+    #pcRevealBtn:disabled { opacity:.55; cursor:progress; }
 
     section { padding:58px 0; }
     .eyebrow { color:var(--teal-d); font-weight:800; font-size:13px; letter-spacing:.08em; text-transform:uppercase; text-align:center; margin-bottom:12px; }
@@ -291,6 +292,7 @@
             <button class="js-wl-btn btn btn-primary" type="submit" data-i18n="join_btn">Mettiti in lista d'attesa →</button>
           </form>
           <p class="js-wl-msg msg" role="status"></p>
+          <button type="button" id="pcRevealBtn" class="btn btn-primary" style="width:100%;margin-top:14px;" hidden disabled>Sto calcolando…</button>
         </div>
         <button type="button" id="pcAgainBtn" class="pc-again" hidden data-i18n="again">← Cerca un altro prodotto</button>
         <!-- Gate: appare quando finiscono le ricerche gratis del giorno -->
@@ -523,8 +525,8 @@
       // Testi bilingui del risultato (IT/EN). Il VALORE della condizione resta in italiano
       // (lo capisce il backend); si traduce solo l'etichetta mostrata.
       var T = {
-        it: { writeBrand: 'Scrivi marca e modello.', searching: 'Cerco…', detected: 'categoria rilevata:', fromNew: 'da nuovo ≈', marketVal: 'valore di mercato ·', tooGenericMsg: 'Modello troppo generico, non trovo un prezzo preciso. Scrivi il nome esatto e riprova.', remaining: 'Ricerche gratis rimaste oggi: ', lastUsed: 'Ultima ricerca gratis di oggi usata', error: 'Errore, riprova tra poco.', size: 'Taglia ', analyzing: 'Analizzo la foto…', notRecognized: 'Non ho riconosciuto il prodotto. Riprova con una foto più chiara e ravvicinata.' },
-        en: { writeBrand: 'Enter brand and model.', searching: 'Searching…', detected: 'detected category:', fromNew: 'when new ≈', marketVal: 'market value ·', tooGenericMsg: 'Model too generic, can’t find a precise price. Write the exact name and try again.', remaining: 'Free searches left today: ', lastUsed: 'Today’s last free search used', error: 'Error, please try again shortly.', size: 'Size ', analyzing: 'Analyzing the photo…', notRecognized: 'I couldn’t recognize the product. Try a clearer, closer photo.' }
+        it: { writeBrand: 'Scrivi marca e modello.', searching: 'Cerco…', detected: 'categoria rilevata:', fromNew: 'da nuovo ≈', marketVal: 'valore di mercato ·', tooGenericMsg: 'Modello troppo generico, non trovo un prezzo preciso. Scrivi il nome esatto e riprova.', remaining: 'Ricerche gratis rimaste oggi: ', lastUsed: 'Ultima ricerca gratis di oggi usata', error: 'Errore, riprova tra poco.', size: 'Taglia ', analyzing: 'Analizzo la foto…', notRecognized: 'Non ho riconosciuto il prodotto. Riprova con una foto più chiara e ravvicinata.', calculating: 'Sto calcolando…', revealBtn: 'Guarda il risultato gratuitamente →' },
+        en: { writeBrand: 'Enter brand and model.', searching: 'Searching…', detected: 'detected category:', fromNew: 'when new ≈', marketVal: 'market value ·', tooGenericMsg: 'Model too generic, can’t find a precise price. Write the exact name and try again.', remaining: 'Free searches left today: ', lastUsed: 'Today’s last free search used', error: 'Error, please try again shortly.', size: 'Size ', analyzing: 'Analyzing the photo…', notRecognized: 'I couldn’t recognize the product. Try a clearer, closer photo.', calculating: 'Calculating…', revealBtn: 'See the result for free →' }
       };
       function tv(k) { return (T[curLang()] || T.it)[k]; }
       // Config per categoria: nome/dettaglio localizzati; nelle condizioni [valore-backend, {it,en}].
@@ -548,12 +550,17 @@
       }
       cat.addEventListener('change', applyCat); applyCat();
       document.addEventListener('hqlangchange', applyCat); // ritraduce i campi al cambio lingua
-      // Box iscrizione INLINE (niente popup): appare sotto il risultato appena esce una stima.
+      // Box iscrizione INLINE: appare SUBITO durante il calcolo (al posto del box risultato);
+      // il valore si sblocca gratis col tap su "Guarda il risultato" (pendingReveal sotto).
       var joinBox = document.getElementById('pcJoinBox');
-      function showJoinBox() { if (joinBox) joinBox.hidden = false; }
-      // Caricamento brandizzato (stesso splash "HEADQUARTERS → HQ" dell'app): mostrato mentre
-      // aspettiamo la risposta, con una durata minima garantita così si vede sempre per intero.
-      var LOADER_HTML = '<div class="pc-loader"><div class="hq-logo-area"><div class="hq-word"><span>H</span><span class="fl">EAD</span><span>Q</span><span class="fl">UARTERS</span></div></div><div class="hq-bar"><i></i></div></div>';
+      var revealBtn = document.getElementById('pcRevealBtn');
+      var pendingReveal = null; // funzione che mostra il risultato vero, richiamata al tap su "Guarda il risultato"
+      if (revealBtn) revealBtn.addEventListener('click', function () {
+        if (!pendingReveal) return;
+        pendingReveal();
+        pendingReveal = null;
+        revealBtn.hidden = true;
+      });
       function withMinDelay(promise, ms) {
         var wait = new Promise(function (res) { setTimeout(res, ms); });
         return Promise.all([promise, wait]).then(function (r) { return r[0]; });
@@ -570,8 +577,12 @@
         if (againBtn) againBtn.hidden = false;
         if (retryBanner) retryBanner.hidden = true;
         if (isMobile && pcSub) pcSub.style.display = 'none';
-        out.innerHTML = LOADER_HTML;
-        if (joinBox) joinBox.hidden = true;
+        out.innerHTML = '';
+        pendingReveal = null;
+        // Mentre calcoliamo, al posto del box risultato mostriamo subito il box iscrizione:
+        // il tempo di attesa serve a far vedere la proposta, poi si "sblocca" il risultato gratis.
+        if (joinBox) joinBox.hidden = false;
+        if (revealBtn) { revealBtn.hidden = false; revealBtn.disabled = true; revealBtn.textContent = tv('calculating'); }
         gate.hidden = true;
       }
       // Quando la ricerca è "troppo generica": invece di un vicolo cieco, riapriamo il form
@@ -583,6 +594,10 @@
         if (againBtn) againBtn.hidden = true;
         if (pcSub) pcSub.style.display = '';
         if (retryBanner) { retryBanner.textContent = message || ''; retryBanner.hidden = !message; }
+        // Niente da rivelare: il box iscrizione (mostrato durante l'attesa) si richiude col form.
+        if (joinBox) joinBox.hidden = true;
+        if (revealBtn) revealBtn.hidden = true;
+        pendingReveal = null;
         out.innerHTML = '';
         q.value = name || '';
         q.focus();
@@ -595,6 +610,8 @@
         if (retryBanner) retryBanner.hidden = true;
         out.innerHTML = '';
         if (joinBox) joinBox.hidden = true;
+        if (revealBtn) revealBtn.hidden = true;
+        pendingReveal = null;
         gate.hidden = true;
         q.focus();
       });
@@ -616,7 +633,7 @@
           .then(function (d) {
             btn.disabled = false; btn.textContent = lbl;
             // Finite le valutazioni gratis: il form RESTA usabile ma esce la schermata iscrizione.
-            if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; if (pcSub) pcSub.style.display = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+            if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; if (pcSub) pcSub.style.display = ''; if (joinBox) joinBox.hidden = true; if (revealBtn) revealBtn.hidden = true; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
             var detHtml = d.detected ? '<div class="pc-src">' + tv('detected') + ' <b style="color:#c9d0d8">' + esc(d.detected) + '</b></div>' : '';
             if (d.value != null) {
               var cur = (d.currency && d.currency !== 'EUR') ? (' ' + d.currency) : '€';
@@ -626,8 +643,11 @@
               // SOLO qui (ricerca da testo): la ricerca via foto non mostra una foto del catalogo.
               var img = d.image ? '<img src="/api/catalog/img-public?u=' + encodeURIComponent(d.image) + '" alt="" style="width:96px;height:96px;object-fit:contain;background:#fff;border-radius:14px;flex-shrink:0;padding:6px" onerror="this.style.display=\'none\'">' : '';
               var info = '<div class="pc-info"><div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
-              out.innerHTML = '<div class="' + (img ? 'pc-card pc-card-h' : 'pc-card') + '">' + img + info + '</div>';
-              showJoinBox(); // appena esce il valore → invito a iscriversi (inline, non più popup)
+              var cardHtml = '<div class="' + (img ? 'pc-card pc-card-h' : 'pc-card') + '">' + img + info + '</div>';
+              // Il risultato non esce subito: resta il box iscrizione, il valore si "sblocca" col
+              // pulsante "Guarda il risultato gratuitamente" (nessuna ricerca in più consumata).
+              pendingReveal = function () { out.innerHTML = cardHtml; };
+              if (revealBtn) { revealBtn.disabled = false; revealBtn.textContent = tv('revealBtn'); }
             } else {
               // Troppo generico (o nessuna fonte affidabile): non consuma una ricerca, l'utente
               // può riprovare subito con un nome più preciso. Niente stima IA vaga: solo dati veri.
@@ -640,7 +660,7 @@
 
       // ---- VALUTA DA UNA FOTO (vision IA, 1 scan/giorno per IP) ----
       function renderPhoto(d, userImg) {
-        if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; if (pcSub) pcSub.style.display = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+        if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; if (pcSub) pcSub.style.display = ''; if (joinBox) joinBox.hidden = true; if (revealBtn) revealBtn.hidden = true; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
         if (!d.recognized && d.value == null) {
           reopenFormWithPrefill(d.suggestedCategory, '', tv('notRecognized'));
           return;
@@ -652,8 +672,9 @@
           // già in memoria (compressa) dal passo precedente, nessuna chiamata in più.
           var img = userImg ? '<img src="' + userImg + '" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:14px;flex-shrink:0;">' : '';
           var info = '<div class="pc-info"><div class="pc-name">' + esc(d.name) + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
-          out.innerHTML = '<div class="' + (img ? 'pc-card pc-card-h' : 'pc-card') + '">' + img + info + '</div>';
-          showJoinBox();
+          var cardHtml = '<div class="' + (img ? 'pc-card pc-card-h' : 'pc-card') + '">' + img + info + '</div>';
+          pendingReveal = function () { out.innerHTML = cardHtml; };
+          if (revealBtn) { revealBtn.disabled = false; revealBtn.textContent = tv('revealBtn'); }
         } else {
           // Troppo generico (o verifica visiva non confermata): non consuma la prova giornaliera.
           // Riapriamo il form pre-compilato (categoria + nome parziale, es. "Nike SB Dunk Low"
