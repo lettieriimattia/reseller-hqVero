@@ -9701,10 +9701,28 @@ export default function App() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.quantity')}</label>
-                  <input type="number" min="1" max={productToSell.maxQty}
-                    value={sellQuantity} onChange={(e: any) => setSellQuantity(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#6b54c6] outline-none" />
-                  <p className="text-[10px] text-[var(--text-soft)] mt-1">{t('sell.maxAvailable')}: {productToSell.maxQty}</p>
+                  {/* Stepper − / + così è chiaro che si può vendere PIÙ di uno di un gruppo (es. 14 di 29). */}
+                  <div className="flex items-stretch gap-2">
+                    <button type="button" aria-label="-"
+                      onClick={() => setSellQuantity(q => String(Math.max(1, (parseInt(q) || 1) - 1)))}
+                      className="w-10 shrink-0 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] text-lg font-black text-[var(--text)] hover:bg-[var(--fill)] active:scale-95 transition disabled:opacity-40"
+                      disabled={(parseInt(sellQuantity) || 1) <= 1}>−</button>
+                    <input type="number" min="1" max={productToSell.maxQty} inputMode="numeric"
+                      value={sellQuantity}
+                      onChange={(e: any) => { const n = parseInt(e.target.value); setSellQuantity(!n ? '' : String(Math.min(productToSell!.maxQty, Math.max(1, n)))); }}
+                      className="w-full text-center bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm font-bold focus:border-[#6b54c6] outline-none" />
+                    <button type="button" aria-label="+"
+                      onClick={() => setSellQuantity(q => String(Math.min(productToSell!.maxQty, (parseInt(q) || 1) + 1)))}
+                      className="w-10 shrink-0 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] text-lg font-black text-[var(--text)] hover:bg-[var(--fill)] active:scale-95 transition disabled:opacity-40"
+                      disabled={(parseInt(sellQuantity) || 1) >= productToSell.maxQty}>+</button>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-[10px] text-[var(--text-soft)]">{t('sell.maxAvailable')}: {productToSell.maxQty}</p>
+                    {productToSell.maxQty > 1 && (
+                      <button type="button" onClick={() => setSellQuantity(String(productToSell!.maxQty))}
+                        className="text-[10px] font-bold text-[#6b54c6] hover:underline">{lang === 'en' ? 'All' : 'Tutti'}</button>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.totalPrice')}</label>

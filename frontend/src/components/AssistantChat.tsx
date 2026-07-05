@@ -502,8 +502,9 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
         </div>
       )}
 
-      {/* DESKTOP: barra chatbox in basso CENTRATA (stile Gemini/ChatGPT), nell'area contenuto. */}
-      {!open && (
+      {/* DESKTOP: barra chatbox in basso CENTRATA (stile Gemini/ChatGPT), nell'area contenuto.
+          Nascosta anche qui durante la selezione multipla (hideBar), così non copre la barra azioni. */}
+      {!open && !hideBar && (
         <div className="hidden lg:block fixed bottom-6 left-60 right-0 z-[45] px-6 pointer-events-none">
           <div className="max-w-2xl mx-auto pointer-events-auto">{bar}</div>
         </div>
