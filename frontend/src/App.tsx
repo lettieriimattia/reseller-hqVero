@@ -4901,7 +4901,7 @@ export default function App() {
   // Desktop = COCKPIT: altezza fissa, lo scroll avviene SOLO dentro <main> (cruscotto
   // inamovibile). Mobile resta a scroll di pagina normale.
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col text-[var(--text)] lg:pl-60 pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", background: 'radial-gradient(135% 60% at 50% -10%, var(--gold-soft), transparent 56%), radial-gradient(75% 45% at 100% -6%, rgba(160,178,196,0.06), transparent 52%), var(--bg)' }}>
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col text-[var(--text)] lg:pl-60 pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", background: 'radial-gradient(120% 70% at 50% -25%, rgba(139,120,255,0.055), transparent 55%), var(--bg)' }}>
 
       {/* ========== SIDEBAR (solo desktop) ========== */}
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-60 z-40 bg-[var(--surface)] border-r border-[var(--border)] px-3 pt-6 pb-6">
@@ -5185,7 +5185,7 @@ export default function App() {
                   (pacchi in attesa → apre il Tracking). Su mobile: solo Personal (il tracking è nella bottom-nav). */}
               <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-5">
                 <button onClick={() => { setPpFrom(personalPeriod.from || ''); setPpTo(personalPeriod.to || ''); setPeriodPickerOpen(true); }}
-                  className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group">
+                  className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] group">
                   <p className="sys-label mb-1.5 flex items-center gap-1.5"><Wallet size={10} /> {t('dash.personal')} <ChevronDown size={11} className="text-[var(--text-faint)] group-hover:text-[var(--text-soft)]" /></p>
                   <p className="text-2xl lg:text-3xl font-extrabold num text-[var(--teal)]">{periodProfit.toFixed(0)}€</p>
                   <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] mt-1 truncate capitalize font-semibold">{periodLabel}</p>
@@ -5207,7 +5207,7 @@ export default function App() {
                   }
                   return (
                     <button onClick={onClick}
-                      className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group hidden lg:flex lg:flex-col">
+                      className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] group hidden lg:flex lg:flex-col">
                       <p className="sys-label mb-1.5 flex items-center gap-1.5">{icon} {label} <ChevronDown size={11} className="-rotate-90 text-[var(--text-faint)] group-hover:text-[var(--text-soft)]" /></p>
                       <p className={`text-2xl lg:text-3xl font-extrabold num ${valColor}`}>{value}</p>
                       <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] mt-1 truncate font-semibold">{sub}</p>
@@ -5218,7 +5218,7 @@ export default function App() {
 
               {/* NOTE / TASK — desktop: colonna ALTA a destra (row-span-2). */}
               <button onClick={() => setTaskPanelOpen(true)}
-                className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 group flex flex-col lg:row-span-2 lg:h-full">
+                className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] group flex flex-col lg:row-span-2 lg:h-full">
                 {/* Etichetta NOTE — più grande su desktop (prima si leggeva male sulla card alta). */}
                 <p className="text-[10px] lg:text-[13px] uppercase tracking-[0.14em] font-bold text-[var(--text-faint)] mb-1.5 lg:mb-2.5 flex items-center gap-1.5"><StickyNote size={13} className="lg:hidden" /><StickyNote size={16} className="hidden lg:block" /> {t('task.title')}
                   {tasks.filter(x => !x.done).length > 0 && <span className="ml-auto text-[9px] lg:text-[11px] font-bold bg-[#6b54c6]/20 text-[#6b54c6] px-1.5 rounded-full num">{tasks.filter(x => !x.done).length}</span>}

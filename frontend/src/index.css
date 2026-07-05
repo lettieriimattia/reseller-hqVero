@@ -403,9 +403,10 @@ button:active { opacity: 0.75; }
 }
 @media (prefers-reduced-motion: reduce) { .fab-violet { animation: none; } }
 /* Feedback meccanico: i componenti si sollevano come interruttori scolpiti dal pieno */
-.mech { transition: transform .2s ease-out, box-shadow .2s ease-out, border-color .2s ease-out, background-color .2s ease-out; }
-.mech:hover { transform: translateY(-2px); }
-.mech:active { transform: translateY(0); }
+/* Tech-minimal (Linear/Vercel): le card NON "saltano". Nessun sollevamento, solo un lievissimo
+   schiarire del bordo/superficie all'hover → sobrio, premium, non ludico. */
+.mech { transition: border-color .18s ease-out, background-color .18s ease-out; }
+.mech:hover { border-color: var(--border-3); background-color: var(--fill); }
 
 /* ===== Dettaglio champagne (lusso) — usare con parsimonia ===== */
 .text-gold     { color: var(--gold); }
