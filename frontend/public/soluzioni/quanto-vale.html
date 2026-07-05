@@ -604,7 +604,7 @@
               var baseLine = (d.base && Math.round(d.base) !== Math.round(d.value)) ? '<div class="pc-src">' + tv('fromNew') + ' ' + Math.round(d.base) + cur + '</div>' : '';
               // Foto ufficiale del prodotto (dal catalogo/KicksDB) via proxy pubblico → niente hotlink/CSP.
               // SOLO qui (ricerca da testo): la ricerca via foto non mostra una foto del catalogo.
-              var img = d.image ? '<img src="/api/catalog/img-public?u=' + encodeURIComponent(d.image) + '" alt="" style="width:96px;height:96px;object-fit:contain;background:#fff;border-radius:14px;flex-shrink:0;padding:6px">' : '';
+              var img = d.image ? '<img src="/api/catalog/img-public?u=' + encodeURIComponent(d.image) + '" alt="" style="width:96px;height:96px;object-fit:contain;background:#fff;border-radius:14px;flex-shrink:0;padding:6px" onerror="this.style.display=\'none\'">' : '';
               var info = '<div class="pc-info"><div class="pc-name">' + esc(d.name || query) + (sub ? ' · <span style="color:#8a929c;font-weight:600">' + sub + '</span>' : '') + '</div><div class="pc-val">≈ ' + Math.round(d.value) + cur + '</div>' + baseLine + detHtml + '<div class="pc-src">' + tv('marketVal') + ' ' + esc(d.source || 'StockX') + '</div></div>';
               out.innerHTML = '<div class="' + (img ? 'pc-card pc-card-h' : 'pc-card') + '">' + img + info + '</div>';
               showJoinBox(); // appena esce il valore → invito a iscriversi (inline, non più popup)

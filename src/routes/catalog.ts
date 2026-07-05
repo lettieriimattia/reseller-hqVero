@@ -19,8 +19,16 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
-// ===== ROTTE PUBBLICHE (per la landing page, senza login): vetrina + proxy immagini. =====
-router.get('/showcase', async (_req: AuthRequest, res: Response) => {
+// ===== ROTTE PUBBLICHE (per la landing page E il checker, senza login): vetrina + proxy immagini.
+// GOTCHA (2026-07-06): stare PRIMA di `router.use(authenticate, ...)` qui sotto NON BASTA, perché
+// in server.ts `app.use('/', teamRoutes)` viene montato PRIMA di `app.use('/api/catalog', ...)` e
+// teamRoutes ha un `router.use(authenticate)` che si applica a QUALSIASI richiesta, anche a path
+// che teamRoutes stesso non gestisce (Express valuta i router in ordine di montaggio: un visitatore
+// anonimo veniva bloccato 401 PRIMA di arrivare qui). Per questo queste 2 rotte vivono in un router
+// SEPARATO (publicCatalogRouter, esportato sotto) che server.ts monta ESPLICITAMENTE prima di
+// teamRoutes — stesso pattern già usato per /api/share e /api (signalsRouter).
+export const publicCatalogRouter = Router();
+publicCatalogRouter.get('/showcase', async (_req: AuthRequest, res: Response) => {
   try {
     // Mix CASUALE di tutte le categorie (ruota ad ogni caricamento della landing).
     const picked = await prisma.$queryRaw<any[]>`
@@ -29,7 +37,7 @@ router.get('/showcase', async (_req: AuthRequest, res: Response) => {
     res.json(picked.map((i: any) => ({ image: i.image, name: i.name, brand: i.brand })));
   } catch { res.json([]); }
 });
-router.get('/img-public', async (req: AuthRequest, res: Response) => {
+publicCatalogRouter.get('/img-public', async (req: AuthRequest, res: Response) => {
   try {
     const u = (req.query.u || '').toString();
     if (!u) return res.status(400).end();

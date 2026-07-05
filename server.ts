@@ -43,7 +43,7 @@ import plansRoutes from './src/routes/plans';
 import proRoutes from './src/routes/pro';
 import marketRoutes from './src/routes/market';
 import chatRoutes from './src/routes/chat';
-import catalogRoutes from './src/routes/catalog';
+import catalogRoutes, { publicCatalogRouter } from './src/routes/catalog';
 import assistantRoutes from './src/routes/assistant';
 import billingRoutes, { stripeWebhookHandler } from './src/routes/billing';
 import { initPush } from './src/services/push.service';
@@ -255,6 +255,11 @@ app.use('/api/share', publicShareRouter);
 
 // Segnali pre-lancio PUBBLICI (waitlist + conteggio visite landing). PRIMA di teamRoutes.
 app.use('/api', signalsRouter);
+
+// Catalogo PUBBLICO (showcase landing + proxy immagini per il checker). PRIMA di teamRoutes:
+// altrimenti un visitatore anonimo prende 401 dal middleware authenticate di teamRoutes prima
+// di arrivare qui (bug trovato 2026-07-06: bloccava silenziosamente le foto per chi non è loggato).
+app.use('/api/catalog', publicCatalogRouter);
 
 // Stato app (pubblico): il frontend lo legge per mostrare la schermata di manutenzione.
 app.get('/api/status', (_req, res) => {
