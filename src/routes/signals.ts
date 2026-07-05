@@ -132,6 +132,20 @@ async function findLiveKicksImage(name: string): Promise<string | null> {
     const minScore = Math.max(2, Math.ceil(words.length * 0.6));
     if (bestScore < minScore) return null;
     if (!imageMatchesTitle(best.image, best.title)) return null;
+    // Salva SUBITO in cache: così il tetto giornaliero si consuma solo per prodotti mai cercati
+    // prima — una volta trovata, la foto resta gratis (dalla cache) per chiunque la cerchi dopo.
+    const key = (best.styleId || best.productId || best.title || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 120);
+    if (key) {
+      const brand = best.brand || '';
+      const itemNm = (brand && best.title.toLowerCase().startsWith(brand.toLowerCase()))
+        ? best.title.slice(brand.length).trim() || best.title
+        : best.title;
+      prisma.catalogItem.upsert({
+        where: { key },
+        create: { key, brand: best.brand, name: itemNm, sku: best.styleId || null, image: best.image, stockxProductId: best.productId || null },
+        update: { image: best.image, name: itemNm, brand: best.brand },
+      }).catch(() => {});
+    }
     return best.image;
   } catch { return null; }
 }
