@@ -288,9 +288,11 @@ router.post('/price-check', async (req: Request, res: Response) => {
         if (pcByIp.size > 8000) { for (const [k, vv] of pcByIp) if (vv.date !== today) pcByIp.delete(k); } // pulizia
       }
       const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - (used + 1));
-      // Se la fonte (es. StockX) non ha dato una foto, provo la cache locale (immagini KicksDB
-      // già scaricate durante l'uso dell'app) — zero chiamate esterne, zero costo di quota.
-      const image = val.image || await findCachedImage(val.itemName || query);
+      // Foto: PRIMA la cache locale (immagini KicksDB già scaricate durante l'uso dell'app — zero
+      // chiamate esterne, zero costo quota, già filtrata per match affidabile). Solo se la cache
+      // non ha nulla, ripiego sulla foto della fonte (es. StockX), che può avere colorway sbagliate
+      // rispetto al titolo (dato StockX stesso inconsistente in alcuni prodotti).
+      const image = (await findCachedImage(val.itemName || query)) || val.image;
       return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, image, detected, remaining, freeLimit: FREE_CHECKS });
     }
     // Nessun valore affidabile: "troppo generico, riprova" — non consuma la prova giornaliera.
