@@ -203,7 +203,12 @@ router.post('/photo-check', async (req: Request, res: Response) => {
     const isCards = /cart|pok|tcg/i.test(category + ' ' + shownCat);
     const val = await getValuation({ category, name, brand: '', game: isCards ? 'pokemon' : undefined });
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: ('📷 ' + name).slice(0, 80), found: val.value != null } }).catch(() => {});
-    if (val.value != null) {
+    // Rete di sicurezza anti-allucinazione: sneaker/streetwear + prezzo alto + scan NON ad alta
+    // confidenza (l'IA non era sicura del modello) → troppo rischioso mostrarlo come certo (es. una
+    // Dunk qualsiasi scambiata per una rara "De La Soul" da 674€). Meglio chiedere di riprovare.
+    const isSneakerLike = /scarp|sneaker|shoe|street|abbigli|vestit/i.test(category + ' ' + shownCat);
+    const uncertainHighValue = isSneakerLike && val.value != null && val.value > 300 && scan.confidence !== 'HIGH';
+    if (val.value != null && !uncertainHighValue) {
       if (!admin) {
         photoByIp.set(ip, { date: today, count: used + 1 });
         if (photoByIp.size > 8000) { for (const [k, vv] of photoByIp) if (vv.date !== today) photoByIp.delete(k); }
