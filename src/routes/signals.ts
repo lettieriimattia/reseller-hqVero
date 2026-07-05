@@ -60,6 +60,7 @@ async function findCachedImage(name: string): Promise<string | null> {
   if (!words.length) return null;
   // Le parole più LUNGHE sono di solito le più specifiche (nome modello/collab) → filtrano meglio.
   const distinctive = [...words].sort((a, b) => b.length - a.length).slice(0, 3);
+  const mostDistinctive = distinctive[0]; // es. "krueger" — la parola che identifica DAVVERO il modello
   try {
     const cands = await prisma.catalogItem.findMany({
       where: { AND: [
@@ -78,7 +79,15 @@ async function findCachedImage(name: string): Promise<string | null> {
       const score = words.reduce((s, w) => s + (hay.includes(w) ? 1 : 0), 0);
       if (score > bestScore) { bestScore = score; best = c; }
     }
-    return best?.image || null;
+    if (!best) return null;
+    // Soglia minima: senza questa, bastava condividere parole GENERICHE ("nike"/"dunk"/"low")
+    // per prendere la foto di una scarpa completamente diversa (es. "Freddy Krueger" mostrava
+    // una Dunk qualsiasi). Ora serve un punteggio solido E la parola più specifica presente
+    // davvero — altrimenti meglio NESSUNA foto che una sbagliata.
+    const hayBest = `${best.brand} ${best.name}`.toLowerCase();
+    const minScore = Math.max(2, Math.ceil(words.length * 0.6));
+    if (bestScore < minScore || !hayBest.includes(mostDistinctive)) return null;
+    return best.image || null;
   } catch { return null; }
 }
 
