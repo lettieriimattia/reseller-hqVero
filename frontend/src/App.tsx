@@ -4444,8 +4444,9 @@ export default function App() {
     };
   };
 
-  // Link pubblico di tracciamento (nessun account/API): apre un tracker universale
-  const trackingPublicUrl = (code: string) => `https://parcelsapp.com/en/tracking/${encodeURIComponent(code)}`;
+  // Link pubblico di tracciamento (nessun account/API): AfterShip rileva il corriere da solo
+  // dal formato del numero e mostra lo stato reale della spedizione.
+  const trackingPublicUrl = (code: string) => `https://track.aftership.com/${encodeURIComponent(code)}`;
 
   const handleRemoveTracking = async () => {
     if (!trackingProduct) return;
