@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Come iniziare a fare reselling: guida per principianti — HQVault</title>
+  <meta name="description" content="Come iniziare a fare reselling di sneaker, streetwear e carte partendo da zero: scegli la nicchia, trova dove comprare, verifica quanto vale prima di comprare, calcola il margine reale e gestisci tutto senza Excel. Guida pratica in 6 passi." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="canonical" href="https://resellerhq.onrender.com/soluzioni/come-iniziare-reselling" />
+  <meta name="author" content="HQVault" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="HQVault" />
+  <meta property="og:title" content="Come iniziare a fare reselling — guida per principianti — HQVault" />
+  <meta property="og:description" content="Da zero al primo profitto: nicchia, dove comprare, quanto vale, margine reale e magazzino. La guida pratica in 6 passi." />
+  <meta property="og:image" content="https://resellerhq.onrender.com/logo.png" />
+  <link rel="preload" as="image" href="/logo.png" fetchpriority="high" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="apple-touch-icon" href="/logoHQCromato.png" />
+  <script>document.documentElement.classList.add('js');</script>
+  <style>
+    :root {
+      --bg: #ffffff; --soft-bg: #f6f7f9; --card: #ffffff; --line: #e7e9ee;
+      --text: #14181f; --muted: #5b6573; --teal: #0d9488; --teal-d: #0b7c72; --ink: #0f172a;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+    .narrow { max-width: 900px; }
+    .btn { display: inline-block; padding: 14px 26px; border-radius: 12px; font-weight: 800; font-size: 15px; transition: transform .15s, box-shadow .2s, background .2s; }
+    .btn-primary { background: var(--teal); color: #fff; box-shadow: 0 8px 24px -8px rgba(13,148,136,.5); }
+    .btn-primary:hover { transform: translateY(-2px); background: var(--teal-d); }
+    .btn-ghost { border: 1.5px solid rgba(255,255,255,.22); color: #fff; }
+    .btn-ghost:hover { border-color: #fff; background: rgba(255,255,255,.06); }
+    .btn-white { background: #fff; color: var(--teal-d); }
+
+    header { position: sticky; top: 0; z-index: 50; background: rgba(8,9,11,.72); backdrop-filter: blur(14px) saturate(160%); border-bottom: 1px solid rgba(255,255,255,.07); }
+    .nav { display: flex; align-items: center; justify-content: space-between; height: 66px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 19px; letter-spacing: -.02em; color: #f4f6f8; }
+    .brand b { color: #c2c9d2; }
+    .nav-links { display: flex; align-items: center; gap: 24px; font-size: 14.5px; color: #9aa2ab; font-weight: 600; }
+    .nav-links a:hover { color: #fff; }
+    .langbtn { font-size: 12.5px; font-weight: 800; letter-spacing: .03em; color: #e9ecef; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); padding: 9px 14px; border-radius: 999px; cursor: pointer; transition: background .15s; }
+    .langbtn:hover { background: rgba(255,255,255,.16); }
+    @media (max-width: 760px) { .nav-links a:not(.btn) { display: none; } }
+
+    .hero { position: relative; overflow: hidden; background: #06070a; color: #fff; text-align: center; padding: 86px 0 70px; }
+    .hero > .wrap { position: relative; z-index: 2; }
+    .hero-fx { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+    .hero-fx span { position: absolute; border-radius: 50%; filter: blur(72px); mix-blend-mode: screen; opacity: .5; animation: aurora 24s ease-in-out infinite; }
+    .hero-fx .b1 { width: 52vw; max-width: 640px; aspect-ratio: 1; background: radial-gradient(circle, #1f9f93, transparent 68%); top: -16%; left: 3%; }
+    .hero-fx .b2 { width: 48vw; max-width: 560px; aspect-ratio: 1; background: radial-gradient(circle, #4a5bd6, transparent 68%); top: -6%; right: 2%; animation-delay: -8s; }
+    .hero-fx .b3 { width: 42vw; max-width: 540px; aspect-ratio: 1; background: radial-gradient(circle, #7a4bd6, transparent 68%); bottom: -22%; left: 38%; animation-delay: -16s; }
+    @keyframes aurora { 0%, 100% { transform: translate(0,0) scale(1); } 33% { transform: translate(5vw,4vh) scale(1.18); } 66% { transform: translate(-4vw,3vh) scale(.88); } }
+    @media (prefers-reduced-motion: reduce) { .hero-fx span { animation: none; } }
+    .hero-bloom { position: absolute; z-index: 1; top: 8%; left: 50%; transform: translateX(-50%); width: min(680px, 82vw); height: 300px; pointer-events: none; background: radial-gradient(closest-side, rgba(210,224,255,.26), rgba(140,170,255,.06) 50%, transparent 72%); filter: blur(22px); }
+    .crumb { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; color: #c9d0d8; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10); padding: 7px 15px; border-radius: 999px; margin-bottom: 24px; }
+    .crumb .dot { width: 7px; height: 7px; border-radius: 50%; background: #5fb9ae; }
+    .hero h1 { font-size: clamp(32px, 5.4vw, 54px); font-weight: 900; letter-spacing: -.03em; line-height: 1.12; max-width: 820px; margin: 0 auto 16px; padding-bottom: .12em;
+      background: linear-gradient(180deg, #ffffff 0%, #dfe3e8 58%, #b6bbc2 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+    .hero .sub { color: #aeb6c0; font-size: clamp(16px, 2.3vw, 20px); max-width: 660px; margin: 0 auto 28px; }
+    .hero .sub b { color: #e9ecef; font-weight: 700; }
+    .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .micro { margin-top: 16px; font-size: 13.5px; color: #7e8893; }
+
+    section { padding: 60px 0; }
+    .eyebrow { color: var(--teal-d); font-weight: 800; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; text-align: center; margin-bottom: 12px; }
+    h2 { font-size: clamp(25px, 4vw, 38px); font-weight: 900; letter-spacing: -.025em; color: var(--ink); text-align: center; max-width: 760px; margin: 0 auto 14px; }
+    .lead { color: var(--muted); text-align: center; max-width: 660px; margin: 0 auto 44px; font-size: 17px; }
+
+    /* Risposta veloce */
+    .answer { background: var(--soft-bg); border: 1px solid var(--line); border-left: 4px solid var(--teal); border-radius: 14px; padding: 24px 26px; max-width: 820px; margin: 0 auto; }
+    .answer-label { color: var(--teal-d); font-weight: 800; font-size: 12.5px; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 8px; }
+    .answer-text { color: var(--ink); font-size: 17px; } .answer-text b { font-weight: 800; }
+
+    /* Steps numerati */
+    .steps { display: grid; gap: 16px; max-width: 880px; margin: 0 auto; }
+    .step { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px 26px; display: flex; gap: 20px; align-items: flex-start; transition: transform .15s, box-shadow .2s; }
+    .step:hover { transform: translateY(-3px); box-shadow: 0 16px 40px -20px rgba(15,23,42,.3); }
+    .step .n { flex: 0 0 44px; height: 44px; border-radius: 13px; background: linear-gradient(135deg, #0d9488, #0b7c72); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 19px; }
+    .step h3 { font-size: 19px; font-weight: 800; color: var(--ink); margin-bottom: 7px; }
+    .step p { color: var(--muted); font-size: 15.5px; }
+    .step p a { color: var(--teal-d); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+
+    /* FAQ */
+    .faq { max-width: 760px; margin: 0 auto; }
+    details { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-bottom: 12px; }
+    details summary { font-weight: 800; font-size: 16px; color: var(--ink); cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::after { content: '+'; color: var(--teal); font-size: 24px; line-height: 1; }
+    details[open] summary::after { content: '\2212'; }
+    details p { color: var(--muted); margin-top: 12px; font-size: 15px; }
+    details p a { color: var(--teal-d); font-weight: 700; text-decoration: underline; }
+
+    .final { text-align: center; background: linear-gradient(135deg, #0d9488, #0b7c72); border-radius: 28px; padding: 58px 24px; color: #fff; margin: 10px 0 44px; }
+    .final h2 { color: #fff; } .final p { color: rgba(255,255,255,.86); max-width: 540px; margin: 0 auto 24px; font-size: 16.5px; }
+
+    footer { border-top: 1px solid var(--line); padding: 40px 0 90px; color: var(--muted); font-size: 14px; }
+    .foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+    .foot nav { display: flex; gap: 20px; flex-wrap: wrap; }
+    .foot a:hover { color: var(--ink); }
+    .wl-form { display: flex; gap: 10px; max-width: 440px; margin: 6px auto 0; }
+    @media (max-width: 480px) { .wl-form { flex-direction: column; } }
+    .wl-form .js-wl-email { flex: 1; border: none; border-radius: 12px; padding: 15px 16px; font-size: 16px; outline: none; background: #fff; color: var(--ink); box-shadow: 0 8px 24px -12px rgba(0,0,0,.4); }
+    .wl-form .btn { border: none; cursor: pointer; white-space: nowrap; }
+    .wl-msg { color: #fff; font-weight: 700; font-size: 14px; margin-top: 14px; min-height: 20px; }
+    .wl-consent { color: rgba(255,255,255,.8); font-size: 12.5px; margin-top: 12px; }
+    .wl-consent a { color: #fff; text-decoration: underline; }
+    .sticky-cta { display: none; }
+    @media (max-width: 760px) {
+      .sticky-cta { display: block; position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 60;
+        background: var(--teal); color: #fff; font-weight: 800; font-size: 16px; padding: 15px 20px; border-radius: 14px;
+        box-shadow: 0 12px 30px -8px rgba(13,148,136,.6); text-align: center; transition: opacity .2s; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap nav">
+      <a href="/" class="brand" aria-label="HQVault home">HQ<b>Vault</b></a>
+      <nav class="nav-links" aria-label="Navigazione principale">
+        <a href="/#funzioni" data-i18n="nav1">Funzioni</a>
+        <a href="/#faq" data-i18n="nav2">FAQ</a>
+        <a href="/waitlist?src=iniziare" class="btn btn-ghost" style="padding:9px 18px;" data-i18n="nav3">Lista d'attesa</a>
+        <button id="hqLangBtn" class="langbtn" onclick="hqToggleLang()">EN</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-fx" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
+      <div class="hero-bloom" aria-hidden="true"></div>
+      <div class="wrap narrow">
+        <span class="crumb"><span class="dot"></span> <span data-i18n="crumb">Guida per principianti</span></span>
+        <h1 data-i18n="h1">Come iniziare a fare reselling (senza errori da principiante)</h1>
+        <p class="sub" data-i18n="sub">Sneaker, streetwear, carte. Ti serve poco per partire: <b>una nicchia, dove comprare e come capire quanto vale davvero</b> quello che rivendi. Ecco i 6 passi, in ordine.</p>
+        <div class="cta-row">
+          <a href="#passi" class="btn btn-primary" data-i18n="cta1">Vai ai 6 passi</a>
+          <a href="/waitlist?src=iniziare" class="btn btn-ghost" data-i18n="cta2">Prova HQVault</a>
+        </div>
+        <p class="micro" data-i18n="micro">Guida pratica · nessun corso a pagamento · adatta a chi parte da zero</p>
+      </div>
+    </section>
+
+    <!-- RISPOSTA VELOCE -->
+    <section style="padding-top:52px; padding-bottom:8px">
+      <div class="wrap narrow">
+        <div class="answer">
+          <p class="answer-label" data-i18n="ans_l">In breve</p>
+          <p class="answer-text" data-i18n="ans_t">Per <b>iniziare a fare reselling</b> scegli una <b>nicchia</b> che conosci, trova <b>dove comprare sotto prezzo</b> (drop, outlet, privati, lotti), e prima di ogni acquisto <b>controlla il valore di mercato reale</b> e il <b>margine netto</b> (tolte commissioni e spedizione). Poi tieni il <b>magazzino in ordine</b> e traccia il profitto a ogni vendita: è lì che si capisce se stai davvero guadagnando.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 PASSI -->
+    <section id="passi">
+      <div class="wrap">
+        <p class="eyebrow" data-i18n="s_eye">Il metodo</p>
+        <h2 data-i18n="s_h2">Da zero al primo profitto, in 6 passi</h2>
+        <p class="lead" data-i18n="s_lead">Nessun segreto: solo l'ordine giusto delle cose da fare.</p>
+        <div class="steps">
+          <div class="step"><div class="n">1</div><div><h3 data-i18n="st1h">Scegli una nicchia che conosci</h3><p data-i18n="st1p">Sneaker, streetwear, carte Pokémon, lusso. Meglio una sola all'inizio: impari a riconoscere i modelli, i prezzi giusti e i falsi molto più in fretta se resti concentrato.</p></div></div>
+          <div class="step"><div class="n">2</div><div><h3 data-i18n="st2h">Trova dove comprare sotto prezzo</h3><p data-i18n="st2p">Drop ufficiali, outlet, saldi, privati (Vinted/Wallapop), lotti e stock. Il profitto si fa <b>quando compri</b>, non quando vendi: paga bene e il resto viene da sé.</p></div></div>
+          <div class="step"><div class="n">3</div><div><h3 data-i18n="st3h">Controlla quanto vale PRIMA di comprare</h3><p data-i18n="st3p">Non fidarti dei prezzi "richiesti": guarda i venduti reali. Con <a href="/soluzioni/quanto-vale">Quanto vale?</a> scatti una foto o scrivi il modello e vedi subito il valore di mercato (StockX per l'hype, Cardmarket per le carte).</p></div></div>
+          <div class="step"><div class="n">4</div><div><h3 data-i18n="st4h">Calcola il margine REALE</h3><p data-i18n="st4p">Prezzo di vendita meno acquisto <b>non</b> è il tuo guadagno: togli le commissioni della piattaforma e la <a href="/soluzioni/quanto-costa-spedizione">spedizione</a>. Se il margine netto è troppo basso, quell'affare non è un affare.</p></div></div>
+          <div class="step"><div class="n">5</div><div><h3 data-i18n="st5h">Tieni il magazzino in ordine</h3><p data-i18n="st5p">Con pochi pezzi basta la testa; a 30-40 no. Un <a href="/soluzioni/magazzino">gestionale del magazzino</a> ti dice cosa hai, quanto vale e cosa è fermo da troppo tempo (capitale bloccato).</p></div></div>
+          <div class="step"><div class="n">6</div><div><h3 data-i18n="st6h">Vendi, traccia il profitto e pensa alle tasse</h3><p data-i18n="st6p">A ogni vendita segna prezzo, piattaforma e fee: così sai il profitto vero, non "a sensazione". E tieni da parte i dati: oltre una certa soglia di guadagni annui in Italia serve la partita IVA — meglio saperlo prima.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" style="background:var(--soft-bg); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+      <div class="wrap">
+        <p class="eyebrow" data-i18n="q_eye">Domande frequenti</p>
+        <h2 data-i18n="q_h2">Le domande di chi parte adesso</h2>
+        <div class="faq" style="margin-top:24px">
+          <details open><summary data-i18n="q1s">Quanti soldi servono per iniziare?</summary><p data-i18n="q1p">Anche poco: puoi partire con uno o due pezzi comprati bene e reinvestire il ricavo. L'errore è comprare tanto senza aver verificato prima il valore reale e il margine.</p></details>
+          <details><summary data-i18n="q2s">Come faccio a sapere quanto vale un pezzo?</summary><p data-i18n="q2p">Guarda i prezzi VENDUTI, non quelli richiesti. Con <a href="/soluzioni/quanto-vale">Quanto vale?</a> ottieni il valore di mercato da una foto o dal nome del modello, in un tap.</p></details>
+          <details><summary data-i18n="q3s">Serve la partita IVA per fare reselling?</summary><p data-i18n="q3p">In Italia, oltre una certa soglia di guadagni annui e con vendite abituali sì, di norma serve. Le regole cambiano nel tempo: informati con un commercialista. Nel dubbio, tieni traccia di tutti gli acquisti e le vendite da subito — HQVault ti prepara i dati pronti da esportare.</p></details>
+          <details><summary data-i18n="q4s">Dove conviene comprare e dove rivendere?</summary><p data-i18n="q4p">Compri dai drop ufficiali, outlet, saldi, privati e lotti; rivendi dove c'è domanda per la tua nicchia (StockX/eBay per l'hype, Vinted/Wallapop per il resto). Confronta sempre le commissioni prima.</p></details>
+          <details><summary data-i18n="q5s">Come evito le fregature (falsi)?</summary><p data-i18n="q5p">Compra da fonti affidabili, controlla foto reali e dettagli, e diffida dei prezzi troppo bassi. Con l'esperienza sulla tua nicchia riconosci i segnali; all'inizio, meglio pochi acquisti sicuri che tanti rischiosi.</p></details>
+          <details><summary data-i18n="q6s">HQVault a cosa mi serve da principiante?</summary><p data-i18n="q6p">Ti toglie il lavoro manuale: valuti i pezzi prima di comprarli, aggiungi il magazzino con una foto, e a ogni vendita vedi il profitto reale con fee e spedizione già tolte. Meno errori, più chiarezza.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA FINALE -->
+    <section>
+      <div class="wrap narrow">
+        <div class="final" id="join">
+          <h2 data-i18n="fin_h2">Parti col piede giusto</h2>
+          <p data-i18n="fin_p">HQVault sta arrivando: valuti, gestisci il magazzino e sai il profitto reale a ogni vendita. Lascia l'email e ti avvisiamo al lancio.</p>
+          <form class="js-wl-form wl-form" data-src="iniziare" novalidate>
+            <input class="js-wl-email" type="email" inputmode="email" autocomplete="email" placeholder="La tua email" data-i18n-ph="ph" required />
+            <button class="js-wl-btn btn btn-white" type="submit" data-i18n="wl_btn">Avvisami</button>
+          </form>
+          <p class="js-wl-msg wl-msg" role="status"></p>
+          <p class="wl-consent" data-i18n="fin_consent">Un solo avviso al lancio · niente spam. <a href="/privacy">Privacy</a></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <div>
+        <div class="brand" style="margin-bottom:8px; font-size:17px; color:var(--ink);">HQ<b style="color:var(--muted)">Vault</b></div>
+        <span data-i18n="foot_copy">© 2026 HQVault — Software gestionale per reseller.</span>
+      </div>
+      <nav aria-label="Link del sito">
+        <a href="/soluzioni/quanto-vale" data-i18n="foot_l1">Quanto vale?</a>
+        <a href="/soluzioni/magazzino" data-i18n="foot_l2">Magazzino</a>
+        <a href="/soluzioni/quanto-costa-spedizione" data-i18n="foot_l3">Spedizioni</a>
+        <a href="/waitlist?src=iniziare" data-i18n="foot_reg">Iscriviti</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+    {"@type":"Question","name":"Quanti soldi servono per iniziare a fare reselling?","acceptedAnswer":{"@type":"Answer","text":"Anche poco: puoi partire con uno o due pezzi comprati bene e reinvestire il ricavo. L'errore è comprare tanto senza aver verificato prima il valore reale e il margine."}},
+    {"@type":"Question","name":"Come faccio a sapere quanto vale un pezzo?","acceptedAnswer":{"@type":"Answer","text":"Guarda i prezzi venduti, non quelli richiesti. Con lo strumento Quanto vale? ottieni il valore di mercato da una foto o dal nome del modello."}},
+    {"@type":"Question","name":"Serve la partita IVA per fare reselling in Italia?","acceptedAnswer":{"@type":"Answer","text":"Oltre una certa soglia di guadagni annui e con vendite abituali di norma sì. Le regole cambiano: informati con un commercialista e tieni traccia di acquisti e vendite da subito."}},
+    {"@type":"Question","name":"Dove conviene comprare e dove rivendere?","acceptedAnswer":{"@type":"Answer","text":"Compri da drop ufficiali, outlet, saldi, privati e lotti; rivendi dove c'è domanda per la tua nicchia. Confronta sempre le commissioni prima."}}
+  ]}
+  </script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"HQVault","applicationCategory":"BusinessApplication","operatingSystem":"Web, iOS, Android","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}}
+  </script>
+  <a href="#join" class="sticky-cta" data-i18n="sticky">📩 Entra in lista d'attesa →</a>
+
+  <script>
+    window.HQ_EN = {
+      nav1: 'Features', nav2: 'FAQ', nav3: 'Waitlist',
+      crumb: 'Beginner guide',
+      h1: 'How to start reselling (without rookie mistakes)',
+      sub: "Sneakers, streetwear, cards. You need little to start: <b>a niche, where to buy, and how to know what your items are really worth</b>. Here are the 6 steps, in order.",
+      cta1: 'Go to the 6 steps', cta2: 'Try HQVault',
+      micro: 'Practical guide · no paid course · made for absolute beginners',
+      ans_l: 'In short',
+      ans_t: "To <b>start reselling</b>, pick a <b>niche</b> you know, find <b>where to buy below price</b> (drops, outlets, private sellers, lots), and before every purchase <b>check the real market value</b> and your <b>net margin</b> (fees and shipping removed). Then keep your <b>inventory tidy</b> and track profit on every sale: that's where you learn if you're actually making money.",
+      s_eye: 'The method',
+      s_h2: 'From zero to your first profit, in 6 steps',
+      s_lead: 'No secrets: just the right order of things to do.',
+      st1h: 'Pick a niche you know', st1p: 'Sneakers, streetwear, Pokémon cards, luxury. Better one at the start: you learn to recognize models, fair prices and fakes far faster if you stay focused.',
+      st2h: 'Find where to buy below price', st2p: 'Official drops, outlets, sales, private sellers (Vinted/Wallapop), lots and bulk. Profit is made <b>when you buy</b>, not when you sell: buy well and the rest follows.',
+      st3h: 'Check the value BEFORE buying', st3p: "Don't trust asking prices: look at real sold prices. With <a href=\"/soluzioni/quanto-vale\">What's it worth?</a> you snap a photo or type the model and instantly see the market value (StockX for hype, Cardmarket for cards).",
+      st4h: 'Calculate the REAL margin', st4p: 'Sale price minus cost is <b>not</b> your profit: subtract platform fees and <a href="/soluzioni/quanto-costa-spedizione">shipping</a>. If the net margin is too thin, that deal isn\'t a deal.',
+      st5h: 'Keep your inventory tidy', st5p: 'With a few items your head is enough; at 30-40 it isn\'t. An <a href="/soluzioni/magazzino">inventory manager</a> tells you what you own, what it\'s worth and what\'s been sitting too long (locked-up capital).',
+      st6h: 'Sell, track profit, think about taxes', st6p: "On every sale log price, platform and fee: that's how you know real profit, not by feel. And keep your data: above a certain yearly income in Italy you need a VAT number — better to know in advance.",
+      q_eye: 'Frequently asked questions',
+      q_h2: 'The questions of those starting now',
+      q1s: 'How much money do I need to start?', q1p: "Even a little: you can start with one or two well-bought items and reinvest the proceeds. The mistake is buying a lot without first checking real value and margin.",
+      q2s: 'How do I know what an item is worth?', q2p: "Look at SOLD prices, not asking prices. With <a href=\"/soluzioni/quanto-vale\">What's it worth?</a> you get the market value from a photo or the model name, in one tap.",
+      q3s: 'Do I need a VAT number to resell?', q3p: 'In Italy, above a certain yearly income and with regular sales, usually yes. Rules change over time: check with an accountant. When in doubt, track every purchase and sale from day one — HQVault gets your data export-ready.',
+      q4s: 'Where should I buy and where should I resell?', q4p: 'Buy from official drops, outlets, sales, private sellers and lots; resell where there\'s demand for your niche (StockX/eBay for hype, Vinted/Wallapop for the rest). Always compare fees first.',
+      q5s: 'How do I avoid getting scammed (fakes)?', q5p: 'Buy from trusted sources, check real photos and details, and be wary of prices that are too low. With experience in your niche you spot the signs; at the start, a few safe buys beat many risky ones.',
+      q6s: 'What is HQVault for, as a beginner?', q6p: 'It removes the manual work: you value items before buying, add inventory with a photo, and on every sale you see real profit with fees and shipping already subtracted. Fewer mistakes, more clarity.',
+      fin_h2: 'Start on the right foot',
+      fin_p: "HQVault is coming: value items, manage inventory and know real profit on every sale. Leave your email and we'll notify you at launch.",
+      ph: 'Your email', wl_btn: 'Notify me',
+      fin_consent: 'One notification at launch · no spam. <a href="/privacy">Privacy</a>',
+      foot_copy: '© 2026 HQVault — Management software for resellers.',
+      foot_l1: "What's it worth?", foot_l2: 'Inventory', foot_l3: 'Shipping', foot_reg: 'Join',
+      sticky: '📩 Join the waitlist →'
+    };
+  </script>
+  <script src="/lang.js"></script>
+
+  <script>
+    try { navigator.sendBeacon ? navigator.sendBeacon('/api/hit?p=iniziare') : fetch('/api/hit?p=iniziare'); } catch (e) {}
+    function curLang() { try { return localStorage.getItem('hqLang') || 'it'; } catch (e) { return 'it'; } }
+    var WLSTR = {
+      it: { invalid: "Inserisci un'email valida.", sending: 'Invio…', err: 'Qualcosa è andato storto, riprova.', already: '✓ Sei già in lista: ti avviseremo al lancio.', ok: '✓ Sei in lista! Ti scriviamo al lancio.' },
+      en: { invalid: 'Enter a valid email.', sending: 'Sending…', err: 'Something went wrong, please try again.', already: "✓ You're already on the list: we'll notify you at launch.", ok: "✓ You're on the list! We'll write to you at launch." }
+    };
+    function wt(k) { return (WLSTR[curLang()] || WLSTR.it)[k]; }
+    (function () {
+      var RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      document.querySelectorAll('.js-wl-form').forEach(function (form) {
+        var emailEl = form.querySelector('.js-wl-email');
+        var btn = form.querySelector('.js-wl-btn');
+        var msg = form.parentNode.querySelector('.js-wl-msg');
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var email = (emailEl.value || '').trim().toLowerCase();
+          if (!RE.test(email)) { if (msg) { msg.style.color = '#ffe0d0'; msg.textContent = wt('invalid'); } return; }
+          var label = btn ? btn.textContent : '';
+          btn.disabled = true; btn.textContent = wt('sending'); if (msg) msg.textContent = '';
+          fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: form.getAttribute('data-src') || 'iniziare' }) })
+            .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+            .then(function (d) {
+              form.style.display = 'none';
+              if (msg) { msg.style.color = ''; msg.textContent = (d && d.already) ? wt('already') : wt('ok'); }
+            })
+            .catch(function () { btn.disabled = false; btn.textContent = label; if (msg) { msg.style.color = '#ffe0d0'; msg.textContent = wt('err'); } });
+        });
+      });
+      var sticky = document.querySelector('.sticky-cta'), join = document.getElementById('join');
+      if (sticky && join && 'IntersectionObserver' in window) {
+        new IntersectionObserver(function (es) { es.forEach(function (en) { sticky.style.opacity = en.isIntersecting ? '0' : '1'; sticky.style.pointerEvents = en.isIntersecting ? 'none' : 'auto'; }); }, { threshold: .2 }).observe(join);
+      }
+    })();
+  </script>
+</body>
+</html>
