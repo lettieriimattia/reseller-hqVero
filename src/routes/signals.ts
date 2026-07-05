@@ -379,7 +379,10 @@ router.post('/price-check', async (req: Request, res: Response) => {
       // fonte prezzo (StockX), che a volte ha colorway sbagliate rispetto al titolo.
       const itemName = val.itemName || query;
       const image = (await findCachedImage(itemName)) || (await findLiveKicksImage(itemName)) || val.image;
-      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, image, detected, remaining, freeLimit: FREE_CHECKS });
+      // "base" = prezzo "da nuovo" (concetto SNEAKER: retail nuovo → % per condizione). Per le
+      // CARTE non ha senso (hanno un solo valore di mercato Cardmarket) → niente riga "da nuovo".
+      const base = isCards ? null : ((val as any).low ?? null);
+      return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base, image, detected, remaining, freeLimit: FREE_CHECKS });
     }
     // Nessun valore affidabile: "troppo generico, riprova" — non consuma la prova giornaliera.
     const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - used);
