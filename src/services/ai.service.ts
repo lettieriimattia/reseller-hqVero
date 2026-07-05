@@ -1390,6 +1390,14 @@ ${prompt}`;
             result.model = `${card.name} — ${card.set.name} ${card.number}/${card.set.printedTotal}${pokeLang} (da nome)`;
             result.confidence = 'MEDIUM';
             result.details = buildDetails(card);
+          } else if (parsed.cardNumber) {
+            // NESSUNA delle 3 query (nome+numero, numero+totale, solo nome) ha trovato un riscontro
+            // reale su pokemontcg.io: il numero letto dalla foto (OCR IA) potrebbe essere sbagliato
+            // (es. "196/198" letto invece di "196/SV-P" — caratteri piccoli/rovinati si confondono
+            // facilmente). Se sbaglia è grave (valutazione a vuoto, dato sporco in magazzino): avvisa
+            // SEMPRE l'utente invece di tenere silenziosamente il numero non verificato.
+            result.confidence = 'LOW';
+            result.warnings = [...(result.warnings || []), `Numero carta "${parsed.cardNumber}" non trovato nel database Pokémon TCG: potrebbe essere stato letto male dalla foto. Verifica il numero sulla carta prima di salvare.`];
           }
         } catch (tcgErr) {
           logger.warn('TCG API non raggiungibile', { tcgErr });
