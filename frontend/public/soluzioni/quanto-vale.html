@@ -569,6 +569,18 @@
         if (joinBox) joinBox.hidden = true;
         gate.hidden = true;
       }
+      // Quando la ricerca è "troppo generica": invece di un vicolo cieco, riapriamo il form
+      // GIÀ COMPILATO (categoria + nome parziale) così l'utente completa/corregge invece di
+      // ripartire da zero — riduce a zero gli errori: il testo battuto è il metodo più affidabile.
+      function reopenFormWithPrefill(category, name) {
+        if (category && CATS[category]) { cat.value = category; applyCat(); }
+        if (formArea) formArea.hidden = false;
+        if (againBtn) againBtn.hidden = true;
+        if (pcSub) pcSub.style.display = '';
+        q.value = name || '';
+        q.focus();
+        if (q.value) { try { q.setSelectionRange(q.value.length, q.value.length); } catch (e) {} }
+      }
       if (againBtn) againBtn.addEventListener('click', function () {
         if (formArea) formArea.hidden = false;
         againBtn.hidden = true;
@@ -612,6 +624,7 @@
               // Troppo generico (o nessuna fonte affidabile): non consuma una ricerca, l'utente
               // può riprovare subito con un nome più preciso. Niente stima IA vaga: solo dati veri.
               out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('tooGenericMsg') + '</span>' + detHtml + '</div>';
+              reopenFormWithPrefill(cat.value, query);
             }
             if (typeof d.remaining === 'number' && micro) { micro.textContent = d.remaining > 0 ? (tv('remaining') + d.remaining) : tv('lastUsed'); }
           })
@@ -622,7 +635,9 @@
       function renderPhoto(d, userImg) {
         if (d.limited) { out.innerHTML = ''; if (formArea) formArea.hidden = false; if (againBtn) againBtn.hidden = true; if (pcSub) pcSub.style.display = ''; gate.hidden = false; gate.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
         if (!d.recognized && d.value == null) {
-          out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notRecognized') + '</span></div>'; return;
+          out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('notRecognized') + '</span></div>';
+          reopenFormWithPrefill(d.suggestedCategory, '');
+          return;
         }
         var detHtml = d.detected ? '<div class="pc-src">' + tv('detected') + ' <b style="color:#c9d0d8">' + esc(d.detected) + '</b></div>' : '';
         if (d.value != null) {
@@ -634,9 +649,11 @@
           out.innerHTML = '<div class="' + (img ? 'pc-card pc-card-h' : 'pc-card') + '">' + img + info + '</div>';
           showJoinBox();
         } else {
-          // Troppo generico (o nessuna fonte affidabile): non consuma la prova giornaliera,
-          // l'utente può riprovare subito (con una foto più chiara o un altro angolo).
+          // Troppo generico (o verifica visiva non confermata): non consuma la prova giornaliera.
+          // Riapriamo il form pre-compilato (categoria + nome parziale, es. "Nike SB Dunk Low"
+          // senza la collab non confermata) così l'utente scrive il dettaglio esatto e riprova.
           out.innerHTML = '<div class="pc-card"><span class="pc-warn">' + tv('tooGenericMsg') + '</span>' + detHtml + '</div>';
+          reopenFormWithPrefill(d.suggestedCategory, d.suggestedName || d.name);
         }
         if (typeof d.remaining === 'number' && micro) micro.textContent = d.remaining > 0 ? (tv('remaining') + d.remaining) : tv('lastUsed');
       }

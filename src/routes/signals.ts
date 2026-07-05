@@ -154,6 +154,18 @@ function detectCategory(q: string): { cat: string; label: string } | null {
   return null;
 }
 
+// Mappa la categoria dello SCAN (italiano: "Scarpe","Vestiti","Pokemon"...) alle chiavi del
+// dropdown del checker — usata per riaprire il form pre-compilato quando la foto non basta.
+function mapScanCategory(cat: string): string {
+  const c = (cat || '').toLowerCase();
+  if (c.includes('scarp') || c.includes('sneaker')) return 'scarpe';
+  if (c.includes('vestit') || c.includes('abbigli') || c.includes('street')) return 'streetwear';
+  if (c.includes('pokemon') || c.includes('pokémon') || c.includes('carte') || c.includes('card') || c.includes('tcg')) return 'carte';
+  if (c.includes('orolog') || c.includes('watch')) return 'orologi';
+  if (c.includes('bors') || c.includes('bag')) return 'borse';
+  return 'altro';
+}
+
 // DEBUG LEGO (pubblico ma protetto da chiave): funziona anche in incognito/non loggato.
 // Mostra se APIFY è configurato + la risposta GREZZA dell'actor (status, campi, primo item),
 // così capiamo perché un set non viene valutato. Apri:
@@ -199,7 +211,8 @@ router.post('/photo-check', async (req: Request, res: Response) => {
     const name = [brand, model].filter(Boolean).join(' ').trim();
     const category = (scan.category || scan.detectedCategory || 'altro').toString();
     const shownCat = scan.detectedCategory || category;
-    if (!name) return res.json({ value: null, recognized: false, detected: shownCat, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
+    const suggestedCategory = mapScanCategory(category + ' ' + shownCat);
+    if (!name) return res.json({ value: null, recognized: false, detected: shownCat, suggestedCategory, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
     const isCards = /cart|pok|tcg/i.test(category + ' ' + shownCat);
     const val = await getValuation({ category, name, brand: '', game: isCards ? 'pokemon' : undefined });
     prisma.priceCheckLog.create({ data: { ipHash: ipHashOf(ip), query: ('📷 ' + name).slice(0, 80), found: val.value != null } }).catch(() => {});
@@ -220,8 +233,14 @@ router.post('/photo-check', async (req: Request, res: Response) => {
       // mostrarne un'altra presa dal catalogo (quella resta solo per la ricerca da testo).
       return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || name, source: val.source, image: null, recognized: true, detected: shownCat, remaining, freeLimit: PHOTO_FREE });
     }
-    // Nessun valore affidabile: "troppo generico, riprova" — non consuma la prova giornaliera.
-    return res.json({ value: null, tooGeneric: true, name, recognized: true, detected: shownCat, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
+    // Nessun valore affidabile (o verifica visiva non confermata): "troppo generico, riprova" —
+    // non consuma la prova giornaliera. Suggeriamo un nome di ripiego per pre-compilare il form
+    // testuale: se la verifica visiva ha bocciato una collab/colorway specifica, usiamo il
+    // modello BASE (senza quella parte non confermata) invece del nome rischioso intero.
+    const details: any = scan.details || {};
+    const baseModel = [scan.brand, details.model].filter(Boolean).join(' ').trim();
+    const suggestedName = (val.value != null && !visualOk && baseModel) ? baseModel : name;
+    return res.json({ value: null, tooGeneric: true, name, suggestedName, suggestedCategory, recognized: true, detected: shownCat, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
   } catch (e: any) {
     logger.warn('photo-check errore', { err: e?.message });
     return res.json({ value: null, error: true, remaining: admin ? null : Math.max(0, PHOTO_FREE - used), freeLimit: PHOTO_FREE });
