@@ -31,6 +31,9 @@
     .nm{font-weight:800;font-size:15px;margin:3px 0 6px;line-height:1.25}
     .sub{color:var(--soft);font-size:12.5px}
     .price{margin-top:9px;font-weight:900;font-size:17px;color:var(--teal)}
+    .sizes{margin-top:9px;display:grid;gap:4px}
+    .size-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;color:var(--soft);background:var(--surface2);border-radius:8px;padding:5px 9px}
+    .size-row b{color:var(--teal);font-weight:800;white-space:nowrap}
     .empty,.loading{text-align:center;padding:90px 20px;color:var(--soft)}
     .spinner{width:34px;height:34px;border:3px solid rgba(255,255,255,.12);border-top-color:var(--violet);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
     @keyframes spin{to{transform:rotate(360deg)}}
@@ -60,15 +63,29 @@
       document.getElementById('meta').textContent = (d.count||0) + (d.count===1?' prodotto':' prodotti') + (d.sellerName? ' · '+d.sellerName : '');
       if(d.contact){ document.getElementById('contactBox').innerHTML = '<span class="contact">✉️ '+esc(d.contact)+'</span>'; }
       if(!d.products || !d.products.length){ grid.className=''; grid.innerHTML='<div class="empty">Nessun prodotto disponibile in questa vetrina.</div>'; return; }
-      grid.innerHTML = d.products.map(function(p){
-        var src = p.photo || '';
+      // Raggruppa per MODELLO (brand+nome): una scheda sola, con tutte le taglie disponibili
+      // elencate sotto (invece di una card duplicata per ogni singolo pezzo/taglia).
+      var groups = {}, order = [];
+      d.products.forEach(function(p){
+        var key = (p.brand||'')+'|'+(p.name||'');
+        if(!groups[key]){ groups[key]=[]; order.push(key); }
+        groups[key].push(p);
+      });
+      grid.innerHTML = order.map(function(key){
+        var items = groups[key];
+        var first = items[0];
+        var withPhoto = items.find(function(it){ return it.photo; }) || first;
+        var src = withPhoto.photo || '';
         if (src && /^https?:\/\/(images\.stockx\.com|images\.pokemontcg\.io|images?\.goat\.com)/i.test(src)) src = '/api/catalog/img-public?u='+encodeURIComponent(src);
         var img = src ? '<img src="'+esc(src)+'" onerror="this.parentNode.innerHTML=\'<span class=noimg>📦</span>\'" alt="">' : '<span class="noimg">📦</span>';
-        var price = p.price!=null ? '<div class="price">'+Math.round(p.price)+' €</div>' : '';
+        var rows = items.map(function(it){
+          var priceStr = it.price!=null ? (Math.round(it.price)+' €') : '';
+          return '<div class="size-row"><span>'+esc(it.size)+' · '+esc(it.condition)+'</span>'+(priceStr?'<b>'+priceStr+'</b>':'')+'</div>';
+        }).join('');
         return '<div class="card"><div class="ph">'+img+'</div><div class="info">'+
-          '<div class="brand">'+esc(p.brand)+'</div>'+
-          '<div class="nm">'+esc(p.name)+'</div>'+
-          '<div class="sub">'+esc(p.size)+' · '+esc(p.condition)+'</div>'+ price +
+          '<div class="brand">'+esc(first.brand)+'</div>'+
+          '<div class="nm">'+esc(first.name)+'</div>'+
+          '<div class="sizes">'+rows+'</div>'+
           '</div></div>';
       }).join('');
     }).catch(function(){
