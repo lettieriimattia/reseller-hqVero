@@ -5187,10 +5187,16 @@ export default function App() {
                   (pacchi in attesa → apre il Tracking). Su mobile: solo Personal (il tracking è nella bottom-nav). */}
               <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-5">
                 <button onClick={() => { setPpFrom(personalPeriod.from || ''); setPpTo(personalPeriod.to || ''); setPeriodPickerOpen(true); }}
-                  className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] group">
-                  <p className="sys-label mb-1.5 flex items-center gap-1.5"><Wallet size={10} /> {t('dash.personal')} <ChevronDown size={11} className="text-[var(--text-faint)] group-hover:text-[var(--text-soft)]" /></p>
-                  <p className="text-2xl lg:text-3xl font-extrabold num text-[var(--teal)]">{periodProfit.toFixed(0)}€</p>
-                  <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] mt-1 truncate capitalize font-semibold">{periodLabel}</p>
+                  className="mech text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 lg:p-5 hover:border-[var(--border-2)] group flex flex-col">
+                  <div className="flex items-center justify-between mb-3 lg:mb-4">
+                    <span className="flex items-center gap-2 text-[10px] lg:text-[11px] uppercase tracking-[0.14em] font-bold text-[var(--text-faint)]">
+                      <span className="w-6 h-6 lg:w-7 lg:h-7 rounded-lg bg-[var(--fill)] flex items-center justify-center"><Wallet size={13} className="text-[var(--text-soft)]" /></span>
+                      {t('dash.personal')}
+                    </span>
+                    <ChevronDown size={14} className="text-[var(--text-faint)] group-hover:text-[var(--text-soft)] transition-colors shrink-0" />
+                  </div>
+                  <p className="text-[28px] lg:text-[34px] font-black num text-[var(--teal)] leading-none tracking-tight">{periodProfit.toFixed(0)}€</p>
+                  <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] mt-2 truncate capitalize font-semibold">{periodLabel}</p>
                 </button>
                 {/* Box SMART: mostra la cosa più urgente — da spedire → fermi >30gg → valore stock. */}
                 {(() => {
@@ -5198,21 +5204,27 @@ export default function App() {
                   const staleN = products.filter((p: any) => p.status === 'IN STOCK' && (p.oldestDate || p.createdAt) && (Date.now() - new Date(p.oldestDate || p.createdAt).getTime()) / 86400000 > 30).length;
                   let icon, label, value, sub, onClick, valColor;
                   if (shipN > 0) {
-                    icon = <Truck size={11} />; label = t('nav.tracking'); value = String(shipN); sub = t('dash.toShip'); valColor = 'text-[var(--text)]';
+                    icon = <Truck size={13} />; label = t('nav.tracking'); value = String(shipN); sub = t('dash.toShip'); valColor = 'text-[var(--text)]';
                     onClick = () => navigateTo('tracking');
                   } else if (staleN > 0) {
-                    icon = <AlertTriangle size={11} />; label = t('dash.stale'); value = String(staleN); sub = t('dash.staleSub'); valColor = 'text-amber-400';
+                    icon = <AlertTriangle size={13} />; label = t('dash.stale'); value = String(staleN); sub = t('dash.staleSub'); valColor = 'text-amber-400';
                     onClick = () => { setStaleOnly(true); navigateTo('magazzino'); };
                   } else {
-                    icon = <Wallet size={11} />; label = t('mag.stockValue'); value = `${Math.round(stockValore).toLocaleString('it-IT')}€`; sub = t('dash.stock'); valColor = 'text-[#8a78d9]';
+                    icon = <Wallet size={13} />; label = t('mag.stockValue'); value = `${Math.round(stockValore).toLocaleString('it-IT')}€`; sub = t('dash.stock'); valColor = 'text-[#8a78d9]';
                     onClick = () => navigateTo('magazzino');
                   }
                   return (
                     <button onClick={onClick}
-                      className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] group hidden lg:flex lg:flex-col">
-                      <p className="sys-label mb-1.5 flex items-center gap-1.5">{icon} {label} <ChevronDown size={11} className="-rotate-90 text-[var(--text-faint)] group-hover:text-[var(--text-soft)]" /></p>
-                      <p className={`text-2xl lg:text-3xl font-extrabold num ${valColor}`}>{value}</p>
-                      <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] mt-1 truncate font-semibold">{sub}</p>
+                      className="mech text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 lg:p-5 hover:border-[var(--border-2)] group hidden lg:flex lg:flex-col">
+                      <div className="flex items-center justify-between mb-3 lg:mb-4">
+                        <span className="flex items-center gap-2 text-[10px] lg:text-[11px] uppercase tracking-[0.14em] font-bold text-[var(--text-faint)]">
+                          <span className="w-6 h-6 lg:w-7 lg:h-7 rounded-lg bg-[var(--fill)] flex items-center justify-center text-[var(--text-soft)]">{icon}</span>
+                          {label}
+                        </span>
+                        <ChevronDown size={14} className="-rotate-90 text-[var(--text-faint)] group-hover:text-[var(--text-soft)] transition-colors shrink-0" />
+                      </div>
+                      <p className={`text-[28px] lg:text-[34px] font-black num leading-none tracking-tight ${valColor}`}>{value}</p>
+                      <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] mt-2 truncate font-semibold">{sub}</p>
                     </button>
                   );
                 })()}
@@ -5220,25 +5232,29 @@ export default function App() {
 
               {/* NOTE / TASK — desktop: colonna ALTA a destra (row-span-2). */}
               <button onClick={() => setTaskPanelOpen(true)}
-                className="mech text-left bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl p-3.5 hover:border-[var(--border-2)] group flex flex-col lg:row-span-2 lg:h-full">
-                {/* Etichetta NOTE — più grande su desktop (prima si leggeva male sulla card alta). */}
-                <p className="text-[10px] lg:text-[13px] uppercase tracking-[0.14em] font-bold text-[var(--text-faint)] mb-1.5 lg:mb-2.5 flex items-center gap-1.5"><StickyNote size={13} className="lg:hidden" /><StickyNote size={16} className="hidden lg:block" /> {t('task.title')}
-                  {tasks.filter(x => !x.done).length > 0 && <span className="ml-auto text-[9px] lg:text-[11px] font-bold bg-[#6b54c6]/20 text-[#6b54c6] px-1.5 rounded-full num">{tasks.filter(x => !x.done).length}</span>}
-                </p>
+                className="mech text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 lg:p-5 hover:border-[var(--border-2)] group flex flex-col lg:row-span-2 lg:h-full">
+                {/* Header NOTE — icona in chip + conteggio (coerente con le KPI). */}
+                <div className="flex items-center justify-between mb-3 lg:mb-4">
+                  <span className="flex items-center gap-2 text-[10px] lg:text-[11px] uppercase tracking-[0.14em] font-bold text-[var(--text-faint)]">
+                    <span className="w-6 h-6 lg:w-7 lg:h-7 rounded-lg bg-[var(--fill)] flex items-center justify-center"><StickyNote size={13} className="text-[var(--text-soft)]" /></span>
+                    {t('task.title')}
+                  </span>
+                  {tasks.filter(x => !x.done).length > 0 && <span className="text-[10px] lg:text-[11px] font-bold bg-[#6b54c6]/15 text-[#8a78d9] px-2 py-0.5 rounded-full num">{tasks.filter(x => !x.done).length}</span>}
+                </div>
                 {tasks.filter(x => !x.done).length === 0 ? (
-                  <p className="text-[11px] lg:text-sm text-[var(--text-faint)] leading-snug flex-1">{t('task.empty')}</p>
+                  <p className="text-[12px] lg:text-sm text-[var(--text-faint)] leading-snug flex-1">{t('task.empty')}</p>
                 ) : (
-                  <div className="space-y-1 lg:space-y-2.5 flex-1">
+                  <div className="space-y-2 lg:space-y-3 flex-1">
                     {/* 2 note su mobile, fino a 7 su desktop (la card è alta). Testo più grande su PC. */}
                     {tasks.filter(x => !x.done).slice(0, 2).map(tk => (
-                      <p key={tk.id} className="text-[12px] lg:text-[15px] text-[var(--text-soft)] truncate flex items-center gap-2"><span className="w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full bg-[#6b54c6] shrink-0" />{tk.summary || tk.text}</p>
+                      <p key={tk.id} className="text-[12.5px] lg:text-[14.5px] text-[var(--text-soft)] truncate flex items-center gap-2.5"><span className="w-1.5 h-1.5 rounded-full bg-[#6b54c6] shrink-0" />{tk.summary || tk.text}</p>
                     ))}
                     {tasks.filter(x => !x.done).slice(2, 7).map(tk => (
-                      <p key={tk.id} className="hidden lg:flex text-[15px] text-[var(--text-soft)] truncate items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-[#6b54c6] shrink-0" />{tk.summary || tk.text}</p>
+                      <p key={tk.id} className="hidden lg:flex text-[14.5px] text-[var(--text-soft)] truncate items-center gap-2.5"><span className="w-1.5 h-1.5 rounded-full bg-[#6b54c6] shrink-0" />{tk.summary || tk.text}</p>
                     ))}
                   </div>
                 )}
-                <p className="text-[10px] lg:text-[13px] text-[#6b54c6] font-bold mt-1.5 lg:mt-3 group-hover:opacity-80">{t('dash.see')} →</p>
+                <p className="text-[11px] lg:text-[13px] text-[#8a78d9] font-bold mt-3 lg:mt-4 group-hover:text-[#a996ff] transition-colors">{t('dash.see')} →</p>
               </button>
 
               {/* Grafico Andamento Vendite — nella STESSA griglia: mobile a tutta larghezza sotto,
