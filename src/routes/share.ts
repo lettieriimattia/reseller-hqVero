@@ -23,8 +23,8 @@ function safeProduct(p: any) {
     condition: p.condition,
     category: p.category,
     photo: firstPhoto(p.photos),
-    // prezzo di vendita richiesto (SOLO se pubblicato): mai il prezzo d'acquisto.
-    price: p.publicPrice != null ? p.publicPrice : null,
+    // NIENTE prezzo in vetrina: è il prezzo a cui il reseller vende → dato riservato, non
+    // va esposto pubblicamente (né in UI né nel JSON pubblico). Mai il prezzo d'acquisto.
   };
 }
 
@@ -35,7 +35,8 @@ async function loadShareProducts(share: any) {
   if (!Array.isArray(ids) || !ids.length) return [];
   const prods = await prisma.product.findMany({
     where: { id: { in: ids }, userId: share.userId, deletedAt: null, status: 'IN STOCK' },
-    select: { id: true, brand: true, name: true, size: true, condition: true, category: true, photos: true, publicPrice: true },
+    // publicPrice NON selezionato: la vetrina non mostra prezzi (dato riservato del reseller).
+    select: { id: true, brand: true, name: true, size: true, condition: true, category: true, photos: true },
   });
   // mantieni l'ordine scelto
   const byId = new Map(prods.map(p => [p.id, p]));

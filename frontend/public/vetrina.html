@@ -88,17 +88,13 @@
         var src = withPhoto.photo || '';
         if (src && /^https?:\/\/(images\.stockx\.com|images\.pokemontcg\.io|images?\.goat\.com)/i.test(src)) src = '/api/catalog/img-public?u='+encodeURIComponent(src);
         var img = src ? '<img src="'+esc(src)+'" onerror="this.parentNode.innerHTML=\'<span class=noimg>📦</span>\'" alt="">' : '<span class="noimg">📦</span>';
-        var prices = items.map(function(it){ return it.price; }).filter(function(p){ return p!=null; });
-        var minPrice = prices.length ? Math.min.apply(null, prices) : null;
-        var multi = prices.length > 1 && (Math.max.apply(null, prices) !== minPrice);
-        var priceHtml = minPrice!=null ? '<div class="price">'+(multi?'da ':'')+Math.round(minPrice)+' €</div>' : '';
+        // NIENTE prezzi in vetrina: sono i prezzi a cui il reseller vende → dato riservato.
         var pills = items.map(function(it){
           return '<div class="size-pill"><b>'+esc(it.size||'-')+'</b><span>'+esc(it.condition||'-')+'</span></div>';
         }).join('');
         return '<div class="card"><div class="ph">'+img+'</div><div class="info">'+
           '<div class="brand">'+esc(first.brand)+'</div>'+
           '<div class="nm">'+esc(first.name)+'</div>'+
-          priceHtml+
           '<div class="sizes">'+pills+'</div>'+
           '</div></div>';
       }).join('');
