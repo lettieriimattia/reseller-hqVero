@@ -17,6 +17,7 @@ import { logInventory } from '../services/inventory-log.service';
 import { notifyWarehouseMembers } from '../services/notification.service';
 import { getMarketValuation } from '../services/price.service';
 import { getStockXValuation, isStockXConfigured, searchStockXCandidates, getStockXImage } from '../services/stockx.service';
+import { getValuation } from '../services/valuation.service';
 import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
 import { normalizeProductName } from '../services/ai.service';
 import { checkProductQuota, requireFeature } from '../middleware/plan';
@@ -975,21 +976,28 @@ router.get('/:id/valuation', requireFeature('stockx_pricing'), async (req: AuthR
     if (!allowed || !product) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
     if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
 
-    const query = `${product.brand} ${product.name}`.trim();
-    // StockX: prova SEMPRE. Restituiamo anche il MOTIVO preciso se non c'è valore,
-    // così dall'app si capisce se manca la configurazione, la connessione o solo il match.
-    const sx = await getStockXValuation({ query, name: product.name || undefined, size: product.size || undefined, sku: product.sku || undefined, category: product.category || undefined });
-    if (sx.value != null) {
-      return res.json({ configured: true, value: sx.value, source: 'Valutazione di mercato', sample: sx.sample || 1, confidence: 'alta', authenticatedOnly: true });
-    }
-    res.json({
-      configured: sx.configured,
-      connected: sx.connected ?? false,
-      value: null,
-      // sx.source è già esplicativo: "non configurato" | "non connesso" | "nessun risultato" | "errore"
-      source: sx.source,
-      sample: 0,
+    // Dispatcher UNIFICATO (lo stesso del checker pubblico e dello scan): instrada per categoria
+    // → carte su Cardmarket/gradazione, orologi su Chrono24, borse su Vestiaire, vinili su
+    // Discogs, sneaker/resto su StockX. PRIMA chiamava SEMPRE e SOLO StockX: una carta Pokémon
+    // gradata finiva a cercare "non quotazioni trovate su StockX" invece del prezzo Cardmarket.
+    const isCard = /pokemon|pokémon|carte|card|tcg|magic|mtg|yugioh|yu-gi-oh|ygo/i.test(product.category || '');
+    const val = await getValuation({
+      category: product.category || undefined,
+      brand: product.brand || undefined,
+      name: product.name || undefined,
+      size: product.size || undefined,
+      // Il campo generico "size" per le carte contiene il NUMERO carta (es. "196/198");
+      // lo passiamo anche come "number" così il branch carte lo trova.
+      number: isCard ? (product.size || undefined) : undefined,
+      condition: product.condition || undefined,
+      sku: product.sku || undefined,
     });
+    if (val.value != null) {
+      return res.json({ configured: true, value: val.value, source: val.source, sample: val.sample || 1, confidence: val.reliable ? 'alta' : 'bassa', authenticatedOnly: val.reliable, image: val.image || undefined });
+    }
+    // Nessun valore: val.source è già esplicativo per qualsiasi fonte tentata
+    // (StockX "non configurato"/"non connesso"/"nessun match", o il messaggio delle altre fonti).
+    res.json({ configured: isStockXConfigured(), value: null, source: val.source, sample: 0 });
   } catch (err: any) {
     logger.error('Errore GET /products/:id/valuation', { err: err.message });
     res.status(500).json({ error: 'Errore valutazione' });
