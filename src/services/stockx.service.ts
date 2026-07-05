@@ -251,12 +251,21 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
   }
   // Collab/edizioni speciali: se sono nel titolo StockX ma NON nel nome riconosciuto,
   // è quasi certo un modello diverso (e molto più caro) → forte penalità.
-  const COLLAB = ['travis scott', 'off-white', 'off white', 'dior', 'fragment', 'union', 'tiffany', 'louis vuitton', 'ben & jerry', 'a ma maniere', 'sacai', 'supreme', 'kaws'];
+  // Lista NON esaustiva apposta: qualsiasi nome nuovo di boutique/collab andrà comunque preso
+  // dal pattern EXCLUSIVE_PATTERN sotto (F&F/PE/Sample/NFR), che non dipende da un elenco fisso.
+  const COLLAB = ['travis scott', 'off-white', 'off white', 'dior', 'fragment', 'union', 'tiffany', 'louis vuitton', 'ben & jerry', 'a ma maniere', 'sacai', 'supreme', 'kaws',
+    'trophy room', 'patta', 'concepts', 'undefeated', 'bodega', 'kith', 'extra butter', 'dover street market', 'atmos', 'clot', 'parra', 'doernbecher', 'what the', 'eminem'];
+  // Edizioni MAI vendute al pubblico (Friends&Family, Player Exclusive, Sample, Not-For-Resale):
+  // penalità forte SEMPRE, a prescindere dal nome della collab — sono per definizione irraggiungibili
+  // e molto più care di un modello normale, quindi non vanno MAI proposte per una ricerca generica.
+  const EXCLUSIVE_PATTERN = /\(?\bf\s*&\s*f\)?\b|friends?\s*(and|&)\s*family|\(?\bpe\)?\b|player\s*exclusiv|\bsample\b|not[\s-]?for[\s-]?resale|\bnfr\b/i;
   const scoreOf = (title: string) => {
     const t = (title || '').toLowerCase();
     const tSet = new Set(toks(title));
     let matched = 0; qSet.forEach(x => { if (tSet.has(x)) matched++; });
-    let penalty = 0; for (const c of COLLAB) { if (t.includes(c) && !nameStr.includes(c)) penalty++; }
+    let penalty = 0;
+    for (const c of COLLAB) { if (t.includes(c) && !nameStr.includes(c)) penalty++; }
+    if (EXCLUSIVE_PATTERN.test(t) && !EXCLUSIVE_PATTERN.test(nameStr)) penalty += 2;
     return { matched, penalty, final: matched - 2 * penalty };
   };
 
