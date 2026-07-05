@@ -824,10 +824,16 @@ export default function App() {
     onTouchMove: moveLongPress,
     onTouchEnd: cancelLongPress,
   } : {});
-  const cardClick = (groupKey: string) => {
+  const cardClick = (groupKey: string, group?: any) => {
     if (swipeActed.current) { swipeActed.current = false; return; } // dopo una swipe niente click
     if (longPressFired.current) { longPressFired.current = false; return; }
-    if (bulkMode) toggleGroupSelection(groupKey);
+    if (!bulkMode) return;
+    // In selezione, se l'oggetto CONTIENE più pezzi (modello con più taglie/venditori, o lotto),
+    // aprire il dettaglio così si scelgono i SINGOLI pezzi (es. vendere solo 2 su 3, e decidere
+    // quali in base al venditore) invece di selezionare per forza tutto il gruppo.
+    if (group?.isModel) { setModelDetail(group); return; }
+    if (group?.isLot) { setLotDetail(group); return; }
+    toggleGroupSelection(groupKey);
   };
 
   // ===== SWIPE sulle card magazzino (mobile): destra = Vendi, sinistra = Elimina (con conferma) =====
@@ -5619,7 +5625,7 @@ export default function App() {
                           <div className="absolute inset-0 flex items-center justify-end pr-5 rounded-2xl bg-red-600/25 text-red-200 font-bold pointer-events-none" style={{ opacity: swipe?.key === groupKey && swipe.dx < -8 ? 1 : 0 }}>{t('sw.delete')} <Trash2 size={18} className="ml-1.5" /></div>
                         </>))}
                       <div
-                        onClick={() => cardClick(groupKey)}
+                        onClick={() => cardClick(groupKey, g)}
                         {...cardTouchProps(groupKey, g)}
                         style={{ transform: swipe?.key === groupKey ? `translateX(${swipe.dx}px)` : undefined, transition: swipe?.key === groupKey ? 'none' : 'transform .22s ease', touchAction: 'pan-y' }}
                         className={`bg-[var(--surface)] border ring-1 ring-white/[0.02] rounded-2xl overflow-hidden ease-out active:scale-[0.99] relative ${
@@ -5681,7 +5687,7 @@ export default function App() {
 
                       {/* ===== DESKTOP: card a cubetto ===== */}
                       <div
-                        onClick={() => cardClick(groupKey)}
+                        onClick={() => cardClick(groupKey, g)}
                         {...cardPressProps(groupKey)}
                         className={`hidden lg:flex flex-col bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all duration-200 relative hover:-translate-y-1 hover:shadow-xl hover:shadow-black/25 ${
                           bulkMode ? 'cursor-pointer select-none' : ''
