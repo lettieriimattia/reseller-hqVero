@@ -48,13 +48,13 @@ export default function TrendChart({ trendData }: { trendData: any[] }) {
         {/* Linea media (tratteggiata, tenue) */}
         <ReferenceLine y={avg} stroke="#6b54c6" strokeOpacity={0.28} strokeDasharray="3 5" />
 
-        {/* Ricavi: velo secondario di sfondo (curva morbida, tenue) */}
-        <Area type="monotone" dataKey="Ricavi" stroke="#8a78d9" strokeOpacity={0.4} strokeWidth={1.75}
+        {/* Ricavi: velo secondario di sfondo (linea spezzata, tenue) */}
+        <Area type="linear" dataKey="Ricavi" stroke="#8a78d9" strokeOpacity={0.4} strokeWidth={1.75}
           fill="url(#ricaGrad)" dot={false} isAnimationActive={false} />
 
-        {/* Profitto: curva MORBIDA viola in primo piano, con glow/ombra e stroke sfumato.
-            Nessun puntino fisso → pulito; il punto compare solo all'hover (activeDot). */}
-        <Area type="monotone" dataKey="Profitto" stroke="url(#profStroke)" strokeWidth={3}
+        {/* Profitto: spezzata viola ANGOLARE (niente raccordi curvi) in primo piano, con glow/ombra
+            e stroke sfumato. Nessun puntino fisso → il punto compare solo all'hover (activeDot). */}
+        <Area type="linear" dataKey="Profitto" stroke="url(#profStroke)" strokeWidth={3}
           fill="url(#profGrad)" dot={false} style={{ filter: 'url(#lineGlow)' }}
           activeDot={{ r: 5, fill: '#c4b5fd', stroke: '#6b54c6', strokeWidth: 2 }}
           isAnimationActive={true} animationDuration={700} />

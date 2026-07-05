@@ -214,16 +214,20 @@ if (isProduction) {
     if (req.cookies?.refresh_token) return true;
     return false;
   }
+  // ⚠️ TEMPORANEO: cancello beta SOSPESO finché le landing non sono online. Ora i beta tester
+  // senza codice devono poter usare l'app col link normale (login/loro account). Per RIATTIVARLO
+  // al lancio pubblico: rimettere BETA_GATE_ON = true (qui) — riattiva TUTTI i punti del gate.
+  const BETA_GATE_ON = false;
   // GATE UNICO della shell dell'app: chi non ha accesso NON deve MAI vedere la pagina di login
   // (né dell'app né dell'admin). Vale per /app, ma ANCHE per l'accesso DIRETTO ai file statici
   // index.html/admin.html (altrimenti li servirebbe express.static saltando il cancello beta).
   function serveGatedApp(req: Request, res: Response, file: 'index.html' | 'admin.html') {
     const betaKey = process.env.BETA_ACCESS_KEY || '';
-    if (betaKey && req.query.beta === betaKey) {
+    if (BETA_GATE_ON && betaKey && req.query.beta === betaKey) {
       res.cookie(BETA_COOKIE, '1', { httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'lax', maxAge: 365 * 24 * 60 * 60 * 1000 });
       return res.redirect(file === 'admin.html' ? '/admin' : '/app');
     }
-    if (betaKey && !hasAppAccess(req)) return res.redirect('/waitlist');
+    if (BETA_GATE_ON && betaKey && !hasAppAccess(req)) return res.redirect('/waitlist');
     res.sendFile(path.join(frontendDist, file));
   }
   // L'app SPA vive sotto /app (e sottopercorsi). Servila SUBITO, PRIMA dei router API:
@@ -384,8 +388,11 @@ if (isProduction) {
   // l'ordine cambiasse — questo NON deve diventare una scorciatoia per la pagina di login: il gate
   // vero resta /app, /index.html e /admin qui sopra. Serviamo la shell solo a chi ha già accesso.
   app.get('*', (req: Request, res: Response) => {
+    // ⚠️ TEMPORANEO: cancello beta SOSPESO (come serveGatedApp sopra) — al lancio riattivare
+    // il blocco qui sotto insieme a BETA_GATE_ON = true.
+    const BETA_GATE_ON = false;
     const betaKey = process.env.BETA_ACCESS_KEY || '';
-    if (betaKey) {
+    if (BETA_GATE_ON && betaKey) {
       if (req.cookies?.hq_beta === '1') { /* ok */ }
       else {
         const tk = req.cookies?.access_token;
