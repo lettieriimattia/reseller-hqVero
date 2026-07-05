@@ -31,6 +31,11 @@ const VINYL_KEYS = ['vinil', 'disco', 'dischi', 'vinyl', 'record', 'lp', '33 gir
 const BAG_KEYS = ['bors', 'bag', 'pochette', 'zaino', 'tracoll', 'clutch', 'handbag', 'shopper'];
 const WATCH_KEYS = ['orolog', 'watch', 'chrono'];
 const SHOE_KEYS = ['scarp', 'sneaker', 'calzatur', 'shoe', 'ginnastica'];
+// Abbigliamento/streetwear: le uniche categorie (oltre alle scarpe) a cui si applica la % per
+// condizione. Orologi/borse/elettronica/carte NON scalano di prezzo con quelle percentuali.
+const APPAREL_KEYS = ['abbigli', 'street', 'vestit', 'felpa', 'hoodie', 'shirt', 'maglia', 'maglion',
+  'giacc', 'jacket', 'pantalon', 'tee', 't-shirt', 'cappell', 'beanie', 'short', 'jeans', 'tuta',
+  'crewneck', 'cardigan', 'polo', 'camic', 'gilet', 'coat', 'cappotto', 'piumino'];
 
 function matches(cat: string, keys: string[]): boolean {
   const c = (cat || '').toLowerCase();
@@ -163,8 +168,10 @@ export async function getValuation(opts: {
     if (q.length >= 2) {
       const v = await getStockXValuation({ query: q, name: opts.name, size: opts.size, category: opts.category, sku: opts.sku });
       if (v.value != null) {
-        // Anche qui applichiamo la % per condizione (vestiti/streetwear passano di qui).
-        const cm = conditionMultiplier(opts.condition);
+        // La % per condizione si applica SOLO ad abbigliamento/streetwear (le scarpe hanno il ramo
+        // dedicato sopra). Elettronica, accessori e altro passano di qui SENZA scalare il prezzo:
+        // quelle percentuali (100/77/62/45/30) valgono solo per scarpe e vestiti.
+        const cm = matches(cat, APPAREL_KEYS) ? conditionMultiplier(opts.condition) : { pct: 1, label: '' };
         const adjusted = Math.round((v.value as number) * cm.pct);
         const src = cm.pct !== 1 ? `Valutazione di mercato · ${Math.round(cm.pct * 100)}% (${cm.label})` : 'Valutazione di mercato';
         return { value: adjusted, currency: 'EUR', source: src, reliable: true, sample: v.sample || 1, itemName: v.itemName, low: cm.pct !== 1 ? v.value : undefined, image: v.image };
