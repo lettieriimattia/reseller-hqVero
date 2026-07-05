@@ -33,14 +33,26 @@ const SET_HINT_WORDS = ['van', 'gogh', 'museum', 'promo', 'special', 'delivery',
 // Costruisce la query Lucene di pokemontcg.io. Il NOME va cercato per PAROLE in wildcard
 // (name:pikachu*) invece che come stringa esatta: "Pikachu Van Gogh" come stringa esatta non
 // esiste e svuoterebbe la ricerca. Il numero, se c'è, resta il vincolo più forte.
+// pokemontcg.io salva il numero SENZA il totale del set: "271/264" sulla carta → number "271".
+// Prendiamo la parte prima dello slash (e togliamo eventuali zeri iniziali non servono, ma li
+// lasciamo com'è: il campo è testuale, es. "SV-P", "271", "H12").
+function numberCore(raw?: string): string {
+  return (raw || '').replace(/["\\:]/g, ' ').split('/')[0].trim();
+}
 function buildQuery(opts: { name?: string; number?: string; setName?: string }): string {
   const parts: string[] = [];
   const clean = (s: string) => s.replace(/["\\:]/g, ' ').trim();
-  if (opts.name) {
+  const num = numberCore(opts.number);
+  if (num) {
+    // Col NUMERO abbiamo il vincolo più specifico: NON aggiungiamo i filtri name:* — spesso
+    // l'utente mette nel "nome" anche il set (es. "Gengar VMAX Fusion Strike") e quelle parole,
+    // ANDate come name:, svuoterebbero la ricerca (la carta si chiama solo "Gengar VMAX"). Il
+    // nome/set lo usiamo DOPO per lo scoring tra i risultati con quel numero.
+    parts.push(`number:"${num}"`);
+  } else if (opts.name) {
     const words = clean(opts.name).split(/\s+/).filter(w => w.length >= 2 && !SET_HINT_WORDS.includes(w.toLowerCase()));
     for (const w of words) parts.push(`name:${w}*`);
   }
-  if (opts.number) parts.push(`number:"${clean(opts.number)}"`);
   if (opts.setName) parts.push(`set.name:"${clean(opts.setName)}"`);
   return parts.join(' ');
 }
@@ -73,12 +85,20 @@ export async function getPokemonCardValue(opts: { name?: string; number?: string
       const hay = `${c?.name || ''} ${c?.set?.name || ''} ${c?.set?.series || ''}`.toLowerCase();
       return qWords.reduce((s, w) => s + (hay.includes(w) ? 1 : 0), 0);
     };
+    const num = numberCore(opts.number);
     let best = pool[0];
-    if (opts.number) {
-      const exact = pool.find(c => (c.number || '').toString() === opts.number!.toString());
-      if (exact) best = exact;
+    if (num) {
+      // Tra i risultati con quel numero, scegli quello che COMBACIA MEGLIO col nome+set scritto
+      // dall'utente (es. numero 271 esiste in più set → prende quello di "Fusion Strike"/"Gengar").
+      const numMatches = pool.filter(c => (c.number || '').toString() === num);
+      const pickFrom = numMatches.length > 0 ? numMatches : pool;
+      best = [...pickFrom].sort((a, b) => {
+        const d = scoreOf(b) - scoreOf(a);
+        if (d !== 0) return d;
+        return (b?.cardmarket?.prices ? 1 : 0) - (a?.cardmarket?.prices ? 1 : 0);
+      })[0] || best;
     }
-    if (!opts.number && qWords.length > 0) {
+    if (!num && qWords.length > 0) {
       // ordina per: punteggio parole desc, poi prezzo presente, poi set più recente (già ordinato)
       const ranked = [...pool].sort((a, b) => {
         const d = scoreOf(b) - scoreOf(a);

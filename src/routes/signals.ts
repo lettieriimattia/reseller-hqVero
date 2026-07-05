@@ -61,7 +61,9 @@ function clientIp(req: Request): string {
 const PUBLIC_CHECKER_ENABLED = process.env.PUBLIC_CHECKER_ENABLED !== 'false';
 const MONTHLY_CAPS: Record<'ai' | 'kicks' | 'cards', number> = {
   ai: Number(process.env.PUBLIC_AI_MONTHLY_CAP || 3000),
-  kicks: Number(process.env.PUBLIC_KICKS_MONTHLY_CAP || 45000),
+  // KicksDB piano 1000/mese, condiviso con l'app interna: il checker pubblico ne usa al massimo
+  // una fetta (400). Il tetto DURO globale resta comunque in kicksdb.service (950/mese).
+  kicks: Number(process.env.PUBLIC_KICKS_MONTHLY_CAP || 400),
   cards: Number(process.env.PUBLIC_CARDS_MONTHLY_CAP || 3000),
 };
 const monthlyUsed: Record<'ai' | 'kicks' | 'cards', number> = { ai: 0, kicks: 0, cards: 0 };
@@ -132,13 +134,12 @@ async function findCachedImage(name: string): Promise<string | null> {
   } catch { return null; }
 }
 
-// Fonte foto PRIMARIA (dopo la cache): ricerca KicksDB DAL VIVO. Piano Starter kicks.dev =
-// 50.000 richieste/mese (~1600/giorno) → il checker pubblico può usarla generosamente. Tetto
-// giornaliero DEDICATO comunque presente (oltre a quello già globale in kicksdb.service) come
-// rete di sicurezza contro un picco di traffico imprevisto; ogni foto trovata si mette subito in
-// cache (vedi sotto), quindi il tetto si consuma solo per prodotti MAI cercati prima, non per
-// ogni singola persona che li richiede.
-const KICKS_PUBLIC_DAILY_CAP = Number(process.env.KICKSDB_PUBLIC_DAILY_CAP || 500);
+// Fonte foto PRIMARIA (dopo la cache): ricerca KicksDB DAL VIVO. Piano attuale = 1000 richieste/
+// MESE, condiviso con l'app interna → il checker pubblico ne usa una fetta PICCOLA (tetto mensile
+// dedicato sotto + tetto giornaliero prudente). Ogni foto trovata si mette subito in cache, quindi
+// il budget si consuma solo per prodotti MAI cercati prima, non per ogni persona che li richiede.
+// Il tetto DURO globale (che copre app + pubblico) resta in kicksdb.service (950/mese, 60/giorno).
+const KICKS_PUBLIC_DAILY_CAP = Number(process.env.KICKSDB_PUBLIC_DAILY_CAP || 30);
 let kicksPublicCalls = 0;
 let kicksPublicDay = new Date().toDateString();
 function kicksPublicUnderCap(): boolean {
@@ -373,9 +374,9 @@ router.post('/price-check', async (req: Request, res: Response) => {
         if (pcByIp.size > 8000) { for (const [k, vv] of pcByIp) if (vv.date !== today) pcByIp.delete(k); } // pulizia
       }
       const remaining = (admin || UNLIMITED_CHECKS) ? null : Math.max(0, FREE_CHECKS - (used + 1));
-      // Foto, in ordine: 1) cache locale (gratis, già filtrata) 2) KicksDB dal vivo (fonte foto
-      // PRIMARIA — piano Starter 50k richieste/mese, affidabile) 3) ultimissimo ripiego: la foto
-      // della fonte prezzo (StockX), che a volte ha colorway sbagliate rispetto al titolo.
+      // Foto, in ordine: 1) cache locale (gratis, già filtrata) 2) KicksDB dal vivo (con budget
+      // mensile 1000/mese, quindi usato con parsimonia) 3) ultimissimo ripiego: la foto della
+      // fonte prezzo (StockX), che a volte ha colorway sbagliate rispetto al titolo.
       const itemName = val.itemName || query;
       const image = (await findCachedImage(itemName)) || (await findLiveKicksImage(itemName)) || val.image;
       return res.json({ value: val.value, currency: val.currency || 'EUR', name: val.itemName || query, source: val.source || 'StockX', base: (val as any).low ?? null, image, detected, remaining, freeLimit: FREE_CHECKS });

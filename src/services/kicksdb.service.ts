@@ -14,16 +14,23 @@ export function isKicksConfigured(): boolean {
   return !!process.env.KICKSDB_API_KEY;
 }
 
-// Tetto GIORNALIERO di chiamate (sicurezza quota: ~1500/giorno = ~45k/mese, sotto il free 50k).
-// Oltre il tetto si serve solo dalla cache locale (niente nuove chiamate esterne).
-const DAILY_CAP = Number(process.env.KICKSDB_DAILY_CAP || 1500);
-let callsToday = 0;
+// Tetti di sicurezza quota. PIANO ATTUALE = 1000 richieste/MESE → il tetto che conta è quello
+// MENSILE (950, un po' sotto i 1000 per lasciare margine). Questo è il collo di bottiglia UNICO
+// da cui passano TUTTE le chiamate KicksDB (app interna + checker pubblico): garantisce che il
+// totale mensile non superi mai il piano. Oltre il tetto si serve solo dalla cache locale (gratis).
+const MONTHLY_CAP = Number(process.env.KICKSDB_MONTHLY_CAP || 950);
+const DAILY_CAP = Number(process.env.KICKSDB_DAILY_CAP || 60); // evita che un singolo giorno bruci il mese
+let callsToday = 0, callsMonth = 0;
 let callDay = new Date().toDateString();
+let callMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 function underQuota(): boolean {
   const today = new Date().toDateString();
+  const month = new Date().toISOString().slice(0, 7);
   if (today !== callDay) { callDay = today; callsToday = 0; }
+  if (month !== callMonth) { callMonth = month; callsMonth = 0; }
+  if (callsMonth >= MONTHLY_CAP) { logger.warn('KicksDB: tetto MENSILE raggiunto (piano 1000/mese), solo cache'); return false; }
   if (callsToday >= DAILY_CAP) { logger.warn('KicksDB: tetto giornaliero raggiunto, solo cache'); return false; }
-  callsToday++;
+  callsToday++; callsMonth++;
   return true;
 }
 
