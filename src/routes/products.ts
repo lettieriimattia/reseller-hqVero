@@ -391,24 +391,46 @@ router.post('/merge-category', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// POST /products/enrich-photos — { ids? } → aggancia la foto dal catalogo ai prodotti SENZA
-// immagine. Se 'ids' manca, processa tutti i prodotti IN STOCK dell'utente senza foto.
-router.post('/enrich-photos', async (req: AuthRequest, res: Response) => {
-  try {
-    const ids: string[] = Array.isArray(req.body?.ids) ? req.body.ids.slice(0, 300) : [];
-    const where: any = { userId: req.user!.userId, deletedAt: null, photos: null };
-    if (ids.length) where.id = { in: ids };
-    else where.status = 'IN STOCK';
-    const products = await prisma.product.findMany({ where, take: 300 });
-    let updated = 0;
-    for (const p of products) {
-      const found = await findCatalogImage(p.brand, p.name, true); // deep: usa l'IA per i nomi abbreviati
+// Aggancia la foto dal catalogo a un LOTTO di prodotti SENZA immagine — riusata sia dal
+// vecchio endpoint manuale sia dai trigger AUTOMATICI (creazione prodotto + spazzata periodica).
+// Best-effort, non lancia mai (chi la chiama non deve aspettarla né gestirne gli errori).
+async function enrichPhotosBatch(userId: string, ids: string[] = [], deep = false, limit = 300): Promise<number> {
+  const where: any = { userId, deletedAt: null, photos: null };
+  if (ids.length) where.id = { in: ids };
+  else where.status = 'IN STOCK';
+  const products = await prisma.product.findMany({ where, take: limit });
+  let updated = 0;
+  for (const p of products) {
+    try {
+      const found = await findCatalogImage(p.brand, p.name, deep);
       if (found?.image) {
         await prisma.product.update({ where: { id: p.id }, data: { photos: JSON.stringify([found.image]), sku: p.sku || found.sku } });
         updated++;
       }
-    }
-    res.json({ updated, scanned: products.length });
+    } catch (e: any) { logger.warn('enrichPhotosBatch item', { err: e?.message, id: p.id }); }
+  }
+  return updated;
+}
+
+// Rate-limit della spazzata AUTOMATICA per utente (best-effort, in memoria: va bene un riavvio
+// che la azzeri, l'importante è non rilanciarla ad ogni singola apertura della pagina).
+const lastAutoSweep = new Map<string, number>();
+const AUTO_SWEEP_COOLDOWN_MS = 60 * 60 * 1000; // 1 ora
+function maybeAutoSweepPhotos(userId: string) {
+  const last = lastAutoSweep.get(userId) || 0;
+  if (Date.now() - last < AUTO_SWEEP_COOLDOWN_MS) return;
+  lastAutoSweep.set(userId, Date.now());
+  enrichPhotosBatch(userId, [], false, 15).catch(() => {}); // piccolo lotto, non-deep (economico)
+}
+
+// POST /products/enrich-photos — { ids? } → aggancia la foto dal catalogo ai prodotti SENZA
+// immagine. Se 'ids' manca, processa tutti i prodotti IN STOCK dell'utente senza foto.
+// (Endpoint tenuto per compatibilità/debug: l'agganciamento ora avviene AUTOMATICAMENTE.)
+router.post('/enrich-photos', async (req: AuthRequest, res: Response) => {
+  try {
+    const ids: string[] = Array.isArray(req.body?.ids) ? req.body.ids.slice(0, 300) : [];
+    const updated = await enrichPhotosBatch(req.user!.userId, ids, true);
+    res.json({ updated });
   } catch (err: any) {
     logger.error('Errore POST /products/enrich-photos', { err: err.message });
     res.status(500).json({ error: 'Errore aggancio foto' });
