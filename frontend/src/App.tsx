@@ -5129,7 +5129,7 @@ export default function App() {
             {/* Header: saluto a sinistra + Add sulla STESSA riga (desktop), allineati in alto. */}
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h2 className="text-2xl sm:text-[26px] lg:text-[30px] font-black leading-tight pb-0.5 tracking-tight">
+                <h2 className="text-[26px] sm:text-3xl lg:text-[34px] font-black leading-tight pb-0.5 tracking-tight">
                   {(() => {
                     const h = new Date().getHours();
                     return (h >= 5 && h < 12) ? (lang === 'en' ? 'Good morning' : 'Buongiorno')
@@ -5139,7 +5139,7 @@ export default function App() {
                       : (lang === 'en' ? 'Hello' : 'Salve');                                    // notte
                   })()}, <span className="text-[var(--text)] font-black">{user.name.split(' ')[0]}</span>
                 </h2>
-                <p className="text-[11px] lg:text-xs text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1 capitalize truncate">{new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1.5 capitalize truncate">{new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
               </div>
               {/* Add — sulla riga del saluto (desktop). Su mobile resta il "+" nella chatbox. */}
               <button onClick={() => openAddForm()}
