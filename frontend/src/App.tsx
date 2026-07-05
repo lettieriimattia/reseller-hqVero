@@ -5125,7 +5125,7 @@ export default function App() {
         </nav>
       </header>
       
-      <main key={currentView} className="w-full max-w-[1440px] 2xl:max-w-[1760px] mx-auto px-4 lg:px-10 py-5 lg:py-10 pb-28 lg:pb-16 animate-fade-in lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+      <main key={currentView} className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-5 lg:py-10 pb-28 lg:pb-16 animate-fade-in lg:flex-1 lg:overflow-y-auto lg:min-h-0">
 
         {/* ========== DASHBOARD ========== */}
         {currentView === 'dashboard' && (
