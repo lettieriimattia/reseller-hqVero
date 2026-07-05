@@ -40,10 +40,15 @@ function imgMatchScore(query: string, title: string): number {
 // Cerca la FOTO ufficiale di un prodotto dal catalogo: prima la cache locale (gratis, niente
 // quota), poi KicksDB→StockX. Sceglie il candidato che COMBACIA MEGLIO col nome (soglia minima):
 // così non aggancia foto sbagliate e per i nomi inventati non mette nulla. Ritorna {image,sku}|null.
+// Categorie/prodotti che il catalogo (StockX/KicksDB = sneaker, streetwear, carte) NON copre:
+// per un iPhone/console il catalogo aggancerebbe una foto a caso "somigliante" → meglio l'icona.
+const NON_CATALOG_RE = /elettron|electron|iphone|ipad|macbook|smartphone|telefon|tablet|console|playstation|\bps[45]\b|xbox|nintendo|switch|laptop|notebook|airpod|cuffi|smartwatch|apple watch|monitor|\btv\b/i;
 async function findCatalogImage(brand?: string | null, name?: string | null, deep = false): Promise<{ image: string; sku: string | null } | null> {
   const nm = (name || '').trim();
   const q = `${brand || ''} ${nm}`.trim();
   if (q.length < 2) return null;
+  // Elettronica & co.: il catalogo non ha la foto giusta → niente aggancio (icona di categoria).
+  if (NON_CATALOG_RE.test(q)) return null;
   // 1) cache locale CatalogItem — niente consumo quota. Prende candidati e sceglie il migliore.
   if (nm.length >= 3) {
     try {
