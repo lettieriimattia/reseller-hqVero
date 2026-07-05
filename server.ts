@@ -189,15 +189,12 @@ if (!isProduction) {
 // ==========================================
 if (isProduction) {
   const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
-  // Landing pubblica SEO alla ROOT (statica, indicizzabile); l'app gira sotto /app e ogni altra
-  // route SPA. Deve stare PRIMA di express.static (che altrimenti servirebbe index.html su "/").
-  // Se l'utente è GIÀ loggato (cookie access valido) → va dritto all'app, niente landing.
-  app.get('/', (_req: Request, res: Response) => {
-    // ⚠️ TEMPORANEO (fase test): la ROOT mostra SEMPRE la landing, anche se sei loggato,
-    // così puoi vedere/provare la landing (prima ti sbatteva sull'app). Al go-live rimetti il
-    // redirect: se access_token valido → res.redirect('/app'). L'app resta comunque su /app.
-    res.sendFile(path.join(frontendDist, 'landing.html'));
-  });
+  // ⚠️ FASE TEST (richiesta utente): la ROOT porta DRITTO all'app (comodità di accesso).
+  // La landing principale vive su /main-landingpage. Al lancio pubblico si potrà rimettere la
+  // landing sulla root (per gli anonimi) + redirect a /app per i loggati.
+  app.get('/', (_req: Request, res: Response) => res.redirect('/app'));
+  // Landing PRINCIPALE spostata qui (statica, pubblica).
+  app.get('/main-landingpage', (_req: Request, res: Response) => res.sendFile(path.join(frontendDist, 'landing.html')));
   // CANCELLO BETA: "la gente non deve sapere dell'app". Un visitatore anonimo che apre /app
   // (indovinando l'URL) NON deve vedere il form di login — va rimandato alla waitlist. Solo chi
   // ha già una sessione valida (già loggato) O il link segreto una tantum (BETA_ACCESS_KEY) entra.
