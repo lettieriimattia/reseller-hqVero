@@ -1375,21 +1375,56 @@ ${prompt}`;
             marketPrice: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
           });
 
+          // Verifica di coerenza SET: nome+numero possono combaciare con una carta REALE ma
+          // SBAGLIATA (ristampe/promo diverse condividono nome+numero in set differenti). Se l'IA
+          // ha letto anche il set dalla foto, lo usiamo per scegliere il candidato giusto tra più
+          // risultati o per accorgerci che quello trovato non c'entra — invece di accettarlo alla
+          // cieca solo perché "una carta con questo numero esiste".
+          const pickCard = (data: any[]) => {
+            const wantSet = (parsed.setName || '').toLowerCase().trim();
+            if (wantSet) {
+              const bySet = data.find((c: any) => {
+                const cs = (c.set?.name || '').toLowerCase();
+                return cs && (cs.includes(wantSet) || wantSet.includes(cs));
+              });
+              if (bySet) return { card: bySet, mismatch: false, ambiguous: false };
+            }
+            const card = data[0];
+            const ambiguous = new Set(data.map((c: any) => c.set?.id)).size > 1;
+            const mismatch = !!wantSet && !(card.set?.name || '').toLowerCase().includes(wantSet) && !wantSet.includes((card.set?.name || '').toLowerCase());
+            return { card, mismatch, ambiguous };
+          };
+          const warnMismatch = (card: any, mismatch: boolean, ambiguous: boolean) => {
+            if (mismatch) return `Trovata "${card.name}" #${card.number} ma nel set "${card.set.name}", diverso dal set letto dalla foto ("${parsed.setName}"): potrebbe essere la carta sbagliata. Verifica manualmente prima di salvare.`;
+            if (ambiguous) return `Esistono più carte reali con lo stesso nome e numero (ristampe/promo in set diversi): verifica che sia proprio "${card.set.name}" prima di salvare.`;
+            return null;
+          };
+
           if (d1?.data?.length > 0) {
-            const card = d1.data[0];
+            const { card, mismatch, ambiguous } = pickCard(d1.data);
             result.model = `${card.name} — ${card.set.name} ${card.number}/${card.set.printedTotal}${pokeLang}`;
-            result.confidence = 'HIGH';
             result.details = buildDetails(card);
+            const warn = warnMismatch(card, mismatch, ambiguous);
+            if (warn) { result.confidence = 'LOW'; result.warnings = [...(result.warnings || []), warn]; }
+            else result.confidence = 'HIGH';
           } else if (d2?.data?.length > 0) {
-            const best = d2.data.find((c: any) => c.name.toLowerCase().includes((parsed.name || '').toLowerCase())) || d2.data[0];
-            result.model = `${best.name} — ${best.set.name} ${best.number}/${best.set.printedTotal}${pokeLang}`;
-            result.confidence = 'HIGH';
-            result.details = buildDetails(best);
+            const filtered = d2.data.filter((c: any) => c.name.toLowerCase().includes((parsed.name || '').toLowerCase()));
+            const pool = filtered.length > 0 ? filtered : d2.data;
+            const { card, mismatch, ambiguous } = pickCard(pool);
+            result.model = `${card.name} — ${card.set.name} ${card.number}/${card.set.printedTotal}${pokeLang}`;
+            result.details = buildDetails(card);
+            const warn = warnMismatch(card, mismatch, ambiguous) || (filtered.length === 0 ? `Il nome "${parsed.name}" non combacia con "${card.name}" trovato per questo numero: potrebbe essere la carta sbagliata. Verifica manualmente prima di salvare.` : null);
+            if (warn) { result.confidence = 'LOW'; result.warnings = [...(result.warnings || []), warn]; }
+            else result.confidence = 'HIGH';
           } else if (d3?.data?.length > 0) {
-            const card = d3.data[0];
-            result.model = `${card.name} — ${card.set.name} ${card.number}/${card.set.printedTotal}${pokeLang} (da nome)`;
+            // Solo nome (il numero letto non ha trovato nulla): il match più debole, non prendiamo
+            // MAI HIGH qui — al massimo MEDIUM, e comunque avvisiamo se il set non torna.
+            const { card, mismatch, ambiguous } = pickCard(d3.data);
+            result.model = `${card.name} — ${card.set.name} ${card.number}/${card.set.printedTotal}${pokeLang} (da nome, numero non verificato)`;
             result.confidence = 'MEDIUM';
             result.details = buildDetails(card);
+            const warn = warnMismatch(card, mismatch, ambiguous) || `Il numero carta letto dalla foto non è stato trovato: mostro "${card.name}" — ${card.set.name} solo in base al nome. Verifica numero e set prima di salvare.`;
+            result.warnings = [...(result.warnings || []), warn];
           } else if (parsed.cardNumber) {
             // NESSUNA delle 3 query (nome+numero, numero+totale, solo nome) ha trovato un riscontro
             // reale su pokemontcg.io: il numero letto dalla foto (OCR IA) potrebbe essere sbagliato
