@@ -780,6 +780,29 @@ export default function App() {
   const [selectedGroupKeys, setSelectedGroupKeys] = useState<Set<string>>(new Set());
   // Pezzi SINGOLI selezionati (es. alcuni pezzi di un lotto) da raggruppare con altri prodotti
   const [selectedPieceIds, setSelectedPieceIds] = useState<Set<string>>(new Set());
+  // Selezione PARZIALE di un gruppo di pezzi identici (es. 14 di 29) in modalità selezione:
+  // toccando il gruppo si apre un selettore "quanti".
+  const [bulkQtyGroup, setBulkQtyGroup] = useState<any | null>(null);
+  const [bulkQtyValue, setBulkQtyValue] = useState('1');
+  const openBulkQty = (g: any) => {
+    setBulkMode(true);
+    const already = (g.ids as string[]).filter(id => selectedPieceIds.has(id)).length;
+    setBulkQtyValue(String(already > 0 ? already : g.ids.length));
+    setBulkQtyGroup(g);
+  };
+  const applyBulkQty = () => {
+    const g = bulkQtyGroup; if (!g) return;
+    const n = Math.min(g.ids.length, Math.max(0, parseInt(bulkQtyValue) || 0));
+    setSelectedPieceIds(prev => {
+      const next = new Set(prev);
+      (g.ids as string[]).forEach(id => next.delete(id));        // azzera questo gruppo
+      (g.ids as string[]).slice(0, n).forEach(id => next.add(id)); // seleziona i primi n
+      return next;
+    });
+    // il gruppo va gestito a livello di PEZZI, non come blocco intero
+    setSelectedGroupKeys(prev => { const next = new Set(prev); next.delete((g.ids as string[]).join(',')); return next; });
+    setBulkQtyGroup(null);
+  };
 
   // Long-press per entrare in selezione (sostituisce il tasto "Seleziona").
   // Robusto su tablet/telefono: si ANNULLA se il dito si muove (= stai scorrendo), così
@@ -833,6 +856,9 @@ export default function App() {
     // quali in base al venditore) invece di selezionare per forza tutto il gruppo.
     if (group?.isModel) { setModelDetail(group); return; }
     if (group?.isLot) { setLotDetail(group); return; }
+    // Gruppo di pezzi IDENTICI (es. ×29): apri il selettore "quanti" così ne selezioni una parte
+    // (es. 14 di 29) invece di tutto il gruppo. Un pezzo solo → toggle diretto.
+    if (group && (group.ids?.length || 0) > 1) { openBulkQty(group); return; }
     toggleGroupSelection(groupKey);
   };
 
@@ -5596,7 +5622,10 @@ export default function App() {
                   <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 lg:gap-3">
                   {groupedInStockArray.map((g: any) => {
                     const groupKey = g.ids.join(',');
-                    const isSelected = selectedGroupKeys.has(groupKey);
+                    // Selezione: gruppo intero (selectedGroupKeys) OPPURE alcuni pezzi (selectedPieceIds).
+                    const selPieceCount = (g.ids as string[]).filter((id: string) => selectedPieceIds.has(id)).length;
+                    const isSelected = selectedGroupKeys.has(groupKey) || selPieceCount > 0;
+                    const isPartialSel = selPieceCount > 0 && selPieceCount < g.ids.length && !selectedGroupKeys.has(groupKey);
                     const isAdmin = isAdminEmail(user!.email);
                     let photoUrl: string | null = null;
                     try { const ph = g.photos ? JSON.parse(g.photos) : []; if (ph.length > 0) photoUrl = ph[0]; } catch {}
@@ -5632,8 +5661,8 @@ export default function App() {
                           bulkMode ? 'cursor-pointer select-none' : ''
                         } ${isSelected ? 'border-[#6b54c6] shadow-sm' : 'border-[var(--border)]'}`}>
                         {bulkMode && (
-                          <div className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-gray-600 bg-[var(--surface-2)]'}`}>
-                            {isSelected && <CheckCircle size={14} className="text-[var(--text)]" />}
+                          <div className={`absolute top-3 right-3 z-10 min-w-6 h-6 px-1 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-gray-600 bg-[var(--surface-2)]'}`}>
+                            {isPartialSel ? <span className="text-[10px] font-black text-white">{selPieceCount}</span> : isSelected ? <CheckCircle size={14} className="text-[var(--text)]" /> : null}
                           </div>
                         )}
                         <div className="flex items-center gap-3 p-3.5">
@@ -5704,8 +5733,8 @@ export default function App() {
                             {g.trackingStatus && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500 text-[var(--text)]' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500 text-[var(--text)]' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500 text-[var(--text)]' : 'bg-black/50 backdrop-blur text-gray-300'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? t('mag.trTransit') : g.trackingStatus === 'DELIVERED' ? t('mag.trDelivered') : g.trackingStatus === 'OUT_FOR_DELIVERY' ? t('mag.trOutForDelivery') : t('mag.track')}</span>}
                           </div>
                           {bulkMode && (
-                            <div className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-[var(--border-3)] bg-black/40 backdrop-blur'}`}>
-                              {isSelected && <CheckCircle size={14} className="text-[var(--text)]" />}
+                            <div className={`absolute top-2 right-2 z-10 min-w-6 h-6 px-1 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-[var(--border-3)] bg-black/40 backdrop-blur'}`}>
+                              {isPartialSel ? <span className="text-[10px] font-black text-white">{selPieceCount}</span> : isSelected ? <CheckCircle size={14} className="text-[var(--text)]" /> : null}
                             </div>
                           )}
                         </div>
@@ -9682,6 +9711,35 @@ export default function App() {
       )}
 
       {/* ========== MODALE: VENDI ========== */}
+      {/* ===== SELETTORE QUANTITÀ per selezione parziale di un gruppo di pezzi identici ===== */}
+      {bulkQtyGroup && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-[220] p-0 sm:p-4" onClick={() => setBulkQtyGroup(null)}>
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-center pt-1 pb-3 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+            <h3 className="text-lg font-black text-center">{fullName(bulkQtyGroup.brand, bulkQtyGroup.name)}</h3>
+            <p className="text-xs text-[var(--text-soft)] text-center mt-1">{lang === 'en' ? 'How many to select?' : 'Quanti selezionarne?'} · {lang === 'en' ? 'available' : 'disponibili'}: {bulkQtyGroup.ids.length}</p>
+            <div className="flex items-center justify-center gap-4 my-6">
+              <button type="button" onClick={() => setBulkQtyValue(q => String(Math.max(0, (parseInt(q) || 0) - 1)))}
+                className="w-14 h-14 rounded-2xl bg-[var(--surface-2)] border border-[var(--border-2)] text-2xl font-black hover:bg-[var(--fill)] active:scale-95 transition disabled:opacity-40"
+                disabled={(parseInt(bulkQtyValue) || 0) <= 0}>−</button>
+              <input type="number" min="0" max={bulkQtyGroup.ids.length} inputMode="numeric"
+                value={bulkQtyValue}
+                onChange={(e: any) => { const n = parseInt(e.target.value); setBulkQtyValue(e.target.value === '' ? '' : String(Math.min(bulkQtyGroup.ids.length, Math.max(0, n || 0)))); }}
+                className="w-24 text-center bg-[var(--surface-2)] border border-[var(--border-2)] rounded-2xl p-3 text-2xl font-black focus:border-[#6b54c6] outline-none" />
+              <button type="button" onClick={() => setBulkQtyValue(q => String(Math.min(bulkQtyGroup.ids.length, (parseInt(q) || 0) + 1)))}
+                className="w-14 h-14 rounded-2xl bg-[var(--surface-2)] border border-[var(--border-2)] text-2xl font-black hover:bg-[var(--fill)] active:scale-95 transition disabled:opacity-40"
+                disabled={(parseInt(bulkQtyValue) || 0) >= bulkQtyGroup.ids.length}>+</button>
+            </div>
+            <button type="button" onClick={() => setBulkQtyValue(String(bulkQtyGroup.ids.length))}
+              className="w-full mb-2 text-xs font-bold text-[#6b54c6] hover:underline">{lang === 'en' ? 'Select all' : 'Seleziona tutti'} ({bulkQtyGroup.ids.length})</button>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setBulkQtyGroup(null)} className="flex-1 py-3 rounded-xl border border-[var(--border-2)] text-sm font-bold text-[var(--text-soft)] hover:text-[var(--text)]">{t('common.cancel')}</button>
+              <button type="button" onClick={applyBulkQty} className="flex-1 py-3 rounded-xl bg-[#6b54c6] hover:bg-[#5d44b0] text-white text-sm font-black">OK</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {sellModalOpen && productToSell && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setSellModalOpen(false))}>
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
