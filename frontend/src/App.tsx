@@ -5458,7 +5458,7 @@ export default function App() {
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center shrink-0 w-full lg:w-auto">
                 <h2 className="text-xl lg:text-3xl font-semibold">{t('mag.title')}</h2>
-                <div className="flex bg-[var(--surface)] p-1 rounded-xl border border-[var(--border-2)] w-full lg:w-auto">
+                <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] w-full lg:w-auto">
                   <button onClick={() => { setMagazzinoView('instock'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
                       magazzinoView === 'instock' ? 'bg-[#6b54c6] text-[var(--text)]' : 'text-[var(--text-soft)]'
@@ -5901,7 +5901,7 @@ export default function App() {
                       }
 
                       return (
-                        <div key={soldKey} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:border-[var(--border-2)] transition-all group">
+                        <div key={soldKey} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:border-[var(--border-2)] transition-colors group">
                           <div className={`flex items-center gap-3 p-4 ${g.quantity > 1 || buyers.some(b => b.name !== '—') ? 'cursor-pointer' : ''}`}
                             onClick={() => setExpandedSoldKey(isExpanded ? null : soldKey)}>
                             {photos.length > 0
@@ -5917,7 +5917,7 @@ export default function App() {
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-[10px] text-[var(--text-faint)]">{g.size}</span>
                                 <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border ${platCls}`}>{g.platform}</span>
-                                {soldDate && <span className="text-[10px] text-gray-700">{soldDate}</span>}
+                                {soldDate && <span className="text-[10px] text-[var(--text-faint)]">{soldDate}</span>}
                                 {/* Compratori: un nome se unico, "N compratori" se diversi (apri la tendina per vederli). */}
                                 {buyers.length === 1 && buyers[0].name !== '—' && (
                                   <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)] flex items-center gap-1"><Users size={9} /> {buyers[0].name}</span>
@@ -5928,7 +5928,7 @@ export default function App() {
                               </div>
                             </div>
                             <div className="text-right shrink-0 ml-2">
-                              <p className={`font-semibold text-base ${g.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              <p className={`font-black text-base num tracking-tight leading-none ${g.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                                 {g.totalProfit >= 0 ? '+' : ''}{g.totalProfit.toFixed(0)}€
                               </p>
                               {marginPct !== null && (
@@ -5939,13 +5939,13 @@ export default function App() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 px-4 pb-3 border-t border-[var(--border)] pt-2.5">
-                            <span className="text-[10px] text-gray-700 flex items-center gap-1">
+                            <span className="text-[10px] text-[var(--text-faint)] flex items-center gap-1">
                               {g.purchasePrice?.toFixed(0)}€
                               <span className="text-gray-800 mx-0.5">→</span>
                               <span className="text-[var(--text-soft)] font-bold">{g.totalRevenue.toFixed(0)}€</span>
                             </span>
                             {g.totalFees > 0 && (
-                              <span className="text-[10px] text-gray-700">· {g.totalFees.toFixed(0)}€ fee</span>
+                              <span className="text-[10px] text-[var(--text-faint)]">· {g.totalFees.toFixed(0)}€ fee</span>
                             )}
                             <button onClick={() => openEditModal(g)}
                               className="ml-auto flex items-center gap-1.5 bg-[var(--fill)] border border-[var(--border-2)] text-[var(--text-soft)] hover:text-[var(--text)] px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
