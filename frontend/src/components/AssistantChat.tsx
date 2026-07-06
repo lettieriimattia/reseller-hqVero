@@ -27,7 +27,7 @@ function Waveform({ level }: { level: number }) {
   return (
     <div className="flex items-center gap-[3px] h-5">
       {factors.map((f, i) => (
-        <span key={i} className="w-[3px] rounded-full bg-violet-400 transition-[height] duration-100 ease-out"
+        <span key={i} className="w-[3px] rounded-full bg-[#9fb0bd] transition-[height] duration-100 ease-out"
           style={{ height: `${Math.max(3, Math.min(20, f * level * 26 + 3))}px` }} />
       ))}
     </div>
@@ -367,7 +367,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
 
   // Barra di scrittura/voce (riusata: ancorata nel pannello quando aperto, flottante quando chiuso).
   const bar = (
-    <div className="relative rounded-full p-px bg-gradient-to-r from-violet-500/90 via-fuchsia-500/90 to-violet-500/90 shadow-[0_8px_44px_-8px_rgba(107,84,198,0.7)]">
+    <div className="relative rounded-full p-px bg-gradient-to-r from-[#8397aa]/90 via-[#8397aa]/90 to-[#8397aa]/90 shadow-[0_8px_44px_-8px_rgba(131,151,170,0.7)]">
       {/* Overlay registrazione (push-to-talk) sopra la barra. */}
       {pttActive && (
         <div className="absolute left-0 right-0 bottom-full mb-3 flex justify-center px-2">
@@ -382,7 +382,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
                   <>
                     <span className="text-xs text-[var(--text-soft)]">in registrazione…</span>
                     <button onClick={() => finishPtt('cancel')} className="ml-1 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 text-[var(--text-soft)] hover:text-red-400 transition-colors"><X size={16} /></button>
-                    <button onClick={() => finishPtt('send')} className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-violet-500 to-violet-600 text-white"><Send size={15} /></button>
+                    <button onClick={() => finishPtt('send')} className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-[#8397aa] to-[#6f8394] text-white"><Send size={15} /></button>
                   </>
                 ) : (
                   <span className="text-xs text-[var(--text-soft)]">⬆︎ blocca · ⬅︎ annulla · rilascia = invia</span>
@@ -426,7 +426,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
           <Mic size={18} />
         </button>
         <button onClick={() => send(input)} disabled={sending || !input.trim()} aria-label={tx('Invia', 'Send')}
-          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-violet-500 to-violet-600 text-white shadow-lg shadow-violet-500/30 transition-all hover:from-violet-400 hover:to-violet-500 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed">
+          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#8397aa] to-[#6f8394] text-white shadow-lg shadow-[#8397aa]/30 transition-all hover:from-[#9fb0bd] hover:to-[#8397aa] disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed">
           {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
         </button>
       </div>
@@ -439,18 +439,18 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       {open && (
         <div className="fixed inset-0 z-[44] flex flex-col justify-end lg:inset-auto lg:bottom-6 lg:left-0 lg:right-0 lg:top-auto lg:items-center lg:px-6">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setOpen(false)} />
-          <div ref={panelRef} className="relative flex flex-col h-[86vh] rounded-t-[28px] border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_-24px_80px_-24px_rgba(107,84,198,0.55)] lg:h-[720px] lg:max-h-[80vh] lg:w-full lg:max-w-2xl lg:rounded-[24px] lg:border lg:border-white/10">
+          <div ref={panelRef} className="relative flex flex-col h-[86vh] rounded-t-[28px] border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_-24px_80px_-24px_rgba(131,151,170,0.55)] lg:h-[720px] lg:max-h-[80vh] lg:w-full lg:max-w-2xl lg:rounded-[24px] lg:border lg:border-white/10">
             {/* Grab handle */}
             <div className="mx-auto mt-3 mb-1.5 h-1.5 w-10 rounded-full bg-white/15 shrink-0" />
 
             <div className="flex items-center justify-between px-6 pt-1.5 pb-3 shrink-0">
               <div className="flex items-center gap-2.5">
-                <span className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                <span className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8397aa] to-[#8397aa] flex items-center justify-center shadow-lg shadow-[#8397aa]/30">
                   <Sparkles size={16} className="text-white" />
                 </span>
                 <div className="flex flex-col leading-none gap-1">
                   <span className="font-bold tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-400/80">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9fb0bd]/80">
                     {wakeOn ? tx('in ascolto di Ehy HQ', 'listening for Ehy HQ') : tx('Assistente · beta', 'Assistant · beta')}
                   </span>
                 </div>
@@ -460,7 +460,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
                 <button onClick={() => setWakeEnabled(v => { if (!v) userArmedRef.current = true; return !v; })} aria-label={wakeEnabled ? tx('Disattiva Ehy HQ', 'Disable Ehy HQ') : tx('Attiva Ehy HQ', 'Enable Ehy HQ')}
                   title={tx('Ascolto "Ehy HQ"', 'Listening for "Ehy HQ"')}
                   className={`flex items-center gap-1.5 px-2.5 h-8 rounded-full text-[11px] font-bold transition-colors ${
-                    wakeOn ? 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/30'
+                    wakeOn ? 'bg-[#8397aa]/15 text-[#9fb0bd] ring-1 ring-[#8397aa]/30'
                     : wakeEnabled ? 'bg-white/5 text-[var(--text-soft)]'
                     : 'text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5'
                   }`}>
@@ -486,7 +486,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
                 <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[82%] px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap rounded-2xl ${
                     m.role === 'user'
-                      ? 'bg-gradient-to-br from-violet-500 to-violet-600 text-white rounded-br-md shadow-lg shadow-violet-500/25'
+                      ? 'bg-gradient-to-br from-[#8397aa] to-[#6f8394] text-white rounded-br-md shadow-lg shadow-[#8397aa]/25'
                       : 'bg-white/[0.05] border border-white/10 text-[var(--text)] rounded-bl-md'
                   }`}>{m.content}</div>
                 </div>
@@ -494,17 +494,17 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
               {sending && (
                 <div className="flex justify-start">
                   <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-white/[0.05] border border-white/10">
-                    <Loader2 size={16} className="animate-spin text-violet-400" />
+                    <Loader2 size={16} className="animate-spin text-[#9fb0bd]" />
                   </div>
                 </div>
               )}
               {/* Sto ascoltando / trascrivo — segno di vita con onda audio dal vivo */}
               {(voiceState === 'recording' || voiceState === 'transcribing') && (
                 <div className="flex justify-end">
-                  <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl rounded-br-md bg-violet-500/15 border border-violet-500/30">
+                  <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl rounded-br-md bg-[#8397aa]/15 border border-[#8397aa]/30">
                     {voiceState === 'recording'
-                      ? <><Waveform level={micLevel} /><span className="text-xs text-violet-200 font-medium">{tx('in ascolto…', 'listening…')}</span></>
-                      : <><Loader2 size={15} className="animate-spin text-violet-300" /><span className="text-xs text-violet-200 font-medium">{tx('trascrivo…', 'transcribing…')}</span></>}
+                      ? <><Waveform level={micLevel} /><span className="text-xs text-[#c0cbd6] font-medium">{tx('in ascolto…', 'listening…')}</span></>
+                      : <><Loader2 size={15} className="animate-spin text-[#9fb0bd]" /><span className="text-xs text-[#c0cbd6] font-medium">{tx('trascrivo…', 'transcribing…')}</span></>}
                   </div>
                 </div>
               )}

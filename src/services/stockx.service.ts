@@ -237,11 +237,18 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
   const toks = (s: string) => clean(s).toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length > 1);
   const nameStr = (opts.name || opts.query || '').toLowerCase();
   const qSet = new Set(toks(opts.name || opts.query));
+  // Colori scritti in italiano dall'utente → aggiungi anche l'equivalente EN, così "rossa" matcha
+  // "Red" nel titolo StockX (i titoli sono in inglese). Serve a distinguere la colorway giusta.
+  const IT_EN_COLOR: Record<string, string> = { rosso: 'red', rossa: 'red', nero: 'black', nera: 'black', bianco: 'white', bianca: 'white', blu: 'blue', azzurro: 'blue', verde: 'green', giallo: 'yellow', gialla: 'yellow', arancione: 'orange', arancio: 'orange', viola: 'purple', rosa: 'pink', marrone: 'brown', grigio: 'grey', grigia: 'grey', beige: 'beige', oro: 'gold', dorato: 'gold', argento: 'silver', bordeaux: 'burgundy', panna: 'cream', crema: 'cream' };
+  for (const w of Array.from(qSet)) { const en = IT_EN_COLOR[w]; if (en) qSet.add(en); }
 
   // Parole "generiche" (brand + silhouette): da sole NON identificano un modello preciso.
   // Es: "Nike SB Dunk Low" → potrebbe essere una SB da 100€ o una Freddy Krueger da 5000€.
   // Se non c'è uno SKU e il nome è SOLO parole generiche → non diamo un prezzo (sarebbe a caso).
   const GENERIC = new Set(['nike', 'jordan', 'air', 'sb', 'dunk', 'low', 'high', 'mid', 'force', 'max', 'retro', 'og', 'sp', 'new', 'balance', 'nb', 'adidas', 'yeezy', 'boost', 'samba', 'gazelle', 'spezial', 'campus', 'asics', 'gel', 'scarpe', 'scarpa', 'sneaker', 'sneakers', 'shoe', 'shoes', 'pro', 'wmns', 'gs', 'ps', 'td']);
+  // NEUTRAL = colori + tipi di capo. NON identificano un modello diverso (descrivono la colorway/il
+  // tipo), quindi NON vengono contate come "parole in più" nella penalità generale sotto.
+  const NEUTRAL = new Set(['white', 'black', 'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'brown', 'grey', 'gray', 'beige', 'tan', 'cream', 'navy', 'olive', 'gold', 'silver', 'burgundy', 'sail', 'bone', 'chalk', 'volt', 'teal', 'mint', 'khaki', 'camo', 'multicolor', 'multi', 'university', 'varsity', 'triple', 'core', 'wolf', 'cool', 'light', 'dark', 'hoodie', 'hooded', 'sweatshirt', 'sweater', 'crewneck', 'crew', 'tee', 'shirt', 'jacket', 'coat', 'pants', 'pant', 'shorts', 'short', 'hat', 'cap', 'beanie', 'bag', 'sock', 'socks', 'zip', 'pullover', 'vest', 'jersey', 'sleeve', 'cardigan', 'puffer', 'fleece', 'tracksuit']);
   const distinctive = Array.from(qSet).filter(t => !GENERIC.has(t) && !/^\d+$/.test(t));
   // Query troppo generica (solo brand+silhouette, es. "Nike SB Dunk Low"): potrebbe essere una
   // qualsiasi da 100€ o una rarissima da 5000€. Meglio dire "troppo generico" che indovinare,
@@ -254,7 +261,12 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
   // Lista NON esaustiva apposta: qualsiasi nome nuovo di boutique/collab andrà comunque preso
   // dal pattern EXCLUSIVE_PATTERN sotto (F&F/PE/Sample/NFR), che non dipende da un elenco fisso.
   const COLLAB = ['travis scott', 'off-white', 'off white', 'dior', 'fragment', 'union', 'tiffany', 'louis vuitton', 'ben & jerry', 'a ma maniere', 'sacai', 'supreme', 'kaws',
-    'trophy room', 'patta', 'concepts', 'undefeated', 'bodega', 'kith', 'extra butter', 'dover street market', 'atmos', 'clot', 'parra', 'doernbecher', 'what the', 'eminem'];
+    'trophy room', 'patta', 'concepts', 'undefeated', 'bodega', 'kith', 'extra butter', 'dover street market', 'atmos', 'clot', 'parra', 'doernbecher', 'what the', 'eminem',
+    // Collab STREETWEAR note (booster). NB: la vera difesa generale è la penalità "parole in più" sotto,
+    // non questo elenco — qui restano solo nomi-collab, MAI brand base (nike/jordan/vans...) se no
+    // penalizzerebbe le ricerche normali ("dunk panda" → titolo "Nike Dunk..." verrebbe punito).
+    'maison margiela', 'margiela', 'mm6', 'comme des garcons', 'comme des garçons', 'cdg', 'stone island', 'swarovski',
+    'hysteric glamour', 'emilio pucci', 'nan goldin', 'yohji yamamoto', 'undercover'];
   // Edizioni MAI vendute al pubblico (Friends&Family, Player Exclusive, Sample, Not-For-Resale):
   // penalità forte SEMPRE, a prescindere dal nome della collab — sono per definizione irraggiungibili
   // e molto più care di un modello normale, quindi non vanno MAI proposte per una ricerca generica.
@@ -266,7 +278,14 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
     let penalty = 0;
     for (const c of COLLAB) { if (t.includes(c) && !nameStr.includes(c)) penalty++; }
     if (EXCLUSIVE_PATTERN.test(t) && !EXCLUSIVE_PATTERN.test(nameStr)) penalty += 2;
-    return { matched, penalty, final: matched - 2 * penalty };
+    // DIFESA GENERALE (senza liste): conta le parole DISTINTIVE del titolo che l'utente NON ha
+    // cercato. NON contano né le generiche (brand/silhouette) né i colori/tipi-di-capo (NEUTRAL):
+    // quelle descrivono solo la colorway (es. "Dunk Panda" → "White Black" non è un altro prodotto).
+    // Restano collab/varianti/modelli in più: così "Supreme Box Logo Hoodie" NON matcha
+    // "Supreme MM6 Maison Margiela ... Black" (mm6/maison/margiela pesano) e preferisce il base.
+    let extra = 0;
+    tSet.forEach(w => { if (w.length > 2 && !GENERIC.has(w) && !NEUTRAL.has(w) && !/^\d+$/.test(w) && !qSet.has(w)) extra++; });
+    return { matched, penalty, extra, final: matched - 2 * penalty - 0.7 * extra };
   };
 
   // Se è una scarpa, accetta SOLO sneaker su StockX (mai maglie/accessori/apparel).
