@@ -5752,7 +5752,7 @@ export default function App() {
                       <div
                         onClick={() => cardClick(groupKey, g)}
                         {...cardPressProps(groupKey)}
-                        className={`hidden lg:flex flex-col bg-[var(--surface)] border rounded-2xl overflow-hidden transition-all duration-200 relative hover:-translate-y-1 hover:shadow-xl hover:shadow-black/25 ${
+                        className={`hidden lg:flex flex-col bg-[var(--surface)] border rounded-2xl overflow-hidden transition-colors relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
                         } ${isSelected ? 'border-[#6b54c6] shadow-sm' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
                         <div
@@ -5773,9 +5773,9 @@ export default function App() {
                           )}
                         </div>
                         <div className="p-4 flex-1 flex flex-col items-start text-left">
-                          <p className="font-bold text-base leading-tight line-clamp-2 w-full">{fullName(g.brand, g.name)}</p>
+                          <p className="font-bold text-base leading-tight line-clamp-2 w-full tracking-tight">{fullName(g.brand, g.name)}</p>
                           <p className="text-sm text-[var(--text-muted)] mt-1.5">{g.isModel ? modelSub(g) : `${g.size} · ${g.condition}`}</p>
-                          <p className="text-2xl font-bold text-[var(--text)] mt-auto pt-2 num">{g.purchasePrice.toFixed(0)}€</p>
+                          <p className="text-2xl font-black text-[var(--text)] mt-auto pt-2 num tracking-tight leading-none">{g.purchasePrice.toFixed(0)}€</p>
                           {shares?.length > 0 && <p className="text-[11px] text-blue-400/70 mt-1.5 truncate max-w-full">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                           {!bulkMode && (
                             <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
