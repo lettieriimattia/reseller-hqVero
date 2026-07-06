@@ -5486,10 +5486,10 @@ export default function App() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)]" size={16} />
                   <input type="text" placeholder={t('mag.searchPlaceholder')}
                     value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
-                    className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#6b54c6] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#6b54c6] outline-none" />
                 </div>
                 <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
-                  className="w-full lg:w-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#6b54c6] outline-none shrink-0">
+                  className="w-full lg:w-auto bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#6b54c6] outline-none shrink-0">
                   <option value="all">{t('mag.allDepartments')}</option>
                   {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -5509,7 +5509,7 @@ export default function App() {
                       else { setSortField(f); setSortDir('desc'); }
                     }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                        sortField === f ? 'bg-[#6b54c6] text-[var(--text)]' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                        sortField === f ? 'bg-[#6b54c6] text-[var(--text)]' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
                       }`}>
                       {f === 'date' ? t('mag.sortDate') : f === 'price' ? t('mag.sortPrice') : f === 'name' ? t('mag.sortName') : t('mag.sortMargin')}
                       {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
@@ -5518,14 +5518,14 @@ export default function App() {
                   {/* Filtro rapido: Fermi (+30gg in stock) */}
                   <button onClick={() => setStaleOnly(s => !s)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                      staleOnly ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                      staleOnly ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
                     }`}>
                     <AlertTriangle size={12} /> {t('dash.stale')}
                   </button>
                 </div>
                 {/* Condizione */}
                 <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
-                  className="w-full lg:w-auto lg:ml-auto bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#6b54c6] outline-none text-[var(--text-muted)]">
+                  className="w-full lg:w-auto lg:ml-auto bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#6b54c6] outline-none text-[var(--text-muted)]">
                   <option value="all">{t('mag.condition')}</option>
                   <option value="DS">DS</option>
                   <option value="VNDS">VNDS</option>
@@ -5535,10 +5535,10 @@ export default function App() {
                 <div className="flex gap-2">
                   <input type="number" placeholder="Min €" value={filterPriceMin}
                     onChange={(e: any) => setFilterPriceMin(e.target.value)}
-                    className="w-16 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#6b54c6] outline-none text-[var(--text-muted)]" />
+                    className="w-16 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#6b54c6] outline-none text-[var(--text-muted)]" />
                   <input type="number" placeholder="Max €" value={filterPriceMax}
                     onChange={(e: any) => setFilterPriceMax(e.target.value)}
-                    className="w-16 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#6b54c6] outline-none text-[var(--text-muted)]" />
+                    className="w-16 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#6b54c6] outline-none text-[var(--text-muted)]" />
                 </div>
               </div>
             )}
