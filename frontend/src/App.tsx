@@ -4905,7 +4905,7 @@ export default function App() {
   // Desktop = COCKPIT: altezza fissa, lo scroll avviene SOLO dentro <main> (cruscotto
   // inamovibile). Mobile resta a scroll di pagina normale.
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col text-[var(--text)] lg:pl-60 pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", background: 'radial-gradient(120% 70% at 50% -25%, rgba(139,120,255,0.055), transparent 55%), var(--bg)' }}>
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col text-[var(--text)] lg:pl-60 pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", background: 'radial-gradient(120% 70% at 50% -25%, var(--page-glow, rgba(139,120,255,0.055)), transparent 55%), var(--bg)' }}>
 
       {/* ========== SIDEBAR (solo desktop) ========== */}
       <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-60 z-40 bg-[var(--surface)] border-r border-[var(--border)] px-3 pt-6 pb-6">
@@ -10420,7 +10420,7 @@ export default function App() {
       {bulkMode && (
         <div className="fixed left-0 right-0 z-40 px-4 transition-all bottom-[calc(5rem+env(safe-area-inset-bottom)+8px)] lg:bottom-6">
           {(() => { const selCount = getBulkSelectedIds().length; return (
-          <div className={`bg-[#1a1a1a] border rounded-2xl p-3 flex items-center gap-2 shadow-2xl transition-all max-w-md mx-auto ${
+          <div className={`bg-[var(--surface)] border rounded-2xl p-3 flex items-center gap-2 shadow-2xl transition-all max-w-md mx-auto ${
             selCount > 0 ? 'border-[#6b54c6]/50' : 'border-gray-700'
           }`}>
             <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); setSelectedPieceIds(new Set()); }}
@@ -11838,7 +11838,7 @@ export default function App() {
                       <div className="p-4 border-b border-[var(--border)]">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[#111] border border-[var(--border)] flex items-center justify-center text-xl shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] flex items-center justify-center text-xl shrink-0">
                               <Layers size={18} className="text-[#6b54c6]" />
                             </div>
                             <div>
@@ -12011,7 +12011,7 @@ export default function App() {
                               <UserPlus size={10} /> {t('tp.invitePartner')}
                             </p>
                             <div className="flex gap-2">
-                              <div className="flex-1 bg-[#111] border border-[var(--border-2)] rounded-xl px-3 py-2 flex items-center gap-2 overflow-hidden">
+                              <div className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 flex items-center gap-2 overflow-hidden">
                                 <KeyRound size={11} className="text-[var(--text-faint)] shrink-0" />
                                 <span className="font-mono text-xs text-gray-300 truncate">{team.inviteCode}</span>
                               </div>
@@ -12103,7 +12103,7 @@ export default function App() {
                           value={shipFrom[f.key] || ''}
                           onChange={e => setShipFrom((p: any) => ({ ...p, [f.key]: e.target.value }))}
                           placeholder={f.placeholder}
-                          className="w-full bg-[#111] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-violet-500/50"
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-violet-500/50"
                         />
                       </div>
                     ))}
@@ -12127,7 +12127,7 @@ export default function App() {
                           value={shipTo[f.key as keyof typeof shipTo] || ''}
                           onChange={e => setShipTo(p => ({ ...p, [f.key]: e.target.value }))}
                           placeholder={f.placeholder}
-                          className="w-full bg-[#111] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-violet-500/50"
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-violet-500/50"
                         />
                       </div>
                     ))}
@@ -12143,7 +12143,7 @@ export default function App() {
                         className={`p-2.5 rounded-xl border text-center transition-all ${
                           shipPreset.label === p.label
                             ? 'bg-violet-500/15 border-violet-500/40 text-[var(--text)]'
-                            : 'bg-[#111] border-[var(--border)] text-[var(--text-soft)] hover:border-[var(--border-3)]'
+                            : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-soft)] hover:border-[var(--border-3)]'
                         }`}>
                         <p className="text-xs font-bold">{p.label}</p>
                         <p className="text-[9px] text-[var(--text-faint)] mt-0.5">{p.weight}kg</p>
@@ -12170,7 +12170,7 @@ export default function App() {
                       className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all text-left ${
                         selectedRate?.id === r.id
                           ? 'bg-violet-500/10 border-violet-500/40'
-                          : 'bg-[#111] border-[var(--border)] hover:border-[var(--border-3)]'
+                          : 'bg-[var(--surface-2)] border-[var(--border)] hover:border-[var(--border-3)]'
                       }`}>
                       <div>
                         <p className="font-bold text-sm text-[var(--text)]">{r.carrier}</p>
@@ -12264,7 +12264,7 @@ export default function App() {
                       className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border text-center transition-all active:scale-95 ${
                         listingPlatform === p.id
                           ? 'bg-violet-500/15 border-violet-500/40 text-[var(--text)]'
-                          : 'bg-[#111] border-[var(--border)] text-[var(--text-soft)] hover:border-[var(--border-3)] hover:text-gray-300'
+                          : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-soft)] hover:border-[var(--border-3)] hover:text-gray-300'
                       }`}>
                       <span className="text-lg">{p.emoji}</span>
                       <span className="text-[10px] font-bold">{p.label}</span>

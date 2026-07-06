@@ -238,6 +238,9 @@
   --rust-soft: rgba(181,116,90,0.13);
   --beige: #9aa2ab;
 }
+/* Alone di sfondo pagina: nel carbon è TITANIO neutro (non il viola degli altri temi). */
+.carbon { --page-glow: rgba(196,206,218,0.05); }
+.chrome { --page-glow: rgba(190,202,214,0.05); }
 .carbon .sys-label { letter-spacing: 0.2em; }
 .carbon .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #0b0c0d !important; }
 .carbon .text-\[\#6b54c6\]   { color: var(--accent) !important; }
