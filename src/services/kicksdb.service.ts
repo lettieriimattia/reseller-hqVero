@@ -7,6 +7,7 @@
 // Free tier ~50k richieste/mese: con la cache locale (CatalogItem) basta e avanza.
 
 import { logger } from '../utils/logger';
+import { isPlaceholderImage } from '../utils/imageConsistency';
 
 const KICKS_BASE = 'https://api.kicks.dev/v3';
 
@@ -47,6 +48,12 @@ export interface CatalogCandidate {
 // Estrae l'URL immagine da forme diverse della risposta KicksDB (image può essere una stringa,
 // un oggetto {original/small/thumbnail}, oppure la foto sta in media/gallery/grid_picture_url).
 function pickImage(p: any): string | null {
+  const picked = pickImageRaw(p);
+  // Scarta i segnaposto ("immagine non disponibile" = X grigia StockX / template GOAT): meglio
+  // nessuna foto (→ placeholder logo HQ) che una foto finta.
+  return isPlaceholderImage(picked) ? null : picked;
+}
+function pickImageRaw(p: any): string | null {
   if (!p) return null;
   const img = p.image;
   if (typeof img === 'string' && img) return img;

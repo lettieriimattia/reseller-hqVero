@@ -37,6 +37,16 @@ function proxyImg(url?: string | null): string | undefined {
   }
   return url;
 }
+// Riconosce le foto SEGNAPOSTO ("immagine non disponibile": X grigia StockX / template GOAT):
+// vanno trattate come "nessuna foto" così mostriamo il logo HQ invece di una foto finta.
+function isPlaceholderPhoto(url?: string | null): boolean {
+  if (!url) return true;
+  return /placeholder|product[-_]?template|not[-_]?available|no[-_]?image|noimage|coming[-_]?soon|missing|default[-_]?product|stockx[-_]?logo|\/static\/|blank\.(png|jpe?g|webp)/i.test(url);
+}
+// Restituisce l'URL della foto solo se è una foto VERA (non un segnaposto), altrimenti null.
+function realPhoto(url?: string | null): string | null {
+  return url && !isPlaceholderPhoto(url) ? url : null;
+}
 
 // Raggruppa le singole vendite di un gruppo per COMPRATORE (nome). Ogni buyer: quantità totale
 // + l'elenco delle singole vendite (con id e data) per mostrarle nella tendina e fare il reso del
@@ -5446,9 +5456,9 @@ export default function App() {
             })()}
             {/* Riga 1: titolo + toggle IN STOCK/VENDUTI accanto, ricerca inline su desktop */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-              <div className="flex flex-col gap-2 lg:flex-row lg:items-center shrink-0 w-full lg:w-auto">
-                <h2 className="text-xl lg:text-3xl font-semibold">{t('mag.title')}</h2>
-                <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] w-full lg:w-auto">
+              <div className="flex flex-col gap-2 lg:flex-row lg:items-center shrink-0 w-full lg:w-auto lg:gap-4">
+                <h2 className="text-xl lg:text-3xl font-semibold leading-none lg:mt-0.5">{t('mag.title')}</h2>
+                <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] w-full lg:w-auto lg:ml-1">
                   <button onClick={() => { setMagazzinoView('instock'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
                       magazzinoView === 'instock' ? 'bg-[#8397aa] text-[var(--text)]' : 'text-[var(--text-soft)]'
@@ -5648,7 +5658,7 @@ export default function App() {
                     const isPartialSel = selPieceCount > 0 && selPieceCount < g.ids.length && !selectedGroupKeys.has(groupKey);
                     const isAdmin = isAdminEmail(user!.email);
                     let photoUrl: string | null = null;
-                    try { const ph = g.photos ? JSON.parse(g.photos) : []; if (ph.length > 0) photoUrl = ph[0]; } catch {}
+                    try { const ph = g.photos ? JSON.parse(g.photos) : []; if (ph.length > 0) photoUrl = realPhoto(ph[0]); } catch {}
                     const days = g.oldestDate || g.createdAt ? Math.floor((Date.now() - new Date(g.oldestDate || g.createdAt).getTime()) / 86400000) : null;
                     const shares = getShares(g);
                     const daysBadge = days !== null ? (
