@@ -15,14 +15,14 @@ export default function TrendChart({ trendData }: { trendData: any[] }) {
         <defs>
           {/* Sfumatura viola sotto la linea principale (Profitto) — più profonda per dare volume */}
           <linearGradient id="profGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#c0cbd6" stopOpacity={0.55} />
-            <stop offset="45%" stopColor="#8397aa" stopOpacity={0.18} />
-            <stop offset="100%" stopColor="#8397aa" stopOpacity={0} />
+            <stop offset="0%" stopColor="#dbe2ea" stopOpacity={0.5} />
+            <stop offset="45%" stopColor="#aeb9c6" stopOpacity={0.16} />
+            <stop offset="100%" stopColor="#aeb9c6" stopOpacity={0} />
           </linearGradient>
-          {/* Velo tenue per i Ricavi (serie secondaria, sotto) */}
+          {/* Velo tenue per i Ricavi (serie secondaria, azzurro-acciaio) */}
           <linearGradient id="ricaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6f8394" stopOpacity={0.10} />
-            <stop offset="100%" stopColor="#6f8394" stopOpacity={0} />
+            <stop offset="0%" stopColor="#5e86b5" stopOpacity={0.16} />
+            <stop offset="100%" stopColor="#5e86b5" stopOpacity={0} />
           </linearGradient>
           {/* Ombra/glow morbido sotto la linea del profitto → profondità premium */}
           <filter id="lineGlow" x="-20%" y="-40%" width="140%" height="200%">
@@ -30,8 +30,8 @@ export default function TrendChart({ trendData }: { trendData: any[] }) {
           </filter>
           {/* Sfumatura sulla linea stessa (chiaro in alto → accento in basso) per un filo di lucentezza */}
           <linearGradient id="profStroke" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#cbd4dd" />
-            <stop offset="100%" stopColor="#8397aa" />
+            <stop offset="0%" stopColor="#eef1f5" />
+            <stop offset="100%" stopColor="#b7c2ce" />
           </linearGradient>
         </defs>
 
@@ -48,15 +48,15 @@ export default function TrendChart({ trendData }: { trendData: any[] }) {
         {/* Linea media (tratteggiata, tenue) */}
         <ReferenceLine y={avg} stroke="#8397aa" strokeOpacity={0.28} strokeDasharray="3 5" />
 
-        {/* Ricavi: velo secondario di sfondo (linea spezzata, tenue) */}
-        <Area type="linear" dataKey="Ricavi" stroke="#6f8394" strokeOpacity={0.4} strokeWidth={1.75}
+        {/* Ricavi: linea secondaria AZZURRO-ACCIAIO (tinta distinta dal profitto argento) */}
+        <Area type="linear" dataKey="Ricavi" stroke="#5e86b5" strokeOpacity={0.85} strokeWidth={2}
           fill="url(#ricaGrad)" dot={false} isAnimationActive={false} />
 
         {/* Profitto: spezzata viola ANGOLARE (niente raccordi curvi) in primo piano, con glow/ombra
             e stroke sfumato. Nessun puntino fisso → il punto compare solo all'hover (activeDot). */}
         <Area type="linear" dataKey="Profitto" stroke="url(#profStroke)" strokeWidth={3}
           fill="url(#profGrad)" dot={false} style={{ filter: 'url(#lineGlow)' }}
-          activeDot={{ r: 5, fill: '#d3d9e0', stroke: '#8397aa', strokeWidth: 2 }}
+          activeDot={{ r: 5, fill: '#eef1f4', stroke: '#b7c2ce', strokeWidth: 2 }}
           isAnimationActive={true} animationDuration={700} />
       </AreaChart>
     </ResponsiveContainer>

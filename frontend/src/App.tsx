@@ -5015,7 +5015,9 @@ export default function App() {
         </div>
       </header>
 
-      {/* ========== HEADER (solo MOBILE: su desktop Add è sul saluto e le notifiche in sidebar) ========== */}
+      {/* ========== HEADER (solo MOBILE) — in PORTAL su document.body così il `fixed` aggancia SEMPRE
+           al viewport, fuori da qualsiasi antenato con transform/filter/contain che romperebbe il fixed. ========== */}
+      {createPortal(
       <header ref={topBarRef} className="lux-underline fixed top-0 inset-x-0 z-40 lg:hidden bg-[var(--bg-blur)] backdrop-blur-xl"
         style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)' }}>
         {/* Fascia PIENA sotto lo status bar (orario/batteria): resta opaca per tutta l'area di sicurezza
@@ -5113,7 +5115,7 @@ export default function App() {
             </div>
           </div>
         </nav>
-      </header>
+      </header>, document.body)}
 
       {/* ===== PANNELLO NOTIFICHE (indipendente): mobile in alto centrato, desktop ancorato in
            basso a sinistra vicino alla sidebar. Backdrop trasparente per chiudere al tap-fuori. ===== */}
@@ -5296,8 +5298,8 @@ export default function App() {
                     <h3 className="text-lg lg:text-xl font-bold">{t('an.salesTrend')}</h3>
                     {/* Legenda subito sotto il titolo (colori allineati al grafico). */}
                     <div className="flex items-center gap-4 mt-1.5">
-                      <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-soft)]"><span className="w-4 h-[3px] rounded-full inline-block" style={{ background: '#9fb0bd' }} />{t('an.revenue')}</div>
-                      <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-soft)]"><span className="w-4 h-[3px] rounded-full inline-block" style={{ background: '#8397aa' }} />{t('dash.profit')}</div>
+                      <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-soft)]"><span className="w-4 h-[3px] rounded-full inline-block" style={{ background: '#5e86b5' }} />{t('an.revenue')}</div>
+                      <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-soft)]"><span className="w-4 h-[3px] rounded-full inline-block" style={{ background: '#e6ebf0' }} />{t('dash.profit')}</div>
                     </div>
                   </div>
                   {/* Il periodo si sceglie dalla card "Personal": qui mostro solo l'etichetta (tap → selettore). */}
