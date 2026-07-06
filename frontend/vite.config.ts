@@ -77,7 +77,7 @@ export default defineConfig({
         globIgnores: ['**/vosk-*.js', '**/vosk/**'],
         navigateFallback: '/index.html',
         // /^\/$/ = la ROOT non è gestita dal SW → la landing pubblica arriva sempre dal server.
-        navigateFallbackDenylist: [/^\/$/, /^\/api/, /^\/auth/, /^\/products/, /^\/team/, /^\/notifications/, /^\/tracking/, /^\/health/, /^\/admin/, /^\/landing/, /^\/waitlist/, /^\/privacy/, /^\/termini/, /^\/s\//, /^\/soluzioni\//],
+        navigateFallbackDenylist: [/^\/$/, /^\/api/, /^\/auth/, /^\/products/, /^\/team/, /^\/notifications/, /^\/tracking/, /^\/health/, /^\/admin/, /^\/landing/, /^\/main-landingpage/, /^\/waitlist/, /^\/privacy/, /^\/termini/, /^\/s\//, /^\/soluzioni\//],
         // BUG TROVATO: Workbox di default mappa "/" al precache di "index.html" (opzione
         // "directoryIndex", default 'index.html') PRIMA ancora di guardare navigateFallbackDenylist
         // (sono due meccanismi diversi: quello è un match diretto sul precache, il denylist

@@ -12,15 +12,15 @@
   <link rel="icon" type="image/png" href="/logo.png" />
   <link rel="apple-touch-icon" href="/logoHQCromato.png" />
   <style>
-    :root { --teal: #0d9488; --teal-d: #0b7c72; }
+    :root { --teal: #3c4657; --teal-d: #2a323f; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { min-height: 100vh; background: #06070a; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; }
     a { color: inherit; }
     .fx { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
     .fx span { position: absolute; border-radius: 50%; filter: blur(76px); mix-blend-mode: screen; opacity: .5; animation: aurora 24s ease-in-out infinite; }
-    .fx .b1 { width: 54vw; max-width: 640px; aspect-ratio: 1; background: radial-gradient(circle, #1f9f93, transparent 68%); top: -16%; left: 2%; }
-    .fx .b2 { width: 50vw; max-width: 580px; aspect-ratio: 1; background: radial-gradient(circle, #4a5bd6, transparent 68%); top: -6%; right: 0; animation-delay: -8s; }
-    .fx .b3 { width: 46vw; max-width: 560px; aspect-ratio: 1; background: radial-gradient(circle, #7a4bd6, transparent 68%); bottom: -24%; left: 40%; animation-delay: -16s; }
+    .fx .b1 { width: 54vw; max-width: 640px; aspect-ratio: 1; background: radial-gradient(circle, #3a5068, transparent 68%); top: -16%; left: 2%; }
+    .fx .b2 { width: 50vw; max-width: 580px; aspect-ratio: 1; background: radial-gradient(circle, #313d4f, transparent 68%); top: -6%; right: 0; animation-delay: -8s; }
+    .fx .b3 { width: 46vw; max-width: 560px; aspect-ratio: 1; background: radial-gradient(circle, #454f5e, transparent 68%); bottom: -24%; left: 40%; animation-delay: -16s; }
     @keyframes aurora { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(5vw,4vh) scale(1.18); } 66% { transform: translate(-4vw,3vh) scale(.88); } }
     @media (prefers-reduced-motion: reduce) { .fx span { animation: none; } }
     .top { position: relative; z-index: 2; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 960px; margin: 0 auto; width: 100%; }
@@ -32,7 +32,7 @@
     .home-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.32); transform: translateY(-1px); }
     main { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px 20px 60px; }
     .pill { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; color: #c9d0d8; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10); padding: 7px 15px; border-radius: 999px; margin-bottom: 26px; }
-    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #5fb9ae; animation: pulse 2s ease infinite; }
+    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #6f8394; animation: pulse 2s ease infinite; }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
     h1 { font-size: clamp(34px, 6vw, 60px); font-weight: 900; letter-spacing: -.03em; line-height: 1.1; max-width: 720px; margin: 0 auto 16px; padding-bottom: .1em;
       background: linear-gradient(180deg, #ffffff 0%, #dfe3e8 56%, #b6bbc2 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
@@ -49,13 +49,19 @@
     .consent { margin-top: 16px; font-size: 12.5px; color: #7e8893; max-width: 460px; }
     .consent a { color: #9aa2ab; text-decoration: underline; }
     .msg { margin-top: 22px; font-size: 15px; font-weight: 600; min-height: 22px; }
-    .msg.ok { color: #5fb9ae; } .msg.warn { color: #e0b16a; } .msg.err { color: #e08a6a; }
+    .msg.ok { color: #6f8394; } .msg.warn { color: #e0b16a; } .msg.err { color: #e08a6a; }
     .done { display: none; }
-    .done .ico { width: 64px; height: 64px; border-radius: 50%; background: rgba(13,148,136,.16); border: 1px solid rgba(13,148,136,.4); display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 22px; }
+    .done .ico { width: 64px; height: 64px; border-radius: 50%; background: rgba(20,24,31,.16); border: 1px solid rgba(20,24,31,.4); display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 22px; }
     footer { position: relative; z-index: 2; text-align: center; padding: 22px; color: #6a6e76; font-size: 12.5px; }
     footer a { color: #8a929c; }
   </style>
+  <!-- Font "da status" (JP Morgan-like): serif Fraunces sui titoli, coerente con l'app -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet" />
+  <style>h1,h2,.hero-h1{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-optical-sizing:auto;letter-spacing:-.01em}</style>
 </head>
+
 <body>
   <div class="fx" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
 
