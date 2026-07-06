@@ -51,7 +51,8 @@ const TOOLS = [
           taglia: { type: 'string', description: 'Taglia, es. "42" o "M" (facoltativo)' },
           // Union number|string: i modelli Groq a volte emettono "200" (stringa) e la
           // validazione tool fallirebbe con 400. executeTool fa comunque Number(...).
-          prezzo: { type: ['number', 'string'], description: 'Prezzo d\'acquisto in euro (facoltativo, default 0). Solo cifre, es. 200.' },
+          prezzo: { type: ['number', 'string'], description: 'Prezzo d\'acquisto in euro (facoltativo, default 0). Di DEFAULT è PER UNITÀ; se è il totale pagato per più pezzi imposta anche "prezzo_totale": true.' },
+          prezzo_totale: { type: 'boolean', description: 'true se "prezzo" è il totale pagato per TUTTE le unità insieme ("2 a 25000 in totale"), false se è per UNA ("25000 l\'una"). Default false.' },
           condizione: { type: 'string', description: 'Condizione, es. "Nuovo" (facoltativo)' },
           categoria: { type: 'string', description: 'Reparto/categoria, es. "Scarpe" (facoltativo)' },
           quantita: { type: ['number', 'string'], description: 'Quante unità IDENTICHE aggiungere (default 1). Es. "aggiungi 4 Jordan 4 uguali" → 4.' },
@@ -139,6 +140,8 @@ const TOOLS = [
           nuova_taglia: { type: 'string', description: 'Nuova taglia (facoltativo)' },
           nuova_condizione: { type: 'string', description: 'Nuova condizione, es. "Nuovo" (facoltativo)' },
           nuova_categoria: { type: 'string', description: 'Nuova categoria/reparto (facoltativo)' },
+          prezzo_svendita: { type: ['number', 'string'], description: 'Prezzo di SVENDITA / liquidazione (sell panic): quanto lo daresti per venderlo SUBITO. È SOLO un valore stimato, NON registra una vendita. Usalo quando l\'utente dice "prezzo di svendita", "a quanto lo svenderei/svendo", "quanto per venderlo subito", "prezzo di liquidazione".' },
+          svendita_totale: { type: 'boolean', description: 'true se "prezzo_svendita" è per TUTTE le unità insieme ("in totale/tutte assieme"), false se è PER UNITÀ ("ciascuna/l\'una"). Default false.' },
         },
         required: ['nome'],
       },
@@ -173,7 +176,8 @@ const TOOLS = [
           brand: { type: 'string', description: 'Marca per individuare il prodotto (facoltativo)' },
           nome: { type: 'string', description: 'Nome del modello venduto' },
           taglia: { type: 'string', description: 'Taglia per individuarlo (facoltativo)' },
-          prezzo_vendita: { type: ['number', 'string'], description: 'Prezzo di vendita per unità, in euro' },
+          prezzo_vendita: { type: ['number', 'string'], description: 'Prezzo di vendita in euro. Di DEFAULT è PER UNITÀ; se è il totale di più pezzi imposta anche "prezzo_totale": true.' },
+          prezzo_totale: { type: 'boolean', description: 'true se "prezzo_vendita" è il totale per TUTTE le unità vendute insieme ("tutte a X/in totale"), false se è per UNA ("ciascuna/l\'una"). Default false.' },
           piattaforma: { type: 'string', description: 'Dove l\'hai venduto: Vinted/StockX/eBay/Subito/Privato (facoltativo)' },
           quantita: { type: ['number', 'string'], description: 'Quante unità vendere (default 1)' },
           cliente: { type: 'string', description: 'A CHI ho venduto: nome/@social del cliente (facoltativo). Es. "a Giulia" → "Giulia".' },
@@ -243,6 +247,8 @@ Regole:
 - Nel "crea_lotto": "20 paia di X" → una riga con quantita 20; se una parte del lotto è di un fornitore e una parte di un altro ("metà a Luca, metà a Marco"), spezza in due righe con le rispettive quantità e "fornitore". Il prezzo_totale è quello di TUTTO il lotto: il sistema divide sui pezzi totali.
 - Per MODIFICARE un articolo già in magazzino (prezzo, taglia, condizione, categoria) usa "modifica_prodotto".
 - Per VENDERE un articolo già in magazzino usa "vendi_prodotto" col prezzo di vendita (e quantità se più di una).
+- ⚠️ SVENDITA ≠ VENDITA: "prezzo di svendita", "a quanto lo svenderei/svendo", "quanto per venderlo SUBITO", "prezzo di liquidazione" NON è una vendita reale → è solo il PREZZO STIMATO di svendita rapida (un campo). Usa "modifica_prodotto" con "prezzo_svendita". NON usare "vendi_prodotto" per questo. Usa "vendi_prodotto" SOLO per vendite VERE già avvenute ("ho venduto", "venduta a", "vendi X a Y euro").
+- ⚠️ PREZZO TOTALE vs PER UNITÀ: quando la quantità è >1 distingui se il prezzo è per TUTTE le unità insieme o per UNA. "in totale", "tutte assieme", "tutte a X", "X in tutto", "all together" → è il TOTALE: imposta il flag "prezzo_totale"/"svendita_totale" a true. "ciascuna", "l'una", "a testa", "cada", "each" → è PER UNITÀ: flag false. Nel dubbio ("comprate a X", "le vendo a X" senza altro) → PER UNITÀ. Vale per acquisto (aggiungi/crea_lotto), vendita e svendita.
 - FORNITORE e DATA in ACQUISTO: se l'utente dice DA CHI ha comprato ("me le ha vendute Marco", "comprate da Luca", "bought from Marco", "from @tizio") passa "fornitore". Se dice QUANDO ("ieri", "il 12 giugno", "3 giorni fa", "10/06", "yesterday", "June 12", "3 days ago") passa "data_acquisto". Vale sia per "aggiungi_prodotto" che per "crea_lotto".
 - CLIENTE e DATA in VENDITA: se dice A CHI ha venduto ("venduta a Giulia", "sold to Giulia", "to @cliente") passa "cliente". Se dice QUANDO l'ha venduta passa "data_vendita".
 - Le date passale ESATTAMENTE come le dice l'utente (es. "ieri"/"yesterday", "12 giugno"/"June 12", "10/06"): NON convertirle tu in un altro formato, ci pensa il sistema.
@@ -413,7 +419,10 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
 
       const category = twin?.category || await defaultCategory(ctx.userId, args.categoria);
       const condition = (args.condizione ? String(args.condizione) : '').trim() || twin?.condition || '—';
-      const givenPrice = Number(args.prezzo) > 0 ? Number(args.prezzo) : null;
+      let givenPrice = Number(args.prezzo) > 0 ? Number(args.prezzo) : null;
+      // Prezzo indicato come TOTALE per più unità → riportalo a PER UNITÀ (il magazzino salva il
+      // costo per pezzo). Es. "2 a 25000 in totale" con qty 2 → 12500 cad.
+      if (givenPrice != null && args.prezzo_totale === true && qty > 1) givenPrice = Math.round((givenPrice / qty) * 100) / 100;
       const purchasePrice = givenPrice ?? (twin?.purchasePrice ?? 0);
       let resolvedSku: string | null = args.sku ? String(args.sku).trim() : (twin?.sku || null);
 
@@ -505,7 +514,14 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
       if (args.nuova_taglia && String(args.nuova_taglia).trim()) upd.size = String(args.nuova_taglia).trim();
       if (args.nuova_condizione && String(args.nuova_condizione).trim()) upd.condition = String(args.nuova_condizione).trim();
       if (args.nuova_categoria && String(args.nuova_categoria).trim()) upd.category = String(args.nuova_categoria).trim();
-      if (!Object.keys(upd).length) return { error: 'Dimmi cosa modificare: prezzo, taglia, condizione o categoria.' };
+      // Prezzo di SVENDITA (sell panic) → campo quickSalePrice. NON è una vendita. Se dato come
+      // totale per più pezzi, riportalo a per-unità (il campo è per pezzo).
+      if (Number(args.prezzo_svendita) > 0) {
+        let sv = Number(args.prezzo_svendita);
+        if (args.svendita_totale === true && prods.length > 1) sv = Math.round((sv / prods.length) * 100) / 100;
+        upd.quickSalePrice = sv;
+      }
+      if (!Object.keys(upd).length) return { error: 'Dimmi cosa modificare: prezzo, prezzo di svendita, taglia, condizione o categoria.' };
       await prisma.product.updateMany({ where: { id: { in: prods.map(p => p.id) } }, data: upd });
       return { ok: true, modificati: prods.length, prodotto: `${prods[0].brand} ${prods[0].name}`, modifiche: upd };
     }
@@ -539,10 +555,12 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
       const platform = (args.piattaforma ? String(args.piattaforma).trim() : '') || 'Privato';
       const customer = (args.cliente ? String(args.cliente).trim() : '') || null;
       const soldOn = parseItDate(args.data_vendita) || new Date(); // se non detta → adesso
+      // Prezzo indicato come TOTALE per più unità → prezzo PER PEZZO = totale / n. venduti.
+      const unitPrice = (args.prezzo_totale === true && prods.length > 1) ? Math.round((prezzo / prods.length) * 100) / 100 : prezzo;
       for (const p of prods) {
-        await prisma.product.update({ where: { id: p.id }, data: { salePrice: prezzo, platform, status: 'VENDUTO', customer, soldAt: soldOn } });
+        await prisma.product.update({ where: { id: p.id }, data: { salePrice: unitPrice, platform, status: 'VENDUTO', customer, soldAt: soldOn } });
       }
-      return { ok: true, venduti: prods.length, prodotto: `${prods[0].brand} ${prods[0].name}`, taglia: prods[0].size, prezzo, piattaforma: platform, cliente: customer || undefined, data_vendita: soldOn.toLocaleDateString('it-IT') };
+      return { ok: true, venduti: prods.length, prodotto: `${prods[0].brand} ${prods[0].name}`, taglia: prods[0].size, prezzo: unitPrice, prezzo_totale: unitPrice * prods.length, piattaforma: platform, cliente: customer || undefined, data_vendita: soldOn.toLocaleDateString('it-IT') };
     }
 
     if (name === 'valuta_prezzo') {
@@ -632,6 +650,7 @@ function summarizeToolResult(name: string, result: any): string {
   if (name === 'modifica_prodotto' && result?.ok) {
     const parti: string[] = [];
     if (result.modifiche?.purchasePrice != null) parti.push(`prezzo ${result.modifiche.purchasePrice}€`);
+    if (result.modifiche?.quickSalePrice != null) parti.push(`prezzo svendita ${result.modifiche.quickSalePrice}€`);
     if (result.modifiche?.size) parti.push(`taglia ${result.modifiche.size}`);
     if (result.modifiche?.condition) parti.push(`condizione ${result.modifiche.condition}`);
     if (result.modifiche?.category) parti.push(`categoria ${result.modifiche.category}`);

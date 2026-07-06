@@ -85,6 +85,27 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
     return () => { vv.removeEventListener('resize', onResize); vv.removeEventListener('scroll', onResize); };
   }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);      // pannello chat aperto (per click-fuori)
+  const inputRef = useRef<HTMLInputElement>(null);    // campo di scrittura (per autofocus)
+  // All'apertura: focus SUBITO sull'input (si scrive subito) + chiusura al click/tocco FUORI
+  // dal pannello (mouse su desktop, tap su mobile) invece di restare aperta ferma.
+  useEffect(() => {
+    if (!open) return;
+    const focusT = setTimeout(() => inputRef.current?.focus(), 70);
+    const onOutside = (e: Event) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    // aggancio al giro dopo, così non catturo il click/tocco che ha APPENA aperto la chat
+    const armT = setTimeout(() => {
+      document.addEventListener('mousedown', onOutside);
+      document.addEventListener('touchstart', onOutside, { passive: true });
+    }, 0);
+    return () => {
+      clearTimeout(focusT); clearTimeout(armT);
+      document.removeEventListener('mousedown', onOutside);
+      document.removeEventListener('touchstart', onOutside);
+    };
+  }, [open]);
   const recSupported = isRecordingSupported();
 
   useEffect(() => {
@@ -381,6 +402,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
           )}
         </button>
         <input
+          ref={inputRef}
           value={input}
           onChange={e => setInput(e.target.value)}
           onFocus={() => setOpen(true)}
@@ -417,7 +439,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       {open && (
         <div className="fixed inset-0 z-[44] flex flex-col justify-end lg:inset-auto lg:bottom-6 lg:left-60 lg:right-0 lg:top-auto lg:items-center lg:px-6">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setOpen(false)} />
-          <div className="relative flex flex-col h-[86vh] rounded-t-[28px] border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_-24px_80px_-24px_rgba(107,84,198,0.55)] lg:h-[720px] lg:max-h-[80vh] lg:w-full lg:max-w-2xl lg:rounded-[24px] lg:border lg:border-white/10">
+          <div ref={panelRef} className="relative flex flex-col h-[86vh] rounded-t-[28px] border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_-24px_80px_-24px_rgba(107,84,198,0.55)] lg:h-[720px] lg:max-h-[80vh] lg:w-full lg:max-w-2xl lg:rounded-[24px] lg:border lg:border-white/10">
             {/* Grab handle */}
             <div className="mx-auto mt-3 mb-1.5 h-1.5 w-10 rounded-full bg-white/15 shrink-0" />
 
