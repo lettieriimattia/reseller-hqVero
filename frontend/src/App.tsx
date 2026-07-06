@@ -419,7 +419,7 @@ export default function App() {
   
   // ----- TEMA (scuro / chiaro / glass) -----
   // 'chrome' = tema premium cromato, ora DEFAULT per tutti gli account.
-  const [theme, setTheme] = useState<'dark' | 'light' | 'glass' | 'lux' | 'chrome'>(() => {
+  const [theme, setTheme] = useState<'dark' | 'light' | 'glass' | 'lux' | 'chrome' | 'carbon'>(() => {
     try {
       // Rollout Chrome: porta TUTTI al tema cromato UNA volta (poi resta modificabile dall'utente).
       if (localStorage.getItem('hq-theme-rollout') !== 'chrome') {
@@ -427,12 +427,12 @@ export default function App() {
         localStorage.setItem('hq-theme-rollout', 'chrome');
         return 'chrome';
       }
-      return (localStorage.getItem('hq-theme') as 'dark' | 'light' | 'glass' | 'lux' | 'chrome') || 'chrome';
+      return (localStorage.getItem('hq-theme') as 'dark' | 'light' | 'glass' | 'lux' | 'chrome' | 'carbon') || 'chrome';
     } catch { return 'chrome'; }
   });
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('light', 'glass', 'lux', 'chrome');
+    root.classList.remove('light', 'glass', 'lux', 'chrome', 'carbon');
     if (theme !== 'dark') root.classList.add(theme);
     try { localStorage.setItem('hq-theme', theme); } catch { /* storage non disponibile */ }
   }, [theme]);
@@ -8383,7 +8383,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  {theme === 'light' ? <Sun className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'lux' ? <Gem className="text-[#1fa89f] mt-0.5" size={22} /> : theme === 'chrome' ? <Gem className="text-[#c2c9d2] mt-0.5" size={22} /> : <Moon className="text-[#6b54c6] mt-0.5" size={22} />}
+                  {theme === 'light' ? <Sun className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#6b54c6] mt-0.5" size={22} /> : theme === 'lux' ? <Gem className="text-[#1fa89f] mt-0.5" size={22} /> : theme === 'chrome' ? <Gem className="text-[#c2c9d2] mt-0.5" size={22} /> : theme === 'carbon' ? <Layers className="text-[#b9c0c9] mt-0.5" size={22} /> : <Moon className="text-[#6b54c6] mt-0.5" size={22} />}
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.appearance')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">{t('set.appearanceDesc')}</p>
@@ -8409,6 +8409,15 @@ export default function App() {
                     }`}>
                     <Gem size={13} /> Chrome
                   </button>
+                  {/* Tema CARBON FIBER (stile Pagani) — solo admin */}
+                  {isAdminEmail(user?.email) && (
+                    <button onClick={() => setTheme('carbon')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                        theme === 'carbon' ? 'bg-[#b9c0c9] text-[#0b0c0d]' : 'text-[var(--text-soft)]'
+                      }`}>
+                      <Layers size={13} /> Carbon
+                    </button>
+                  )}
                 </div>
               </div>
             </section>
