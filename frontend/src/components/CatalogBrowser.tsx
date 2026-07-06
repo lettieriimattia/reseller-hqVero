@@ -165,7 +165,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
 
   return (
     <div className="w-full">
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h1 className="text-xl font-black text-[var(--text)]">Catalogo</h1>
         <p className="text-sm text-[var(--text-soft)]">Tocca <span className="text-[#8397aa] font-bold">+</span> per aggiungere al magazzino con la foto ufficiale.</p>
       </div>

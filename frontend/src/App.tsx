@@ -4580,7 +4580,7 @@ export default function App() {
               {marketItems.map((it: any) => (
                 <button key={it.id} onClick={() => openMarketDetail(it.id)}
                   className="text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:-translate-y-0.5 hover:shadow-lg transition-all">
-                  <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
+                  <div className="aspect-square bg-white flex items-center justify-center overflow-hidden">
                     {it.photo ? <img src={it.photo} alt="" className="w-full h-full object-cover" /> : <span className="text-4xl">{getCategoryIcon(it.category)}</span>}
                   </div>
                   <div className="p-3">
@@ -4603,7 +4603,7 @@ export default function App() {
                   className="p-3 -mr-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
               </div>
               <div className="flex-1 overflow-y-auto overscroll-contain">
-                <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
+                <div className="aspect-square bg-white flex items-center justify-center overflow-hidden">
                   {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
                 </div>
                 <div className="p-5">
@@ -6816,7 +6816,7 @@ export default function App() {
                 {marketItems.map((it: any) => (
                   <button key={it.id} onClick={() => openMarketDetail(it.id)}
                     className="text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:-translate-y-0.5 hover:shadow-lg transition-all">
-                    <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
+                    <div className="aspect-square bg-white flex items-center justify-center overflow-hidden">
                       {it.photo ? <img src={it.photo} alt="" className="w-full h-full object-cover" /> : <span className="text-4xl">{getCategoryIcon(it.category)}</span>}
                     </div>
                     <div className="p-3">
@@ -7191,7 +7191,7 @@ export default function App() {
                   const idx = Math.min(marketPhotoIdx, Math.max(0, photos.length - 1));
                   return (
                     <>
-                      <div className="aspect-square bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
+                      <div className="aspect-square bg-white flex items-center justify-center overflow-hidden">
                         {photos[idx] ? <img src={photos[idx]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
                       </div>
                       {photos.length > 1 && (
@@ -9278,7 +9278,7 @@ export default function App() {
                     {scanStockxMatch && scanStockxMatch.image && (
                       <div className="p-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border-2)]">
                         <div className="flex items-center gap-2.5">
-                          <img src={scanStockxMatch.image} alt="" className="w-14 h-14 rounded-lg object-cover bg-white/5 shrink-0" />
+                          <img src={scanStockxMatch.image} alt="" className="w-14 h-14 rounded-lg object-contain bg-white shrink-0" />
                           <div className="min-w-0">
                             <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">{t('form.stockxSays')}</p>
                             <p className="font-bold text-[var(--text)] truncate">{scanStockxMatch.title}</p>
