@@ -5152,30 +5152,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* ===== COCKPIT — cluster strumenti (solo DESKTOP): striscia da cruscotto sotto il saluto.
-                 Densità + numeri tabulari + label di sistema. Texture carbon ereditata dalla card. ===== */}
-            {productsLoaded && products.length > 0 && (() => {
-              const pezziStock = groupedInStockArray.reduce((a: number, g: any) => a + (g.quantity || 0), 0);
-              const vendutiPeriodo = globalSold.filter((p: any) => inPersonalPeriod(p.soldAt || p.createdAt)).length;
-              const cells = [
-                { label: lang === 'en' ? 'Pieces' : 'Pezzi', value: pezziStock.toLocaleString('it-IT'), sub: lang === 'en' ? 'in stock' : 'in magazzino', money: false },
-                { label: lang === 'en' ? 'Stock value' : 'Valore stock', value: `${Math.round(stockValore).toLocaleString('it-IT')}€`, sub: lang === 'en' ? 'cost' : 'costo', money: true },
-                { label: lang === 'en' ? 'Quick value' : 'Valore rapido', value: `${Math.round(liquidationValue).toLocaleString('it-IT')}€`, sub: lang === 'en' ? 'fast sale' : 'svendita', money: true },
-                { label: lang === 'en' ? 'Sold' : 'Venduti', value: vendutiPeriodo.toLocaleString('it-IT'), sub: periodLabel, money: false },
-              ];
-              return (
-                <div className="hidden lg:grid grid-cols-4 bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
-                  {cells.map((c, i) => (
-                    <div key={i} className={`px-5 py-4 ${i > 0 ? 'border-l border-[var(--border)]' : ''}`}>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-faint)] mb-2">{c.label}</p>
-                      <p className={`text-[28px] font-black num leading-none tracking-tight ${c.money ? 'text-[var(--teal)]' : 'text-[var(--text)]'}`}>{c.value}</p>
-                      <p className="text-[11px] text-[var(--text-faint)] font-semibold mt-2 truncate capitalize">{c.sub}</p>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-
             {/* Quanto lo pago? — strumento sourcing (prezzo max d'acquisto). DISATTIVATO finché
                 non colleghiamo fonti affidabili per categoria (eBay generico dava prezzi falsi). */}
             {VALUATION_ENABLED && (
