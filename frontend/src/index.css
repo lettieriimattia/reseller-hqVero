@@ -265,6 +265,17 @@
     inset 0 0 0 1px rgba(0,0,0,0.20),        /* micro-incasso: separazione netta */
     0 3px 20px -4px rgba(0,0,0,0.55);        /* ombra profonda ma morbida */
 }
+/* Su schermi a BASSA densità (desktop 1x) le linee 1px del twill creano moiré ("schermo
+   rovinato"). Le AMMORBIDIAMO lì (meno contrasto + più rade). Sui telefoni (alta densità
+   retina) le linee si fondono e stanno perfette → restano com'è (nessun override). */
+@media (max-resolution: 1.5dppx) {
+  .carbon .bg-\[var\(--surface\)\] {
+    background-image:
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.009) 0, rgba(255,255,255,0.009) 1px, transparent 1px, transparent 5px),
+      repeating-linear-gradient(-45deg, rgba(0,0,0,0.14) 0, rgba(0,0,0,0.14) 1px, transparent 1px, transparent 5px),
+      linear-gradient(180deg, rgba(202,212,224,0.06), rgba(202,212,224,0) 44%);
+  }
+}
 /* Titoli in "titanio spazzolato": gradiente metallico clip (come il chrome ma più freddo/scuro). */
 .carbon h1, .carbon h2, .carbon h3 {
   background: linear-gradient(180deg,#f4f6f8 0%,#c9ced4 34%,#8d949c 56%,#e4e8ec 100%);
