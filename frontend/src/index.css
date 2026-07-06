@@ -214,12 +214,12 @@
   --gold: #b9c0c9;
   --gold-soft: rgba(185,192,201,0.12);
   --gold-line: rgba(185,192,201,0.32);
-  --bg: #08090a;            /* carbonio near-black */
-  --surface: #121317;       /* carbonio elevato */
-  --surface-2: #1a1c20;     /* inset / elevated */
-  --border: rgba(190,200,212,0.08);   /* hairline titanio */
-  --border-2: rgba(190,200,212,0.14);
-  --border-3: rgba(190,200,212,0.22);
+  --bg: #070809;            /* carbonio near-black (leggermente più scuro → i box staccano di più) */
+  --surface: #16171c;       /* carbonio elevato (più chiaro → card più evidenti sul fondo) */
+  --surface-2: #1c1e23;     /* inset / elevated */
+  --border: rgba(190,200,212,0.10);   /* hairline titanio (un filo più marcato) */
+  --border-2: rgba(190,200,212,0.16);
+  --border-3: rgba(190,200,212,0.26);
   --text: #e8ebee;          /* titanio brillante */
   --text-soft: #868d96;     /* grigio titanio */
   --text-muted: #b0b7bf;
@@ -248,15 +248,19 @@
 .carbon .text-yellow-400    { color: #c2a15a !important; }                          /* ottone smorzato */
 .carbon .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .carbon .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
-/* TRAMA CARBON FIBER (twill fine) sulle superfici: due tratteggi diagonali incrociati a bassissimo
-   contrasto (carbonio a vista, non pacchiano) + velatura dall'alto + filo di luce + ombra netta. */
+/* CARD "fresate nel pieno" (spirito Pagani): carbonio twill a vista + bordo di precisione +
+   FILO DI LUCE sull'edge superiore (l'alluminio lucidato che cattura la luce) + profondità pulita.
+   Trama = due tratteggi diagonali incrociati, sobri ma leggibili (non pacchiano). */
 .carbon .bg-\[var\(--surface\)\] {
   background-image:
-    repeating-linear-gradient(45deg, rgba(255,255,255,0.017) 0, rgba(255,255,255,0.017) 1px, transparent 1px, transparent 3px),
-    repeating-linear-gradient(-45deg, rgba(0,0,0,0.28) 0, rgba(0,0,0,0.28) 1px, transparent 1px, transparent 3px),
-    linear-gradient(180deg, rgba(200,210,222,0.045), rgba(200,210,222,0) 46%);
-  border-color: rgba(190,200,212,0.16) !important;
-  box-shadow: inset 0 1px 0 rgba(224,231,238,0.08), 0 2px 16px rgba(0,0,0,0.42);
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.022) 0, rgba(255,255,255,0.022) 1px, transparent 1px, transparent 3px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,0.34) 0, rgba(0,0,0,0.34) 1px, transparent 1px, transparent 3px),
+    linear-gradient(180deg, rgba(202,212,224,0.06), rgba(202,212,224,0) 44%);
+  border-color: rgba(196,206,218,0.20) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(230,236,242,0.11),   /* filo di luce (edge lavorato) */
+    inset 0 0 0 1px rgba(0,0,0,0.20),        /* micro-incasso: separazione netta */
+    0 3px 20px -4px rgba(0,0,0,0.55);        /* ombra profonda ma morbida */
 }
 /* Titoli in "titanio spazzolato": gradiente metallico clip (come il chrome ma più freddo/scuro). */
 .carbon h1, .carbon h2, .carbon h3 {
