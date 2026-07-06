@@ -6028,7 +6028,10 @@ export default function App() {
             {/* ===== GRAFICO A BARRE SOVRAPPOSTE (ultimi 6 mesi): Entrate/Uscite/Investimenti impilate.
                 Tocca una barra per selezionare quel mese (aggiorna il conto economico sotto). ===== */}
             {(() => {
-              const COL = { Entrate: '#3fae82', Uscite: '#8878d6', Investimenti: '#5b86c9' };
+              // Palette FREDDA "private banking": rampa titanio/acciaio (light → steel → graphite),
+              // monocroma e sobria — niente arcobaleno. Entrate = titanio chiaro (spicca),
+              // Investimenti = acciaio medio, Uscite = graphite scuro (recede).
+              const COL = { Entrate: '#c0cbd6', Uscite: '#57626f', Investimenti: '#8397aa' };
               const legend = [
                 { k: 'Entrate', c: COL.Entrate, lbl: t('bub.income'), val: bubbleMonth.ricavi },
                 { k: 'Uscite', c: COL.Uscite, lbl: t('bub.expenses'), val: bubbleMonth.uscite },
@@ -6115,27 +6118,27 @@ export default function App() {
               <p className="text-[9px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.12em] mb-4 flex items-center gap-2"><Sparkles size={10} /> Insights</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {staleCount > 0 && (
-                  <div className="flex items-center gap-3 p-3 bg-red-900/15 border border-red-900/30 rounded-xl cursor-pointer hover:bg-red-900/25 transition-colors"
+                  <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl cursor-pointer hover:border-[var(--border-2)] transition-colors"
                     onClick={() => { setCurrentView('magazzino'); setSortField('date'); setSortDir('asc'); }}>
                     <AlertTriangle size={16} className="text-red-400 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-red-300">{staleCount} {staleCount === 1 ? t('home.staleOne') : t('home.staleMany')} {t('home.over30')}</p>
+                      <p className="text-sm font-bold text-[var(--text)]">{staleCount} {staleCount === 1 ? t('home.staleOne') : t('home.staleMany')} {t('home.over30')}</p>
                       <p className="text-[10px] text-[var(--text-soft)]">{t('home.staleHint')}</p>
                     </div>
                     <span className="text-[10px] text-[var(--text-soft)] shrink-0">{t('dash.see')} →</span>
                   </div>
                 )}
                 {weekSales.length > 0 && (
-                  <div className="flex items-center gap-3 p-3 bg-green-900/15 border border-green-900/30 rounded-xl">
-                    <TrendingUp size={16} className="text-green-400 shrink-0" />
+                  <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl">
+                    <TrendingUp size={16} className="text-emerald-400 shrink-0" />
                     <div>
-                      <p className="text-sm font-bold text-green-300">{weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')} {t('home.thisWeek')}{weekProfit > 0 && ` · +${weekProfit.toFixed(0)}€`}</p>
+                      <p className="text-sm font-bold text-[var(--text)]">{weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')} {t('home.thisWeek')}{weekProfit > 0 && ` · +${weekProfit.toFixed(0)}€`}</p>
                       <p className="text-[10px] text-[var(--text-soft)]">{t('home.goodPace')}</p>
                     </div>
                   </div>
                 )}
                 {bestCategoryEntry?.profit > 0 && (
-                  <div className="flex items-center gap-3 p-3 bg-[#6b54c6]/10 border border-[#6b54c6]/20 rounded-xl">
+                  <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl">
                     <span className="text-xl shrink-0">{getCategoryIcon(bestCategoryEntry.cat)}</span>
                     <div>
                       <p className="text-sm font-bold">{bestCategoryEntry.cat} {t('home.bestDeptSuffix')}</p>
