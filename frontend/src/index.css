@@ -18,9 +18,9 @@
   --accent-hover: #8a78d9;
   /* Dettaglio "lusso": champagne/oro usato con PARSIMONIA (hairline, valori, hover).
      Non sostituisce il viola: lo accompagna come finitura premium. */
-  --gold: #c8a96a;
-  --gold-soft: rgba(200,169,106,0.14);
-  --gold-line: rgba(200,169,106,0.34);
+  --gold: #c6ced7;
+  --gold-soft: rgba(198,206,215,0.14);
+  --gold-line: rgba(198,206,215,0.34);
   /* ===== Materiali "Pagani" (cockpit desktop) =====
      Dati critici di profitto, grafici e CTA = ottanio (teal) o ruggine desaturato.
      Testo secondario = beige tenue (calore). Sfondi = antracite/nero (già --bg/--surface). */
@@ -90,10 +90,10 @@
   --bg-blur: rgba(230,230,235,0.85);
   --bg-overlay: rgba(230,230,235,0.72);
   --surface-blur: rgba(255,255,255,0.90);
-  /* Champagne più scuro: leggibile/raffinato su sfondo chiaro */
-  --gold: #9a7b3f;
-  --gold-soft: rgba(154,123,63,0.12);
-  --gold-line: rgba(154,123,63,0.42);
+  /* Cromo scuro: leggibile/raffinato su sfondo chiaro */
+  --gold: #7d858f;
+  --gold-soft: rgba(125,133,143,0.14);
+  --gold-line: rgba(125,133,143,0.42);
 }
 
 /* ===== TEMA "LUX" — Carbon + LED Teal (PREMIUM, anteprima admin) =====
@@ -218,9 +218,9 @@
   --accent-hover: #d3d9e0;
   /* JP Morgan private banking: un SOFFIO di champagne/bronzo = l'unico accento "caldo" di lusso,
      usato col contagocce (wordmark "Vault", hairline sotto i titoli). Il resto resta titanio freddo. */
-  --gold: #c3a878;          /* champagne/bronzo tenue */
-  --gold-soft: rgba(195,168,120,0.12);
-  --gold-line: rgba(195,168,120,0.34);
+  --gold: #cbd3dc;          /* cromo freddo (ex champagne) */
+  --gold-soft: rgba(203,211,220,0.14);
+  --gold-line: rgba(203,211,220,0.34);
   --bg: #070809;            /* carbonio near-black (leggermente più scuro → i box staccano di più) */
   --surface: #16171c;       /* carbonio elevato (più chiaro → card più evidenti sul fondo) */
   --surface-2: #1c1e23;     /* inset / elevated */
@@ -333,10 +333,10 @@
   /* Più opaco: i pannelli flottanti (tendina notifiche, modali) devono restare
      leggibili anche in glass — col 50% il testo spariva sullo sfondo. */
   --surface-blur: rgba(18,18,28,0.88);
-  /* Champagne un filo più chiaro per brillare sul vetro */
-  --gold: #d9bd84;
-  --gold-soft: rgba(217,189,132,0.16);
-  --gold-line: rgba(217,189,132,0.38);
+  /* Cromo un filo più chiaro per brillare sul vetro */
+  --gold: #d3dbe3;
+  --gold-soft: rgba(211,219,227,0.16);
+  --gold-line: rgba(211,219,227,0.38);
 }
 /* Sfondo sfumato: serve "qualcosa dietro" perché il vetro si veda */
 html.glass, html.glass body {

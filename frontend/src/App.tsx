@@ -4604,7 +4604,7 @@ export default function App() {
               </div>
               <div className="flex-1 overflow-y-auto overscroll-contain">
                 <div className="aspect-square bg-white flex items-center justify-center overflow-hidden">
-                  {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
+                  {marketDetail.photos?.[0] ? <img src={marketDetail.photos[0]} alt="" className="w-full h-full object-contain" /> : <img src="/logo.png" alt="" className="w-1/3 h-1/3 object-contain opacity-20" />}
                 </div>
                 <div className="p-5">
                   <p className="text-xl font-bold">{fullName(marketDetail.brand, marketDetail.name)}</p>
@@ -4980,8 +4980,8 @@ export default function App() {
       </header>
 
       {/* ========== HEADER (solo MOBILE: su desktop Add è sul saluto e le notifiche in sidebar) ========== */}
-      <header className="lux-underline sticky top-0 z-40 lg:hidden backdrop-blur-xl"
-        style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)', background: 'var(--bg)' }}>
+      <header className="lux-underline fixed top-0 inset-x-0 z-40 lg:hidden bg-[var(--bg-blur)] backdrop-blur-xl"
+        style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)' }}>
         {/* Fascia PIENA sotto lo status bar (orario/batteria): resta opaca per tutta l'area di sicurezza
             (con fallback minimo se safe-area=0, es. webview senza notch) e poi sfuma → scorrendo, il
             contenuto svanisce sotto orario/batteria invece di collidere. Solo mobile. */}
@@ -5078,6 +5078,9 @@ export default function App() {
           </div>
         </nav>
       </header>
+      {/* Spacer per l'header FISSO (solo mobile): riserva l'altezza così il contenuto parte sotto
+          la striscia (HQVault + impostazioni/notifiche/logout) che ora resta sempre visibile. */}
+      <div className="lg:hidden" aria-hidden="true" style={{ height: 'calc(max(env(safe-area-inset-top), 12px) + 62px)' }} />
 
       {/* ===== PANNELLO NOTIFICHE (indipendente): mobile in alto centrato, desktop ancorato in
            basso a sinistra vicino alla sidebar. Backdrop trasparente per chiudere al tap-fuori. ===== */}
@@ -5688,7 +5691,7 @@ export default function App() {
                         <div className="flex items-center gap-3 p-3.5">
                           {photoUrl
                             ? <div onClick={!bulkMode ? () => openEditModal(g) : undefined} className={`w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)] bg-white ${!bulkMode ? 'cursor-pointer' : ''}`}><img src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain" /></div>
-                            : <span className="text-2xl shrink-0 w-16 text-center">{getCategoryIcon(g.category)}</span>}
+                            : <div className="w-16 h-16 rounded-xl shrink-0 border border-[var(--border-2)] bg-white flex items-center justify-center overflow-hidden"><img src="/logo.png" alt="" className="w-3/5 h-3/5 object-contain opacity-25" /></div>}
                           <div className={`flex-1 min-w-0 ${!bulkMode ? 'cursor-pointer' : ''}`}
                             onClick={!bulkMode ? () => openEditModal(g) : undefined}>
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -5746,7 +5749,7 @@ export default function App() {
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
                           {photoUrl
                             ? <img src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain" />
-                            : <span className="text-4xl opacity-80">{getCategoryIcon(g.category)}</span>}
+                            : <img src="/logo.png" alt="" className="w-1/2 h-1/2 object-contain opacity-20" />}
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                             {g.quantity > 1 && <span className="text-[10px] bg-[#8397aa] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
                             {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-[var(--text)]' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-[var(--text-muted)]'}`}>{days}g</span>}
@@ -7192,7 +7195,7 @@ export default function App() {
                   return (
                     <>
                       <div className="aspect-square bg-white flex items-center justify-center overflow-hidden">
-                        {photos[idx] ? <img src={photos[idx]} alt="" className="w-full h-full object-contain" /> : <span className="text-6xl">{getCategoryIcon(marketDetail.category)}</span>}
+                        {photos[idx] ? <img src={photos[idx]} alt="" className="w-full h-full object-contain" /> : <img src="/logo.png" alt="" className="w-1/3 h-1/3 object-contain opacity-20" />}
                       </div>
                       {photos.length > 1 && (
                         <div className="flex gap-2 p-3 overflow-x-auto">

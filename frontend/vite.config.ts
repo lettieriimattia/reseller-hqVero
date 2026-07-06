@@ -18,7 +18,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logo.png'],
+      includeAssets: ['logo.png', 'logo-icon.png'],
       manifest: {
         name: 'HQVault',
         short_name: 'HQVault',
@@ -46,18 +46,18 @@ export default defineConfig({
         },
         icons: [
           {
-            src: '/logo.png',
+            src: '/logo-icon.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: '/logo.png',
+            src: '/logo-icon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/logo.png',
+            src: '/logo-icon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
