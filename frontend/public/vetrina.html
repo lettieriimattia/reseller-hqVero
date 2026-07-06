@@ -68,7 +68,7 @@
       var left = false;
       window.addEventListener('pagehide', function () { left = true; });
       if (history.length > 1) history.back();
-      setTimeout(function () { if (!left) location.href = '/app'; }, 400);
+      setTimeout(function () { if (!left) location.href = '/main-landingpage'; }, 400);
     });
     var token = (location.pathname.split('/s/')[1] || '').replace(/[^a-zA-Z0-9]/g,'');
     var grid = document.getElementById('grid');
