@@ -437,7 +437,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
     <>
       {/* Pannello chat (slide-up) — solo telefono. Conversazione scrollabile + input ancorato. */}
       {open && (
-        <div className="fixed inset-0 z-[44] flex flex-col justify-end lg:inset-auto lg:bottom-6 lg:left-60 lg:right-0 lg:top-auto lg:items-center lg:px-6">
+        <div className="fixed inset-0 z-[44] flex flex-col justify-end lg:inset-auto lg:bottom-6 lg:left-0 lg:right-0 lg:top-auto lg:items-center lg:px-6">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setOpen(false)} />
           <div ref={panelRef} className="relative flex flex-col h-[86vh] rounded-t-[28px] border-t border-white/10 bg-[var(--surface)]/95 backdrop-blur-2xl ring-1 ring-white/5 shadow-[0_-24px_80px_-24px_rgba(107,84,198,0.55)] lg:h-[720px] lg:max-h-[80vh] lg:w-full lg:max-w-2xl lg:rounded-[24px] lg:border lg:border-white/10">
             {/* Grab handle */}
@@ -529,7 +529,7 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
       {/* DESKTOP: barra chatbox in basso CENTRATA (stile Gemini/ChatGPT), nell'area contenuto.
           Nascosta anche qui durante la selezione multipla (hideBar), così non copre la barra azioni. */}
       {!open && !hideBar && (
-        <div className="hidden lg:block fixed bottom-6 left-60 right-0 z-[45] px-6 pointer-events-none">
+        <div className="hidden lg:block fixed bottom-6 left-0 right-0 z-[45] px-6 pointer-events-none">
           <div className="max-w-2xl mx-auto pointer-events-auto">{bar}</div>
         </div>
       )}

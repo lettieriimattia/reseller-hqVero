@@ -416,19 +416,21 @@ export default function App() {
   const [notifications, setNotifications] = useState<AINotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
+  const [topMenuOpen, setTopMenuOpen] = useState(false); // menu "Altro" del top nav (desktop)
   
   // ----- TEMA (scuro / chiaro / glass) -----
   // 'chrome' = tema premium cromato, ora DEFAULT per tutti gli account.
   const [theme, setTheme] = useState<'dark' | 'light' | 'glass' | 'lux' | 'chrome' | 'carbon'>(() => {
     try {
-      // Rollout Chrome: porta TUTTI al tema cromato UNA volta (poi resta modificabile dall'utente).
-      if (localStorage.getItem('hq-theme-rollout') !== 'chrome') {
-        localStorage.setItem('hq-theme', 'chrome');
-        localStorage.setItem('hq-theme-rollout', 'chrome');
-        return 'chrome';
+      // Rollout CARBON (Pagani × JP Morgan): porta TUTTI al tema scuro/carbon UNA volta (poi
+      // resta modificabile dall'utente). 'dark' come valore → applica la colorazione carbon.
+      if (localStorage.getItem('hq-theme-rollout') !== 'carbon') {
+        localStorage.setItem('hq-theme', 'dark');
+        localStorage.setItem('hq-theme-rollout', 'carbon');
+        return 'dark';
       }
-      return (localStorage.getItem('hq-theme') as 'dark' | 'light' | 'glass' | 'lux' | 'chrome' | 'carbon') || 'chrome';
-    } catch { return 'chrome'; }
+      return (localStorage.getItem('hq-theme') as 'dark' | 'light' | 'glass' | 'lux' | 'chrome' | 'carbon') || 'dark';
+    } catch { return 'dark'; }
   });
   useEffect(() => {
     const root = document.documentElement;
@@ -4905,16 +4907,14 @@ export default function App() {
   // Desktop = COCKPIT: altezza fissa, lo scroll avviene SOLO dentro <main> (cruscotto
   // inamovibile). Mobile resta a scroll di pagina normale.
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col text-[var(--text)] lg:pl-60 pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", background: 'radial-gradient(120% 70% at 50% -25%, var(--page-glow, rgba(139,120,255,0.055)), transparent 55%), var(--bg)' }}>
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col text-[var(--text)] pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", background: 'radial-gradient(120% 70% at 50% -25%, var(--page-glow, rgba(139,120,255,0.055)), transparent 55%), var(--bg)' }}>
 
-      {/* ========== SIDEBAR (solo desktop) ========== */}
-      <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-60 z-40 bg-[var(--surface)] border-r border-[var(--border)] px-3 pt-6 pb-6">
+      {/* ========== TOP NAV (solo desktop) — barra orizzontale stile private banking ========== */}
+      <header className="hidden lg:flex items-center gap-1 h-16 shrink-0 z-40 px-6 border-b border-[var(--border)] bg-[var(--surface)]">
         {/* Brand */}
-        <div className="px-3 mb-7 flex items-center">
-          <span className="text-lg font-black tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
-        </div>
-        {/* Nav */}
-        <nav className="flex flex-col gap-1">
+        <span className="text-lg font-black text-[var(--text)] mr-5 shrink-0 font-display">HQ<span className="text-gold">Vault</span></span>
+        {/* Nav orizzontale */}
+        <nav className="flex items-center gap-0.5">
           {[
             { id: 'dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
             { id: 'magazzino', label: t('nav.magazzino'), icon: Package },
@@ -4933,61 +4933,59 @@ export default function App() {
               : 0;
             return (
               <button key={tab.id} onClick={() => navigateTo(tab.id as any)}
-                className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                className={`relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-[13.5px] font-semibold transition-colors ${
                   active ? 'bg-[#6b54c6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
                 }`}>
-                {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#6b54c6] rounded-r-full" />}
-                <Icon size={18} /> {tab.label}
-                {badge > 0 && <span className="ml-auto min-w-[20px] h-5 px-1 bg-blue-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">{badge}</span>}
+                {active && <span className="absolute left-1/2 -translate-x-1/2 bottom-0 w-6 h-[2px] bg-[#6b54c6] rounded-full" />}
+                <Icon size={16} /> {tab.label}
+                {badge > 0 && <span className="min-w-[18px] h-[18px] px-1 bg-blue-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">{badge}</span>}
               </button>
             );
           })}
         </nav>
-        {/* Sezione "Generale" — tutto cio' che sta "fuori" dal gestionale, in fondo */}
-        <div className="mt-auto pt-3 border-t border-[var(--border)] flex flex-col gap-0.5">
-          <p className="px-3.5 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-faint)]">{t('hdr.general')}</p>
+        {/* Cluster azioni a destra */}
+        <div className="ml-auto flex items-center gap-1.5 shrink-0">
           <button onClick={() => openPlanModal()}
-            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-semibold text-[#6b54c6] hover:bg-[#6b54c6]/10 transition-colors">
-            <Sparkles size={17} /> {t('plan.tabPlans')}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-bold text-[#6b54c6] hover:bg-[#6b54c6]/10 transition-colors">
+            <Sparkles size={15} /> {t('plan.tabPlans')}
           </button>
-          {/* Notifiche (desktop): qui in GENERAL invece che nel top bar. */}
-          <button onClick={() => setNotifPanelOpen(!notifPanelOpen)}
-            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
-            <Bell size={17} /> {t('set.notifications')}
-            {unreadCount > 0 && <span className="ml-auto min-w-[18px] h-[18px] px-1 bg-[#6b54c6] text-white rounded-full text-[10px] font-bold flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+          <button onClick={() => openAddForm()}
+            className="flex items-center gap-2 bg-[#6b54c6] hover:bg-[#5d44b0] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
+            <Plus size={16} /> {t('common.add')}
           </button>
-          {MARKETPLACE_ENABLED && (
-          <button onClick={() => navigateTo('wallet')}
-            className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-              currentView === 'wallet' ? 'bg-[#6b54c6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
-            }`}>
-            <Wallet size={17} /> {t('nav.wallet')}
+          <button onClick={() => setNotifPanelOpen(!notifPanelOpen)} aria-label={t('set.notifications')}
+            className="relative p-2 rounded-xl hover:bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
+            <Bell size={18} />
+            {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 bg-[#6b54c6] text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
           </button>
-          )}
-          <button onClick={() => navigateTo('settings')}
-            className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-              currentView === 'settings' ? 'bg-[#6b54c6]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
-            }`}>
-            <Settings size={17} /> {t('nav.settings')}
+          <button onClick={() => navigateTo('settings')} aria-label={t('nav.settings')}
+            className={`p-2 rounded-xl transition-colors ${currentView === 'settings' ? 'text-[#6b54c6]' : 'text-[var(--text-muted)] hover:bg-[var(--fill)] hover:text-[var(--text)]'}`}>
+            <Settings size={18} />
           </button>
-          <button onClick={() => setGuideOpen(true)}
-            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
-            <BookOpen size={17} /> {t('hdr.guide')}
-          </button>
-          <button onClick={() => setSupportOpen(true)}
-            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
-            <HelpCircle size={17} /> {t('hdr.support')}
-          </button>
-          <button onClick={() => setPrivacyOpen(true)}
-            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
-            <Lock size={17} /> {t('hdr.privacy')}
-          </button>
-          <button onClick={handleLogout}
-            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[var(--text-soft)] hover:bg-red-500/10 hover:text-red-400 transition-colors">
-            <LogOut size={17} /> {t('cmd.logout')}
-          </button>
+          {/* Menu "Altro" — Guide/Assistenza/Privacy/Wallet/Logout */}
+          <div className="relative">
+            <button onClick={() => setTopMenuOpen(o => !o)} aria-label={t('hdr.general')}
+              className="p-2 rounded-xl text-[var(--text-muted)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors">
+              <MoreHorizontal size={18} />
+            </button>
+            {topMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-[59]" onClick={() => setTopMenuOpen(false)} />
+                <div className="absolute right-0 top-full mt-2 w-56 z-[60] bg-[var(--surface)] border border-[var(--border-2)] rounded-2xl shadow-2xl overflow-hidden py-1">
+                  {MARKETPLACE_ENABLED && (
+                    <button onClick={() => { setTopMenuOpen(false); navigateTo('wallet'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors"><Wallet size={16} /> {t('nav.wallet')}</button>
+                  )}
+                  <button onClick={() => { setTopMenuOpen(false); setGuideOpen(true); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors"><BookOpen size={16} /> {t('hdr.guide')}</button>
+                  <button onClick={() => { setTopMenuOpen(false); setSupportOpen(true); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors"><HelpCircle size={16} /> {t('hdr.support')}</button>
+                  <button onClick={() => { setTopMenuOpen(false); setPrivacyOpen(true); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors"><Lock size={16} /> {t('hdr.privacy')}</button>
+                  <div className="h-px bg-[var(--border)] my-1" />
+                  <button onClick={() => { setTopMenuOpen(false); handleLogout(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[var(--text-soft)] hover:bg-red-500/10 hover:text-red-400 transition-colors"><LogOut size={16} /> {t('cmd.logout')}</button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      </aside>
+      </header>
 
       {/* ========== HEADER (solo MOBILE: su desktop Add è sul saluto e le notifiche in sidebar) ========== */}
       <header className="lux-underline sticky top-0 z-40 lg:hidden bg-[var(--bg-blur)] backdrop-blur-xl"
@@ -5006,7 +5004,7 @@ export default function App() {
           <div className="hidden lg:block flex-1" />
           {/* Wordmark HQVault — su mobile a sinistra, nascosto su desktop (è nella sidebar) */}
           <div className="flex items-center lg:hidden">
-            <span className="text-base font-black tracking-tight text-[var(--text)]">HQ<span className="text-gold">Vault</span></span>
+            <span className="text-base font-black text-[var(--text)] font-display">HQ<span className="text-gold">Vault</span></span>
           </div>
 
           {/* Azioni a destra */}
@@ -5094,7 +5092,7 @@ export default function App() {
       {notifPanelOpen && (
         <>
           <div className="fixed inset-0 z-[59]" onClick={() => setNotifPanelOpen(false)} />
-          <div className="fixed z-[60] left-1/2 -translate-x-1/2 top-16 w-[calc(100vw-1.5rem)] max-w-sm lg:left-[248px] lg:translate-x-0 lg:top-auto lg:bottom-6 lg:w-96 bg-[var(--surface-blur)] backdrop-blur-2xl border border-[var(--border-2)] rounded-2xl shadow-2xl overflow-hidden">
+          <div className="fixed z-[60] left-1/2 -translate-x-1/2 top-16 w-[calc(100vw-1.5rem)] max-w-sm lg:left-auto lg:right-5 lg:translate-x-0 lg:top-[68px] lg:w-96 bg-[var(--surface-blur)] backdrop-blur-2xl border border-[var(--border-2)] rounded-2xl shadow-2xl overflow-hidden">
             <div className="p-4 border-b border-[var(--border)] flex justify-between items-center">
               <h3 className="font-semibold text-sm">{t('set.notifications')}</h3>
               {unreadCount > 0 && (
@@ -8772,7 +8770,7 @@ export default function App() {
       {maintenance && createPortal((
         <div className="fixed inset-0 z-[400] bg-[var(--bg)] flex items-center justify-center p-6 text-center">
           <div className="max-w-sm">
-            <div className="text-3xl font-black tracking-tight mb-4">HQ<span className="text-gold">Vault</span></div>
+            <div className="text-3xl font-black mb-4 font-display">HQ<span className="text-gold">Vault</span></div>
             <div className="text-5xl mb-4">🛠️</div>
             <h1 className="text-2xl font-bold mb-2">Aggiornamento in corso</h1>
             <p className="text-[var(--text-soft)] text-sm">Stiamo migliorando l'app. Torna tra qualche minuto — i tuoi dati sono al sicuro.</p>

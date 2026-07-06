@@ -7,7 +7,10 @@
    1) San Francisco nativo su Apple (iPhone PWA, Mac) → look iOS autentico
    2) Inter come fallback raffinato su Windows/Android (SF-like)
    ======================================== */
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+/* Inter = corpo/dati (grotesque pulito, legibilità massima sui numeri).
+   Fraunces = DISPLAY serif (titoli/wordmark): carattere "crafted + wealth" — l'eleganza
+   istituzionale/private-banking che eleva l'app. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Fraunces:opsz,wght@9..144,380..700&display=swap');
 
 :root {
   /* Colore brand — cambialo QUI in un punto solo per ritoccare l'accent ovunque */
@@ -29,6 +32,8 @@
   --beige: #c9c0ad;        /* testo secondario caldo */
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
     'Inter', 'Helvetica Neue', system-ui, sans-serif;
+  /* Serif display (titoli/wordmark) — "status" istituzionale. Numeri e corpo restano sans. */
+  --font-display: 'Fraunces', 'Newsreader', Georgia, 'Times New Roman', serif;
 
   /* ===== TEMA SCURO (default) =====
      Token semantici usati in tutta l'app via bg-[var(--surface)] ecc.
@@ -209,11 +214,13 @@
    Accento = TITANIO (sostituisce il viola). Superfici con trama twill fine e SOBRIA (non "gamer"),
    filo di luce sul bordo alto = il carbonio che cattura la luce. */
 .carbon {
-  --accent: #b9c0c9;        /* titanio lucidato (accento, ex-viola) */
+  --accent: #b9c0c9;        /* titanio lucidato (accento strutturale, ex-viola) */
   --accent-hover: #d3d9e0;
-  --gold: #b9c0c9;
-  --gold-soft: rgba(185,192,201,0.12);
-  --gold-line: rgba(185,192,201,0.32);
+  /* JP Morgan private banking: un SOFFIO di champagne/bronzo = l'unico accento "caldo" di lusso,
+     usato col contagocce (wordmark "Vault", hairline sotto i titoli). Il resto resta titanio freddo. */
+  --gold: #c3a878;          /* champagne/bronzo tenue */
+  --gold-soft: rgba(195,168,120,0.12);
+  --gold-line: rgba(195,168,120,0.34);
   --bg: #070809;            /* carbonio near-black (leggermente più scuro → i box staccano di più) */
   --surface: #16171c;       /* carbonio elevato (più chiaro → card più evidenti sul fondo) */
   --surface-2: #1c1e23;     /* inset / elevated */
@@ -246,9 +253,17 @@
 .carbon .text-\[\#6b54c6\]   { color: var(--accent) !important; }
 .carbon .border-\[\#6b54c6\] { border-color: var(--accent) !important; }
 .carbon .text-green-400, .carbon .text-emerald-400 { color: #6e9e8a !important; }  /* sage freddo */
-.carbon .text-green-300     { color: #87b3a0 !important; }
+.carbon .text-green-300, .carbon .text-green-600, .carbon .text-emerald-300 { color: #87b3a0 !important; }
 .carbon .text-red-400, .carbon .text-red-300       { color: #b5745a !important; }  /* clay */
-.carbon .text-yellow-400    { color: #c2a15a !important; }                          /* ottone smorzato */
+.carbon .text-yellow-400, .carbon .text-yellow-500, .carbon .text-yellow-600, .carbon .text-amber-400, .carbon .text-amber-500 { color: #c2a15a !important; } /* ottone smorzato */
+/* ===== "Rifai tutto": ogni colore ACCESO rimasto → palette FREDDA private-banking ===== */
+.carbon .text-violet-400, .carbon .text-violet-300, .carbon .text-purple-400, .carbon .text-fuchsia-400 { color: var(--accent) !important; } /* titanio */
+.carbon .text-blue-400, .carbon .text-blue-300, .carbon .text-cyan-400, .carbon .text-sky-400 { color: #8aa6be !important; } /* steel-blue (dati) */
+.carbon .bg-green-500, .carbon .bg-emerald-500, .carbon .bg-green-600, .carbon .bg-green-900\/15, .carbon .bg-green-900\/30 { background-color: #43665c !important; } /* sage scuro */
+.carbon .bg-red-500, .carbon .bg-red-600, .carbon .bg-red-900\/15, .carbon .bg-red-900\/30 { background-color: #6e4636 !important; } /* clay scuro */
+.carbon .bg-yellow-500, .carbon .bg-amber-500, .carbon .bg-amber-400 { background-color: #9a8043 !important; } /* brass scuro */
+.carbon .bg-blue-500, .carbon .bg-blue-600 { background-color: #5c7285 !important; } /* steel scuro */
+.carbon .bg-violet-500, .carbon .bg-fuchsia-500, .carbon .bg-purple-500 { background-color: var(--fill-3) !important; }
 .carbon .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .carbon .lux-underline::after { background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent); }
 /* CARD "fresate nel pieno" (spirito Pagani): carbonio twill a vista + bordo di precisione +
@@ -393,6 +408,11 @@ html:not(.light):not(.glass) body {
 /* Titoli — tracking stretto stile SF Pro Display */
 h1, h2, h3, .num { letter-spacing: -0.02em; }
 h1 { letter-spacing: -0.03em; }
+/* DISPLAY serif (Fraunces) sui titoli grandi + wordmark = "status" istituzionale/private-banking.
+   Il serif ha bisogno di più respiro: annulliamo il tracking stretto. I NUMERI restano sempre
+   Inter tabulare (leggibilità dati intatta), anche dentro un titolo serif. */
+h1, h2, .font-display { font-family: var(--font-display); font-optical-sizing: auto; letter-spacing: -0.005em; }
+h1 .num, h2 .num, .font-display .num, .num { font-family: var(--font-sans); letter-spacing: -0.02em; }
 
 /* Scrollbar completamente nascosta (anche su mobile) — lo scroll resta funzionante */
 * { scrollbar-width: none; -ms-overflow-style: none; }
