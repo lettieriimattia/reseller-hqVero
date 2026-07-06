@@ -5695,7 +5695,7 @@ export default function App() {
                           bulkMode ? 'cursor-pointer select-none' : ''
                         } ${isSelected ? 'border-[#6b54c6] shadow-sm' : 'border-[var(--border)]'}`}>
                         {bulkMode && (
-                          <div className={`absolute top-3 right-3 z-10 min-w-6 h-6 px-1 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-gray-600 bg-[var(--surface-2)]'}`}>
+                          <div className={`absolute top-3 right-3 z-10 min-w-6 h-6 px-1 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
                             {isPartialSel ? <span className="text-[10px] font-black text-white">{selPieceCount}</span> : isSelected ? <CheckCircle size={14} className="text-[var(--text)]" /> : null}
                           </div>
                         )}
@@ -5710,11 +5710,11 @@ export default function App() {
                               {g.quantity > 1 && <span className="text-[10px] bg-[#6b54c6]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
                               {daysBadge}{trackBadge}
                             </div>
-                            <p className="text-xs text-[var(--text-soft)] mt-1">{g.isModel ? modelSub(g) : <>{g.size} · {g.condition} · <span className="text-gray-300 font-semibold">{g.purchasePrice.toFixed(0)}€</span></>}</p>
+                            <p className="text-xs text-[var(--text-soft)] mt-1">{g.isModel ? modelSub(g) : <>{g.size} · {g.condition} · <span className="text-[var(--text-muted)] font-semibold">{g.purchasePrice.toFixed(0)}€</span></>}</p>
                             {shares?.length > 0 && <p className="text-[10px] text-blue-400/70 mt-0.5 truncate">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                             {!bulkMode && (
                               <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
-                                className={`mt-1 text-[11px] flex items-center gap-1 max-w-full w-full overflow-hidden ${g.notes ? 'text-[var(--text-soft)]' : 'text-gray-700'}`}>
+                                className={`mt-1 text-[11px] flex items-center gap-1 max-w-full w-full overflow-hidden ${g.notes ? 'text-[var(--text-soft)]' : 'text-[var(--text-faint)]'}`}>
                                 <StickyNote size={10} className="shrink-0" /><span className="truncate">{g.notes || t('mag.addNote')}</span>
                               </button>
                             )}
@@ -5763,8 +5763,8 @@ export default function App() {
                             : <span className="text-4xl opacity-80">{getCategoryIcon(g.category)}</span>}
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                             {g.quantity > 1 && <span className="text-[10px] bg-[#6b54c6] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
-                            {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-[var(--text)]' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-gray-300'}`}>{days}g</span>}
-                            {g.trackingStatus && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500 text-[var(--text)]' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500 text-[var(--text)]' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500 text-[var(--text)]' : 'bg-black/50 backdrop-blur text-gray-300'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? t('mag.trTransit') : g.trackingStatus === 'DELIVERED' ? t('mag.trDelivered') : g.trackingStatus === 'OUT_FOR_DELIVERY' ? t('mag.trOutForDelivery') : t('mag.track')}</span>}
+                            {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-[var(--text)]' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-[var(--text-muted)]'}`}>{days}g</span>}
+                            {g.trackingStatus && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500 text-[var(--text)]' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500 text-[var(--text)]' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500 text-[var(--text)]' : 'bg-black/50 backdrop-blur text-[var(--text-muted)]'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? t('mag.trTransit') : g.trackingStatus === 'DELIVERED' ? t('mag.trDelivered') : g.trackingStatus === 'OUT_FOR_DELIVERY' ? t('mag.trOutForDelivery') : t('mag.track')}</span>}
                           </div>
                           {bulkMode && (
                             <div className={`absolute top-2 right-2 z-10 min-w-6 h-6 px-1 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#6b54c6] border-[#6b54c6]' : 'border-[var(--border-3)] bg-black/40 backdrop-blur'}`}>
@@ -5779,7 +5779,7 @@ export default function App() {
                           {shares?.length > 0 && <p className="text-[11px] text-blue-400/70 mt-1.5 truncate max-w-full">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                           {!bulkMode && (
                             <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
-                              className={`mt-2 text-xs flex items-center justify-start gap-1 max-w-full ${g.notes ? 'text-[var(--text-soft)] hover:text-gray-300' : 'text-gray-700 hover:text-[var(--text-soft)]'}`}>
+                              className={`mt-2 text-xs flex items-center justify-start gap-1 max-w-full ${g.notes ? 'text-[var(--text-soft)] hover:text-[var(--text-muted)]' : 'text-[var(--text-faint)] hover:text-[var(--text-soft)]'}`}>
                               <StickyNote size={11} className="shrink-0" /><span className="truncate">{g.notes || t('mag.addNote')}</span>
                             </button>
                           )}
