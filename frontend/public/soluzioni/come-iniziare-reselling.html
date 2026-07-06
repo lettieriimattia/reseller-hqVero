@@ -51,9 +51,9 @@
     .hero > .wrap { position: relative; z-index: 2; }
     .hero-fx { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
     .hero-fx span { position: absolute; border-radius: 50%; filter: blur(72px); mix-blend-mode: screen; opacity: .5; animation: aurora 24s ease-in-out infinite; }
-    .hero-fx .b1 { width: 52vw; max-width: 640px; aspect-ratio: 1; background: radial-gradient(circle, #3a5068, transparent 68%); top: -16%; left: 3%; }
-    .hero-fx .b2 { width: 48vw; max-width: 560px; aspect-ratio: 1; background: radial-gradient(circle, #313d4f, transparent 68%); top: -6%; right: 2%; animation-delay: -8s; }
-    .hero-fx .b3 { width: 42vw; max-width: 540px; aspect-ratio: 1; background: radial-gradient(circle, #454f5e, transparent 68%); bottom: -22%; left: 38%; animation-delay: -16s; }
+    .hero-fx .b1 { width: 52vw; max-width: 640px; aspect-ratio: 1; background: radial-gradient(circle, #1f9f93, transparent 68%); top: -16%; left: 3%; }
+    .hero-fx .b2 { width: 48vw; max-width: 560px; aspect-ratio: 1; background: radial-gradient(circle, #3f6fe0, transparent 68%); top: -6%; right: 2%; animation-delay: -8s; }
+    .hero-fx .b3 { width: 42vw; max-width: 540px; aspect-ratio: 1; background: radial-gradient(circle, #7a4bd6, transparent 68%); bottom: -22%; left: 38%; animation-delay: -16s; }
     @keyframes aurora { 0%, 100% { transform: translate(0,0) scale(1); } 33% { transform: translate(5vw,4vh) scale(1.18); } 66% { transform: translate(-4vw,3vh) scale(.88); } }
     @media (prefers-reduced-motion: reduce) { .hero-fx span { animation: none; } }
     .hero-bloom { position: absolute; z-index: 1; top: 8%; left: 50%; transform: translateX(-50%); width: min(680px, 82vw); height: 300px; pointer-events: none; background: radial-gradient(closest-side, rgba(210,224,255,.26), rgba(140,170,255,.06) 50%, transparent 72%); filter: blur(22px); }
@@ -127,10 +127,10 @@
 <body>
   <header>
     <div class="wrap nav">
-      <a href="/" class="brand" aria-label="HQVault home">HQ<b>Vault</b></a>
+      <a href="/main-landingpage" class="brand" aria-label="HQVault home">HQ<b>Vault</b></a>
       <nav class="nav-links" aria-label="Navigazione principale">
-        <a href="/#funzioni" data-i18n="nav1">Funzioni</a>
-        <a href="/#faq" data-i18n="nav2">FAQ</a>
+        <a href="/main-landingpage#funzioni" data-i18n="nav1">Funzioni</a>
+        <a href="/main-landingpage#faq" data-i18n="nav2">FAQ</a>
         <a href="/waitlist?src=iniziare" class="btn btn-ghost" style="padding:9px 18px;" data-i18n="nav3">Lista d'attesa</a>
         <button id="hqLangBtn" class="langbtn" onclick="hqToggleLang()">EN</button>
       </nav>
