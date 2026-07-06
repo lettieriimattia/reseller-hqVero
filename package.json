@@ -8,6 +8,7 @@
     "build": "prisma generate && npm install --include=dev --prefix frontend && npm run build --prefix frontend && tsc && prisma db push --accept-data-loss",
     "start": "node dist/server.js",
     "generate-cert": "node scripts/generate-cert.js",
+    "backup": "tsx scripts/backup-db.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
   },

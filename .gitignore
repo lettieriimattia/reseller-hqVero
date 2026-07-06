@@ -11,3 +11,6 @@ frontend/dist/
 
 # Vosk model source zips (serviamo i .tar.gz in frontend/public/vosk)
 /vosk-model-*.zip
+
+# Backup DB locali (dati reali, NON committare)
+backups/
