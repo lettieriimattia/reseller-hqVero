@@ -518,7 +518,11 @@ button:active { opacity: 0.75; }
   position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
   background: linear-gradient(90deg, transparent, var(--gold-line) 25%, var(--gold-line) 75%, transparent);
   pointer-events: none;
+  /* "Respiro": la luce della linea sale e scende piano (poco), in loop. */
+  animation: luxBreathe 5s ease-in-out infinite;
 }
+@keyframes luxBreathe { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .lux-underline::after { animation: none; opacity: .8; } }
 
 /* Card interattive */
 .card-interactive {

@@ -722,6 +722,7 @@ export default function App() {
   const barcodeLoopRef = useRef<number | null>(null);
   const notifRef = useRef<HTMLDivElement | null>(null);
   const bottomNavRef = useRef<HTMLElement | null>(null);
+  const topBarRef = useRef<HTMLElement | null>(null);
   // Misura l'ALTEZZA REALE della bottom-nav (varia per modello: notch, densità, safe-area)
   // e la espone come variabile CSS --bottom-nav-h. Barra-chat e contenuti la usano per non
   // sovrapporsi MAI, su qualsiasi telefono. (Su desktop la nav non c'è → fallback 0.)
@@ -739,6 +740,26 @@ export default function App() {
     apply();
     requestAnimationFrame(apply);            // dopo il primo paint
     const t = setTimeout(apply, 350);        // dopo che il layout/safe-area si è assestato
+    let ro: ResizeObserver | null = null;
+    if (el && 'ResizeObserver' in window) { ro = new ResizeObserver(apply); ro.observe(el); }
+    window.addEventListener('resize', apply);
+    window.addEventListener('orientationchange', apply);
+    return () => { clearTimeout(t); ro?.disconnect(); window.removeEventListener('resize', apply); window.removeEventListener('orientationchange', apply); };
+  }, [currentView]);
+  // Misura l'ALTEZZA REALE dell'header mobile FISSO (safe-area + contenuto) → variabile CSS
+  // --top-bar-h. Il contenuto si stacca esattamente di quel tanto, così la barra resta bloccata
+  // in alto SENZA buchi né sovrapposizioni. Su desktop l'header è display:none → 0.
+  useEffect(() => {
+    const el = topBarRef.current;
+    const root = document.documentElement;
+    const apply = () => {
+      const visible = el && getComputedStyle(el).display !== 'none';
+      const h = visible ? el!.offsetHeight : 0;
+      root.style.setProperty('--top-bar-h', `${visible ? h : 0}px`);
+    };
+    apply();
+    requestAnimationFrame(apply);
+    const t = setTimeout(apply, 350);
     let ro: ResizeObserver | null = null;
     if (el && 'ResizeObserver' in window) { ro = new ResizeObserver(apply); ro.observe(el); }
     window.addEventListener('resize', apply);
@@ -4917,7 +4938,7 @@ export default function App() {
   // Desktop = COCKPIT: altezza fissa, lo scroll avviene SOLO dentro <main> (cruscotto
   // inamovibile). Mobile resta a scroll di pagina normale.
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col text-[var(--text)] pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", background: 'radial-gradient(120% 70% at 50% -25%, var(--page-glow, rgba(160,170,185,0.05)), transparent 55%), var(--bg)' }}>
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col text-[var(--text)] pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", background: 'radial-gradient(120% 70% at 50% -25%, var(--page-glow, rgba(160,170,185,0.05)), transparent 55%), var(--bg)', paddingTop: 'var(--top-bar-h, 0px)' }}>
 
       {/* ========== TOP NAV (solo desktop) — barra orizzontale stile private banking ========== */}
       <header className="hidden lg:flex items-center gap-1 h-16 shrink-0 z-40 px-6 border-b border-[var(--border)] bg-[var(--surface)]">
@@ -4990,7 +5011,7 @@ export default function App() {
       </header>
 
       {/* ========== HEADER (solo MOBILE: su desktop Add è sul saluto e le notifiche in sidebar) ========== */}
-      <header className="lux-underline sticky top-0 z-40 lg:hidden bg-[var(--bg-blur)] backdrop-blur-xl"
+      <header ref={topBarRef} className="lux-underline fixed top-0 inset-x-0 z-40 lg:hidden bg-[var(--bg-blur)] backdrop-blur-xl"
         style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)' }}>
         {/* Fascia PIENA sotto lo status bar (orario/batteria): resta opaca per tutta l'area di sicurezza
             (con fallback minimo se safe-area=0, es. webview senza notch) e poi sfuma → scorrendo, il
