@@ -4912,7 +4912,7 @@ export default function App() {
       {/* ========== TOP NAV (solo desktop) — barra orizzontale stile private banking ========== */}
       <header className="hidden lg:flex items-center gap-1 h-16 shrink-0 z-40 px-6 border-b border-[var(--border)] bg-[var(--surface)]">
         {/* Brand */}
-        <span className="text-lg font-black text-[var(--text)] mr-5 shrink-0 font-display">HQ<span className="text-gold">Vault</span></span>
+        <span className="text-lg font-black mr-5 shrink-0 font-display txt-chrome">HQVault</span>
         {/* Nav orizzontale */}
         <nav className="flex items-center gap-0.5">
           {[
@@ -4945,14 +4945,6 @@ export default function App() {
         </nav>
         {/* Cluster azioni a destra */}
         <div className="ml-auto flex items-center gap-1.5 shrink-0">
-          <button onClick={() => openPlanModal()}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-bold text-[#6b54c6] hover:bg-[#6b54c6]/10 transition-colors">
-            <Sparkles size={15} /> {t('plan.tabPlans')}
-          </button>
-          <button onClick={() => openAddForm()}
-            className="flex items-center gap-2 bg-[#6b54c6] hover:bg-[#5d44b0] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors active:scale-95">
-            <Plus size={16} /> {t('common.add')}
-          </button>
           <button onClick={() => setNotifPanelOpen(!notifPanelOpen)} aria-label={t('set.notifications')}
             className="relative p-2 rounded-xl hover:bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
             <Bell size={18} />
@@ -5004,7 +4996,7 @@ export default function App() {
           <div className="hidden lg:block flex-1" />
           {/* Wordmark HQVault — su mobile a sinistra, nascosto su desktop (è nella sidebar) */}
           <div className="flex items-center lg:hidden">
-            <span className="text-base font-black text-[var(--text)] font-display">HQ<span className="text-gold">Vault</span></span>
+            <span className="text-base font-black font-display txt-chrome">HQVault</span>
           </div>
 
           {/* Azioni a destra */}
@@ -5122,7 +5114,7 @@ export default function App() {
         </>
       )}
 
-      <main key={currentView} className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-5 lg:py-10 pb-28 lg:pb-16 animate-fade-in lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+      <main key={currentView} className="w-full max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 lg:px-8 py-5 lg:py-10 pb-28 lg:pb-32 animate-fade-in lg:flex-1 lg:overflow-y-auto lg:min-h-0">
 
         {/* ========== DASHBOARD ========== */}
         {currentView === 'dashboard' && (
@@ -5461,10 +5453,6 @@ export default function App() {
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
                       magazzinoView === 'instock' ? 'bg-[#6b54c6] text-[var(--text)]' : 'text-[var(--text-soft)]'
                     }`}>{t('mag.inStock')}</button>
-                  <button onClick={() => { setMagazzinoView('toship'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-                    className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1 whitespace-nowrap ${
-                      magazzinoView === 'toship' ? 'bg-[#6b54c6] text-[var(--text)]' : 'text-[var(--text-soft)]'
-                    }`}>{t('mag.toShip')}{toShipItems.length > 0 && <span className="min-w-[15px] h-4 px-1 bg-amber-500 text-black rounded-full text-[9px] font-bold flex items-center justify-center">{toShipItems.length}</span>}</button>
                   <button onClick={() => { setMagazzinoView('sold'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
                       magazzinoView === 'sold' ? 'bg-green-600 text-[var(--text)]' : 'text-[var(--text-soft)]'
