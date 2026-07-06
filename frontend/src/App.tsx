@@ -2291,16 +2291,17 @@ export default function App() {
     }
   });
   
-  // Grafico dashboard: SEMPRE tutte le vendite del periodo (NON filtrate per categoria del
-  // Magazzino). Prima usava soldItemsTotal=activeProducts → il filtro categoria del Magazzino
-  // "sporcava" la dashboard. Ora usa products (VENDUTO), coerente con la card Personale.
+  // Grafico dashboard: SOLO LA MIA QUOTA (come la card Personale), su TUTTE le vendite del periodo
+  // (NON filtrate per la categoria del Magazzino). Ricavi e Profitto sono moltiplicati per la mia
+  // frazione (myProfitFactor): se sono da solo = 100% (nessun cambio); in team = solo la mia parte.
   const trendData = useMemo(() => (Object.values(
     products.filter(p => p.status === 'VENDUTO' && inPersonalPeriod(p.soldAt || p.createdAt)).reduce((acc, p) => {
       const day = p.soldAt ? new Date(p.soldAt) : new Date();
       const dateKey = day.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
       if (!acc[dateKey]) acc[dateKey] = { date: dateKey, Ricavi: 0, Profitto: 0, _ts: new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime() };
-      acc[dateKey].Ricavi += (p.salePrice || 0);
-      acc[dateKey].Profitto += ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0));
+      const mine = myProfitFactor(p);
+      acc[dateKey].Ricavi += (p.salePrice || 0) * mine;
+      acc[dateKey].Profitto += ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)) * mine;
       return acc;
     }, {} as Record<string, any>)
   ) as any[]).sort((a, b) => a._ts - b._ts)   // ordine CRONOLOGICO sull'asse X
