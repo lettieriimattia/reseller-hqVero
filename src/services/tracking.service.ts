@@ -134,14 +134,19 @@ export async function addTracking(productId: string, trackingCode: string, carri
   // Registra su 17track (non bloccante se fallisce — mostriamo comunque il tracking)
   await register17Track(trackingCode, carrier);
 
+  // Se il CODICE è lo STESSO (ri-salvataggio: es. hai solo cambiato il corriere, o hai premuto
+  // "Salva" dopo aver impostato lo stato a mano), NON resettare stato/cronologia — altrimenti il
+  // "Salva" cancellerebbe l'aggiornamento di stato appena fatto (In transito/Consegnato → Pending).
+  // Solo un codice NUOVO (spedizione diversa) riparte da PENDING.
+  const codeChanged = (product.trackingCode || '').toUpperCase() !== (trackingCode || '').toUpperCase();
+
   await prisma.product.update({
     where: { id: productId },
     data: {
       trackingCode,
       trackingCarrier: carrier,
       trackingDirection: direction,
-      trackingStatus: 'PENDING',
-      trackingHistory: JSON.stringify([]),
+      ...(codeChanged ? { trackingStatus: 'PENDING', trackingHistory: JSON.stringify([]) } : {}),
       trackingUpdatedAt: new Date(),
     },
   });
