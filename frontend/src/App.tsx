@@ -4980,7 +4980,7 @@ export default function App() {
       </header>
 
       {/* ========== HEADER (solo MOBILE: su desktop Add è sul saluto e le notifiche in sidebar) ========== */}
-      <header className="lux-underline fixed top-0 inset-x-0 z-40 lg:hidden bg-[var(--bg-blur)] backdrop-blur-xl"
+      <header className="lux-underline sticky top-0 z-40 lg:hidden bg-[var(--bg-blur)] backdrop-blur-xl"
         style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)' }}>
         {/* Fascia PIENA sotto lo status bar (orario/batteria): resta opaca per tutta l'area di sicurezza
             (con fallback minimo se safe-area=0, es. webview senza notch) e poi sfuma → scorrendo, il
@@ -5078,9 +5078,6 @@ export default function App() {
           </div>
         </nav>
       </header>
-      {/* Spacer per l'header FISSO (solo mobile): riserva l'altezza così il contenuto parte sotto
-          la striscia (HQVault + impostazioni/notifiche/logout) che ora resta sempre visibile. */}
-      <div className="lg:hidden" aria-hidden="true" style={{ height: 'calc(max(env(safe-area-inset-top), 12px) + 62px)' }} />
 
       {/* ===== PANNELLO NOTIFICHE (indipendente): mobile in alto centrato, desktop ancorato in
            basso a sinistra vicino alla sidebar. Backdrop trasparente per chiudere al tap-fuori. ===== */}
