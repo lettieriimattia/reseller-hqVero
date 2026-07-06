@@ -43,7 +43,8 @@ export default function TrendChart({ trendData }: { trendData: any[] }) {
           cursor={{ stroke: 'rgba(131,151,170,0.35)', strokeWidth: 1 }}
           contentStyle={{ backgroundColor: 'rgba(14,15,18,0.94)', backdropFilter: 'blur(12px)', border: '1px solid rgba(131,151,170,0.35)', borderRadius: 14, fontSize: 12, boxShadow: '0 12px 40px -8px rgba(0,0,0,0.6)', padding: '10px 12px' }}
           labelStyle={{ color: '#cbd4dd', fontWeight: 800, marginBottom: 4 }}
-          itemStyle={{ color: '#e8ebee', fontWeight: 600 }} />
+          itemStyle={{ color: '#e8ebee', fontWeight: 600 }}
+          formatter={(value: any, name: any) => [`${Math.round(Number(value) || 0).toLocaleString('it-IT')}€`, name]} />
 
         {/* Linea media (tratteggiata, tenue) */}
         <ReferenceLine y={avg} stroke="#8397aa" strokeOpacity={0.28} strokeDasharray="3 5" />

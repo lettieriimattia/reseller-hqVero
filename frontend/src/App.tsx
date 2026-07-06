@@ -5015,11 +5015,10 @@ export default function App() {
         </div>
       </header>
 
-      {/* ========== HEADER (solo MOBILE) — in PORTAL su document.body così il `fixed` aggancia SEMPRE
-           al viewport, fuori da qualsiasi antenato con transform/filter/contain che romperebbe il fixed. ========== */}
-      {createPortal(
-      <header ref={topBarRef} className="lux-underline fixed top-0 inset-x-0 z-40 lg:hidden bg-[var(--bg-blur)] backdrop-blur-xl"
-        style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)' }}>
+      {/* ========== HEADER (solo MOBILE) — position:fixed INLINE perché la classe `.lux-underline`
+           imposta `position:relative` che, a pari specificità, batteva `.fixed` e sbloccava la barra. ========== */}
+      <header ref={topBarRef} className="lux-underline top-0 inset-x-0 z-40 lg:hidden bg-[var(--bg-blur)] backdrop-blur-xl"
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, paddingTop: 'max(env(safe-area-inset-top), 12px)' }}>
         {/* Fascia PIENA sotto lo status bar (orario/batteria): resta opaca per tutta l'area di sicurezza
             (con fallback minimo se safe-area=0, es. webview senza notch) e poi sfuma → scorrendo, il
             contenuto svanisce sotto orario/batteria invece di collidere. Solo mobile. */}
@@ -5115,7 +5114,7 @@ export default function App() {
             </div>
           </div>
         </nav>
-      </header>, document.body)}
+      </header>
 
       {/* ===== PANNELLO NOTIFICHE (indipendente): mobile in alto centrato, desktop ancorato in
            basso a sinistra vicino alla sidebar. Backdrop trasparente per chiudere al tap-fuori. ===== */}
