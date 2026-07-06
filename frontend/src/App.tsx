@@ -434,9 +434,9 @@ export default function App() {
     const root = document.documentElement;
     root.classList.remove('light', 'glass', 'lux', 'chrome', 'carbon');
     // Il tema "Black" (dark) ora USA la colorazione CARBON FIBER (etichetta invariata):
-    // 'dark' come valore di stato → applica la classe .carbon.
+    // 'dark' come valore di stato → applica la classe .carbon. Ogni tema ha sempre una classe.
     const cls = theme === 'dark' ? 'carbon' : theme;
-    if (cls !== 'dark') root.classList.add(cls);
+    root.classList.add(cls);
     try { localStorage.setItem('hq-theme', theme); } catch { /* storage non disponibile */ }
   }, [theme]);
 
@@ -5548,9 +5548,21 @@ export default function App() {
               const pezzi = groupedInStockArray.reduce((a: number, g: any) => a + g.quantity, 0);
               const costo = groupedInStockArray.reduce((a: number, g: any) => a + g.purchasePrice * g.quantity, 0);
               return (
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-1 px-4 py-3 bg-[var(--surface)] border border-[var(--border)] ring-1 ring-white/[0.02] rounded-2xl text-sm">
-                  <span className="text-[var(--text-soft)]"><span className="font-extrabold text-[var(--text)] num">{pezzi}</span> {t('mag.pieces')} · <span className="font-extrabold text-[var(--text)] num">{groupedInStockArray.length}</span> {t('mag.models')}</span>
-                  <span className="sm:ml-auto flex items-baseline gap-1.5"><span className="sys-label">{t('mag.stockValue')}</span> <span className="font-extrabold text-[var(--teal)] num text-base">{costo.toFixed(0)}€</span></span>
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 lg:px-5 py-3 lg:py-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-2xl">
+                  {/* Lettura "strumento": numero grande + micro-etichetta, divisori a filo. */}
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-lg lg:text-xl font-black num text-[var(--text)] leading-none">{pezzi}</span>
+                    <span className="text-[10px] lg:text-[11px] uppercase tracking-[0.12em] font-bold text-[var(--text-faint)]">{t('mag.pieces')}</span>
+                  </div>
+                  <span className="hidden sm:block w-px h-4 bg-[var(--border-2)]" />
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-lg lg:text-xl font-black num text-[var(--text)] leading-none">{groupedInStockArray.length}</span>
+                    <span className="text-[10px] lg:text-[11px] uppercase tracking-[0.12em] font-bold text-[var(--text-faint)]">{t('mag.models')}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2 sm:ml-auto">
+                    <span className="sys-label">{t('mag.stockValue')}</span>
+                    <span className="text-lg lg:text-xl font-black num text-[var(--teal)] leading-none">{costo.toFixed(0)}€</span>
+                  </div>
                   <button onClick={() => setSmartLotOpen(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#6b54c6]/15 text-[#6b54c6] hover:bg-[#6b54c6]/25 text-xs font-bold transition-colors">
                     <Sparkles size={13} /> Lotto smart
