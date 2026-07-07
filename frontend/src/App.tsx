@@ -5626,19 +5626,26 @@ export default function App() {
                 )}
               </div>
 
-              {/* Ricerca + tasto Filtri (tutti i filtri sono dentro il pannello → look minimal) */}
-              {(() => {
-                const activeFilters = (filterCat !== 'all' ? 1 : 0) + (filterCondition !== 'all' ? 1 : 0) + ((filterPriceMin || filterPriceMax) ? 1 : 0) + (staleOnly ? 1 : 0);
-                return (
-                  <div className="flex gap-2 lg:gap-3 lg:flex-1 lg:justify-end mt-2 lg:mt-0">
-                    <div className="relative flex-1 lg:max-w-md">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)]" size={16} />
-                      <input type="text" placeholder={t('mag.searchPlaceholder')}
-                        value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#8397aa] outline-none" />
-                    </div>
+              {/* Ricerca — su DESKTOP: reparto inline (come prima). Su MOBILE: tasto Filtri. */}
+              <div className="flex gap-2 lg:gap-3 lg:flex-1 lg:justify-end mt-2 lg:mt-0">
+                <div className="relative flex-1 lg:max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)]" size={16} />
+                  <input type="text" placeholder={t('mag.searchPlaceholder')}
+                    value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#8397aa] outline-none" />
+                </div>
+                {/* Desktop: reparto inline accanto alla ricerca */}
+                <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
+                  className="hidden lg:block lg:w-auto bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#8397aa] outline-none shrink-0">
+                  <option value="all">{t('mag.allDepartments')}</option>
+                  {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                {/* Mobile: tasto Filtri (apre il pannello) con badge n. filtri attivi */}
+                {(() => {
+                  const activeFilters = (filterCat !== 'all' ? 1 : 0) + (filterCondition !== 'all' ? 1 : 0) + ((filterPriceMin || filterPriceMax) ? 1 : 0) + (staleOnly ? 1 : 0);
+                  return (
                     <button onClick={() => setFiltersOpen(o => !o)}
-                      className={`relative shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-sm font-bold transition-colors ${
+                      className={`lg:hidden relative shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-sm font-bold transition-colors ${
                         filtersOpen || activeFilters > 0 ? 'bg-[#8397aa]/15 border-[#8397aa]/40 text-[#8397aa]' : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
                       }`}>
                       <SlidersHorizontal size={16} />
@@ -5647,15 +5654,59 @@ export default function App() {
                         <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-[#8397aa] text-white text-[10px] font-black flex items-center justify-center">{activeFilters}</span>
                       )}
                     </button>
-                  </div>
-                );
-              })()}
+                  );
+                })()}
+              </div>
             </div>
 
-            {/* Pannello filtri collassabile: reparto + (in stock) ordina/condizione/prezzo/fermi. */}
+            {/* DESKTOP: barra filtri originale, SEMPRE visibile (ordina/condizione/prezzo). */}
+            {magazzinoView === 'instock' && (
+              <div className="hidden lg:flex lg:flex-row lg:flex-wrap gap-2 lg:items-center">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex items-center gap-1">
+                    <ArrowUpDown size={12} /> {t('mag.sortBy')}
+                  </span>
+                  {(['date','price','name'] as const).map(f => (
+                    <button key={f} onClick={() => {
+                      if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+                      else { setSortField(f); setSortDir('desc'); }
+                    }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                        sortField === f ? 'bg-[#8397aa] text-[var(--text)]' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                      }`}>
+                      {f === 'date' ? t('mag.sortDate') : f === 'price' ? t('mag.sortPrice') : f === 'name' ? t('mag.sortName') : t('mag.sortMargin')}
+                      {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
+                    </button>
+                  ))}
+                  <button onClick={() => setStaleOnly(s => !s)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                      staleOnly ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                    }`}>
+                    <AlertTriangle size={12} /> {t('dash.stale')}
+                  </button>
+                </div>
+                <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
+                  className="lg:ml-auto bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]">
+                  <option value="all">{t('mag.condition')}</option>
+                  <option value="DS">DS</option>
+                  <option value="VNDS">VNDS</option>
+                  <option value="Used">Used</option>
+                </select>
+                <div className="flex gap-2">
+                  <input type="number" placeholder="Min €" value={filterPriceMin}
+                    onChange={(e: any) => setFilterPriceMin(e.target.value)}
+                    className="w-16 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]" />
+                  <input type="number" placeholder="Max €" value={filterPriceMax}
+                    onChange={(e: any) => setFilterPriceMax(e.target.value)}
+                    className="w-16 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]" />
+                </div>
+              </div>
+            )}
+
+            {/* MOBILE: pannello filtri collassabile (reparto + ordina/condizione/prezzo/fermi). */}
             {filtersOpen && (
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3.5 lg:p-4 flex flex-col gap-3.5">
-                {/* Reparto (vale per tutte le viste) */}
+              <div className="lg:hidden bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3.5 flex flex-col gap-3.5">
+                {/* Reparto */}
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest">{t('mag.allDepartments')}</span>
                   <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
@@ -5669,7 +5720,7 @@ export default function App() {
                   <>
                     {/* Ordina */}
                     <div className="flex flex-wrap gap-2 items-center">
-                      <span className="w-full lg:w-auto text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex items-center gap-1">
+                      <span className="w-full text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex items-center gap-1">
                         <ArrowUpDown size={12} /> {t('mag.sortBy')}
                       </span>
                       {(['date','price','name'] as const).map(f => (
@@ -5684,7 +5735,6 @@ export default function App() {
                           {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
                         </button>
                       ))}
-                      {/* Filtro rapido: Fermi (+30gg in stock) */}
                       <button onClick={() => setStaleOnly(s => !s)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
                           staleOnly ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
@@ -5711,7 +5761,7 @@ export default function App() {
                   </>
                 )}
 
-                {/* Azzera filtri (appare solo se qualcosa è attivo) */}
+                {/* Azzera filtri (solo se qualcosa è attivo) */}
                 {(filterCat !== 'all' || filterCondition !== 'all' || filterPriceMin || filterPriceMax || staleOnly) && (
                   <button onClick={() => { setFilterCat('all'); setFilterCondition('all'); setFilterPriceMin(''); setFilterPriceMax(''); setStaleOnly(false); }}
                     className="self-start text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] flex items-center gap-1.5">
