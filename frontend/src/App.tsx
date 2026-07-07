@@ -154,7 +154,7 @@ interface AINotification {
 // ==========================================
 function HQLoader() {
   return (
-    <div className="flex items-center justify-center gap-1" aria-label="Caricamento">
+    <div className="flex items-center justify-center gap-1" aria-label="Loading">
       <style>{`
         @keyframes hq-h {
           0%, 100% { opacity: 1; transform: scale(1);   color: #ffffff; }
@@ -196,7 +196,7 @@ function VaultLoader() {
   const bars = [0, 90, 180, 270]; // chiavistelli a croce (come la reference)
   const spokes = [22.5, 67.5, 112.5, 157.5, 202.5, 247.5, 292.5, 337.5]; // 8 razze del volantino
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 'min(360px, 90vw)', height: 'min(360px, 90vw)' }} aria-label="Caricamento">
+    <div className="relative flex items-center justify-center" style={{ width: 'min(360px, 90vw)', height: 'min(360px, 90vw)' }} aria-label="Loading">
       <style>{`
         @keyframes vlSlam  { 0%{transform:scale(.88) rotate(-6deg);opacity:0} 24%{opacity:1} 62%{transform:scale(1.02) rotate(1.5deg)} 80%{transform:scale(.994) rotate(-.6deg)} 100%{transform:scale(1) rotate(0)} }
         @keyframes vlWheel { 0%,26%{transform:rotate(0)} 82%,100%{transform:rotate(135deg)} }
@@ -4780,7 +4780,7 @@ export default function App() {
               <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0"
                 style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
                 <span className="font-bold text-sm truncate">{fullName(marketDetail.brand, marketDetail.name)}</span>
-                <button onClick={() => setMarketDetail(null)} aria-label="Chiudi"
+                <button onClick={() => setMarketDetail(null)} aria-label={lang === 'en' ? 'Close' : 'Chiudi'}
                   className="p-3 -mr-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
               </div>
               <div className="flex-1 overflow-y-auto overscroll-contain">
@@ -6262,7 +6262,7 @@ export default function App() {
                                           <div className="mt-2 p-2.5 rounded-xl bg-[var(--surface)] border border-[#8397aa]/25 space-y-2" onClick={e => e.stopPropagation()}>
                                             <div className="grid grid-cols-2 gap-2">
                                               <div>
-                                                <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">Prezzo €</label>
+                                                <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{lang === 'en' ? 'Price €' : 'Prezzo €'}</label>
                                                 <input type="number" step="0.01" inputMode="decimal" value={saleEdit.price}
                                                   onChange={e => setSaleEdit(v => ({ ...v, price: e.target.value }))}
                                                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
@@ -6280,7 +6280,7 @@ export default function App() {
                                                   className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa] appearance-none" />
                                               </div>
                                               <div>
-                                                <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">Cliente</label>
+                                                <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{lang === 'en' ? 'Customer' : 'Cliente'}</label>
                                                 <input type="text" value={saleEdit.customer} maxLength={120} placeholder="—"
                                                   onChange={e => setSaleEdit(v => ({ ...v, customer: e.target.value }))}
                                                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
@@ -7516,7 +7516,7 @@ export default function App() {
               <div className="flex items-center justify-between p-3 border-b border-[var(--border)] shrink-0"
                 style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
                 <span className="font-bold text-sm truncate">{fullName(marketDetail.brand, marketDetail.name)}</span>
-                <button onClick={() => setMarketDetail(null)} aria-label="Chiudi"
+                <button onClick={() => setMarketDetail(null)} aria-label={lang === 'en' ? 'Close' : 'Chiudi'}
                   className="p-3 -mr-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
               </div>
               {/* Contenuto scrollabile */}
@@ -7596,7 +7596,7 @@ export default function App() {
         {labelData && createPortal((
           <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setLabelData(null)} {...swipeBack(() => setLabelData(null))}>
             <div className="bg-white text-black rounded-2xl w-full max-w-sm p-6 relative" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setLabelData(null)} aria-label="Chiudi"
+              <button onClick={() => setLabelData(null)} aria-label={lang === 'en' ? 'Close' : 'Chiudi'}
                 className="absolute top-3 right-3 p-2 rounded-lg hover:bg-black/5 active:scale-95"><X size={20} /></button>
               <span className="inline-block bg-[#8397aa] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">ETICHETTA DI PROVA</span>
               <h3 className="text-lg font-bold mt-3">{labelData.productName}</h3>
@@ -7948,7 +7948,7 @@ export default function App() {
             <div className="bg-[var(--card)] w-full h-full sm:h-auto sm:rounded-3xl sm:max-w-lg sm:max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
               <div className="flex items-center gap-2 p-3 border-b border-[var(--border)] shrink-0"
                 style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
-                <button onClick={() => setLotDetail(null)} aria-label="Indietro"
+                <button onClick={() => setLotDetail(null)} aria-label={lang === 'en' ? 'Back' : 'Indietro'}
                   className="flex items-center gap-1 px-2 py-2 -ml-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform text-[var(--text-soft)] hover:text-[var(--text)]">
                   <ChevronDown size={20} className="rotate-90" /> <span className="text-sm font-bold">{t('common.back')}</span>
                 </button>
@@ -7956,7 +7956,7 @@ export default function App() {
                   <p className="font-bold truncate flex items-center justify-center gap-1.5"><Layers size={16} className="text-[#8397aa]" /> {lotDetail.lotName}</p>
                   <p className="text-[11px] text-[var(--text-soft)]">{lotDetail.category}</p>
                 </div>
-                <button onClick={() => setLotDetail(null)} aria-label="Chiudi"
+                <button onClick={() => setLotDetail(null)} aria-label={lang === 'en' ? 'Close' : 'Chiudi'}
                   className="p-3 -mr-1 hover:bg-[var(--fill)] rounded-xl shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
               </div>
               {(() => {
@@ -10131,7 +10131,7 @@ export default function App() {
       {/* ========== LIGHTBOX FOTO (tap su una foto del magazzino) ========== */}
       {zoomPhoto && (
         <div className="fixed inset-0 z-[120] bg-black/95 flex items-center justify-center p-4" onClick={() => setZoomPhoto(null)}>
-          <button onClick={() => setZoomPhoto(null)} aria-label="Chiudi"
+          <button onClick={() => setZoomPhoto(null)} aria-label={lang === 'en' ? 'Close' : 'Chiudi'}
             className="absolute right-4 p-2 bg-white/10 rounded-full text-white hover:bg-white/20 z-10" style={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}>
             <X size={22} />
           </button>
@@ -10242,8 +10242,8 @@ export default function App() {
 
               {/* Identificativo cliente (facoltativo): nome, @social, codice… — idea utente */}
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><Users size={11} /> Cliente <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">(facoltativo)</span></label>
-                <input type="text" value={sellCustomer} onChange={e => setSellCustomer(e.target.value)} placeholder="Nome, @social o codice cliente…" maxLength={120}
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><Users size={11} /> {lang === 'en' ? 'Customer' : 'Cliente'} <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">({lang === 'en' ? 'optional' : 'facoltativo'})</span></label>
+                <input type="text" value={sellCustomer} onChange={e => setSellCustomer(e.target.value)} placeholder={lang === 'en' ? 'Name, @social or customer code…' : 'Nome, @social o codice cliente…'} maxLength={120}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
               </div>
 
@@ -10260,11 +10260,11 @@ export default function App() {
                 <button type="button" onClick={() => setSellExtraOpen(o => !o)}
                   className="w-full flex items-center justify-between p-3 text-left">
                   <span className="text-xs font-bold text-[var(--text-soft)] flex items-center gap-1.5">
-                    <Package size={13} /> Costi extra <span className="font-normal text-[var(--text-faint)] hidden sm:inline">(scatola, spedizione, dogana…)</span>
+                    <Package size={13} /> {lang === 'en' ? 'Extra costs' : 'Costi extra'} <span className="font-normal text-[var(--text-faint)] hidden sm:inline">({lang === 'en' ? 'box, shipping, customs…' : 'scatola, spedizione, dogana…'})</span>
                   </span>
                   {(() => { const ex = sellExtraCosts.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0); return (
                     <span className="flex items-center gap-1.5">
-                      <span className={`text-xs font-bold ${ex > 0 ? 'text-red-400' : 'text-[#8397aa]'}`}>{ex > 0 ? `-${ex.toFixed(2)}€` : 'Aggiungi'}</span>
+                      <span className={`text-xs font-bold ${ex > 0 ? 'text-red-400' : 'text-[#8397aa]'}`}>{ex > 0 ? `-${ex.toFixed(2)}€` : (lang === 'en' ? 'Add' : 'Aggiungi')}</span>
                       <ChevronDown size={14} className={`text-[var(--text-faint)] transition-transform ${sellExtraOpen ? 'rotate-180' : ''}`} />
                     </span>
                   ); })()}
@@ -10273,7 +10273,7 @@ export default function App() {
                   <div className="px-3 pb-3 space-y-2">
                     {sellExtraCosts.map((c, i) => (
                       <div key={i} className="flex gap-2">
-                        <input type="text" value={c.desc} placeholder="Descrizione (es. Scatola)"
+                        <input type="text" value={c.desc} placeholder={lang === 'en' ? 'Description (e.g. Box)' : 'Descrizione (es. Scatola)'}
                           onChange={(e: any) => setSellExtraCosts(arr => arr.map((x, j) => j === i ? { ...x, desc: e.target.value } : x))}
                           className="flex-1 min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
                         <input type="number" step="0.01" value={c.amount} placeholder="€"
@@ -10285,7 +10285,7 @@ export default function App() {
                     ))}
                     <button type="button" onClick={() => setSellExtraCosts(arr => [...arr, { desc: '', amount: '' }])}
                       className="w-full py-2 rounded-lg border border-dashed border-[var(--border-2)] text-xs font-bold text-[#8397aa] hover:bg-[#8397aa]/10 flex items-center justify-center gap-1.5">
-                      <Plus size={13} /> Aggiungi costo
+                      <Plus size={13} /> {lang === 'en' ? 'Add cost' : 'Aggiungi costo'}
                     </button>
                   </div>
                 )}
