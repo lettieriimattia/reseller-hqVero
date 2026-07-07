@@ -108,6 +108,12 @@ model Warehouse {
   // Può essere sovrascritto a livello di singolo prodotto tramite customShares
   defaultProfitShares String?
 
+  // Integrazione Shopify (Fase 1: import catalogo in sola lettura). Token cifrato a riposo.
+  shopifyDomain String?      // dominio *.myshopify.com
+  shopifyToken  String?      // Admin API access token (cifrato via utils/security)
+  shopifyShopName String?    // nome dello shop (per mostrarlo in UI)
+  shopifyLastSync DateTime?
+
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 

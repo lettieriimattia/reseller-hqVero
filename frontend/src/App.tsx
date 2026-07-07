@@ -812,6 +812,13 @@ export default function App() {
   const [twoFaDisablePwd, setTwoFaDisablePwd] = useState('');
   const [twoFaDisableOtp, setTwoFaDisableOtp] = useState('');
 
+  // ----- SHOPIFY (import catalogo) -----
+  const [shopifyWhId, setShopifyWhId] = useState('');
+  const [shopifyStatus, setShopifyStatus] = useState<{ connected: boolean; shopName?: string | null; domain?: string | null; lastSync?: string | null } | null>(null);
+  const [shopifyDomainInput, setShopifyDomainInput] = useState('');
+  const [shopifyTokenInput, setShopifyTokenInput] = useState('');
+  const [shopifyBusy, setShopifyBusy] = useState(false);
+
   // ----- PRODOTTI FERMI -----
   const [staleThreshold, setStaleThreshold] = useState(() => {
     const saved = localStorage.getItem('staleThreshold');
@@ -4686,6 +4693,65 @@ export default function App() {
   };
 
   // ==========================================
+  // SHOPIFY — collega store + importa catalogo (solo OWNER)
+  // ==========================================
+  const ownedWarehouses = (user?.warehouses || []).filter((w: any) => w.role === 'OWNER');
+  const fetchShopifyStatus = async (whId: string) => {
+    if (!whId) { setShopifyStatus(null); return; }
+    const { ok, data } = await apiCall<any>(`/api/shopify/status?warehouseId=${encodeURIComponent(whId)}`);
+    if (ok) setShopifyStatus(data);
+  };
+  const connectShopify = async () => {
+    if (!shopifyWhId || !shopifyDomainInput.trim() || !shopifyTokenInput.trim()) { showToast(lang === 'en' ? 'Enter domain and token' : 'Inserisci dominio e token', 'err'); return; }
+    setShopifyBusy(true);
+    const { ok, data } = await apiCall<any>('/api/shopify/connect', {
+      method: 'POST',
+      body: JSON.stringify({ warehouseId: shopifyWhId, domain: shopifyDomainInput.trim(), token: shopifyTokenInput.trim() }),
+    });
+    setShopifyBusy(false);
+    if (ok) {
+      setShopifyTokenInput('');
+      showToast(lang === 'en' ? `Connected to ${data.shopName}` : `Collegato a ${data.shopName}`);
+      fetchShopifyStatus(shopifyWhId);
+    } else showToast(data?.error || (lang === 'en' ? 'Connection error' : 'Errore connessione'), 'err');
+  };
+  const importShopify = async () => {
+    if (!shopifyWhId) return;
+    setShopifyBusy(true);
+    showToast(lang === 'en' ? 'Importing from Shopify…' : 'Importazione da Shopify…');
+    const { ok, data } = await apiCall<any>('/api/shopify/import', {
+      method: 'POST',
+      body: JSON.stringify({ warehouseId: shopifyWhId }),
+    });
+    setShopifyBusy(false);
+    if (ok) {
+      await fetchProducts();
+      fetchShopifyStatus(shopifyWhId);
+      const dup = data.skippedDuplicates ? (lang === 'en' ? ` (${data.skippedDuplicates} already present)` : ` (${data.skippedDuplicates} già presenti)`) : '';
+      showToast(lang === 'en' ? `Imported ${data.imported} items${dup}` : `Importati ${data.imported} pezzi${dup}`, 'ok');
+    } else showToast(data?.error || (lang === 'en' ? 'Import error' : 'Errore import'), 'err');
+  };
+  const disconnectShopify = async () => {
+    if (!shopifyWhId) return;
+    setShopifyBusy(true);
+    const { ok } = await apiCall<any>('/api/shopify/disconnect', { method: 'POST', body: JSON.stringify({ warehouseId: shopifyWhId }) });
+    setShopifyBusy(false);
+    if (ok) { setShopifyStatus({ connected: false }); showToast(lang === 'en' ? 'Disconnected' : 'Scollegato'); }
+  };
+  // All'apertura delle Impostazioni: scegli un magazzino di cui sei OWNER e carica lo stato Shopify.
+  useEffect(() => {
+    if (currentView !== 'settings') return;
+    const owned = (user?.warehouses || []).filter((w: any) => w.role === 'OWNER');
+    if (owned.length === 0) { setShopifyStatus(null); return; }
+    const wh = (shopifyWhId && owned.some((w: any) => w.id === shopifyWhId)) ? shopifyWhId
+      : (baseWarehouse?.id && owned.some((w: any) => w.id === baseWarehouse.id)) ? baseWarehouse.id
+      : owned[0].id;
+    if (wh !== shopifyWhId) setShopifyWhId(wh);
+    fetchShopifyStatus(wh);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentView, user]);
+
+  // ==========================================
   // EXPORT CSV
   // ==========================================
   const exportCSV = () => {
@@ -8495,6 +8561,71 @@ export default function App() {
                 </button>
               </div>
             </section>
+
+            {/* SEZIONE: SHOPIFY — import catalogo (solo OWNER) */}
+            {ownedWarehouses.length > 0 && (
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <Store className="text-[#95BF47] mt-0.5" size={22} />
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold tracking-tighter">Shopify</h3>
+                  <p className="text-xs text-[var(--text-soft)] mt-1">{lang === 'en' ? 'Import your store catalog into HQ (read-only, we never write to your shop).' : 'Importa il catalogo del tuo store dentro HQ (sola lettura, non tocchiamo il tuo negozio).'}</p>
+                </div>
+              </div>
+
+              {/* Selettore magazzino (se possiedi più reparti) */}
+              {ownedWarehouses.length > 1 && (
+                <select value={shopifyWhId} onChange={e => { setShopifyWhId(e.target.value); fetchShopifyStatus(e.target.value); }}
+                  className="w-full mb-3 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa]">
+                  {ownedWarehouses.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                </select>
+              )}
+
+              {shopifyStatus?.connected ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="w-2 h-2 rounded-full bg-green-400" />
+                    <span className="font-bold text-[var(--text)]">{shopifyStatus.shopName || shopifyStatus.domain}</span>
+                    <span className="text-[var(--text-faint)] text-xs truncate">{shopifyStatus.domain}</span>
+                  </div>
+                  {shopifyStatus.lastSync && (
+                    <p className="text-[11px] text-[var(--text-faint)]">{lang === 'en' ? 'Last import' : 'Ultimo import'}: {new Date(shopifyStatus.lastSync).toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT')}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <button onClick={importShopify} disabled={shopifyBusy}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-[#95BF47] hover:bg-[#7fa53c] text-white disabled:opacity-50 flex items-center justify-center gap-2">
+                      {shopifyBusy ? <Loader2 size={16} className="animate-spin" /> : <Download size={15} />} {lang === 'en' ? 'Import catalog' : 'Importa catalogo'}
+                    </button>
+                    <button onClick={disconnectShopify} disabled={shopifyBusy}
+                      className="px-4 py-2.5 rounded-xl text-sm font-bold bg-[var(--fill)] text-[var(--text-soft)] hover:text-red-400 disabled:opacity-50">
+                      {lang === 'en' ? 'Disconnect' : 'Scollega'}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-faint)] leading-relaxed">{lang === 'en' ? 'Import brings in products, sizes, prices and photos as in-stock pieces. Re-running skips items already present (by SKU + size).' : 'L\'import porta prodotti, taglie, prezzi e foto come pezzi in stock. Rilanciandolo, salta quelli già presenti (per SKU + taglia).'}</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">{lang === 'en' ? 'Store domain (.myshopify.com)' : 'Dominio store (.myshopify.com)'}</label>
+                    <input type="text" value={shopifyDomainInput} onChange={e => setShopifyDomainInput(e.target.value)} placeholder="tuonegozio.myshopify.com" autoCapitalize="none" spellCheck={false}
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa]" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">Admin API access token</label>
+                    <input type="password" value={shopifyTokenInput} onChange={e => setShopifyTokenInput(e.target.value)} placeholder="shpat_…" autoCapitalize="none" spellCheck={false}
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa]" />
+                  </div>
+                  <button onClick={connectShopify} disabled={shopifyBusy}
+                    className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#95BF47] hover:bg-[#7fa53c] text-white disabled:opacity-50 flex items-center justify-center gap-2">
+                    {shopifyBusy ? <Loader2 size={16} className="animate-spin" /> : <Store size={15} />} {lang === 'en' ? 'Connect Shopify' : 'Collega Shopify'}
+                  </button>
+                  <p className="text-[11px] text-[var(--text-faint)] leading-relaxed">
+                    {lang === 'en' ? 'In Shopify admin: Settings → Apps → Develop apps → create an app → grant read_products and read_inventory → install → copy the Admin API access token.' : 'Nell\'admin Shopify: Impostazioni → App → Sviluppa app → crea un\'app → concedi read_products e read_inventory → installa → copia l\'Admin API access token.'}
+                  </p>
+                </div>
+              )}
+            </section>
+            )}
 
             {/* SEZIONE: Incassi marketplace → rimanda alla pagina Portafoglio dedicata */}
             {MARKETPLACE_ENABLED && (
