@@ -27,6 +27,13 @@ import { logger } from '../utils/logger';
 import { imageMatchesTitle } from '../utils/imageConsistency';
 
 // Quanto un titolo del catalogo combacia con la query (0..1) = frazione delle parole della
+// Arrotonda il denaro a 2 decimali (niente 33,3333333 dopo aver diviso un lotto). undefined resta undefined.
+function round2(n: any): number | undefined {
+  if (n === null || n === undefined || n === '') return undefined;
+  const v = Number(n);
+  return Number.isFinite(v) ? Math.round(v * 100) / 100 : undefined;
+}
+
 // query presenti nel titolo. Serve a NON agganciare foto sbagliate (es. prima Jordan 1 a caso).
 function imgMatchScore(query: string, title: string): number {
   const qw = Array.from(new Set(query.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length >= 2)));
@@ -704,7 +711,7 @@ router.put('/:id', validate(sellProductSchema), async (req: AuthRequest, res: Re
       return tx.product.update({
         where: { id: req.params.id },
         data: {
-          salePrice, platform, fees, customer: cust,
+          salePrice: round2(salePrice), platform, fees: round2(fees) ?? 0, customer: cust,
           status: 'VENDUTO', soldAt,
           reservedBy: null, reservedAt: null,
         },
@@ -881,7 +888,7 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
         category, brand, name,
         size: (size || '').trim() || '—',
         condition: (condition || '').trim() || '—',
-        purchasePrice,
+        purchasePrice: purchasePrice !== undefined ? (round2(purchasePrice) ?? purchasePrice) : undefined,
         ...(warehouseMove ? { warehouseId: warehouseMove } : {}),
         customShares: parsedShares,
         profitShareOverride: parsedProfitOverride,
@@ -893,12 +900,12 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
         consignmentName: consignmentName !== undefined ? ((consignmentName || '').trim() || null) : undefined,
         consignmentPercent: consignmentPercent !== undefined ? (typeof consignmentPercent === 'number' ? consignmentPercent : null) : undefined,
         // Modifica VENDITA (solo se inviati: prodotto già venduto). undefined = non toccare.
-        salePrice: salePrice !== undefined ? (typeof salePrice === 'number' ? salePrice : null) : undefined,
+        salePrice: salePrice !== undefined ? (typeof salePrice === 'number' ? round2(salePrice)! : null) : undefined,
         platform: platform !== undefined ? ((platform || '').toString().trim() || null) : undefined,
-        fees: fees !== undefined ? (typeof fees === 'number' ? fees : null) : undefined,
+        fees: fees !== undefined ? (typeof fees === 'number' ? round2(fees)! : null) : undefined,
         customer: customer !== undefined ? ((customer || '').toString().trim() || null) : undefined,
         supplier: supplier !== undefined ? ((supplier || '').toString().trim() || null) : undefined,
-        quickSalePrice: quickSalePrice !== undefined ? (typeof quickSalePrice === 'number' ? quickSalePrice : null) : undefined,
+        quickSalePrice: quickSalePrice !== undefined ? (typeof quickSalePrice === 'number' ? round2(quickSalePrice)! : null) : undefined,
         // Date facoltative: acquisto = createdAt, vendita = soldAt (solo se valide).
         ...(purchaseAt !== undefined ? { createdAt: purchaseAt ?? undefined } : {}),
         ...(soldAtDate !== undefined ? { soldAt: soldAtDate } : {}),

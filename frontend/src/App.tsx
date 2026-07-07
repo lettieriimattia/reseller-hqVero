@@ -63,6 +63,11 @@ function buyersFromSales(sales: any[]): { name: string; qty: number; sales: any[
   return Object.values(map).sort((a, b) => b.qty - a.qty);
 }
 
+// Arrotonda il denaro a 2 decimali (niente 33,3333333 dopo aver diviso un lotto).
+const round2 = (n: any): number => Math.round((Number(n) || 0) * 100) / 100;
+// Stringa "pulita" per prefill input (2 decimali max, senza zeri finali): 33.3333→"33.33", 33→"33".
+const moneyStr = (n: any): string => { const v = round2(n); return Number.isFinite(v) ? String(v) : ''; };
+
 // Avatar soci: colore deterministico dall'iniziale del nome (stesso nome = stesso colore).
 // Palette in armonia col tema (toni saturi ma non sgargianti); testo bianco sopra.
 const AVATAR_COLORS = ['#8397aa', '#c0705a', '#5a9e8f', '#a0729e', '#c9a15a', '#5f86b3', '#9a6b8f', '#6f9a5a', '#b3705f', '#5aa0a0'];
@@ -3668,11 +3673,11 @@ export default function App() {
     
     const qtyToProcess = parseInt(sellQuantity) || 1;
     const idsToProcess = productToSell.ids.slice(0, qtyToProcess);
-    const unitSalePrice = parseFloat(sellPrice) / qtyToProcess;
+    const unitSalePrice = round2(parseFloat(sellPrice) / qtyToProcess);
     // Costi extra (scatola, etichetta, dogana…): somma totale, divisa per le unità e
     // aggiunta alle fees → così viene sottratta dal ricavo nel calcolo del profitto.
     const extraTotal = sellExtraCosts.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0);
-    const unitFees = ((parseFloat(sellFees) || 0) + extraTotal) / qtyToProcess;
+    const unitFees = round2(((parseFloat(sellFees) || 0) + extraTotal) / qtyToProcess);
     
     // Data vendita: default oggi, ma se l'utente la cambia la inviamo (soldDate).
     const soldDate = sellDate && sellDate !== new Date().toISOString().slice(0, 10) ? sellDate : undefined;
@@ -3711,14 +3716,14 @@ export default function App() {
     setProductToEdit(group);
     setEditBrand(group.brand); setEditName(group.name);
     setEditSize(group.size); setEditCondition(group.condition);
-    setEditPrice(group.purchasePrice.toString());
+    setEditPrice(moneyStr(group.purchasePrice));
     // Campi vendita (solo se venduto)
-    setEditSalePrice(group.salePrice != null ? String(group.salePrice) : '');
+    setEditSalePrice(group.salePrice != null ? moneyStr(group.salePrice) : '');
     setEditSalePlatform(group.platform || 'Vinted');
-    setEditSaleFees(group.fees != null ? String(group.fees) : '');
+    setEditSaleFees(group.fees != null ? moneyStr(group.fees) : '');
     setEditSaleCustomer(group.customer || '');
     setEditSupplier(group.supplier || '');
-    setEditQuickSale(group.quickSalePrice != null ? String(group.quickSalePrice) : '');
+    setEditQuickSale(group.quickSalePrice != null ? moneyStr(group.quickSalePrice) : '');
     const toDateInput = (v: any) => { if (!v) return ''; try { return new Date(v).toISOString().slice(0, 10); } catch { return ''; } };
     setEditPurchaseDate(toDateInput(group.createdAt));
     setEditSoldDate(toDateInput(group.soldAt));
@@ -3765,10 +3770,10 @@ export default function App() {
   const startInlineSaleEdit = (s: any) => {
     const toDate = (v: any) => { if (!v) return ''; try { return new Date(v).toISOString().slice(0, 10); } catch { return ''; } };
     setSaleEdit({
-      price: s.salePrice != null ? String(s.salePrice) : '',
+      price: s.salePrice != null ? moneyStr(s.salePrice) : '',
       customer: s.customer || '',
       date: toDate(s.soldAt),
-      fees: s.fees != null ? String(s.fees) : '0',
+      fees: s.fees != null ? moneyStr(s.fees) : '0',
     });
     setEditingSaleId(s.id);
   };
