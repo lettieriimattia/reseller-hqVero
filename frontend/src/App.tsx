@@ -11635,22 +11635,31 @@ export default function App() {
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)] shrink-0">
               <div>
-                <h2 className="font-semibold text-base flex items-center gap-2"><BookOpen size={18} className="text-[#8397aa]" /> Guida rapida</h2>
-                <p className="text-[11px] text-[var(--text-soft)] mt-0.5">Come sfruttare HQ in pochi passi</p>
+                <h2 className="font-semibold text-base flex items-center gap-2"><BookOpen size={18} className="text-[#8397aa]" /> {lang === 'en' ? 'Quick guide' : 'Guida rapida'}</h2>
+                <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{lang === 'en' ? 'Get the most out of HQ in a few steps' : 'Come sfruttare HQ in pochi passi'}</p>
               </div>
               <button onClick={() => setGuideOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
                 <X size={18} className="text-[var(--text-muted)]" />
               </button>
             </div>
             <div className="overflow-y-auto p-5 space-y-4">
-              {[
+              {(lang === 'en' ? [
+                { icon: Plus, t: 'Add a product', d: 'Tap "+" and take a photo: the AI recognizes brand and model and fills in the fields. Check size/condition and save.' },
+                { icon: DollarSign, t: 'Sell & track profit', d: 'On a product tap "Sell": enter price, platform, fees and the sale date. HQ computes profit and margin automatically.' },
+                { icon: Sparkles, t: 'HQ assistant (chatbox)', d: 'The bar at the bottom is your assistant: write (or tap the mic and talk) in plain language. It can add products, look up a price ("what\'s the Dunk Panda worth?"), register a sale or create tasks for you. Tap "+" in the bar for a quick add.' },
+                { icon: Truck, t: 'Shipping & tracking', d: 'Add a tracking number both for incoming parcels (they enter stock on delivery) and for your sales. Once added, a link appears under the product name: tap it to open the carrier page directly. You can also set the status by hand (in transit, delivered…).' },
+                { icon: Users, t: 'Team & warehouses', d: 'Create warehouses/departments and invite partners with the code: profits are split by the percentages you set.' },
+                { icon: Bell, t: 'Notifications', d: 'Turn on push notifications from Settings for sales, deliveries and items sitting in stock too long.' },
+                { icon: Smartphone, t: 'Install the app on your phone', d: 'HQ works like a real full-screen app. On iPhone (Safari): tap the Share button → "Add to Home Screen". On Android (Chrome): menu ⋮ → "Install app". Then open it from the icon like any app.' },
+              ] : [
                 { icon: Plus, t: 'Aggiungi un prodotto', d: 'Premi "+" e scatta una foto: l\'IA riconosce brand e modello e compila i campi. Controlla taglia/condizione e salva.' },
-                { icon: DollarSign, t: 'Vendi e traccia il profitto', d: 'Sul prodotto premi "Vendi": inserisci prezzo, piattaforma e fee. HQ calcola profitto e margine in automatico.' },
-                { icon: Truck, t: 'Spedizioni', d: 'Aggiungi il tracking sia per i pacchi in arrivo (entrano in stock alla consegna) sia per le vendite. Stato aggiornabile a mano + link al corriere.' },
+                { icon: DollarSign, t: 'Vendi e traccia il profitto', d: 'Sul prodotto premi "Vendi": inserisci prezzo, piattaforma, fee e la data di vendita. HQ calcola profitto e margine in automatico.' },
+                { icon: Sparkles, t: 'Assistente HQ (chatbox)', d: 'La barra in basso è il tuo assistente: scrivi (o tocca il microfono e parla) in linguaggio naturale. Può aggiungere prodotti, cercare un prezzo ("quanto vale la Dunk Panda?"), registrare una vendita o crearti dei promemoria. Il "+" nella barra apre l\'aggiunta rapida.' },
+                { icon: Truck, t: 'Spedizioni & tracking', d: 'Aggiungi il codice di tracciamento sia per i pacchi in arrivo (entrano in stock alla consegna) sia per le vendite. Una volta inserito, sotto il nome del prodotto compare un link: toccalo per aprire DIRETTO la pagina del corriere. Puoi anche aggiornare lo stato a mano (in transito, consegnato…).' },
                 { icon: Users, t: 'Team e magazzini', d: 'Crea magazzini/reparti e invita i soci col codice: i profitti si dividono con le percentuali impostate.' },
                 { icon: Bell, t: 'Notifiche', d: 'Attiva le notifiche push dalle Impostazioni per vendite, consegne e prodotti fermi da troppo tempo.' },
                 { icon: Smartphone, t: 'Installa l\'app sul telefono', d: 'HQ funziona come un\'app vera, a schermo intero. Su iPhone (Safari): tocca il tasto Condividi in basso → "Aggiungi a schermata Home". Su Android (Chrome): menu ⋮ in alto a destra → "Installa app" (o "Aggiungi a schermata Home"). Poi la apri dall\'icona come una qualsiasi app.' },
-              ].map(s => {
+              ]).map(s => {
                 const I = s.icon;
                 return (
                   <div key={s.t} className="flex items-start gap-3">
@@ -11664,7 +11673,7 @@ export default function App() {
               })}
               <div className="pt-1 text-center">
                 <button onClick={() => { setGuideOpen(false); navigateTo('settings'); }} className="text-xs text-[#8397aa] font-semibold hover:underline">
-                  Serve aiuto? Impostazioni → Aiuto &amp; Assistenza
+                  {lang === 'en' ? 'Need help? Settings → Help & Support' : 'Serve aiuto? Impostazioni → Aiuto & Assistenza'}
                 </button>
               </div>
             </div>
