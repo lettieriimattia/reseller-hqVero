@@ -3666,7 +3666,16 @@ export default function App() {
     setSellTrackingCode(''); setSellTrackingCarrier('Auto');
     setSellModalOpen(true);
   };
-  
+
+  // Vendita dalla card: MODELLO/LOTTO sono contenitori multi-taglia/pezzo → aprono il dettaglio
+  // così scegli la TAGLIA/pezzo esatto (altrimenti openSellModal(g.ids) venderebbe un pezzo a caso,
+  // non la taglia voluta — bug segnalato). Prodotto singolo → apre direttamente la vendita.
+  const sellFromCard = (g: any) => {
+    if (g.isModel) { setModelDetail(g); return; }
+    if (g.isLot) { setLotDetail(g); return; }
+    openSellModal(g.ids, `${fullName(g.brand, g.name)}`, g);
+  };
+
   const confirmSell = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!productToSell) return;
@@ -5975,7 +5984,7 @@ export default function App() {
                                 <div className="w-px bg-[var(--fill)]" />
                               </>
                             )}
-                            <button onClick={() => openSellModal(g.ids, `${fullName(g.brand, g.name)}`, g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> {t('mag.sell')}</button>
+                            <button onClick={() => sellFromCard(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> {t('mag.sell')}</button>
                           </div>
                         )}
                       </div>
@@ -6027,10 +6036,10 @@ export default function App() {
                             {isAdmin ? (
                               <div className="grid grid-cols-2 gap-1.5">
                                 <button onClick={() => openShipping(g)} className="py-2 rounded-lg text-xs font-bold bg-[#8397aa]/15 text-[#9fb0bd] hover:bg-[#8397aa]/25 hover:text-[#9fb0bd] transition-colors flex items-center justify-center gap-1"><Package size={12} /> {t('mag.ship')}</button>
-                                <button onClick={() => openSellModal(g.ids, `${fullName(g.brand, g.name)}`, g)} className="py-2 rounded-lg text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1"><DollarSign size={12} /> {t('mag.sell')}</button>
+                                <button onClick={() => sellFromCard(g)} className="py-2 rounded-lg text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1"><DollarSign size={12} /> {t('mag.sell')}</button>
                               </div>
                             ) : (
-                              <button onClick={() => openSellModal(g.ids, `${fullName(g.brand, g.name)}`, g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> {t('mag.sell')}</button>
+                              <button onClick={() => sellFromCard(g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> {t('mag.sell')}</button>
                             )}
                             {MARKETPLACE_ENABLED && (
                             <button onClick={() => quickTogglePublic(g)}
