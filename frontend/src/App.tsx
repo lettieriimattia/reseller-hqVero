@@ -19,7 +19,7 @@ import {
   KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon, ScanFace,
   Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal, Send,
   Footprints, Shirt, Watch, ShoppingBag, Gem, Glasses, SprayCan, Smartphone,
-  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check, Share2, CalendarDays, MessageCircle
+  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check, Share2, CalendarDays, MessageCircle, SlidersHorizontal
 } from 'lucide-react';
 
 // ==========================================
@@ -473,6 +473,7 @@ export default function App() {
   const [magazzinoView, setMagazzinoView] = useState<'instock' | 'sold' | 'toship'>('instock');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
+  const [filtersOpen, setFiltersOpen] = useState(false); // pannello filtri collassabile (magazzino minimal)
   // PERIODO "Personal": pilota profitto personale + grafico dashboard + buyer/seller del periodo.
   const [personalPeriod, setPersonalPeriod] = useState<{ kind: '7d' | '30d' | 'year' | 'all' | 'custom'; from?: string; to?: string }>({ kind: 'all' });
   const [periodPickerOpen, setPeriodPickerOpen] = useState(false);
@@ -5625,66 +5626,98 @@ export default function App() {
                 )}
               </div>
 
-              {/* Ricerca + reparto — inline su desktop, impilati su mobile */}
-              <div className="flex flex-col lg:flex-row gap-2 lg:gap-3 lg:flex-1 lg:justify-end mt-2 lg:mt-0">
-                <div className="relative flex-1 lg:max-w-md">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)]" size={16} />
-                  <input type="text" placeholder={t('mag.searchPlaceholder')}
-                    value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#8397aa] outline-none" />
-                </div>
-                <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
-                  className="w-full lg:w-auto bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#8397aa] outline-none shrink-0">
-                  <option value="all">{t('mag.allDepartments')}</option>
-                  {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
+              {/* Ricerca + tasto Filtri (tutti i filtri sono dentro il pannello → look minimal) */}
+              {(() => {
+                const activeFilters = (filterCat !== 'all' ? 1 : 0) + (filterCondition !== 'all' ? 1 : 0) + ((filterPriceMin || filterPriceMax) ? 1 : 0) + (staleOnly ? 1 : 0);
+                return (
+                  <div className="flex gap-2 lg:gap-3 lg:flex-1 lg:justify-end mt-2 lg:mt-0">
+                    <div className="relative flex-1 lg:max-w-md">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)]" size={16} />
+                      <input type="text" placeholder={t('mag.searchPlaceholder')}
+                        value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#8397aa] outline-none" />
+                    </div>
+                    <button onClick={() => setFiltersOpen(o => !o)}
+                      className={`relative shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-sm font-bold transition-colors ${
+                        filtersOpen || activeFilters > 0 ? 'bg-[#8397aa]/15 border-[#8397aa]/40 text-[#8397aa]' : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                      }`}>
+                      <SlidersHorizontal size={16} />
+                      <span className="hidden sm:inline">{lang === 'en' ? 'Filters' : 'Filtri'}</span>
+                      {activeFilters > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-[#8397aa] text-white text-[10px] font-black flex items-center justify-center">{activeFilters}</span>
+                      )}
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
 
-            {magazzinoView === 'instock' && (
-              <div className="flex flex-col lg:flex-row lg:flex-wrap gap-2 lg:items-center">
-                {/* Ordina */}
-                <div className="flex flex-wrap gap-2 items-center">
-                  <span className="w-full lg:w-auto text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex items-center gap-1">
-                    <ArrowUpDown size={12} /> {t('mag.sortBy')}
-                  </span>
-                  {(['date','price','name'] as const).map(f => (
-                    <button key={f} onClick={() => {
-                      if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-                      else { setSortField(f); setSortDir('desc'); }
-                    }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                        sortField === f ? 'bg-[#8397aa] text-[var(--text)]' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
-                      }`}>
-                      {f === 'date' ? t('mag.sortDate') : f === 'price' ? t('mag.sortPrice') : f === 'name' ? t('mag.sortName') : t('mag.sortMargin')}
-                      {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
-                    </button>
-                  ))}
-                  {/* Filtro rapido: Fermi (+30gg in stock) */}
-                  <button onClick={() => setStaleOnly(s => !s)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                      staleOnly ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
-                    }`}>
-                    <AlertTriangle size={12} /> {t('dash.stale')}
+            {/* Pannello filtri collassabile: reparto + (in stock) ordina/condizione/prezzo/fermi. */}
+            {filtersOpen && (
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3.5 lg:p-4 flex flex-col gap-3.5">
+                {/* Reparto (vale per tutte le viste) */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest">{t('mag.allDepartments')}</span>
+                  <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#8397aa] outline-none">
+                    <option value="all">{t('mag.allDepartments')}</option>
+                    {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+
+                {magazzinoView === 'instock' && (
+                  <>
+                    {/* Ordina */}
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <span className="w-full lg:w-auto text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex items-center gap-1">
+                        <ArrowUpDown size={12} /> {t('mag.sortBy')}
+                      </span>
+                      {(['date','price','name'] as const).map(f => (
+                        <button key={f} onClick={() => {
+                          if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+                          else { setSortField(f); setSortDir('desc'); }
+                        }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                            sortField === f ? 'bg-[#8397aa] text-[var(--text)]' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                          }`}>
+                          {f === 'date' ? t('mag.sortDate') : f === 'price' ? t('mag.sortPrice') : f === 'name' ? t('mag.sortName') : t('mag.sortMargin')}
+                          {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
+                        </button>
+                      ))}
+                      {/* Filtro rapido: Fermi (+30gg in stock) */}
+                      <button onClick={() => setStaleOnly(s => !s)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                          staleOnly ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                        }`}>
+                        <AlertTriangle size={12} /> {t('dash.stale')}
+                      </button>
+                    </div>
+                    {/* Condizione + prezzo */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
+                        className="bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]">
+                        <option value="all">{t('mag.condition')}</option>
+                        <option value="DS">DS</option>
+                        <option value="VNDS">VNDS</option>
+                        <option value="Used">Used</option>
+                      </select>
+                      <input type="number" placeholder="Min €" value={filterPriceMin}
+                        onChange={(e: any) => setFilterPriceMin(e.target.value)}
+                        className="w-20 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]" />
+                      <input type="number" placeholder="Max €" value={filterPriceMax}
+                        onChange={(e: any) => setFilterPriceMax(e.target.value)}
+                        className="w-20 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]" />
+                    </div>
+                  </>
+                )}
+
+                {/* Azzera filtri (appare solo se qualcosa è attivo) */}
+                {(filterCat !== 'all' || filterCondition !== 'all' || filterPriceMin || filterPriceMax || staleOnly) && (
+                  <button onClick={() => { setFilterCat('all'); setFilterCondition('all'); setFilterPriceMin(''); setFilterPriceMax(''); setStaleOnly(false); }}
+                    className="self-start text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] flex items-center gap-1.5">
+                    <X size={13} /> {lang === 'en' ? 'Clear filters' : 'Azzera filtri'}
                   </button>
-                </div>
-                {/* Condizione */}
-                <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
-                  className="w-full lg:w-auto lg:ml-auto bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]">
-                  <option value="all">{t('mag.condition')}</option>
-                  <option value="DS">DS</option>
-                  <option value="VNDS">VNDS</option>
-                  <option value="Used">Used</option>
-                </select>
-                {/* Prezzo */}
-                <div className="flex gap-2">
-                  <input type="number" placeholder="Min €" value={filterPriceMin}
-                    onChange={(e: any) => setFilterPriceMin(e.target.value)}
-                    className="w-16 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]" />
-                  <input type="number" placeholder="Max €" value={filterPriceMax}
-                    onChange={(e: any) => setFilterPriceMax(e.target.value)}
-                    className="w-16 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]" />
-                </div>
+                )}
               </div>
             )}
             
