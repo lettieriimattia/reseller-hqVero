@@ -461,9 +461,9 @@ export default function App() {
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove('light', 'glass', 'lux', 'chrome', 'carbon');
-    // Il tema "Black" (dark) ora USA la colorazione CARBON FIBER (etichetta invariata):
-    // 'dark' come valore di stato → applica la classe .carbon. Ogni tema ha sempre una classe.
-    const cls = theme === 'dark' ? 'carbon' : theme;
+    // SCAMBIO look Scuro↔Cromato (richiesta utente): il "dark" attuale sembrava più cromato e
+    // viceversa. Ora l'etichetta "Scuro" (dark) applica il look .chrome e "Cromato" applica .carbon.
+    const cls = theme === 'dark' ? 'chrome' : theme === 'chrome' ? 'carbon' : theme;
     root.classList.add(cls);
     try { localStorage.setItem('hq-theme', theme); } catch { /* storage non disponibile */ }
   }, [theme]);
