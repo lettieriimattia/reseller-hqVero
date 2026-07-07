@@ -19,7 +19,7 @@ import {
   KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon, ScanFace,
   Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal, Send,
   Footprints, Shirt, Watch, ShoppingBag, Gem, Glasses, SprayCan, Smartphone,
-  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check, Share2, CalendarDays, MessageCircle, SlidersHorizontal
+  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check, Share2, CalendarDays, MessageCircle, SlidersHorizontal, ExternalLink
 } from 'lucide-react';
 
 // ==========================================
@@ -5850,7 +5850,11 @@ export default function App() {
                               </div>
                               <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition}</p>
                               {p.trackingCode
-                                ? <p className="text-[11px] text-blue-400 mt-0.5">📦 {p.trackingCode}{paid ? t('mag.awaitingBuyer') : ''}</p>
+                                ? <p className="text-[11px] text-blue-400 mt-0.5">
+                                    <a href={trackingPublicUrl(p.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                                      className="inline-flex items-center gap-1 hover:text-blue-300 font-semibold">
+                                      📦 {p.trackingCode} <ExternalLink size={9} className="opacity-70" />
+                                    </a>{paid ? t('mag.awaitingBuyer') : ''}</p>
                                 : <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{t('mag.toShipHint')}</p>}
                             </div>
                           </div>
@@ -5961,6 +5965,15 @@ export default function App() {
                               {daysBadge}{trackBadge}
                             </div>
                             <p className="text-xs text-[var(--text-soft)] mt-1">{g.isModel ? modelSub(g) : <>{g.size} · {g.condition} · <span className="text-[var(--text-muted)] font-semibold">{g.purchasePrice.toFixed(0)}€</span></>}</p>
+                            {/* Tracking: link DIRETTO al corriere (senza aprire lo shipping). Solo prodotto singolo. */}
+                            {g.trackingCode && !g.isModel && !g.isLot && (
+                              <a href={trackingPublicUrl(g.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                                className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 hover:text-blue-300 max-w-full">
+                                <Truck size={10} className="shrink-0" />
+                                <span className="truncate">{g.trackingCarrier && g.trackingCarrier !== 'Auto' ? `${g.trackingCarrier} · ` : ''}{g.trackingCode}</span>
+                                <ExternalLink size={9} className="shrink-0 opacity-70" />
+                              </a>
+                            )}
                             {shares?.length > 0 && <p className="text-[10px] text-blue-400/70 mt-0.5 truncate">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                             {!bulkMode && (
                               <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
@@ -6025,6 +6038,15 @@ export default function App() {
                         <div className="p-4 flex-1 flex flex-col items-start text-left">
                           <p className="font-bold text-base leading-tight line-clamp-2 w-full tracking-tight">{fullName(g.brand, g.name)}</p>
                           <p className="text-sm text-[var(--text-muted)] mt-1.5">{g.isModel ? modelSub(g) : `${g.size} · ${g.condition}`}</p>
+                          {/* Tracking: link DIRETTO al corriere (senza aprire lo shipping). Solo prodotto singolo. */}
+                          {g.trackingCode && !g.isModel && !g.isLot && (
+                            <a href={trackingPublicUrl(g.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                              className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 hover:text-blue-300 max-w-full">
+                              <Truck size={11} className="shrink-0" />
+                              <span className="truncate">{g.trackingCarrier && g.trackingCarrier !== 'Auto' ? `${g.trackingCarrier} · ` : ''}{g.trackingCode}</span>
+                              <ExternalLink size={10} className="shrink-0 opacity-70" />
+                            </a>
+                          )}
                           <p className="text-2xl font-black text-[var(--text)] mt-auto pt-2 num tracking-tight leading-none">{g.purchasePrice.toFixed(0)}€</p>
                           {shares?.length > 0 && <p className="text-[11px] text-blue-400/70 mt-1.5 truncate max-w-full">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                           {!bulkMode && (
@@ -7968,7 +7990,8 @@ export default function App() {
                           onMouseDown={() => startPieceLongPress(p.id)} onMouseUp={cancelLongPress} onMouseLeave={cancelLongPress}
                           onTouchStart={() => startPieceLongPress(p.id)} onTouchEnd={cancelLongPress}
                           onClick={() => { if (longPressFired.current) { longPressFired.current = false; return; } if (selecting) togglePieceSelection(p.id); }}
-                          className={`flex items-center justify-between gap-2 rounded-xl p-3 select-none transition-all ${picked ? 'bg-[#8397aa]/15 ring-1 ring-[#8397aa]/60' : 'bg-[var(--surface-2)]'} ${selecting ? 'cursor-pointer' : ''}`}>
+                          className={`flex flex-col gap-2 rounded-xl p-3 select-none transition-all ${picked ? 'bg-[#8397aa]/15 ring-1 ring-[#8397aa]/60' : 'bg-[var(--surface-2)]'} ${selecting ? 'cursor-pointer' : ''}`}>
+                          <div className="flex items-center justify-between gap-2">
                           {selecting && (
                             <div className={`shrink-0 w-5 h-5 rounded-md border flex items-center justify-center ${picked ? 'bg-[#8397aa] border-[#8397aa]' : 'border-[var(--border-2)]'}`}>
                               {picked && <Check size={14} className="text-white" />}
@@ -7977,14 +8000,44 @@ export default function App() {
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold truncate">{fullName(p.brand, p.name)}</p>
                             <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition} · {p.purchasePrice?.toFixed(0)}€</p>
+                            {p.trackingCode && (
+                              <a href={trackingPublicUrl(p.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                                className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 hover:text-blue-300 max-w-full">
+                                <Truck size={10} className="shrink-0" /><span className="truncate">{p.trackingCarrier && p.trackingCarrier !== 'Auto' ? `${p.trackingCarrier} · ` : ''}{p.trackingCode}</span><ExternalLink size={9} className="shrink-0 opacity-70" />
+                              </a>
+                            )}
                           </div>
                           {!selecting && (
                           <div className="flex gap-1.5 shrink-0">
                             <button onClick={() => { setLotDetail(null); openEditModal({ ...p, ids: [p.id], quantity: 1, isLot: false }); }}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)]">Modifica</button>
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)]">{t('mag.edit')}</button>
                             <button onClick={() => { setLotDetail(null); openSellModal([p.id], `${fullName(p.brand, p.name)}`, p); }}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-500/15 text-green-400">Vendi</button>
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-500/15 text-green-400">{t('mag.sell')}</button>
                           </div>
+                          )}
+                          </div>
+                          {/* Azioni per QUESTO pezzo (traccia / da spedire / spedisci / elimina). */}
+                          {!selecting && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <button onClick={(e) => { e.stopPropagation(); setLotDetail(null); openTrackingModal({ ...p, ids: [p.id] }); }}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors ${p.trackingCode ? 'bg-blue-500/15 text-blue-400' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
+                                <Truck size={11} /> {t('mag.track')}
+                              </button>
+                              <button onClick={(e) => { e.stopPropagation(); setLotDetail(null); toggleToShip({ ...p, ids: [p.id] }, !p.toShip); }}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors ${p.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
+                                <Package size={11} /> {p.toShip ? t('mag.inList') : t('dash.toShip')}
+                              </button>
+                              {isAdminUser && (
+                                <button onClick={(e) => { e.stopPropagation(); setLotDetail(null); openShipping({ ...p, ids: [p.id] }); }}
+                                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-[#8397aa]/15 text-[#9fb0bd] hover:bg-[#8397aa]/25 transition-colors">
+                                  <Package size={11} /> {t('mag.ship')}
+                                </button>
+                              )}
+                              <button onClick={(e) => { e.stopPropagation(); setLotDetail(null); setSwipeDelete({ ...p, ids: [p.id], quantity: 1 }); }}
+                                className="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-[var(--fill)] text-[var(--text-soft)] hover:text-red-400 transition-colors">
+                                <Trash2 size={11} /> {t('common.delete')}
+                              </button>
+                            </div>
                           )}
                         </div>
                         );
