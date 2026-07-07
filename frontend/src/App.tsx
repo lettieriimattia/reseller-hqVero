@@ -5700,12 +5700,6 @@ export default function App() {
                       {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
                     </button>
                   ))}
-                  <button onClick={() => setStaleOnly(s => !s)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                      staleOnly ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
-                    }`}>
-                    <AlertTriangle size={12} /> {t('dash.stale')}
-                  </button>
                 </div>
                 <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
                   className="lg:ml-auto bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]">
@@ -5757,12 +5751,6 @@ export default function App() {
                           {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
                         </button>
                       ))}
-                      <button onClick={() => setStaleOnly(s => !s)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                          staleOnly ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
-                        }`}>
-                        <AlertTriangle size={12} /> {t('dash.stale')}
-                      </button>
                     </div>
                     {/* Condizione + prezzo */}
                     <div className="flex flex-wrap items-center gap-2">
