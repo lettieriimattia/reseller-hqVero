@@ -3675,6 +3675,14 @@ export default function App() {
     if (g.isLot) { setLotDetail(g); return; }
     openSellModal(g.ids, `${fullName(g.brand, g.name)}`, g);
   };
+  // Come sellFromCard ma generico: se la card è un contenitore (modello/lotto) apre il dettaglio
+  // per scegliere la TAGLIA/pezzo esatto; altrimenti esegue l'azione sul prodotto singolo.
+  // Così ogni azione (vendi, traccia, spedisci, da spedire) colpisce sempre il pezzo GIUSTO.
+  const cardOr = (g: any, fn: (g: any) => void) => {
+    if (g.isModel) { setModelDetail(g); return; }
+    if (g.isLot) { setLotDetail(g); return; }
+    fn(g);
+  };
 
   const confirmSell = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -5980,7 +5988,7 @@ export default function App() {
                           <div className="flex border-t border-[var(--border)]">
                             {isAdmin && (
                               <>
-                                <button onClick={() => openShipping(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[#9fb0bd] hover:bg-[var(--surface-2)]/15"><Package size={13} /> {t('mag.ship')}</button>
+                                <button onClick={() => cardOr(g, openShipping)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[#9fb0bd] hover:bg-[var(--surface-2)]/15"><Package size={13} /> {t('mag.ship')}</button>
                                 <div className="w-px bg-[var(--fill)]" />
                               </>
                             )}
@@ -6029,13 +6037,13 @@ export default function App() {
                         {!bulkMode && (
                           <div className="border-t border-[var(--border)] p-2.5 flex flex-col gap-1.5">
                             <div className="grid grid-cols-2 gap-1.5">
-                              <button onClick={() => openTrackingModal(g)} className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.trackingCode ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> {t('mag.track')}</button>
-                              <button onClick={() => toggleToShip(g, !g.toShip)}
+                              <button onClick={() => cardOr(g, openTrackingModal)} className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.trackingCode ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> {t('mag.track')}</button>
+                              <button onClick={() => cardOr(g, gg => toggleToShip(gg, !gg.toShip))}
                                 className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> {g.toShip ? t('mag.inList') : t('dash.toShip')}</button>
                             </div>
                             {isAdmin ? (
                               <div className="grid grid-cols-2 gap-1.5">
-                                <button onClick={() => openShipping(g)} className="py-2 rounded-lg text-xs font-bold bg-[#8397aa]/15 text-[#9fb0bd] hover:bg-[#8397aa]/25 hover:text-[#9fb0bd] transition-colors flex items-center justify-center gap-1"><Package size={12} /> {t('mag.ship')}</button>
+                                <button onClick={() => cardOr(g, openShipping)} className="py-2 rounded-lg text-xs font-bold bg-[#8397aa]/15 text-[#9fb0bd] hover:bg-[#8397aa]/25 hover:text-[#9fb0bd] transition-colors flex items-center justify-center gap-1"><Package size={12} /> {t('mag.ship')}</button>
                                 <button onClick={() => sellFromCard(g)} className="py-2 rounded-lg text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1"><DollarSign size={12} /> {t('mag.sell')}</button>
                               </div>
                             ) : (
@@ -7866,7 +7874,8 @@ export default function App() {
                   const ids: string[] = s.group.ids || [];
                   const sel = ids.length > 0 && ids.every((id: string) => selectedPieceIds.has(id));
                   return (
-                  <div key={i} className={`flex items-center gap-2.5 rounded-2xl border px-3 py-3 transition-colors ${sel ? 'bg-[var(--accent)]/12 border-[var(--accent)]' : 'bg-[var(--surface-2)] border-[var(--border)]'}`}>
+                  <div key={i} className={`flex flex-col gap-2 rounded-2xl border px-3 py-3 transition-colors ${sel ? 'bg-[var(--accent)]/12 border-[var(--accent)]' : 'bg-[var(--surface-2)] border-[var(--border)]'}`}>
+                    <div className="flex items-center gap-2.5">
                     <button onClick={() => setSelectedPieceIds(prev => { setBulkMode(true); const next = new Set(prev); if (sel) ids.forEach(id => next.delete(id)); else ids.forEach(id => next.add(id)); return next; })}
                       aria-label={t('mag.select')}
                       className={`w-6 h-6 shrink-0 rounded-lg border-2 flex items-center justify-center transition-colors ${sel ? 'bg-[var(--accent)] border-[var(--accent)] text-white' : 'border-[var(--border-2)] text-transparent'}`}>
@@ -7893,6 +7902,28 @@ export default function App() {
                     </button>
                     <button onClick={() => { setModelDetail(null); openSellModal(s.group.ids, `${fullName(modelDetail.brand, modelDetail.name)}`, s.group); }}
                       className="px-3 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold flex items-center gap-1.5"><DollarSign size={13} /> {t('mag.sell')}</button>
+                    </div>
+                    {/* Azioni per QUESTA taglia (traccia / da spedire / spedisci / elimina) → mai sul pezzo sbagliato. */}
+                    <div className="flex items-center gap-1.5 flex-wrap pl-[2.1rem]">
+                      <button onClick={() => { setModelDetail(null); openTrackingModal(s.group); }}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors ${s.group.trackingCode ? 'bg-blue-500/15 text-blue-400' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
+                        <Truck size={11} /> {t('mag.track')}
+                      </button>
+                      <button onClick={() => { setModelDetail(null); toggleToShip(s.group, !s.group.toShip); }}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors ${s.group.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
+                        <Package size={11} /> {s.group.toShip ? t('mag.inList') : t('dash.toShip')}
+                      </button>
+                      {isAdminUser && (
+                        <button onClick={() => { setModelDetail(null); openShipping(s.group); }}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-[#8397aa]/15 text-[#9fb0bd] hover:bg-[#8397aa]/25 transition-colors">
+                          <Package size={11} /> {t('mag.ship')}
+                        </button>
+                      )}
+                      <button onClick={() => { setModelDetail(null); setSwipeDelete(s.group); }}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-[var(--fill)] text-[var(--text-soft)] hover:text-red-400 transition-colors">
+                        <Trash2 size={11} /> {t('common.delete')}
+                      </button>
+                    </div>
                   </div>
                   );
                 })}
