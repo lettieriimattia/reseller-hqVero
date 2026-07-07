@@ -119,6 +119,7 @@ export const sellProductSchema = z.object({
   platform: z.enum(['Vinted', 'Subito', 'StockX', 'eBay', 'Privato']),
   fees: z.number().nonnegative().max(1000000),
   customer: z.string().max(120).optional().nullable(), // identificativo cliente (facoltativo)
+  soldDate: z.string().optional().nullable(), // data vendita (facoltativa; default = adesso)
 });
 
 // ==========================================

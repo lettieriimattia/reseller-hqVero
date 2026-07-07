@@ -686,8 +686,14 @@ router.put('/:id', validate(sellProductSchema), async (req: AuthRequest, res: Re
       return res.status(409).json({ error: 'Prodotto riservato da un altro utente.' });
     }
 
-    const { salePrice, platform, fees, customer } = req.body;
+    const { salePrice, platform, fees, customer, soldDate } = req.body;
     const cust = typeof customer === 'string' && customer.trim() ? customer.trim().slice(0, 120) : null;
+    // Data vendita: default = adesso. Se il client ne passa una valida (e non futura), usiamo quella.
+    let soldAt = new Date();
+    if (soldDate) {
+      const d = new Date(soldDate);
+      if (!isNaN(d.getTime()) && d.getTime() <= Date.now() + 86400000) soldAt = d;
+    }
 
     // ACID transaction
     const updated = await prisma.$transaction(async tx => {
@@ -699,7 +705,7 @@ router.put('/:id', validate(sellProductSchema), async (req: AuthRequest, res: Re
         where: { id: req.params.id },
         data: {
           salePrice, platform, fees, customer: cust,
-          status: 'VENDUTO', soldAt: new Date(),
+          status: 'VENDUTO', soldAt,
           reservedBy: null, reservedAt: null,
         },
       });

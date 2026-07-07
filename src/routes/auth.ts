@@ -809,13 +809,33 @@ router.put('/password', authenticate, sensitiveLimiter, async (req: AuthRequest,
 // ==========================================
 router.put('/profile', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const raw = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
-    if (raw.length < 2 || raw.length > 15) {
-      return res.status(400).json({ error: 'Il nome deve avere tra 2 e 15 caratteri.' });
+    const rawIn = typeof req.body?.name === 'string' ? req.body.name : '';
+    // Pulizia: no caratteri di controllo, no emoji/simboli (solo lettere, numeri, spazio, . ' -),
+    // spazi multipli collassati in uno solo, trim.
+    const name = rawIn
+      .replace(/[\x00-\x1f\x7f]/g, '')
+      .replace(/[^\p{L}\p{N} .'’-]/gu, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (name.length < 2 || name.length > 15) {
+      return res.status(400).json({ error: 'Il nome deve avere tra 2 e 15 caratteri (lettere/numeri).' });
     }
-    // Niente caratteri di controllo / newline nel nome visualizzato.
-    const name = raw.replace(/[\x00-\x1f\x7f]/g, '');
-    if (name.length < 2) return res.status(400).json({ error: 'Nome non valido.' });
+
+    // Niente nomi doppi tra i soci dello STESSO magazzino: crea confusione nella ripartizione.
+    const myWh = await prisma.membership.findMany({ where: { userId: req.user!.userId }, select: { warehouseId: true } });
+    const whIds = myWh.map(m => m.warehouseId);
+    if (whIds.length > 0) {
+      const clash = await prisma.membership.findFirst({
+        where: {
+          warehouseId: { in: whIds },
+          userId: { not: req.user!.userId },
+          user: { name: { equals: name, mode: 'insensitive' } },
+        },
+        select: { userId: true },
+      });
+      if (clash) return res.status(409).json({ error: 'Un socio di un tuo magazzino usa già questo nome. Scegline uno diverso.' });
+    }
+
     const user = await prisma.user.update({
       where: { id: req.user!.userId },
       data: { name },

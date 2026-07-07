@@ -19,7 +19,7 @@ import {
   KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon, ScanFace,
   Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal, Send,
   Footprints, Shirt, Watch, ShoppingBag, Gem, Glasses, SprayCan, Smartphone,
-  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check, Share2
+  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check, Share2, CalendarDays, MessageCircle
 } from 'lucide-react';
 
 // ==========================================
@@ -61,6 +61,22 @@ function buyersFromSales(sales: any[]): { name: string; qty: number; sales: any[
   }
   for (const b of Object.values(map)) b.sales.sort((a: any, c: any) => new Date(c.soldAt || 0).getTime() - new Date(a.soldAt || 0).getTime());
   return Object.values(map).sort((a, b) => b.qty - a.qty);
+}
+
+// Avatar soci: colore deterministico dall'iniziale del nome (stesso nome = stesso colore).
+// Palette in armonia col tema (toni saturi ma non sgargianti); testo bianco sopra.
+const AVATAR_COLORS = ['#8397aa', '#c0705a', '#5a9e8f', '#a0729e', '#c9a15a', '#5f86b3', '#9a6b8f', '#6f9a5a', '#b3705f', '#5aa0a0'];
+function avatarColor(name?: string): string {
+  const s = (name || '').trim() || '?';
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+function avatarInitials(name?: string): string {
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
 // Tutte le chiamate API usano credentials: 'include' per inviare i cookies httpOnly
@@ -548,6 +564,7 @@ export default function App() {
   const [sellPlatform, setSellPlatform] = useState('Vinted');
   const [sellPaymentMethod, setSellPaymentMethod] = useState('Nessuna Fee (Contanti/Bonifico)');
   const [sellCustomer, setSellCustomer] = useState(''); // identificativo cliente (facoltativo)
+  const [sellDate, setSellDate] = useState(''); // data vendita (default: oggi); modificabile al volo
   const [sellFees, setSellFees] = useState('0');
   // Costi extra per la vendita (scatola, etichetta spedizione, dogana…): voci modificabili,
   // la loro somma viene SOTTRATTA dal ricavo (aggiunta alle fees del prodotto).
@@ -588,6 +605,10 @@ export default function App() {
   const [modelDetail, setModelDetail] = useState<any>(null); // dettaglio MODELLO: suddivisione per taglia
   const [zoomPhoto, setZoomPhoto] = useState<string | null>(null); // foto ingrandita (lightbox magazzino)
   const [expandedSoldKey, setExpandedSoldKey] = useState<string | null>(null); // card venduto aperta (tendina compratori)
+  // Modifica INLINE della singola vendita (prezzo/cliente/data/fee) dentro la tendina.
+  const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
+  const [saleEdit, setSaleEdit] = useState<{ price: string; customer: string; date: string; fees: string }>({ price: '', customer: '', date: '', fees: '' });
+  const [saleEditSaving, setSaleEditSaving] = useState(false);
   // Pubblicazione nel marketplace dalla modale di modifica
   const [editIsPublic, setEditIsPublic] = useState(false);
   const [editPublicPrice, setEditPublicPrice] = useState('');
@@ -799,6 +820,7 @@ export default function App() {
   const [filterPriceMin, setFilterPriceMin] = useState('');
   const [filterPriceMax, setFilterPriceMax] = useState('');
   const [staleOnly, setStaleOnly] = useState(false); // filtro rapido "Fermi" (in stock da +30gg)
+  const [soldPeriod, setSoldPeriod] = useState<'all' | '7d' | '30d' | 'month' | 'year'>('all'); // filtro periodo sui venduti
 
   // ----- DELETE PRODOTTO -----
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -2354,7 +2376,11 @@ export default function App() {
 
   const searchedProducts = activeProducts.filter(p => {
     const search = searchTerm.toLowerCase();
-    return (p.name && p.name.toLowerCase().includes(search)) || (p.brand && p.brand.toLowerCase().includes(search));
+    // Ricerca per nome/brand e anche per CLIENTE (es. "tutto ciò che ho venduto a Mario") e fornitore.
+    return (p.name && p.name.toLowerCase().includes(search))
+      || (p.brand && p.brand.toLowerCase().includes(search))
+      || (p.customer && p.customer.toLowerCase().includes(search))
+      || (p.supplier && p.supplier.toLowerCase().includes(search));
   });
 
   const groupedInStockArray = useMemo(() => {
@@ -2484,8 +2510,20 @@ export default function App() {
     return arr;
   }, [products, expenses, reportMonth, dateLocale]);
 
+  // Filtro periodo sui venduti: confronta soldAt con una soglia in giorni / mese / anno correnti.
+  const inSoldPeriod = (soldAt: any): boolean => {
+    if (soldPeriod === 'all') return true;
+    if (!soldAt) return false;
+    const d = new Date(soldAt); const now = new Date();
+    if (soldPeriod === '7d') return d.getTime() >= now.getTime() - 7 * 86400000;
+    if (soldPeriod === '30d') return d.getTime() >= now.getTime() - 30 * 86400000;
+    if (soldPeriod === 'month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    if (soldPeriod === 'year') return d.getFullYear() === now.getFullYear();
+    return true;
+  };
+
   // Venduti: SOLO gli articoli realmente venduti (i PAGATI in attesa stanno in "Da spedire").
-  const groupedSoldArray = Object.values(searchedProducts.filter(p => p.status === 'VENDUTO').reduce((acc, p) => {
+  const groupedSoldArray = Object.values(searchedProducts.filter(p => p.status === 'VENDUTO' && inSoldPeriod(p.soldAt)).reduce((acc, p) => {
     const cat = p.category || 'Scarpe';
     const plat = p.platform || 'Privato';
     const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.salePrice}-${plat}`;
@@ -3617,6 +3655,7 @@ export default function App() {
     setSellQuantity('1');
     setSellPrice('');
     setSellCustomer('');
+    setSellDate(new Date().toISOString().slice(0, 10)); // default: oggi
     setSellExtraCosts([]); setSellExtraOpen(false);
     setSellTrackingCode(''); setSellTrackingCarrier('Auto');
     setSellModalOpen(true);
@@ -3634,11 +3673,13 @@ export default function App() {
     const extraTotal = sellExtraCosts.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0);
     const unitFees = ((parseFloat(sellFees) || 0) + extraTotal) / qtyToProcess;
     
+    // Data vendita: default oggi, ma se l'utente la cambia la inviamo (soldDate).
+    const soldDate = sellDate && sellDate !== new Date().toISOString().slice(0, 10) ? sellDate : undefined;
     let hasError = false;
     for (const id of idsToProcess) {
       const { ok } = await apiCall(`/products/${id}`, {
         method: 'PUT',
-        body: JSON.stringify({ salePrice: unitSalePrice, platform: sellPlatform, fees: unitFees, customer: sellCustomer.trim() || null }),
+        body: JSON.stringify({ salePrice: unitSalePrice, platform: sellPlatform, fees: unitFees, customer: sellCustomer.trim() || null, ...(soldDate ? { soldDate } : {}) }),
       });
       if (!ok) hasError = true;
     }
@@ -3717,6 +3758,43 @@ export default function App() {
     setExpandedSoldKey(null);
     // Pezzo isolato: niente logica lotto/gruppo, opera solo su questo id.
     openEditModal({ ...prod, ids: [prod.id], quantity: 1, lotName: null, isLot: false, isModel: false });
+  };
+
+  // Modifica INLINE veloce (senza aprire il modale): apre l'editor sotto la riga vendita.
+  const startInlineSaleEdit = (s: any) => {
+    const toDate = (v: any) => { if (!v) return ''; try { return new Date(v).toISOString().slice(0, 10); } catch { return ''; } };
+    setSaleEdit({
+      price: s.salePrice != null ? String(s.salePrice) : '',
+      customer: s.customer || '',
+      date: toDate(s.soldAt),
+      fees: s.fees != null ? String(s.fees) : '0',
+    });
+    setEditingSaleId(s.id);
+  };
+  const saveInlineSaleEdit = async (id: string) => {
+    const prod: any = products.find((p: any) => p.id === id);
+    if (!prod) return;
+    setSaleEditSaving(true);
+    const { ok, data } = await apiCall(`/products/${id}/edit`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        category: prod.category, brand: prod.brand || prod.name || 'Articolo', name: prod.name,
+        size: prod.size || undefined, condition: prod.condition || undefined,
+        purchasePrice: prod.purchasePrice,
+        salePrice: saleEdit.price.trim() ? parseFloat(saleEdit.price) : undefined,
+        fees: saleEdit.fees.trim() ? parseFloat(saleEdit.fees) : 0,
+        customer: saleEdit.customer.trim() || null,
+        soldDate: saleEdit.date || null,
+      }),
+    });
+    setSaleEditSaving(false);
+    if (ok) {
+      setEditingSaleId(null);
+      await fetchProducts();
+      showToast(lang === 'en' ? 'Saved' : 'Salvato');
+    } else {
+      showToast(data?.error || 'Errore modifica', 'err');
+    }
   };
 
   // Toggle rapido pubblico/privato dalla card del magazzino (senza aprire la modifica)
@@ -5882,7 +5960,20 @@ export default function App() {
                   </div>
                 )
               ) : (
-                groupedSoldArray.length === 0 ? (
+                <>
+                {/* Filtro periodo sui venduti (7g / 30g / mese / anno). Sempre visibile, anche a 0 risultati. */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+                  {([['all', lang === 'en' ? 'All' : 'Tutti'], ['7d', '7g'], ['30d', '30g'], ['month', lang === 'en' ? 'Month' : 'Mese'], ['year', lang === 'en' ? 'Year' : 'Anno']] as const).map(([val, label]) => (
+                    <button key={val} onClick={() => setSoldPeriod(val as any)}
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border ${soldPeriod === val ? 'bg-[#8397aa] text-white border-[#8397aa]' : 'bg-[var(--surface)] text-[var(--text-soft)] border-[var(--border-2)] hover:text-[var(--text)]'}`}>
+                      {label}
+                    </button>
+                  ))}
+                  {(soldPeriod !== 'all' || searchTerm) && (
+                    <span className="shrink-0 ml-auto text-[10px] text-[var(--text-faint)] font-semibold whitespace-nowrap">{groupedSoldArray.reduce((a: number, g: any) => a + g.quantity, 0)} {lang === 'en' ? 'sold' : 'venduti'}</span>
+                  )}
+                </div>
+                {groupedSoldArray.length === 0 ? (
                   <div className="text-center py-16 px-5 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
                     <CheckCircle className="mx-auto text-[var(--text-faint)] mb-4" size={40} />
                     <p className="text-[var(--text-muted)] font-semibold">{t('mag.soldNoneTitle')}</p>
@@ -6035,20 +6126,61 @@ export default function App() {
                                   </div>
                                   <div className="mt-1.5 space-y-1">
                                     {b.sales.map((s: any) => (
-                                      <div key={s.id} className="flex items-center justify-between gap-2 text-[11px]">
-                                        <span className="text-[var(--text-faint)]">
-                                          {s.soldAt ? new Date(s.soldAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' }) : '—'} · {s.salePrice.toFixed(0)}€
-                                        </span>
-                                        <div className="flex items-center gap-1 shrink-0">
-                                          <button onClick={(e) => { e.stopPropagation(); openEditPiece(s.id); }}
-                                            className="flex items-center gap-1 text-[var(--text-soft)] hover:text-[var(--text)] font-semibold px-2 py-0.5 rounded-lg hover:bg-[var(--fill)] transition-colors">
-                                            <Edit size={11} /> {t('mag.edit')}
-                                          </button>
-                                          <button onClick={(e) => { e.stopPropagation(); handleReturnIds([s.id], `${fullName(g.brand, g.name)}`); }}
-                                            className="flex items-center gap-1 text-blue-400 hover:text-blue-300 font-semibold px-2 py-0.5 rounded-lg hover:bg-blue-500/10 transition-colors">
-                                            ↩ {t('mag.return')}
-                                          </button>
+                                      <div key={s.id}>
+                                        <div className="flex items-center justify-between gap-2 text-[11px]">
+                                          <span className="text-[var(--text-faint)]">
+                                            {s.soldAt ? new Date(s.soldAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' }) : '—'} · {s.salePrice.toFixed(0)}€
+                                          </span>
+                                          <div className="flex items-center gap-1 shrink-0">
+                                            <button onClick={(e) => { e.stopPropagation(); editingSaleId === s.id ? setEditingSaleId(null) : startInlineSaleEdit(s); }}
+                                              className={`flex items-center gap-1 font-semibold px-2 py-0.5 rounded-lg transition-colors ${editingSaleId === s.id ? 'text-[#8397aa] bg-[#8397aa]/10' : 'text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--fill)]'}`}>
+                                              <Edit size={11} /> {t('mag.edit')}
+                                            </button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleReturnIds([s.id], `${fullName(g.brand, g.name)}`); }}
+                                              className="flex items-center gap-1 text-blue-400 hover:text-blue-300 font-semibold px-2 py-0.5 rounded-lg hover:bg-blue-500/10 transition-colors">
+                                              ↩ {t('mag.return')}
+                                            </button>
+                                          </div>
                                         </div>
+                                        {/* Editor INLINE: prezzo / fee / cliente / data — senza aprire il modale. */}
+                                        {editingSaleId === s.id && (
+                                          <div className="mt-2 p-2.5 rounded-xl bg-[var(--surface)] border border-[#8397aa]/25 space-y-2" onClick={e => e.stopPropagation()}>
+                                            <div className="grid grid-cols-2 gap-2">
+                                              <div>
+                                                <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">Prezzo €</label>
+                                                <input type="number" step="0.01" inputMode="decimal" value={saleEdit.price}
+                                                  onChange={e => setSaleEdit(v => ({ ...v, price: e.target.value }))}
+                                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                                              </div>
+                                              <div>
+                                                <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">Fee €</label>
+                                                <input type="number" step="0.01" inputMode="decimal" value={saleEdit.fees}
+                                                  onChange={e => setSaleEdit(v => ({ ...v, fees: e.target.value }))}
+                                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                                              </div>
+                                              <div>
+                                                <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{t('edit.saleDate')}</label>
+                                                <input type="date" value={saleEdit.date} max={new Date().toISOString().slice(0, 10)}
+                                                  onChange={e => setSaleEdit(v => ({ ...v, date: e.target.value }))}
+                                                  className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa] appearance-none" />
+                                              </div>
+                                              <div>
+                                                <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">Cliente</label>
+                                                <input type="text" value={saleEdit.customer} maxLength={120} placeholder="—"
+                                                  onChange={e => setSaleEdit(v => ({ ...v, customer: e.target.value }))}
+                                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                                              </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <button onClick={() => setEditingSaleId(null)}
+                                                className="flex-1 py-1.5 rounded-lg border border-[var(--border-2)] text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)]">{t('common.cancel')}</button>
+                                              <button onClick={() => saveInlineSaleEdit(s.id)} disabled={saleEditSaving}
+                                                className="flex-1 py-1.5 rounded-lg bg-[#8397aa] hover:bg-[#6f8394] text-white text-[11px] font-black disabled:opacity-50 flex items-center justify-center gap-1">
+                                                {saleEditSaving ? <Loader2 size={12} className="animate-spin" /> : t('common.save')}
+                                              </button>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -6060,7 +6192,8 @@ export default function App() {
                       );
                     })}</div>;
                   })()
-                )
+                )}
+                </>
               )}
             </div>
           </div>
@@ -6249,7 +6382,7 @@ export default function App() {
                     const maxP = Math.max(...Object.values(sociProfits).map((s: any) => s.profit), 1);
                     return (
                       <div key={idx} className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${socio.name === user.name ? 'bg-[var(--fill)] border border-[var(--border)]' : ''}`}>
-                        <div className="w-7 h-7 rounded-full bg-[var(--fill)] flex items-center justify-center text-xs font-semibold text-[var(--text-muted)] shrink-0">{socio.name[0]?.toUpperCase()}</div>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: avatarColor(socio.name) }}>{avatarInitials(socio.name)}</div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1.5">
                             <span className="font-semibold text-sm truncate">{socio.name}</span>
@@ -6714,8 +6847,8 @@ export default function App() {
                             <div className="flex items-center justify-between mb-1.5">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm w-5">{medals[idx] || ''}</span>
-                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center font-black text-[10px]">
-                                  {socio.name[0]?.toUpperCase()}
+                                <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-[9px] text-white" style={{ backgroundColor: avatarColor(socio.name) }}>
+                                  {avatarInitials(socio.name)}
                                 </div>
                                 <span className="text-sm font-bold">{socio.name}</span>
                                 {socio.name === user.name && (
@@ -9943,6 +10076,13 @@ export default function App() {
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><Users size={11} /> Cliente <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">(facoltativo)</span></label>
                 <input type="text" value={sellCustomer} onChange={e => setSellCustomer(e.target.value)} placeholder="Nome, @social o codice cliente…" maxLength={120}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+              </div>
+
+              {/* Data vendita (default: oggi). Cambiala qui invece di correggerla dopo dall'Edit. */}
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><CalendarDays size={11} /> {t('edit.saleDate')}</label>
+                <input type="date" value={sellDate} onChange={e => setSellDate(e.target.value)} max={new Date().toISOString().slice(0, 10)}
+                  className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none appearance-none" />
               </div>
 
               {/* Costi extra alla vendita (scatola, etichetta spedizione, dogana…): tendina con
