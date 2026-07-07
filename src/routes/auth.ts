@@ -805,6 +805,30 @@ router.put('/password', authenticate, sensitiveLimiter, async (req: AuthRequest,
 });
 
 // ==========================================
+// PUT /auth/profile — modifica il proprio nome
+// ==========================================
+router.put('/profile', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const raw = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    if (raw.length < 2 || raw.length > 60) {
+      return res.status(400).json({ error: 'Il nome deve avere tra 2 e 60 caratteri.' });
+    }
+    // Niente caratteri di controllo / newline nel nome visualizzato.
+    const name = raw.replace(/[\x00-\x1f\x7f]/g, '');
+    if (name.length < 2) return res.status(400).json({ error: 'Nome non valido.' });
+    const user = await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { name },
+    });
+    await audit({ action: 'PROFILE_UPDATE', userId: user.id, req, metadata: { field: 'name' } });
+    res.json({ user: { id: user.id, name: user.name, email: user.email } });
+  } catch (err: any) {
+    logger.error('Errore modifica profilo', { err: err.message });
+    res.status(500).json({ error: 'Errore modifica profilo' });
+  }
+});
+
+// ==========================================
 // DELETE /auth/delete-account — elimina account con verifica password
 // ==========================================
 router.delete('/delete-account', authenticate, async (req: AuthRequest, res: Response) => {

@@ -810,6 +810,10 @@ export default function App() {
   const [changePwdNew, setChangePwdNew] = useState('');
   const [changePwdConfirm, setChangePwdConfirm] = useState('');
   const [changePwdLoading, setChangePwdLoading] = useState(false);
+  // Modifica del proprio nome visualizzato
+  const [editNameOpen, setEditNameOpen] = useState(false);
+  const [editNameValue, setEditNameValue] = useState('');
+  const [editNameLoading, setEditNameLoading] = useState(false);
 
   // ----- BULK ACTIONS -----
   const [bulkMode, setBulkMode] = useState(false);
@@ -2037,6 +2041,7 @@ export default function App() {
       [twoFaDisableOpen, () => setTwoFaDisableOpen(false)],
       [twoFaSetupOpen, () => setTwoFaSetupOpen(false)],
       [changePwdOpen, () => setChangePwdOpen(false)],
+      [editNameOpen, () => setEditNameOpen(false)],
       [trackingModalOpen, () => setTrackingModalOpen(false)],
       [sourcingOpen, () => setSourcingOpen(false)],
       [showProfitSharesModal, () => setShowProfitSharesModal(false)],
@@ -3703,6 +3708,17 @@ export default function App() {
     setEditModalOpen(true);
   };
 
+  // Modifica di UNA SINGOLA vendita (dalla tendina compratori): apre l'edit sul pezzo esatto,
+  // così ogni vendita mantiene la SUA data/cliente/prezzo (i venduti identici sono raggruppati:
+  // un edit di gruppo scriverebbe la stessa data su tutti i pezzi).
+  const openEditPiece = (id: string) => {
+    const prod: any = products.find((p: any) => p.id === id);
+    if (!prod) return;
+    setExpandedSoldKey(null);
+    // Pezzo isolato: niente logica lotto/gruppo, opera solo su questo id.
+    openEditModal({ ...prod, ids: [prod.id], quantity: 1, lotName: null, isLot: false, isModel: false });
+  };
+
   // Toggle rapido pubblico/privato dalla card del magazzino (senza aprire la modifica)
   const quickTogglePublic = async (group: any) => {
     const makePublic = !group.isPublic;
@@ -3856,9 +3872,12 @@ export default function App() {
           supplier: editSupplier.trim() || null,
           // Date facoltative: acquisto sempre, vendita solo se venduto.
           purchaseDate: editPurchaseDate || null,
-          ...(productToEdit.status === 'VENDUTO' ? { soldDate: editSoldDate || null } : {}),
-          // Modifica VENDITA: solo per prodotti già venduti.
-          ...(productToEdit.status === 'VENDUTO' ? {
+          // Campi VENDITA (data/cliente/prezzo/fee) SOLO se il gruppo è un singolo pezzo:
+          // i venduti identici sono raggruppati e ogni pezzo può avere data/cliente diversi →
+          // scriverli su tutti collasserebbe le vendite sull'ultima data. Per i gruppi multi-pezzo
+          // si modifica la singola vendita dalla tendina (openEditPiece).
+          ...(productToEdit.status === 'VENDUTO' && (productToEdit.ids?.length || 1) === 1 ? {
+            soldDate: editSoldDate || null,
             salePrice: editSalePrice.trim() ? parseFloat(editSalePrice) : undefined,
             platform: editSalePlatform || undefined,
             fees: editSaleFees.trim() ? parseFloat(editSaleFees) : 0,
@@ -4537,6 +4556,29 @@ export default function App() {
       setTimeout(handleLogout, 2200);
     } else {
       showToast(data.error || 'Errore cambio password', 'err');
+    }
+  };
+
+  // ==========================================
+  // MODIFICA NOME
+  // ==========================================
+  const handleChangeName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = editNameValue.trim();
+    if (name.length < 2) { showToast('Il nome deve avere almeno 2 caratteri', 'err'); return; }
+    if (name === user?.name) { setEditNameOpen(false); return; }
+    setEditNameLoading(true);
+    const { ok, data } = await apiCall('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify({ name }),
+    });
+    setEditNameLoading(false);
+    if (ok && data?.user) {
+      setUser(u => u ? { ...u, name: data.user.name } : u);
+      setEditNameOpen(false);
+      showToast('Nome aggiornato');
+    } else {
+      showToast(data?.error || 'Errore modifica nome', 'err');
     }
   };
 
@@ -5995,10 +6037,16 @@ export default function App() {
                                         <span className="text-[var(--text-faint)]">
                                           {s.soldAt ? new Date(s.soldAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' }) : '—'} · {s.salePrice.toFixed(0)}€
                                         </span>
-                                        <button onClick={(e) => { e.stopPropagation(); handleReturnIds([s.id], `${fullName(g.brand, g.name)}`); }}
-                                          className="flex items-center gap-1 text-blue-400 hover:text-blue-300 font-semibold px-2 py-0.5 rounded-lg hover:bg-blue-500/10 transition-colors">
-                                          ↩ {t('mag.return')}
-                                        </button>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                          <button onClick={(e) => { e.stopPropagation(); openEditPiece(s.id); }}
+                                            className="flex items-center gap-1 text-[var(--text-soft)] hover:text-[var(--text)] font-semibold px-2 py-0.5 rounded-lg hover:bg-[var(--fill)] transition-colors">
+                                            <Edit size={11} /> Modifica
+                                          </button>
+                                          <button onClick={(e) => { e.stopPropagation(); handleReturnIds([s.id], `${fullName(g.brand, g.name)}`); }}
+                                            className="flex items-center gap-1 text-blue-400 hover:text-blue-300 font-semibold px-2 py-0.5 rounded-lg hover:bg-blue-500/10 transition-colors">
+                                            ↩ {t('mag.return')}
+                                          </button>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
@@ -8110,6 +8158,23 @@ export default function App() {
             </section>
             )}
 
+            {/* SEZIONE: NOME PROFILO */}
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <Users className="text-[var(--text-soft)] mt-0.5" size={22} />
+                  <div>
+                    <h3 className="text-lg font-bold tracking-tighter">Nome</h3>
+                    <p className="text-xs text-[var(--text-soft)] mt-1">Il nome mostrato in app e ai tuoi soci: <span className="text-[var(--text)] font-semibold">{user?.name}</span></p>
+                  </div>
+                </div>
+                <button onClick={() => { setEditNameValue(user?.name || ''); setEditNameOpen(true); }}
+                  className="px-4 py-2 bg-[#8397aa] hover:bg-[#9fb0bd] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
+                  {t('set.change')}
+                </button>
+              </div>
+            </section>
+
             {/* SEZIONE: CAMBIA PASSWORD */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
@@ -10107,7 +10172,7 @@ export default function App() {
                   <input type="date" value={editPurchaseDate} onChange={e => setEditPurchaseDate(e.target.value)}
                     className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none appearance-none" />
                 </div>
-                {productToEdit.status === 'VENDUTO' && (
+                {productToEdit.status === 'VENDUTO' && (productToEdit.ids?.length || 1) === 1 && (
                   <div className="min-w-0">
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('edit.saleDate')}</label>
                     <input type="date" value={editSoldDate} onChange={e => setEditSoldDate(e.target.value)}
@@ -10125,8 +10190,21 @@ export default function App() {
                 </div>
               )}
 
-              {/* Modifica VENDITA — solo per prodotti già venduti (idea utente) */}
-              {productToEdit.status === 'VENDUTO' && (
+              {/* Gruppo multi-pezzo venduto: ogni vendita può avere data/cliente diversi →
+                  si modificano singolarmente dalla tendina compratori, non in blocco. */}
+              {productToEdit.status === 'VENDUTO' && (productToEdit.ids?.length || 1) > 1 && (
+                <div className="bg-[#8397aa]/[0.08] border border-[#8397aa]/25 rounded-xl p-3.5 flex items-start gap-2.5">
+                  <Users size={14} className="text-[#8397aa] shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-[var(--text-soft)] leading-relaxed">
+                    Questo gruppo ha <b>{productToEdit.ids.length} vendite</b> (anche con date o clienti diversi).
+                    Per modificare data, cliente o prezzo di <b>una singola vendita</b>, chiudi e usa il pulsante
+                    <b> Modifica</b> accanto alla vendita nell'elenco compratori.
+                  </p>
+                </div>
+              )}
+
+              {/* Modifica VENDITA — solo per prodotti già venduti, singolo pezzo (idea utente) */}
+              {productToEdit.status === 'VENDUTO' && (productToEdit.ids?.length || 1) === 1 && (
                 <div className="bg-green-500/[0.06] border border-green-500/20 rounded-xl p-3.5 space-y-3">
                   <p className="text-[10px] font-bold text-green-400 uppercase tracking-widest flex items-center gap-1.5"><DollarSign size={11} /> Vendita</p>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -11535,6 +11613,39 @@ export default function App() {
                 <button type="submit" disabled={changePwdLoading || (!!changePwdConfirm && changePwdNew !== changePwdConfirm)}
                   className="flex-1 bg-[#8397aa] hover:bg-[#9fb0bd] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center">
                   {changePwdLoading ? <Loader2 className="animate-spin" size={16} /> : t('common.save')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========== MODALE: MODIFICA NOME ========== */}
+      {editNameOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4" {...swipeBack(() => setEditNameOpen(false))}>
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6">
+            <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+            <div className="flex items-center gap-3 mb-5">
+              <Users className="text-[var(--text)]" size={22} />
+              <h3 className="font-semibold text-base">Modifica nome</h3>
+            </div>
+            <form onSubmit={handleChangeName} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Il tuo nome</label>
+                <input type="text" required autoFocus value={editNameValue} maxLength={60}
+                  onChange={e => setEditNameValue(e.target.value)}
+                  placeholder="Nome e cognome"
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#8397aa]" />
+                <p className="text-[10px] text-[var(--text-soft)] mt-1">Da 2 a 60 caratteri. È il nome che vedono anche i tuoi soci.</p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setEditNameOpen(false)}
+                  className="flex-1 bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
+                  {t('common.cancel')}
+                </button>
+                <button type="submit" disabled={editNameLoading || editNameValue.trim().length < 2}
+                  className="flex-1 bg-[#8397aa] hover:bg-[#9fb0bd] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center">
+                  {editNameLoading ? <Loader2 className="animate-spin" size={16} /> : t('common.save')}
                 </button>
               </div>
             </form>
