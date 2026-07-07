@@ -11953,7 +11953,7 @@ export default function App() {
             <form onSubmit={handleChangeName} className="space-y-4">
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('name.label')}</label>
-                <input type="text" required autoFocus value={editNameValue} maxLength={15}
+                <input type="text" required autoFocus value={editNameValue} maxLength={20}
                   onChange={e => setEditNameValue(e.target.value)}
                   placeholder={t('name.placeholder')}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#8397aa]" />

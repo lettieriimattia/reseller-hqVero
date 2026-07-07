@@ -817,8 +817,8 @@ router.put('/profile', authenticate, async (req: AuthRequest, res: Response) => 
       .replace(/[^\p{L}\p{N} .'’-]/gu, '')
       .replace(/\s+/g, ' ')
       .trim();
-    if (name.length < 2 || name.length > 15) {
-      return res.status(400).json({ error: 'Il nome deve avere tra 2 e 15 caratteri (lettere/numeri).' });
+    if (name.length < 2 || name.length > 20) {
+      return res.status(400).json({ error: 'Il nome deve avere tra 2 e 20 caratteri (nome e cognome ok).' });
     }
 
     // Niente nomi doppi tra i soci dello STESSO magazzino: crea confusione nella ripartizione.
