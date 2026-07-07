@@ -4565,7 +4565,7 @@ export default function App() {
   const handleChangeName = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = editNameValue.trim();
-    if (name.length < 2) { showToast('Il nome deve avere almeno 2 caratteri', 'err'); return; }
+    if (name.length < 2) { showToast(t('name.tooShort'), 'err'); return; }
     if (name === user?.name) { setEditNameOpen(false); return; }
     setEditNameLoading(true);
     const { ok, data } = await apiCall('/auth/profile', {
@@ -4576,9 +4576,11 @@ export default function App() {
     if (ok && data?.user) {
       setUser(u => u ? { ...u, name: data.user.name } : u);
       setEditNameOpen(false);
-      showToast('Nome aggiornato');
+      // Aggiorna anche il magazzino/soci: la lista membri usa il nome live dell'utente.
+      await fetchTeam();
+      showToast(t('name.updated'));
     } else {
-      showToast(data?.error || 'Errore modifica nome', 'err');
+      showToast(data?.error || t('name.error'), 'err');
     }
   };
 
@@ -6014,7 +6016,7 @@ export default function App() {
                             )}
                             <button onClick={() => openEditModal(g)}
                               className="ml-auto flex items-center gap-1.5 bg-[var(--fill)] border border-[var(--border-2)] text-[var(--text-soft)] hover:text-[var(--text)] px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
-                              <Edit size={12} /> Modifica
+                              <Edit size={12} /> {t('mag.edit')}
                             </button>
                             <button onClick={() => g.quantity > 1 ? setExpandedSoldKey(isExpanded ? null : soldKey) : handleReturn(g)}
                               className="flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/25 text-blue-400 hover:bg-blue-500/25 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
@@ -6040,7 +6042,7 @@ export default function App() {
                                         <div className="flex items-center gap-1 shrink-0">
                                           <button onClick={(e) => { e.stopPropagation(); openEditPiece(s.id); }}
                                             className="flex items-center gap-1 text-[var(--text-soft)] hover:text-[var(--text)] font-semibold px-2 py-0.5 rounded-lg hover:bg-[var(--fill)] transition-colors">
-                                            <Edit size={11} /> Modifica
+                                            <Edit size={11} /> {t('mag.edit')}
                                           </button>
                                           <button onClick={(e) => { e.stopPropagation(); handleReturnIds([s.id], `${fullName(g.brand, g.name)}`); }}
                                             className="flex items-center gap-1 text-blue-400 hover:text-blue-300 font-semibold px-2 py-0.5 rounded-lg hover:bg-blue-500/10 transition-colors">
@@ -8164,8 +8166,8 @@ export default function App() {
                 <div className="flex items-start gap-3">
                   <Users className="text-[var(--text-soft)] mt-0.5" size={22} />
                   <div>
-                    <h3 className="text-lg font-bold tracking-tighter">Nome</h3>
-                    <p className="text-xs text-[var(--text-soft)] mt-1">Il nome mostrato in app e ai tuoi soci: <span className="text-[var(--text)] font-semibold">{user?.name}</span></p>
+                    <h3 className="text-lg font-bold tracking-tighter">{t('set.name')}</h3>
+                    <p className="text-xs text-[var(--text-soft)] mt-1">{t('set.nameDesc')} <span className="text-[var(--text)] font-semibold">{user?.name}</span></p>
                   </div>
                 </div>
                 <button onClick={() => { setEditNameValue(user?.name || ''); setEditNameOpen(true); }}
@@ -10196,9 +10198,7 @@ export default function App() {
                 <div className="bg-[#8397aa]/[0.08] border border-[#8397aa]/25 rounded-xl p-3.5 flex items-start gap-2.5">
                   <Users size={14} className="text-[#8397aa] shrink-0 mt-0.5" />
                   <p className="text-[11px] text-[var(--text-soft)] leading-relaxed">
-                    Questo gruppo ha <b>{productToEdit.ids.length} vendite</b> (anche con date o clienti diversi).
-                    Per modificare data, cliente o prezzo di <b>una singola vendita</b>, chiudi e usa il pulsante
-                    <b> Modifica</b> accanto alla vendita nell'elenco compratori.
+                    {t('edit.multiSaleHint').replace('{n}', String(productToEdit.ids.length))}
                   </p>
                 </div>
               )}
@@ -11627,16 +11627,16 @@ export default function App() {
             <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="flex items-center gap-3 mb-5">
               <Users className="text-[var(--text)]" size={22} />
-              <h3 className="font-semibold text-base">Modifica nome</h3>
+              <h3 className="font-semibold text-base">{t('name.title')}</h3>
             </div>
             <form onSubmit={handleChangeName} className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Il tuo nome</label>
-                <input type="text" required autoFocus value={editNameValue} maxLength={60}
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('name.label')}</label>
+                <input type="text" required autoFocus value={editNameValue} maxLength={15}
                   onChange={e => setEditNameValue(e.target.value)}
-                  placeholder="Nome e cognome"
+                  placeholder={t('name.placeholder')}
                   className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#8397aa]" />
-                <p className="text-[10px] text-[var(--text-soft)] mt-1">Da 2 a 60 caratteri. È il nome che vedono anche i tuoi soci.</p>
+                <p className="text-[10px] text-[var(--text-soft)] mt-1">{t('name.hint')}</p>
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setEditNameOpen(false)}

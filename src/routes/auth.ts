@@ -810,8 +810,8 @@ router.put('/password', authenticate, sensitiveLimiter, async (req: AuthRequest,
 router.put('/profile', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const raw = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
-    if (raw.length < 2 || raw.length > 60) {
-      return res.status(400).json({ error: 'Il nome deve avere tra 2 e 60 caratteri.' });
+    if (raw.length < 2 || raw.length > 15) {
+      return res.status(400).json({ error: 'Il nome deve avere tra 2 e 15 caratteri.' });
     }
     // Niente caratteri di controllo / newline nel nome visualizzato.
     const name = raw.replace(/[\x00-\x1f\x7f]/g, '');
