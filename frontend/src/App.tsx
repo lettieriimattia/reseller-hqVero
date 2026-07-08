@@ -5646,6 +5646,11 @@ export default function App() {
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-bold truncate">{fullName(p.brand, p.name)}</p>
                               <p className="text-[10px] text-[var(--text-faint)] font-mono truncate">{p.trackingCarrier || t('home.carrier')} · {p.trackingCode}</p>
+                              {/* Link DIRETTO al corriere (non apre la pagina tracking) */}
+                              <a href={trackingPublicUrl(p.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                                className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold text-blue-400 hover:text-blue-300">
+                                {t('track.viewCarrier')} <ExternalLink size={9} className="opacity-70" />
+                              </a>
                             </div>
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${st.c}`}>{st.t}</span>
                           </div>
@@ -8217,6 +8222,12 @@ export default function App() {
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <span className="text-[10px] text-[var(--text-faint)] bg-[var(--fill)] px-2 py-0.5 rounded-full">{p.trackingCarrier}</span>
                       {updatedAgo && <span className="text-[10px] text-[var(--text-faint)]">{t('track.updated')} {updatedAgo}</span>}
+                      {p.trackingCode && (
+                        <a href={trackingPublicUrl(p.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-400 hover:text-blue-300">
+                          {t('track.viewCarrier')} <ExternalLink size={9} className="opacity-70" />
+                        </a>
+                      )}
                     </div>
                   </div>
                   <button
