@@ -116,59 +116,8 @@
         <div class="hq-bar"><i></i></div>
       </div>
     </div>
-    <script>
-      (function () {
-        var s = document.getElementById('hq-splash');
-        if (!s) return;
-        try { if (localStorage.getItem('hq-theme') === 'light') s.classList.add('hq-light'); } catch (e) {}
-        var done = false;
-        var startedAt = Date.now();
-        // Durata minima garantita: se la PWA gira già tutta in cache, React monta in <100ms e lo
-        // splash sparirebbe prima che l'animazione (lettere che collassano in "HQ" + barra, ~1.2s)
-        // abbia fatto in tempo a giocarsi. Aspettiamo il minimo anche se React è già pronto prima.
-        var MIN_MS = 1300;
-        function reallyHide() {
-          if (done) return; done = true;
-          s.classList.add('hq-hide');
-          setTimeout(function () { if (s && s.parentNode) s.parentNode.removeChild(s); }, 680);
-        }
-        function hide() {
-          var wait = Math.max(0, MIN_MS - (Date.now() - startedAt));
-          if (wait > 0) setTimeout(reallyHide, wait); else reallyHide();
-        }
-        // React chiama questo appena l'app è montata → lo splash sparisce (rispettando il minimo sopra).
-        window.__hqHideSplash = hide;
-        // Video AI (se presente): mostralo sopra l'SVG, e chiudi lo splash quando finisce.
-        var v = document.getElementById('hq-vault-video');
-        var hasVideo = false;
-        if (v) {
-          v.addEventListener('loadeddata', function () { v.classList.add('vl-on'); });
-          v.addEventListener('playing', function () { hasVideo = true; });
-          v.addEventListener('ended', hide);
-        }
-        // Senza video: nascondi dopo ~2.7s (animazione SVG). Col video: lascia finire ('ended'),
-        // con un tetto di sicurezza a 4s perché lo splash non resti mai bloccato.
-        setTimeout(function () { if (!hasVideo) hide(); }, 1500);
-        setTimeout(hide, 3500);
-      })();
-    </script>
+    <script src="/boot.js"></script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Blocca pinch-to-zoom su iOS Safari (ignora user-scalable=no)
-      document.addEventListener('touchstart', function(e) {
-        if (e.touches.length > 1) e.preventDefault();
-      }, { passive: false });
-      document.addEventListener('touchmove', function(e) {
-        if (e.touches.length > 1) e.preventDefault();
-      }, { passive: false });
-      // Blocca double-tap zoom
-      var lastTap = 0;
-      document.addEventListener('touchend', function(e) {
-        var now = Date.now();
-        if (now - lastTap < 300) e.preventDefault();
-        lastTap = now;
-      }, { passive: false });
-    </script>
   </body>
 </html>

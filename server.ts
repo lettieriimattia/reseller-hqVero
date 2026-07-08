@@ -118,7 +118,32 @@ if (isProduction) {
 // HELMET - Security headers rafforzati
 // ==========================================
 app.use(helmet({
-  contentSecurityPolicy: false,
+  // CSP (difesa anti-XSS): blocca script iniettati/esterni, framing, base-tag hijack.
+  //  - script-src 'self' + 'wasm-unsafe-eval' (Vosk wake-word usa WebAssembly). NIENTE 'unsafe-inline'
+  //    (gli script inline dello splash sono stati spostati in /boot.js).
+  //  - img-src permissivo (https:/data:/blob:) → foto Shopify/Cloudinary/StockX + camera, senza whitelist.
+  //  - style-src 'unsafe-inline' serve agli stili inline di React/Tailwind (basso rischio).
+  //  - Google Fonts: CSS da fonts.googleapis.com, font da fonts.gstatic.com.
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      'default-src': ["'self'"],
+      'script-src': ["'self'", "'wasm-unsafe-eval'"],
+      'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
+      'img-src': ["'self'", 'data:', 'blob:', 'https:'],
+      'media-src': ["'self'", 'blob:', 'data:'],
+      'connect-src': ["'self'", 'https://api.pokemontcg.io'],
+      'worker-src': ["'self'", 'blob:'],
+      'frame-src': ["'self'"],
+      'object-src': ["'none'"],
+      'base-uri': ["'self'"],
+      'form-action': ["'self'"],
+      'frame-ancestors': ["'self'"],
+      // In produzione (HTTPS) forza l'upgrade delle richieste http→https; in locale niente.
+      ...(useHTTPS ? { 'upgrade-insecure-requests': [] } : { 'upgrade-insecure-requests': null }),
+    },
+  },
   crossOriginEmbedderPolicy: false,
   // HSTS: forza HTTPS per 1 anno su tutti i sotto-domini
   hsts: useHTTPS ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
@@ -155,7 +180,7 @@ app.use(cors({
     }
   },
   credentials: true, // Indispensabile per i cookies
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
 }));
 
