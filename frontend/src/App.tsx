@@ -8562,8 +8562,8 @@ export default function App() {
               </div>
             </section>
 
-            {/* SEZIONE: SHOPIFY — import catalogo (solo OWNER) */}
-            {ownedWarehouses.length > 0 && (
+            {/* SEZIONE: SHOPIFY — import catalogo. Visibile SOLO a chi ha il piano Store (o admin). */}
+            {ownedWarehouses.length > 0 && (hasFeature('shopify') || isAdminUser) && (
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start gap-3 mb-4">
                 <Store className="text-[#95BF47] mt-0.5" size={22} />

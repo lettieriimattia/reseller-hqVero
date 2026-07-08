@@ -17,6 +17,7 @@ export type Feature =
   | 'stockx_pricing'      // prezzi reali StockX
   | 'accounting'          // costi extra + export CSV commercialista
   | 'returns'             // gestione resi (riporta un venduto in magazzino)
+  | 'shopify'             // integrazione Shopify (import catalogo) — piano Store/Business
   | 'no_sale_fee';        // fee di servizio sulle vendite azzerata
 
 export interface Plan {
@@ -92,11 +93,12 @@ export const PLANS: Record<PlanId, Plan> = {
     tagline: 'Per negozi e team strutturati',
     highlights: [
       'Tutto del Pro',
+      'Integrazione Shopify: importa il catalogo del tuo store',
       'Etichette/QR magazzino',
       'Prodotti, soci e magazzini illimitati',
       'Priorità supporto',
     ],
-    features: ['marketplace', 'listing_ai', 'partners', 'stockx_pricing', 'accounting', 'advanced_analytics', 'repricing', 'offer_assistant', 'crossposting', 'shipping', 'no_sale_fee', 'labels', 'returns'],
+    features: ['marketplace', 'listing_ai', 'partners', 'stockx_pricing', 'accounting', 'advanced_analytics', 'repricing', 'offer_assistant', 'crossposting', 'shipping', 'no_sale_fee', 'labels', 'returns', 'shopify'],
     maxProducts: null,
     maxTeamMembers: null,
   },

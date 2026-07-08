@@ -5,6 +5,7 @@
 import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { requireFeature } from '../middleware/plan';
 import { encrypt, decrypt } from '../utils/security';
 import { audit } from '../services/audit.service';
 import { logger } from '../utils/logger';
@@ -43,7 +44,7 @@ router.get('/status', async (req: AuthRequest, res: Response) => {
 });
 
 // POST /api/shopify/connect { warehouseId, domain, token } → valida e salva (token cifrato).
-router.post('/connect', async (req: AuthRequest, res: Response) => {
+router.post('/connect', requireFeature('shopify'), async (req: AuthRequest, res: Response) => {
   try {
     const { warehouseId, domain, token } = req.body || {};
     if (!warehouseId || !domain || !token) return res.status(400).json({ error: 'Dominio e token sono richiesti.' });
@@ -94,7 +95,7 @@ function pickSize(product: any, variant: any): string {
 }
 
 // POST /api/shopify/import { warehouseId } → importa i prodotti attivi come pezzi in stock.
-router.post('/import', async (req: AuthRequest, res: Response) => {
+router.post('/import', requireFeature('shopify'), async (req: AuthRequest, res: Response) => {
   try {
     const { warehouseId } = req.body || {};
     if (!warehouseId) return res.status(400).json({ error: 'warehouseId mancante.' });
