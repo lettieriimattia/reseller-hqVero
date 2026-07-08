@@ -5731,7 +5731,7 @@ export default function App() {
             {/* Riga 1: titolo + toggle IN STOCK/VENDUTI accanto, ricerca inline su desktop */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center shrink-0 w-full lg:w-auto lg:gap-4">
-                <h2 className="text-xl lg:text-3xl font-semibold leading-none lg:mt-0.5">{t('mag.title')}</h2>
+                <h2 className="text-xl lg:text-3xl font-semibold leading-tight pb-0.5 lg:pb-0 lg:mt-0.5">{t('mag.title')}</h2>
                 <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] w-full lg:w-auto lg:ml-1">
                   <button onClick={() => { setMagazzinoView('instock'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
