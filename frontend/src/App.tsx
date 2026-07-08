@@ -5648,8 +5648,8 @@ export default function App() {
                               <p className="text-[10px] text-[var(--text-faint)] font-mono truncate">{p.trackingCarrier || t('home.carrier')} · {p.trackingCode}</p>
                               {/* Link DIRETTO al corriere (non apre la pagina tracking) */}
                               <a href={trackingPublicUrl(p.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                                className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold text-blue-400 hover:text-blue-300">
-                                {t('track.viewCarrier')} <ExternalLink size={9} className="opacity-70" />
+                                className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded-lg hover:bg-blue-500/20 transition-colors">
+                                {t('track.viewCarrier')} <ExternalLink size={11} className="opacity-80" />
                               </a>
                             </div>
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${st.c}`}>{st.t}</span>
@@ -8224,8 +8224,8 @@ export default function App() {
                       {updatedAgo && <span className="text-[10px] text-[var(--text-faint)]">{t('track.updated')} {updatedAgo}</span>}
                       {p.trackingCode && (
                         <a href={trackingPublicUrl(p.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-400 hover:text-blue-300">
-                          {t('track.viewCarrier')} <ExternalLink size={9} className="opacity-70" />
+                          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded-lg hover:bg-blue-500/20 transition-colors">
+                          {t('track.viewCarrier')} <ExternalLink size={11} className="opacity-80" />
                         </a>
                       )}
                     </div>
