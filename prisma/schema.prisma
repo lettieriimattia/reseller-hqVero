@@ -519,6 +519,7 @@ model CatalogItem {
   @@index([name])
   @@index([sku])
   @@index([productType])
+  @@index([image])   // usato per il dedup anti-doppioni (stessa foto = stesso prodotto)
 }
 
 // ==========================================

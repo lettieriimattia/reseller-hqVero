@@ -234,6 +234,19 @@ async function upsertCandidate(c: CatalogCandidate, byKey?: Map<string, CatalogR
   // Non salvare mai una foto di un'ALTRA colorway (fonte inconsistente, es. StockX con title e
   // media discordanti): meglio nessuna foto in cache che una sbagliata che poi non si corregge da sola.
   const image = imageMatchesTitle(c.image, c.title) ? c.image : null;
+
+  // ANTI-DUPLICATO (memoria): la fonte a volte torna lo STESSO prodotto con id/sku diversi →
+  // key diverse ma foto identica. Le URL immagine sono uniche per prodotto: se questa foto esiste
+  // già sotto un'altra key, aggiorno quella riga e NON ne creo una nuova (niente righe doppie).
+  if (image) {
+    const dup = await prisma.catalogItem.findFirst({ where: { image, NOT: { key } }, select: { key: true } }).catch(() => null);
+    if (dup) {
+      await prisma.catalogItem.update({ where: { key: dup.key }, data: { name, brand, productType: pt } }).catch(() => {});
+      if (byKey && !byKey.has(dup.key)) byKey.set(dup.key, { key: dup.key, brand, name, sku: c.styleId || null, image, productType: pt });
+      return;
+    }
+  }
+
   if (byKey && !byKey.has(key)) {
     byKey.set(key, { key, brand, name, sku: c.styleId || null, image: image || null, productType: pt });
   }
@@ -264,6 +277,18 @@ function queryScore(q: string, r: { brand?: string | null; name?: string | null;
 // Ordina per pertinenza (score desc), poi mette prima quelli CON foto.
 function byRelevance(q: string) {
   return (a: CatalogResult, b: CatalogResult) => (queryScore(q, b) - queryScore(q, a)) || ((b.image ? 1 : 0) - (a.image ? 1 : 0));
+}
+// Toglie i doppioni con la STESSA immagine (stesso prodotto restituito con id/sku diversi):
+// le URL immagine StockX/KicksDB sono uniche per prodotto → stessa foto = stesso articolo.
+// Tiene il primo (già ordinato per pertinenza). Le righe senza foto passano invariate.
+function dedupByImage(rows: CatalogResult[]): CatalogResult[] {
+  const seen = new Set<string>();
+  const out: CatalogResult[] = [];
+  for (const r of rows) {
+    if (r.image) { if (seen.has(r.image)) continue; seen.add(r.image); }
+    out.push(r);
+  }
+  return out;
 }
 
 // Mappa un candidato della fonte DIRETTAMENTE in risultato UI (per le categorie personalizzate,
@@ -378,6 +403,23 @@ router.get('/_reset', adminOnly, async (_req: AuthRequest, res: Response) => {
   }
 });
 
+// GET /api/catalog/_dedup — rimuove i DOPPIONI già in cache (stessa immagine = stesso prodotto),
+// tenendo la riga più vecchia per ogni foto. Libera memoria SENZA riconsumare la quota (non chiama
+// la fonte). Una tantum dopo il fix del dedup.
+router.get('/_dedup', adminOnly, async (_req: AuthRequest, res: Response) => {
+  try {
+    const r = await prisma.$executeRaw`
+      DELETE FROM "CatalogItem" a
+      USING "CatalogItem" b
+      WHERE a."image" IS NOT NULL
+        AND a."image" = b."image"
+        AND (a."createdAt" > b."createdAt" OR (a."createdAt" = b."createdAt" AND a."id" > b."id"))`;
+    res.json({ ok: true, removed: r });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/catalog/search?q=...&type=sneakers|apparel
 // 1) cerca nella cache locale  2) integra da StockX  3) salva i nuovi in cache (solo link).
 router.get('/search', async (req: AuthRequest, res: Response) => {
@@ -407,7 +449,7 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
       const cachedRes: CatalogResult[] = cachedC.map(it => ({ key: it.key, brand: it.brand, name: it.name, sku: it.sku, image: it.image, productType: it.productType }));
       if (cachedRes.filter(r => r.image).length >= 5) {
         const wi = cachedRes.filter(r => r.image);
-        return res.json((wi.length >= 3 ? wi : cachedRes).sort(byRelevance(q)).slice(0, 20));
+        return res.json(dedupByImage((wi.length >= 3 ? wi : cachedRes).sort(byRelevance(q))).slice(0, 20));
       }
       // Cache insufficiente → interrogo la fonte (KicksDB/StockX) e unisco coi cache.
       const cands = await providerSearch(`${type} ${q}`.trim(), { limit: 20 });
@@ -419,7 +461,7 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
       }
       const all = Array.from(merged.values());
       const withImg = all.filter(r => r.image);
-      return res.json((withImg.length >= 3 ? withImg : all).sort(byRelevance(q)).slice(0, 20));
+      return res.json(dedupByImage((withImg.length >= 3 ? withImg : all).sort(byRelevance(q))).slice(0, 20));
     }
 
     const byKey = new Map<string, CatalogResult>();
@@ -463,7 +505,8 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
     const inCat = type ? all.filter(r => r.productType === type) : all;
     const withImg = inCat.filter(r => r.image);
     // Ordina per PERTINENZA (colore incluso): "jordan 1 canary" → la Canary in cima, non una gialla a caso.
-    res.json((withImg.length >= 3 ? withImg : inCat).sort(byRelevance(q)).slice(0, 20));
+    // Poi dedup per immagine: mai due volte la stessa foto (stesso prodotto con id/sku diversi).
+    res.json(dedupByImage((withImg.length >= 3 ? withImg : inCat).sort(byRelevance(q))).slice(0, 20));
   } catch (e: any) {
     logger.error('GET /catalog/search', { err: e.message });
     res.status(500).json({ error: 'Errore ricerca catalogo' });
@@ -592,11 +635,17 @@ router.get('/popular', async (req: AuthRequest, res: Response) => {
           SELECT *, ROW_NUMBER() OVER (PARTITION BY "productType" ORDER BY RANDOM()) AS rn
           FROM "CatalogItem" WHERE "image" IS NOT NULL
         ) t WHERE rn <= 10 ORDER BY RANDOM() LIMIT 60`;
-      return res.json(rnd.map((r: any) => ({ key: r.key, brand: r.brand, name: r.name, sku: r.sku, image: r.image, productType: r.productType })));
+      const seenAll = new Set<string>();
+      const rndU = rnd.filter((r: any) => { if (!r.image) return true; if (seenAll.has(r.image)) return false; seenAll.add(r.image); return true; });
+      return res.json(rndU.map((r: any) => ({ key: r.key, brand: r.brand, name: r.name, sku: r.sku, image: r.image, productType: r.productType })));
     }
     // PRIORITÀ alle righe CON immagine; se sono poche, mostro comunque il resto (mai pagina vuota).
+    // Dedup per immagine: mai la stessa foto due volte nel catalogo.
     const withImg = items.filter(i => i.image);
-    const out = (withImg.length >= 8 ? withImg : items).slice(0, 60);
+    const seenImg = new Set<string>();
+    const out = (withImg.length >= 8 ? withImg : items)
+      .filter(it => { if (!it.image) return true; if (seenImg.has(it.image)) return false; seenImg.add(it.image); return true; })
+      .slice(0, 60);
     res.json(out.map(it => ({
       key: it.key, brand: it.brand, name: it.name, sku: it.sku,
       image: it.image, productType: it.productType,
