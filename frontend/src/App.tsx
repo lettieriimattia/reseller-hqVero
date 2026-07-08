@@ -5415,7 +5415,7 @@ export default function App() {
                       : (h >= 14 && h < 18) ? (lang === 'en' ? 'Good afternoon' : 'Buon pomeriggio')
                       : (h >= 18 && h < 23) ? (lang === 'en' ? 'Good evening' : 'Buonasera')
                       : (lang === 'en' ? 'Hello' : 'Salve');                                    // notte
-                  })()}, <span className="text-[var(--text)] font-black">{user.name.split(' ')[0]}</span>
+                  })()}, <span className="text-[var(--text)] font-black">{user.name}</span>
                 </h2>
                 <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.1em] mt-1.5 capitalize truncate">{new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
               </div>
