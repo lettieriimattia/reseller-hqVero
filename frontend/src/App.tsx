@@ -84,6 +84,39 @@ function avatarInitials(name?: string): string {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
+type YM = { y: number; m: number };
+const inMonth = (date: any, ym: YM | null): boolean => {
+  if (!ym) return true;
+  if (!date) return false;
+  const d = new Date(date);
+  return d.getFullYear() === ym.y && d.getMonth() === ym.m;
+};
+// Selettore MESE riutilizzabile: spento = pulsante "Per mese"; acceso = ‹ Mese Anno › con ✕.
+// Non permette di andare oltre il mese corrente (niente vendite future).
+function MonthFilter({ value, onChange, locale = 'it' }: { value: YM | null; onChange: (v: YM | null) => void; locale?: string }) {
+  const en = locale.startsWith('en');
+  if (!value) {
+    return (
+      <button onClick={() => { const n = new Date(); onChange({ y: n.getFullYear(), m: n.getMonth() }); }}
+        className="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border bg-[var(--surface)] text-[var(--text-soft)] border-[var(--border-2)] hover:text-[var(--text)] flex items-center gap-1.5 transition-colors">
+        <CalendarDays size={12} /> {en ? 'By month' : 'Per mese'}
+      </button>
+    );
+  }
+  const label = new Date(value.y, value.m, 1).toLocaleDateString(en ? 'en-GB' : 'it-IT', { month: 'long', year: 'numeric' });
+  const shift = (d: number) => { const raw = value.m + d; onChange({ y: value.y + Math.floor(raw / 12), m: ((raw % 12) + 12) % 12 }); };
+  const now = new Date();
+  const atCurrent = value.y === now.getFullYear() && value.m >= now.getMonth();
+  return (
+    <div className="shrink-0 flex items-center gap-0.5 bg-[#8397aa] text-white rounded-full pl-1 pr-1 py-0.5">
+      <button onClick={() => shift(-1)} aria-label="prev" className="w-6 h-6 rounded-full hover:bg-white/20 flex items-center justify-center text-sm leading-none">‹</button>
+      <span className="text-xs font-bold capitalize px-1 whitespace-nowrap">{label}</span>
+      <button onClick={() => shift(1)} disabled={atCurrent} aria-label="next" className="w-6 h-6 rounded-full hover:bg-white/20 flex items-center justify-center text-sm leading-none disabled:opacity-40">›</button>
+      <button onClick={() => onChange(null)} aria-label="clear" className="w-5 h-5 rounded-full hover:bg-white/20 flex items-center justify-center ml-0.5"><X size={12} /></button>
+    </div>
+  );
+}
+
 // Tutte le chiamate API usano credentials: 'include' per inviare i cookies httpOnly
 // Single-flight del refresh: se più chiamate scadono insieme all'avvio, parte UN SOLO
 // /auth/refresh e tutte aspettano lo stesso esito (niente race che sloggava l'utente).
@@ -676,6 +709,7 @@ export default function App() {
   const [expensesOpen, setExpensesOpen] = useState(false); // accordion costi extra (chiuso = non invade le analytics)
   const [expandedContact, setExpandedContact] = useState<string | null>(null); // riga contatto aperta (mostra i suoi pezzi)
   const [contactsPage, setContactsPage] = useState<null | 'buyers' | 'sellers'>(null); // popup tutti i compratori/fornitori
+  const [contactsMonth, setContactsMonth] = useState<YM | null>(null); // filtro MESE su migliori acquirenti/venditori
   const [contactPageExpanded, setContactPageExpanded] = useState<string | null>(null);
   const [contactSearch, setContactSearch] = useState(''); // ricerca nel popup compratori/fornitori
   // TASK / NOTE (widget promemoria, sincronizzate sul server, riassunte dall'IA)
@@ -834,6 +868,7 @@ export default function App() {
   const [filterPriceMax, setFilterPriceMax] = useState('');
   const [staleOnly, setStaleOnly] = useState(false); // filtro rapido "Fermi" (in stock da +30gg)
   const [soldPeriod, setSoldPeriod] = useState<'all' | '7d' | '30d' | 'month' | 'year'>('all'); // filtro periodo sui venduti
+  const [soldMonth, setSoldMonth] = useState<YM | null>(null); // filtro MESE specifico sui venduti (override dei chip)
 
   // ----- DELETE PRODOTTO -----
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -2536,7 +2571,8 @@ export default function App() {
   };
 
   // Venduti: SOLO gli articoli realmente venduti (i PAGATI in attesa stanno in "Da spedire").
-  const groupedSoldArray = Object.values(searchedProducts.filter(p => p.status === 'VENDUTO' && inSoldPeriod(p.soldAt)).reduce((acc, p) => {
+  // Se è attivo un MESE specifico (soldMonth) ha priorità sui chip periodo.
+  const groupedSoldArray = Object.values(searchedProducts.filter(p => p.status === 'VENDUTO' && (soldMonth ? inMonth(p.soldAt, soldMonth) : inSoldPeriod(p.soldAt))).reduce((acc, p) => {
     const cat = p.category || 'Scarpe';
     const plat = p.platform || 'Privato';
     const key = `${cat}-${p.brand.toLowerCase()}-${p.name.toLowerCase()}-${p.size}-${p.salePrice}-${plat}`;
@@ -6145,12 +6181,14 @@ export default function App() {
                 {/* Filtro periodo sui venduti (7g / 30g / mese / anno). Sempre visibile, anche a 0 risultati. */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
                   {([['all', lang === 'en' ? 'All' : 'Tutti'], ['7d', '7g'], ['30d', '30g'], ['month', lang === 'en' ? 'Month' : 'Mese'], ['year', lang === 'en' ? 'Year' : 'Anno']] as const).map(([val, label]) => (
-                    <button key={val} onClick={() => setSoldPeriod(val as any)}
-                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border ${soldPeriod === val ? 'bg-[#8397aa] text-white border-[#8397aa]' : 'bg-[var(--surface)] text-[var(--text-soft)] border-[var(--border-2)] hover:text-[var(--text)]'}`}>
+                    <button key={val} onClick={() => { setSoldPeriod(val as any); setSoldMonth(null); }}
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border ${!soldMonth && soldPeriod === val ? 'bg-[#8397aa] text-white border-[#8397aa]' : 'bg-[var(--surface)] text-[var(--text-soft)] border-[var(--border-2)] hover:text-[var(--text)]'}`}>
                       {label}
                     </button>
                   ))}
-                  {(soldPeriod !== 'all' || searchTerm) && (
+                  {/* Filtro per MESE specifico (naviga ‹ › tra i mesi). */}
+                  <MonthFilter value={soldMonth} onChange={setSoldMonth} locale={lang} />
+                  {(soldPeriod !== 'all' || soldMonth || searchTerm) && (
                     <span className="shrink-0 ml-auto text-[10px] text-[var(--text-faint)] font-semibold whitespace-nowrap">{groupedSoldArray.reduce((a: number, g: any) => a + g.quantity, 0)} {lang === 'en' ? 'sold' : 'venduti'}</span>
                   )}
                 </div>
@@ -7855,8 +7893,8 @@ export default function App() {
           const isBuyers = contactsPage === 'buyers';
           const all: any[] = Object.values(
             (isBuyers
-              ? products.filter((p: any) => p.status === 'VENDUTO' && (p.customer || '').trim())
-              : products.filter((p: any) => (p.supplier || '').trim())
+              ? products.filter((p: any) => p.status === 'VENDUTO' && (p.customer || '').trim() && inMonth(p.soldAt, contactsMonth))
+              : products.filter((p: any) => (p.supplier || '').trim() && inMonth(p.createdAt, contactsMonth))
             ).reduce((acc: any, p: any) => {
               const nm = ((isBuyers ? p.customer : p.supplier) || '').trim();
               if (!acc[nm]) acc[nm] = { name: nm, count: 0, amount: 0, items: [] };
@@ -7870,7 +7908,7 @@ export default function App() {
           const stats = q ? all.filter((s: any) => s.name.toLowerCase().includes(q)) : all;
           const accent = isBuyers ? 'text-emerald-400' : 'text-[#8397aa]';
           const dfmt = (v: any) => v ? new Date(v).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
-          const close = () => { setContactsPage(null); setContactSearch(''); };
+          const close = () => { setContactsPage(null); setContactSearch(''); setContactsMonth(null); };
           return (
             <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col sm:items-center sm:justify-center sm:p-4"
               onClick={e => { if (e.target === e.currentTarget) close(); }} {...swipeBack(close)}>
@@ -7887,13 +7925,17 @@ export default function App() {
                   <button onClick={close} aria-label={t('common.close')}
                     className="p-2 -mr-1 rounded-full text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5 shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
                 </div>
-                {/* Ricerca */}
-                <div className="px-4 py-2.5 border-b border-[var(--border)] shrink-0">
+                {/* Ricerca + filtro mese */}
+                <div className="px-4 py-2.5 border-b border-[var(--border)] shrink-0 space-y-2">
                   <div className="flex items-center gap-2 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2">
                     <Search size={16} className="text-[var(--text-faint)] shrink-0" />
                     <input value={contactSearch} onChange={e => setContactSearch(e.target.value)} autoFocus
                       placeholder={`${t('mag.search')}…`} className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[var(--text)] placeholder:text-[var(--text-faint)]" />
                     {contactSearch && <button onClick={() => setContactSearch('')} className="text-[var(--text-faint)] hover:text-[var(--text)] shrink-0"><X size={15} /></button>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MonthFilter value={contactsMonth} onChange={setContactsMonth} locale={lang} />
+                    {contactsMonth && <span className="text-[10px] text-[var(--text-faint)] font-semibold">{isBuyers ? (lang === 'en' ? 'sales in month' : 'venduti nel mese') : (lang === 'en' ? 'purchases in month' : 'acquisti nel mese')}</span>}
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
