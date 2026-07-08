@@ -590,6 +590,12 @@ router.post('/', validate(createProductSchema), async (req: AuthRequest, res: Re
 // ==========================================
 router.post('/:id/reserve', async (req: AuthRequest, res: Response) => {
   try {
+    // Autorizzazione: solo chi ha accesso al magazzino del prodotto può riservarlo (anti-IDOR).
+    const { allowed } = await canAccessProduct(req.user!.userId, req.params.id);
+    if (!allowed) {
+      await audit({ action: 'UNAUTHORIZED_ACCESS', userId: req.user!.userId, req, resource: req.params.id, metadata: { type: 'product_reserve' } });
+      return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
+    }
     // ACID: select-for-update simulato con transaction + check stato
     const result = await prisma.$transaction(async tx => {
       const product = await tx.product.findFirst({
@@ -632,6 +638,9 @@ router.post('/:id/reserve', async (req: AuthRequest, res: Response) => {
 // ==========================================
 router.delete('/:id/reserve', async (req: AuthRequest, res: Response) => {
   try {
+    // Autorizzazione: solo chi ha accesso al magazzino del prodotto (anti-IDOR).
+    const access = await canAccessProduct(req.user!.userId, req.params.id);
+    if (!access.allowed) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
     const product = await prisma.product.findFirst({
       where: { id: req.params.id, deletedAt: null },
     });

@@ -6,7 +6,7 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
-import { authenticate, AuthRequest } from '../middleware/auth';
+import { authenticate, AuthRequest, canAccessProduct } from '../middleware/auth';
 import { requireOwner } from '../middleware/rbac';
 import { requireFeature } from '../middleware/plan';
 import { logger } from '../utils/logger';
@@ -152,6 +152,9 @@ router.get('/dashboard', async (req: AuthRequest, res: Response) => {
 // ==========================================
 router.get('/inventory-log/:productId', async (req: AuthRequest, res: Response) => {
   try {
+    // Anti-IDOR: lo storico (con i prezzi d'acquisto) è visibile solo a chi ha accesso al prodotto.
+    const { allowed } = await canAccessProduct(req.user!.userId, req.params.productId);
+    if (!allowed) return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
     const logs = await prisma.inventoryLog.findMany({
       where: { productId: req.params.productId },
       include: { user: { select: { id: true, name: true } } },

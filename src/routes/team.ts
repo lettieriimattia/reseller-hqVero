@@ -91,13 +91,12 @@ router.put('/percentage', validate(teamPercentageSchema), async (req: AuthReques
   try {
     const { warehouseId, updates } = req.body;
     
-    const isMember = await prisma.membership.findFirst({
-      where: { userId: req.user!.userId, warehouseId },
-    });
-    if (!isMember) {
+    // Le quote profitti/costi sono un dato sensibile: SOLO il titolare (OWNER) può cambiarle.
+    const isOwner = await authorizeWarehouseOwner(req.user!.userId, warehouseId);
+    if (!isOwner) {
       await audit({ action: 'UNAUTHORIZED_ACCESS', userId: req.user!.userId, req,
         resource: warehouseId, metadata: { type: 'team_percentage_update' } });
-      return res.status(403).json({ error: 'Non sei membro di questo team.' });
+      return res.status(403).json({ error: 'Solo il titolare del magazzino può modificare le quote.' });
     }
     
     // Verifica somma = 100
