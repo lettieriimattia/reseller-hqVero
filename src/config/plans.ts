@@ -88,9 +88,9 @@ export const PLANS: Record<PlanId, Plan> = {
   },
   business: {
     id: 'business',
-    name: 'Business',
+    name: 'Business/Store',
     priceMonthly: 39.99,
-    tagline: 'Per negozi e team strutturati',
+    tagline: 'Per negozi: sincronizza Shopify e gestisci tutto',
     highlights: [
       'Tutto del Pro',
       'Integrazione Shopify: importa il catalogo del tuo store',
