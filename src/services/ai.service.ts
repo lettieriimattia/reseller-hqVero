@@ -62,15 +62,25 @@ async function groqCallWithRetry<T>(
       return await fn(groqClients[keyIdx]);
     } catch (err: any) {
       lastErr = err;
-      if (err?.status === 429 || err?.status === 503) {
+      const st = err?.status;
+      // Errori di RETE / timeout del provider (non hanno status HTTP): transitori → riprova.
+      const transientNet = ['ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'ENOTFOUND', 'ECONNREFUSED'].includes(err?.code)
+        || ['APIConnectionError', 'APIConnectionTimeoutError', 'AbortError'].includes(err?.name);
+      if (st === 429 || st === 503) {
+        // Limite/servizio saturo: ruota chiave (o attendi se ne hai una sola) e riprova.
         const rotated = rotateKey();
-        if (!rotated) {
-          // Una sola chiave — aspetta 2s e riprova
-          await new Promise(r => setTimeout(r, 2000));
-        }
+        if (!rotated) await new Promise(r => setTimeout(r, 2000));
         continue;
       }
-      throw err; // altri errori: rilancia subito
+      // Errori TRANSITORI del provider (500/502/504) o di rete/timeout: NON è colpa della richiesta.
+      // Piccola pausa, prova un'altra chiave e ritenta (entro maxAttempts) invece di fallire subito
+      // con "Assistente non disponibile". (400/401 ecc. = deterministici → rilancio.)
+      if (st === 500 || st === 502 || st === 504 || transientNet) {
+        await new Promise(r => setTimeout(r, 800));
+        rotateKey();
+        continue;
+      }
+      throw err; // errori deterministici (400/401/…): rilancia subito
     }
   }
   throw lastErr || new Error('Limite richieste IA raggiunto. Attendi qualche minuto o aggiungi chiavi Groq.');
