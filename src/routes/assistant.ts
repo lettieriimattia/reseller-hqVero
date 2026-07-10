@@ -294,16 +294,14 @@ async function findCatalogPhoto(query: string): Promise<{ image: string | null; 
   const q = (query || '').trim();
   if (q.length < 2) return { image: null, styleId: null };
   const cands: { title: string; image: string | null; styleId: string | null; productId: string | null }[] = [];
-  try {
-    if (isKicksConfigured()) {
-      const k = await kicksSearch(q, { limit: 8 });
-      for (const c of k) cands.push({ title: c.title, image: c.image, styleId: c.styleId, productId: c.productId });
-    }
-    if (isStockXConfigured()) {
-      const s = await searchStockXCandidates(q, { limit: 8 });
-      for (const c of s) cands.push({ title: c.title, image: c.image, styleId: c.styleId, productId: c.productId });
-    }
-  } catch { /* foto facoltativa */ }
+  // KicksDB e StockX in PARALLELO (non in sequenza): dimezza l'attesa nel caso peggiore.
+  // Entrambe le funzioni catturano già i propri errori/timeout internamente (tornano [] al max).
+  const [kicksRes, stockxRes] = await Promise.allSettled([
+    isKicksConfigured() ? kicksSearch(q, { limit: 8 }) : Promise.resolve([]),
+    isStockXConfigured() ? searchStockXCandidates(q, { limit: 8 }) : Promise.resolve([]),
+  ]);
+  if (kicksRes.status === 'fulfilled') for (const c of kicksRes.value) cands.push({ title: c.title, image: c.image, styleId: c.styleId, productId: c.productId });
+  if (stockxRes.status === 'fulfilled') for (const c of stockxRes.value) cands.push({ title: c.title, image: c.image, styleId: c.styleId, productId: c.productId });
   if (!cands.length) return { image: null, styleId: null };
   // Scelgo quello che combacia MEGLIO col nome (colore incluso), anche se la ricerca non ha portato la foto.
   const words = q.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 1);

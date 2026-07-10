@@ -7,6 +7,7 @@ import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { logger } from '../utils/logger';
 import { imageMatchesTitle } from '../utils/imageConsistency';
+import { fetchWithTimeout } from '../utils/fetchTimeout';
 
 
 const STOCKX_AUTHORIZE = 'https://accounts.stockx.com/authorize';
@@ -45,7 +46,8 @@ export function getAuthorizeUrl(redirectUri: string, state: string): string {
 // Scambia il code per i token e salva il refresh_token (Setting key/value).
 export async function exchangeCodeForTokens(code: string, redirectUri: string): Promise<any | null> {
   try {
-    const res = await fetch(STOCKX_TOKEN, {
+    // Azione admin one-off (collega account StockX): timeout più permissivo, non blocca la chat.
+    const res = await fetchWithTimeout(STOCKX_TOKEN, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -55,7 +57,7 @@ export async function exchangeCodeForTokens(code: string, redirectUri: string): 
         code,
         redirect_uri: redirectUri,
       }),
-    });
+    }, 8000);
     if (!res.ok) { logger.error('StockX token exchange fallito', { status: res.status }); return null; }
     const data = await res.json() as any;
     if (data.refresh_token) {
@@ -85,7 +87,8 @@ export async function getStockXAccessToken(): Promise<string | null> {
   const stored = await prisma.setting.findUnique({ where: { key: 'stockxRefreshToken' } }).catch(() => null);
   if (!stored?.value) return null;
   try {
-    const res = await fetch(STOCKX_TOKEN, {
+    // Timeout aggressivo: è il primo passo di ogni ricerca/foto StockX chiamata dalla chat.
+    const res = await fetchWithTimeout(STOCKX_TOKEN, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -95,7 +98,7 @@ export async function getStockXAccessToken(): Promise<string | null> {
         refresh_token: stored.value,
         audience: STOCKX_AUDIENCE,
       }),
-    });
+    }, 4000);
     if (!res.ok) { logger.error('StockX refresh fallito', { status: res.status }); return null; }
     const data = await res.json() as any;
     accessCache = { token: data.access_token, expiresAt: Date.now() + (data.expires_in || 3600) * 1000 };
@@ -151,7 +154,7 @@ export async function searchStockXCandidates(query: string, opts?: { sneakersOnl
   const q = (query || '').replace(/[–—•|]/g, ' ').replace(/\s+/g, ' ').trim();
   if (q.length < 2) return [];
   try {
-    const r = await fetch(`${STOCKX_API_BASE}/v2/catalog/search?query=${encodeURIComponent(q)}&pageNumber=1&pageSize=12`, { headers });
+    const r = await fetchWithTimeout(`${STOCKX_API_BASE}/v2/catalog/search?query=${encodeURIComponent(q)}&pageNumber=1&pageSize=12`, { headers }, 4000);
     if (!r.ok) return [];
     const d = await r.json() as any;
     let products: any[] = d?.products || d?.data || d?.hits || [];
@@ -181,7 +184,7 @@ export async function getStockXImage(productId?: string | null): Promise<string 
   if (!token) return null;
   const headers = { Authorization: `Bearer ${token}`, 'x-api-key': process.env.STOCKX_API_KEY || '', Accept: 'application/json' };
   try {
-    const r = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(id)}`, { headers });
+    const r = await fetchWithTimeout(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(id)}`, { headers }, 4000);
     if (!r.ok) return null;
     const p = await r.json() as any;
     return p?.media?.imageUrl || p?.media?.thumbUrl || p?.media?.smallImageUrl
@@ -303,7 +306,7 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
     let best = { final: -Infinity, matched: 0, penalty: 0 };
     let searchFailed = false;
     for (const q of candidates) {
-      const sr = await fetch(`${STOCKX_API_BASE}/v2/catalog/search?query=${encodeURIComponent(q)}&pageNumber=1&pageSize=10`, { headers });
+      const sr = await fetchWithTimeout(`${STOCKX_API_BASE}/v2/catalog/search?query=${encodeURIComponent(q)}&pageNumber=1&pageSize=10`, { headers }, 5000);
       if (!sr.ok) { logger.warn('StockX search non ok', { status: sr.status, q }); searchFailed = true; continue; }
       const sd = await sr.json() as any;
       let products: any[] = sd?.products || sd?.data || sd?.hits || [];
@@ -355,14 +358,14 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
     // 2) Prova il market data della variant corrispondente alla taglia
     if (opts.size && productId) {
       try {
-        const vr = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(productId)}/variants?currencyCode=EUR`, { headers });
+        const vr = await fetchWithTimeout(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(productId)}/variants?currencyCode=EUR`, { headers }, 5000);
         if (vr.ok) {
           const vd = await vr.json() as any;
           const variants = Array.isArray(vd) ? vd : (vd?.variants || vd?.data || []);
           const target = normSize(opts.size);
           const match = variants.find((v: any) => normSize(v.variantValue || v.size || v.sizeChart?.displayOptions?.[0]?.size) === target);
           if (match?.variantId) {
-            const md = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(productId)}/variants/${encodeURIComponent(match.variantId)}/market-data?currencyCode=EUR`, { headers });
+            const md = await fetchWithTimeout(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(productId)}/variants/${encodeURIComponent(match.variantId)}/market-data?currencyCode=EUR`, { headers }, 5000);
             if (md.ok) value = pickStockXPrice(await md.json());
           }
         }
@@ -372,7 +375,7 @@ export async function getStockXValuation(opts: { query: string; name?: string; s
     // 3) Fallback: market data a livello di prodotto
     let mdError: string | null = null;
     if (value == null && productId) {
-      const md = await fetch(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(productId)}/market-data?currencyCode=EUR`, { headers });
+      const md = await fetchWithTimeout(`${STOCKX_API_BASE}/v2/catalog/products/${encodeURIComponent(productId)}/market-data?currencyCode=EUR`, { headers }, 5000);
       if (md.ok) {
         value = pickStockXPrice(await md.json());
       } else {

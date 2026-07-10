@@ -8,6 +8,7 @@
 
 import { logger } from '../utils/logger';
 import { isPlaceholderImage } from '../utils/imageConsistency';
+import { fetchWithTimeout } from '../utils/fetchTimeout';
 
 const KICKS_BASE = 'https://api.kicks.dev/v3';
 
@@ -99,9 +100,12 @@ export async function kicksSearch(
   const limit = Math.min(Math.max(opts?.limit || 20, 1), 50);
   const url = `${KICKS_BASE}/stockx/products?query=${encodeURIComponent(q)}&limit=${limit}`;
   try {
-    const r = await fetch(url, {
+    // Timeout aggressivo (4s): la chatbox cerca la foto qui durante "aggiungi_prodotto" — se
+    // KicksDB è lento, meglio salvare il prodotto senza foto (la aggancia poi lo sweep) che
+    // tenere l'utente in attesa a tempo indeterminato.
+    const r = await fetchWithTimeout(url, {
       headers: { Authorization: `Bearer ${process.env.KICKSDB_API_KEY || ''}`, Accept: 'application/json' },
-    });
+    }, 4000);
     if (!r.ok) { logger.warn('KicksDB search non ok', { status: r.status }); return []; }
     const d = await r.json() as any;
     const items: any[] = Array.isArray(d?.data) ? d.data : (Array.isArray(d?.products) ? d.products : []);
