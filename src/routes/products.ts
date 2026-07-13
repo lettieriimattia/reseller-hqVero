@@ -15,6 +15,7 @@ import { validate, createProductSchema, editProductSchema, sellProductSchema } f
 import { audit } from '../services/audit.service';
 import { logInventory } from '../services/inventory-log.service';
 import { notifyWarehouseMembers } from '../services/notification.service';
+import { onProductSold } from '../services/inventorySync.service';
 import { getMarketValuation } from '../services/price.service';
 import { getStockXValuation, isStockXConfigured, searchStockXCandidates, getStockXImage } from '../services/stockx.service';
 import { getValuation } from '../services/valuation.service';
@@ -736,6 +737,7 @@ router.put('/:id', validate(sellProductSchema), async (req: AuthRequest, res: Re
       newValue: 'VENDUTO',
       note: `Venduto ${salePrice}€ su ${platform}`,
     });
+    onProductSold(updated.id).catch(() => {});
 
     await audit({
       action: 'PRODUCT_SELL', userId: req.user!.userId, req,

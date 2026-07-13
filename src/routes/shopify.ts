@@ -9,7 +9,10 @@ import { requireFeature } from '../middleware/plan';
 import { encrypt, decrypt } from '../utils/security';
 import { audit } from '../services/audit.service';
 import { logger } from '../utils/logger';
-import { verifyShopify, fetchAllShopifyProducts, normalizeShopDomain } from '../services/shopify.service';
+import {
+  verifyShopify, fetchAllShopifyProducts, normalizeShopDomain,
+  fetchShopifyLocations, registerOrderWebhook,
+} from '../services/shopify.service';
 
 const router = Router();
 router.use(authenticate);
@@ -37,32 +40,112 @@ router.get('/status', async (req: AuthRequest, res: Response) => {
       domain: wh?.shopifyDomain || null,
       shopName: wh?.shopifyShopName || null,
       lastSync: wh?.shopifyLastSync || null,
+      locationLinked: !!wh?.shopifyLocationId,
+      webhookConfigured: !!wh?.shopifyWebhookSecret,
     });
   } catch (err: any) {
     res.status(err.status || 500).json({ error: err.message || 'Errore' });
   }
 });
 
-// POST /api/shopify/connect { warehouseId, domain, token } → valida e salva (token cifrato).
+// POST /api/shopify/connect { warehouseId, domain, token, webhookSecret? } → valida e salva
+// (token/secret cifrati). webhookSecret è il "Client secret" dell'app custom (facoltativo qui,
+// serve solo per registrare il webhook ordini — vedi /webhook/register).
 router.post('/connect', requireFeature('shopify'), async (req: AuthRequest, res: Response) => {
   try {
-    const { warehouseId, domain, token } = req.body || {};
+    const { warehouseId, domain, token, webhookSecret } = req.body || {};
     if (!warehouseId || !domain || !token) return res.status(400).json({ error: 'Dominio e token sono richiesti.' });
     await requireOwner(req.user!.userId, warehouseId);
     const info = await verifyShopify(String(domain), String(token)); // lancia se non valido
+
+    // Location: la giacenza Shopify si legge/scrive per coppia variante+location. Se lo store
+    // ne ha una sola la colleghiamo subito; con più location serve una scelta esplicita
+    // (POST /location) — il tentativo qui è best-effort, non deve far fallire il connect base
+    // (lo scope read_locations potrebbe mancare sulla custom app).
+    let locations: { id: number; name: string }[] = [];
+    let autoLocationId: string | null = null;
+    try {
+      const locs = await fetchShopifyLocations(info.domain, String(token));
+      locations = locs.map(l => ({ id: l.id, name: l.name }));
+      if (locs.length === 1) autoLocationId = String(locs[0].id);
+    } catch (e: any) {
+      logger.warn('Shopify connect: lettura location fallita (sync giacenza da collegare a mano dopo)', { err: e.message });
+    }
+
     await prisma.warehouse.update({
       where: { id: warehouseId },
       data: {
         shopifyDomain: info.domain,
         shopifyToken: encrypt(String(token)),
         shopifyShopName: info.name,
+        ...(autoLocationId ? { shopifyLocationId: autoLocationId } : {}),
+        ...(webhookSecret ? { shopifyWebhookSecret: encrypt(String(webhookSecret)) } : {}),
       },
     });
     await audit({ action: 'PROFILE_UPDATE', userId: req.user!.userId, req, resource: warehouseId, metadata: { shopify: 'connect', shop: info.name } });
-    res.json({ connected: true, shopName: info.name, domain: info.domain });
+    res.json({
+      connected: true, shopName: info.name, domain: info.domain,
+      locationLinked: !!autoLocationId, locations, // se >1, il frontend mostra la scelta
+    });
   } catch (err: any) {
     logger.error('Shopify connect', { err: err.message });
     res.status(err.status || 500).json({ error: err.message || 'Errore connessione Shopify' });
+  }
+});
+
+// POST /api/shopify/location { warehouseId, locationId } → scegli la location (store multi-sede).
+router.post('/location', requireFeature('shopify'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { warehouseId, locationId } = req.body || {};
+    if (!warehouseId || !locationId) return res.status(400).json({ error: 'warehouseId e locationId richiesti.' });
+    await requireOwner(req.user!.userId, warehouseId);
+    const wh = await prisma.warehouse.findUnique({ where: { id: warehouseId } });
+    if (!wh?.shopifyToken || !wh.shopifyDomain) return res.status(400).json({ error: 'Shopify non collegato per questo magazzino.' });
+    const token = decrypt(wh.shopifyToken);
+    const locs = await fetchShopifyLocations(wh.shopifyDomain, token);
+    if (!locs.some(l => String(l.id) === String(locationId))) return res.status(400).json({ error: 'Location non trovata su questo store.' });
+    await prisma.warehouse.update({ where: { id: warehouseId }, data: { shopifyLocationId: String(locationId) } });
+    res.json({ locationLinked: true });
+  } catch (err: any) {
+    res.status(err.status || 500).json({ error: err.message || 'Errore' });
+  }
+});
+
+// POST /api/shopify/webhook/secret { warehouseId, webhookSecret } → salva/aggiorna SOLO il
+// Client secret (senza dover reinserire il token, già salvato dal connect iniziale).
+router.post('/webhook/secret', requireFeature('shopify'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { warehouseId, webhookSecret } = req.body || {};
+    if (!warehouseId || !String(webhookSecret || '').trim()) return res.status(400).json({ error: 'Client secret mancante.' });
+    await requireOwner(req.user!.userId, warehouseId);
+    const wh = await prisma.warehouse.findUnique({ where: { id: warehouseId } });
+    if (!wh?.shopifyToken || !wh.shopifyDomain) return res.status(400).json({ error: 'Shopify non collegato per questo magazzino.' });
+    await prisma.warehouse.update({ where: { id: warehouseId }, data: { shopifyWebhookSecret: encrypt(String(webhookSecret).trim()) } });
+    res.json({ saved: true });
+  } catch (err: any) {
+    res.status(err.status || 500).json({ error: err.message || 'Errore' });
+  }
+});
+
+// POST /api/shopify/webhook/register { warehouseId } → registra il webhook "ordine creato" su
+// Shopify verso il nostro endpoint pubblico. Richiede APP_URL (https) e webhookSecret già salvato.
+router.post('/webhook/register', requireFeature('shopify'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { warehouseId } = req.body || {};
+    if (!warehouseId) return res.status(400).json({ error: 'warehouseId mancante.' });
+    await requireOwner(req.user!.userId, warehouseId);
+    const wh = await prisma.warehouse.findUnique({ where: { id: warehouseId } });
+    if (!wh?.shopifyToken || !wh.shopifyDomain) return res.status(400).json({ error: 'Shopify non collegato per questo magazzino.' });
+    if (!wh.shopifyWebhookSecret) return res.status(400).json({ error: 'Manca il Client secret dell\'app: ricollega Shopify inserendolo (Impostazioni → Shopify).' });
+    const appUrl = (process.env.APP_URL || '').trim().replace(/\/$/, '');
+    if (!appUrl.startsWith('https://')) return res.status(400).json({ error: 'APP_URL non configurato (serve un dominio https pubblico per ricevere i webhook).' });
+    const token = decrypt(wh.shopifyToken);
+    const { id } = await registerOrderWebhook(wh.shopifyDomain, token, `${appUrl}/api/shopify/webhook/orders`);
+    await audit({ action: 'PROFILE_UPDATE', userId: req.user!.userId, req, resource: warehouseId, metadata: { shopify: 'webhook_register', webhookId: id } });
+    res.json({ registered: true, webhookId: id });
+  } catch (err: any) {
+    logger.error('Shopify webhook register', { err: err.message });
+    res.status(err.status || 500).json({ error: err.message || 'Errore registrazione webhook' });
   }
 });
 
@@ -74,7 +157,10 @@ router.post('/disconnect', async (req: AuthRequest, res: Response) => {
     await requireOwner(req.user!.userId, warehouseId);
     await prisma.warehouse.update({
       where: { id: warehouseId },
-      data: { shopifyDomain: null, shopifyToken: null, shopifyShopName: null, shopifyLastSync: null },
+      data: {
+        shopifyDomain: null, shopifyToken: null, shopifyShopName: null, shopifyLastSync: null,
+        shopifyLocationId: null, shopifyWebhookSecret: null,
+      },
     });
     res.json({ connected: false });
   } catch (err: any) {
@@ -143,6 +229,10 @@ router.post('/import', requireFeature('shopify'), async (req: AuthRequest, res: 
             notes: 'Importato da Shopify',
             userId: req.user!.userId,
             warehouseId,
+            // Lega il pezzo alla variante Shopify: la vendita di QUESTA riga (o di una delle sue
+            // "sorelle" fisiche) scalerà di 1 la giacenza della variante su Shopify.
+            shopifyVariantId: String(v.id),
+            shopifyInventoryItemId: v.inventory_item_id ? String(v.inventory_item_id) : null,
           });
         }
         if (sku) seen.add(key);

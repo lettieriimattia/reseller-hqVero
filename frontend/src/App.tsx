@@ -846,11 +846,13 @@ export default function App() {
   const [twoFaDisablePwd, setTwoFaDisablePwd] = useState('');
   const [twoFaDisableOtp, setTwoFaDisableOtp] = useState('');
 
-  // ----- SHOPIFY (import catalogo) -----
+  // ----- SHOPIFY (import catalogo + sync giacenza) -----
   const [shopifyWhId, setShopifyWhId] = useState('');
-  const [shopifyStatus, setShopifyStatus] = useState<{ connected: boolean; shopName?: string | null; domain?: string | null; lastSync?: string | null } | null>(null);
+  const [shopifyStatus, setShopifyStatus] = useState<{ connected: boolean; shopName?: string | null; domain?: string | null; lastSync?: string | null; locationLinked?: boolean; webhookConfigured?: boolean } | null>(null);
   const [shopifyDomainInput, setShopifyDomainInput] = useState('');
   const [shopifyTokenInput, setShopifyTokenInput] = useState('');
+  const [shopifyWebhookSecretInput, setShopifyWebhookSecretInput] = useState('');
+  const [shopifyLocations, setShopifyLocations] = useState<{ id: number; name: string }[]>([]);
   const [shopifyBusy, setShopifyBusy] = useState(false);
 
   // ----- PRODOTTI FERMI -----
@@ -4742,14 +4744,40 @@ export default function App() {
     setShopifyBusy(true);
     const { ok, data } = await apiCall<any>('/api/shopify/connect', {
       method: 'POST',
-      body: JSON.stringify({ warehouseId: shopifyWhId, domain: shopifyDomainInput.trim(), token: shopifyTokenInput.trim() }),
+      body: JSON.stringify({
+        warehouseId: shopifyWhId, domain: shopifyDomainInput.trim(), token: shopifyTokenInput.trim(),
+        ...(shopifyWebhookSecretInput.trim() ? { webhookSecret: shopifyWebhookSecretInput.trim() } : {}),
+      }),
     });
     setShopifyBusy(false);
     if (ok) {
-      setShopifyTokenInput('');
+      setShopifyTokenInput(''); setShopifyWebhookSecretInput('');
+      setShopifyLocations(Array.isArray(data.locations) ? data.locations : []);
       showToast(lang === 'en' ? `Connected to ${data.shopName}` : `Collegato a ${data.shopName}`);
       fetchShopifyStatus(shopifyWhId);
     } else showToast(data?.error || (lang === 'en' ? 'Connection error' : 'Errore connessione'), 'err');
+  };
+  const pickShopifyLocation = async (locationId: number) => {
+    if (!shopifyWhId) return;
+    setShopifyBusy(true);
+    const { ok, data } = await apiCall<any>('/api/shopify/location', {
+      method: 'POST',
+      body: JSON.stringify({ warehouseId: shopifyWhId, locationId }),
+    });
+    setShopifyBusy(false);
+    if (ok) { showToast(lang === 'en' ? 'Location linked' : 'Location collegata', 'ok'); fetchShopifyStatus(shopifyWhId); }
+    else showToast(data?.error || (lang === 'en' ? 'Error' : 'Errore'), 'err');
+  };
+  const registerShopifyWebhook = async () => {
+    if (!shopifyWhId) return;
+    setShopifyBusy(true);
+    const { ok, data } = await apiCall<any>('/api/shopify/webhook/register', {
+      method: 'POST',
+      body: JSON.stringify({ warehouseId: shopifyWhId }),
+    });
+    setShopifyBusy(false);
+    if (ok) { showToast(lang === 'en' ? 'Order notifications active' : 'Notifiche ordini attive', 'ok'); fetchShopifyStatus(shopifyWhId); }
+    else showToast(data?.error || (lang === 'en' ? 'Error' : 'Errore'), 'err');
   };
   const importShopify = async () => {
     if (!shopifyWhId) return;
@@ -8615,14 +8643,14 @@ export default function App() {
               </div>
             </section>
 
-            {/* SEZIONE: SHOPIFY — import catalogo. Visibile SOLO a chi ha il piano Store (o admin). */}
+            {/* SEZIONE: SHOPIFY — import catalogo + sync giacenza. Visibile SOLO a chi ha il piano Store (o admin). */}
             {ownedWarehouses.length > 0 && (hasFeature('shopify') || isAdminUser) && (
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start gap-3 mb-4">
                 <Store className="text-[#95BF47] mt-0.5" size={22} />
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-bold tracking-tighter">Shopify</h3>
-                  <p className="text-xs text-[var(--text-soft)] mt-1">{lang === 'en' ? 'Import your store catalog into HQ (read-only, we never write to your shop).' : 'Importa il catalogo del tuo store dentro HQ (sola lettura, non tocchiamo il tuo negozio).'}</p>
+                  <p className="text-xs text-[var(--text-soft)] mt-1">{lang === 'en' ? 'Import your store catalog and keep stock in sync both ways: a sale here scales your Shopify inventory, and a Shopify/in-store order marks the matching piece as sold here.' : 'Importa il catalogo del tuo store e tieni la giacenza sincronizzata nei due sensi: una vendita qui scala l\'inventario Shopify, e un ordine Shopify/in negozio segna venduto il pezzo corrispondente qui.'}</p>
                 </div>
               </div>
 
@@ -8655,6 +8683,52 @@ export default function App() {
                     </button>
                   </div>
                   <p className="text-[11px] text-[var(--text-faint)] leading-relaxed">{lang === 'en' ? 'Import brings in products, sizes, prices and photos as in-stock pieces. Re-running skips items already present (by SKU + size).' : 'L\'import porta prodotti, taglie, prezzi e foto come pezzi in stock. Rilanciandolo, salta quelli già presenti (per SKU + taglia).'}</p>
+
+                  {/* Location: se lo store ne ha più di una e non è ancora collegata, va scelta. */}
+                  {!shopifyStatus.locationLinked && shopifyLocations.length > 1 && (
+                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                      <p className="text-[11px] font-bold text-amber-400">{lang === 'en' ? 'Choose the location to sync stock with:' : 'Scegli la location con cui sincronizzare la giacenza:'}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {shopifyLocations.map(l => (
+                          <button key={l.id} onClick={() => pickShopifyLocation(l.id)} disabled={shopifyBusy}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] hover:bg-[var(--fill-2)] disabled:opacity-50">
+                            {l.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notifiche ordini (webhook): richiede il Client secret dell'app, non solo il token. */}
+                  <div className="pt-2 border-t border-[var(--border)] space-y-2">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className={`w-1.5 h-1.5 rounded-full ${shopifyStatus.webhookConfigured ? 'bg-green-400' : 'bg-[var(--text-faint)]'}`} />
+                      <span className="font-bold text-[var(--text-soft)]">{lang === 'en' ? 'Order notifications (Shopify → HQ)' : 'Notifiche ordini (Shopify → HQ)'}</span>
+                    </div>
+                    {!shopifyStatus.webhookConfigured && (
+                      <>
+                        <input type="password" value={shopifyWebhookSecretInput} onChange={e => setShopifyWebhookSecretInput(e.target.value)} placeholder={lang === 'en' ? 'App Client secret' : 'Client secret dell\'app'} autoCapitalize="none" spellCheck={false}
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#8397aa]" />
+                        <p className="text-[10px] text-[var(--text-faint)] leading-relaxed">{lang === 'en' ? 'Found next to the Admin API token in the custom app credentials. Needed to verify order webhooks.' : 'Si trova accanto al token Admin API nelle credenziali dell\'app custom. Serve per verificare i webhook degli ordini.'}</p>
+                      </>
+                    )}
+                    <button onClick={async () => {
+                        if (shopifyWebhookSecretInput.trim()) {
+                          setShopifyBusy(true);
+                          const { ok, data } = await apiCall<any>('/api/shopify/webhook/secret', {
+                            method: 'POST',
+                            body: JSON.stringify({ warehouseId: shopifyWhId, webhookSecret: shopifyWebhookSecretInput.trim() }),
+                          });
+                          setShopifyBusy(false);
+                          if (!ok) { showToast(data?.error || (lang === 'en' ? 'Error saving secret' : 'Errore salvataggio secret'), 'err'); return; }
+                          setShopifyWebhookSecretInput('');
+                        }
+                        registerShopifyWebhook();
+                      }} disabled={shopifyBusy || (!shopifyStatus.webhookConfigured && !shopifyWebhookSecretInput.trim())}
+                      className="w-full py-2 rounded-xl text-xs font-bold bg-[var(--fill)] hover:bg-[var(--fill-2)] disabled:opacity-50 flex items-center justify-center gap-2">
+                      {shopifyBusy ? <Loader2 size={14} className="animate-spin" /> : <Bell size={13} />} {shopifyStatus.webhookConfigured ? (lang === 'en' ? 'Re-register webhook' : 'Ri-registra webhook') : (lang === 'en' ? 'Activate order notifications' : 'Attiva notifiche ordini')}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -8668,12 +8742,17 @@ export default function App() {
                     <input type="password" value={shopifyTokenInput} onChange={e => setShopifyTokenInput(e.target.value)} placeholder="shpat_…" autoCapitalize="none" spellCheck={false}
                       className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa]" />
                   </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">{lang === 'en' ? 'Client secret (optional, for order notifications)' : 'Client secret (facoltativo, per le notifiche ordini)'}</label>
+                    <input type="password" value={shopifyWebhookSecretInput} onChange={e => setShopifyWebhookSecretInput(e.target.value)} placeholder="shpss_… / •••" autoCapitalize="none" spellCheck={false}
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa]" />
+                  </div>
                   <button onClick={connectShopify} disabled={shopifyBusy}
                     className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#95BF47] hover:bg-[#7fa53c] text-white disabled:opacity-50 flex items-center justify-center gap-2">
                     {shopifyBusy ? <Loader2 size={16} className="animate-spin" /> : <Store size={15} />} {lang === 'en' ? 'Connect Shopify' : 'Collega Shopify'}
                   </button>
                   <p className="text-[11px] text-[var(--text-faint)] leading-relaxed">
-                    {lang === 'en' ? 'In Shopify admin: Settings → Apps → Develop apps → create an app → grant read_products and read_inventory → install → copy the Admin API access token.' : 'Nell\'admin Shopify: Impostazioni → App → Sviluppa app → crea un\'app → concedi read_products e read_inventory → installa → copia l\'Admin API access token.'}
+                    {lang === 'en' ? 'In Shopify admin: Settings → Apps → Develop apps → create an app → grant read_products, read_inventory, write_inventory and read_orders → install → copy the Admin API access token (and the Client secret if you want order notifications).' : 'Nell\'admin Shopify: Impostazioni → App → Sviluppa app → crea un\'app → concedi read_products, read_inventory, write_inventory e read_orders → installa → copia l\'Admin API access token (e il Client secret se vuoi le notifiche ordini).'}
                   </p>
                 </div>
               )}

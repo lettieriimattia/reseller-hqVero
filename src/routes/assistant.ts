@@ -13,6 +13,7 @@ import { groqAssistantChat, isGroqConfigured, groqTranscribe, summarizeTaskText 
 import { searchStockXCandidates, getStockXValuation, isStockXConfigured, getStockXImage } from '../services/stockx.service';
 import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
 import { addTracking, CARRIERS } from '../services/tracking.service';
+import { onProductSold } from '../services/inventorySync.service';
 import { checkProductQuota } from '../middleware/plan';
 import { logger } from '../utils/logger';
 
@@ -557,6 +558,7 @@ async function executeTool(name: string, args: any, ctx: { userId: string }): Pr
       const unitPrice = (args.prezzo_totale === true && prods.length > 1) ? Math.round((prezzo / prods.length) * 100) / 100 : prezzo;
       for (const p of prods) {
         await prisma.product.update({ where: { id: p.id }, data: { salePrice: unitPrice, platform, status: 'VENDUTO', customer, soldAt: soldOn } });
+        onProductSold(p.id).catch(() => {});
       }
       return { ok: true, venduti: prods.length, prodotto: `${prods[0].brand} ${prods[0].name}`, taglia: prods[0].size, prezzo: unitPrice, prezzo_totale: unitPrice * prods.length, piattaforma: platform, cliente: customer || undefined, data_vendita: soldOn.toLocaleDateString('it-IT') };
     }

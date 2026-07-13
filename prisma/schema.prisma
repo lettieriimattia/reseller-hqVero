@@ -108,11 +108,15 @@ model Warehouse {
   // Può essere sovrascritto a livello di singolo prodotto tramite customShares
   defaultProfitShares String?
 
-  // Integrazione Shopify (Fase 1: import catalogo in sola lettura). Token cifrato a riposo.
+  // Integrazione Shopify. Fase 1: import catalogo in sola lettura. Fase 2: sync giacenza
+  // bidirezionale (vendita da noi → scala Shopify; ordine Shopify → segna venduto da noi).
+  // Token/secret cifrati a riposo (utils/security).
   shopifyDomain String?      // dominio *.myshopify.com
-  shopifyToken  String?      // Admin API access token (cifrato via utils/security)
+  shopifyToken  String?      // Admin API access token (cifrato)
   shopifyShopName String?    // nome dello shop (per mostrarlo in UI)
   shopifyLastSync DateTime?
+  shopifyLocationId String?      // location Shopify su cui si scala/legge la giacenza
+  shopifyWebhookSecret String?   // Client secret dell'app custom (cifrato), verifica HMAC webhook ordini
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -246,6 +250,12 @@ model Product {
   toShip         Boolean   @default(false) // marcato "da spedire" (es. venduto su un'altra piattaforma)
   sourceProductId String?  // se acquistato nel marketplace: id dell'articolo originale del venditore
 
+  // Sync Shopify (Fase 2): legano questo pezzo fisico alla variante/riga di giacenza su Shopify.
+  // Popolati dall'import (src/routes/shopify.ts). Se presenti, la vendita di questo pezzo
+  // scala la giacenza Shopify (src/services/inventorySync.service.ts).
+  shopifyVariantId       String?
+  shopifyInventoryItemId String?
+
   // Pilastro 1: Campi dinamici dalla CategoryTemplate (JSONB)
   attributes     String?      // Record<string, any> — popolato dal DynamicForm (JSON string per SQLite)
 
@@ -272,6 +282,7 @@ model Product {
   @@index([status])
   @@index([warehouseId])
   @@index([deletedAt])
+  @@index([shopifyVariantId])
 }
 
 // ==========================================

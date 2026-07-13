@@ -46,6 +46,7 @@ import chatRoutes from './src/routes/chat';
 import catalogRoutes, { publicCatalogRouter } from './src/routes/catalog';
 import assistantRoutes from './src/routes/assistant';
 import shopifyRoutes from './src/routes/shopify';
+import { shopifyOrderWebhookHandler } from './src/routes/shopify-webhook';
 import billingRoutes, { stripeWebhookHandler } from './src/routes/billing';
 import { initPush } from './src/services/push.service';
 import { sendEmail } from './src/services/email.service';
@@ -195,6 +196,8 @@ app.use(compression());
 
 // Webhook Stripe: DEVE ricevere il body RAW (firma), quindi prima di express.json.
 app.post('/billing/webhook', express.raw({ type: 'application/json' }), stripeWebhookHandler);
+// Webhook Shopify (ordine creato): stesso motivo, firma HMAC sul body RAW.
+app.post('/api/shopify/webhook/orders', express.raw({ type: 'application/json' }), shopifyOrderWebhookHandler);
 
 app.use(express.json({ limit: '10mb' })); // ridotto da 15mb: meno RAM per richiesta (le foto sono compresse lato client)
 app.use(express.urlencoded({ limit: '10mb', extended: true }));

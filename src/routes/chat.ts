@@ -9,6 +9,7 @@ import { addTracking } from '../services/tracking.service';
 import { notifyWarehouseMembers, notify } from '../services/notification.service';
 import { logger } from '../utils/logger';
 import { refundProductPayment, releaseHold, reverseSaleAfterRefund, reasonLabel, DISPUTE_REASONS, SHIP_FALLBACK_DAYS } from '../services/dispute.service';
+import { onProductSold } from '../services/inventorySync.service';
 
 const router = Router();
 router.use(authenticate);
@@ -144,6 +145,7 @@ router.post('/:id/ship', async (req: AuthRequest, res: Response) => {
       where: { id: product.id },
       data: { status: 'VENDUTO', soldAt: new Date(), salePrice, fees, platform: 'Marketplace', isPublic: false },
     });
+    onProductSold(product.id).catch(() => {});
 
     let tracked = false;
     if (trackingCode.length >= 4) {

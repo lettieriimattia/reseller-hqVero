@@ -9,6 +9,7 @@ import { logger } from '../utils/logger';
 import { notifyWarehouseMembers } from './notification.service';
 import { sendDeliveredEmail } from './email-jobs.service';
 import { AUTO_RELEASE_DAYS } from './dispute.service';
+import { onProductSold } from './inventorySync.service';
 
 
 const SEVENTEEN_TRACK_KEY = process.env.TRACKING_17TRACK_KEY || '';
@@ -214,6 +215,7 @@ async function applyDeliveredEffects(product: any): Promise<void> {
       where: { id: product.id },
       data: { status: 'VENDUTO', soldAt: new Date(), salePrice: 0, fees: 0 },
     });
+    onProductSold(product.id).catch(() => {});
     if (product.warehouseId) {
       await notifyWarehouseMembers({
         warehouseId: product.warehouseId,

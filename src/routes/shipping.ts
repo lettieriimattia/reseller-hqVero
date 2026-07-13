@@ -8,12 +8,15 @@ import { PrismaClient } from '@prisma/client';
 import { prisma } from "../lib/prisma";
 import { authenticate, AuthRequest, canAccessProduct } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimit';
+import { requireFeature } from '../middleware/plan';
 import { logger } from '../utils/logger';
 
 const router = Router();
 const SENDCLOUD_BASE = 'https://panel.sendcloud.sc/api/v2';
 
-router.use(authenticate, apiLimiter);
+// Bug corretto: prima queste rotte non avevano ALCUN controllo piano (qualunque utente Free
+// poteva prenotare etichette). "shipping" è già inclusa in Pro/Business — vedi src/config/plans.ts.
+router.use(authenticate, apiLimiter, requireFeature('shipping'));
 
 function sendcloudHeaders() {
   const key    = (process.env.SENDCLOUD_API_KEY    || '').trim();

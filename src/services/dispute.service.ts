@@ -11,6 +11,7 @@
 import { prisma } from '../lib/prisma';
 import { stripe } from '../lib/stripe';
 import { notifyWarehouseMembers } from './notification.service';
+import { onProductSold } from './inventorySync.service';
 import { logger } from '../utils/logger';
 
 // Giorni dopo la consegna oltre i quali i fondi si sbloccano da soli (scelta utente: 5).
@@ -86,6 +87,7 @@ export async function releaseHold(productId: string, opts?: { partialRefund?: nu
       message: `${product.brand} ${product.name}: ${partial > 0 ? 'rimborso parziale applicato, ' : ''}importo disponibile nel Portafoglio.`,
     }).catch(() => {});
   }
+  onProductSold(productId).catch(() => {});
   return { ok: true };
 }
 

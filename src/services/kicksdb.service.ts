@@ -6,6 +6,7 @@
 // Auth: header Authorization: Bearer <KICKSDB_API_KEY>. Base: https://api.kicks.dev/v3
 // Free tier ~50k richieste/mese: con la cache locale (CatalogItem) basta e avanza.
 
+import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
 import { isPlaceholderImage } from '../utils/imageConsistency';
 import { fetchWithTimeout } from '../utils/fetchTimeout';
@@ -22,17 +23,32 @@ export function isKicksConfigured(): boolean {
 // totale mensile non superi mai il piano. Oltre il tetto si serve solo dalla cache locale (gratis).
 const MONTHLY_CAP = Number(process.env.KICKSDB_MONTHLY_CAP || 950);
 const DAILY_CAP = Number(process.env.KICKSDB_DAILY_CAP || 60); // evita che un singolo giorno bruci il mese
-let callsToday = 0, callsMonth = 0;
-let callDay = new Date().toDateString();
-let callMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
-function underQuota(): boolean {
-  const today = new Date().toDateString();
-  const month = new Date().toISOString().slice(0, 7);
-  if (today !== callDay) { callDay = today; callsToday = 0; }
-  if (month !== callMonth) { callMonth = month; callsMonth = 0; }
-  if (callsMonth >= MONTHLY_CAP) { logger.warn('KicksDB: tetto MENSILE raggiunto (piano 1000/mese), solo cache'); return false; }
-  if (callsToday >= DAILY_CAP) { logger.warn('KicksDB: tetto giornaliero raggiunto, solo cache'); return false; }
-  callsToday++; callsMonth++;
+
+// Contatori PERSISTITI su Setting (stesso pattern di apify.service.ts): il piano free di Render
+// va in standby dopo 15min di inattività e si riavvia ad ogni richiesta successiva, molto più
+// spesso di un redeploy mensile — contatori in RAM si azzererebbero ad ogni risveglio, facendo
+// sforare il tetto reale dei 1000/mese senza che il codice se ne accorga.
+function monthKey(): string {
+  const d = new Date();
+  return `kicksdb_month_${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+function dayKey(): string {
+  return `kicksdb_day_${new Date().toISOString().slice(0, 10)}`;
+}
+async function getCount(key: string): Promise<number> {
+  try { const s = await prisma.setting.findUnique({ where: { key } }); return s ? parseInt(s.value, 10) || 0 : 0; }
+  catch { return 0; }
+}
+async function bumpCount(key: string, current: number): Promise<void> {
+  try { await prisma.setting.upsert({ where: { key }, update: { value: String(current + 1) }, create: { key, value: '1' } }); }
+  catch (err: any) { logger.warn('KicksDB: bump contatore fallito', { key, err: err.message }); }
+}
+async function underQuota(): Promise<boolean> {
+  const mKey = monthKey(), dKey = dayKey();
+  const [monthCount, dayCount] = await Promise.all([getCount(mKey), getCount(dKey)]);
+  if (monthCount >= MONTHLY_CAP) { logger.warn('KicksDB: tetto MENSILE raggiunto (piano 1000/mese), solo cache'); return false; }
+  if (dayCount >= DAILY_CAP) { logger.warn('KicksDB: tetto giornaliero raggiunto, solo cache'); return false; }
+  await Promise.all([bumpCount(mKey, monthCount), bumpCount(dKey, dayCount)]);
   return true;
 }
 
@@ -94,7 +110,7 @@ export async function kicksSearch(
   opts?: { limit?: number; productType?: string },
 ): Promise<CatalogCandidate[]> {
   if (!isKicksConfigured()) return [];
-  if (!underQuota()) return []; // tetto giornaliero superato → solo cache
+  if (!(await underQuota())) return []; // tetto giornaliero/mensile superato → solo cache
   const q = (query || '').replace(/[–—•|]/g, ' ').replace(/\s+/g, ' ').trim();
   if (q.length < 2) return [];
   const limit = Math.min(Math.max(opts?.limit || 20, 1), 50);
