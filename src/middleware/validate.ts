@@ -104,7 +104,8 @@ export const editProductSchema = z.object({
   profitShareOverride: sharesSchema,
   warehouseId: z.string().cuid().optional(), // sposta il prodotto in un altro magazzino
   // Modifica VENDITA (solo per prodotti già venduti): prezzo, piattaforma, fee, cliente.
-  salePrice: z.number().positive().max(1000000).nullable().optional(),
+  // Non ".positive()": un Trade può avere conguaglio 0 (scambio alla pari) o negativo (l'hai pagato tu).
+  salePrice: z.number().min(-1000000).max(1000000).nullable().optional(),
   platform: z.string().max(60).nullable().optional(),
   fees: z.number().nonnegative().max(1000000).nullable().optional(),
   customer: z.string().max(120).nullable().optional(),
@@ -120,6 +121,17 @@ export const sellProductSchema = z.object({
   fees: z.number().nonnegative().max(1000000),
   customer: z.string().max(120).optional().nullable(), // identificativo cliente (facoltativo)
   soldDate: z.string().optional().nullable(), // data vendita (facoltativa; default = adesso)
+});
+
+// Trade: scambio di un prodotto con altri oggetti (+ eventuale conguaglio in denaro),
+// concordato fuori piattaforma. cashAmount può essere negativo (paghi tu il conguaglio),
+// zero (scambio alla pari) o positivo (ricevi tu il conguaglio) — a differenza di una
+// vendita normale, per questo non riusa sellProductSchema (che richiede salePrice > 0).
+export const tradeProductSchema = z.object({
+  cashAmount: z.number().min(-1000000).max(1000000),
+  counterparty: z.string().max(120).optional().nullable(), // con chi hai fatto lo scambio (facoltativo)
+  note: z.string().max(500).optional().nullable(), // cosa hai ricevuto in cambio
+  soldDate: z.string().optional().nullable(),
 });
 
 // ==========================================

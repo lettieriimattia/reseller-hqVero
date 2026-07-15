@@ -11,7 +11,7 @@ import { authenticate, AuthRequest, canAccessProduct } from '../middleware/auth'
 import { resolveRole, stripFinancials } from '../middleware/rbac';
 import { uploadImages, isCloudinaryConfigured } from '../services/upload.service';
 import { apiLimiter } from '../middleware/rateLimit';
-import { validate, createProductSchema, editProductSchema, sellProductSchema } from '../middleware/validate';
+import { validate, createProductSchema, editProductSchema, sellProductSchema, tradeProductSchema } from '../middleware/validate';
 import { audit } from '../services/audit.service';
 import { logInventory } from '../services/inventory-log.service';
 import { notifyWarehouseMembers } from '../services/notification.service';
@@ -760,6 +760,95 @@ router.put('/:id', validate(sellProductSchema), async (req: AuthRequest, res: Re
     if (err.message === 'ALREADY_SOLD') return res.status(409).json({ error: 'Prodotto già venduto da un altro utente.' });
     logger.error('Errore PUT /products/:id', { err: err.message });
     res.status(500).json({ error: 'Errore vendita' });
+  }
+});
+
+// ==========================================
+// POST /products/:id/trade — registra uno SCAMBIO (concordato fuori piattaforma):
+// il pezzo esce dal magazzino come un venduto normale (platform: "Trade"), ma al posto
+// di un prezzo fisso salviamo il conguaglio in denaro (può essere negativo se l'hai pagato
+// tu) e una nota su cosa hai ricevuto in cambio. Gli oggetti ricevuti si aggiungono a
+// magazzino separatamente dal client via la normale POST /products.
+// ==========================================
+router.post('/:id/trade', validate(tradeProductSchema), async (req: AuthRequest, res: Response) => {
+  try {
+    const { allowed, product } = await canAccessProduct(req.user!.userId, req.params.id);
+    if (!allowed || !product) {
+      await audit({
+        action: 'UNAUTHORIZED_ACCESS', userId: req.user!.userId, req,
+        resource: req.params.id, metadata: { type: 'product_trade' },
+      });
+      return res.status(403).json({ error: 'Non hai accesso a questo prodotto.' });
+    }
+
+    if (product.deletedAt) return res.status(404).json({ error: 'Prodotto non trovato.' });
+    if (product.status === 'VENDUTO') return res.status(400).json({ error: 'Prodotto già venduto.' });
+
+    const isOwner = (req as any).isOwner as boolean;
+    if (
+      product.status === 'RESERVED' &&
+      product.reservedBy !== req.user!.userId &&
+      !isOwner
+    ) {
+      return res.status(409).json({ error: 'Prodotto riservato da un altro utente.' });
+    }
+
+    const { cashAmount, counterparty, note, soldDate } = req.body;
+    const cust = typeof counterparty === 'string' && counterparty.trim() ? counterparty.trim().slice(0, 120) : null;
+    const tradeNote = typeof note === 'string' && note.trim() ? note.trim().slice(0, 500) : null;
+    let soldAt = new Date();
+    if (soldDate) {
+      const d = new Date(soldDate);
+      if (!isNaN(d.getTime()) && d.getTime() <= Date.now() + 86400000) soldAt = d;
+    }
+
+    const updated = await prisma.$transaction(async tx => {
+      const current = await tx.product.findUnique({ where: { id: req.params.id } });
+      if (!current || current.status === 'VENDUTO') {
+        throw Object.assign(new Error('ALREADY_SOLD'), { status: 409 });
+      }
+      return tx.product.update({
+        where: { id: req.params.id },
+        data: {
+          salePrice: round2(cashAmount) ?? 0, platform: 'Trade', fees: 0, customer: cust,
+          notes: tradeNote, status: 'VENDUTO', soldAt,
+          reservedBy: null, reservedAt: null,
+        },
+      });
+    });
+
+    await logInventory({
+      productId: updated.id,
+      userId: req.user!.userId,
+      action: 'STATUS_CHANGE',
+      field: 'status',
+      oldValue: product.status,
+      newValue: 'VENDUTO',
+      note: `Trade: ${cashAmount >= 0 ? '+' : ''}${cashAmount}€${cust ? ` con ${cust}` : ''}`,
+    });
+    onProductSold(updated.id).catch(() => {});
+
+    await audit({
+      action: 'PRODUCT_TRADE', userId: req.user!.userId, req,
+      resource: updated.id,
+      metadata: { cashAmount, counterparty: cust },
+    });
+
+    if (updated.warehouseId) {
+      await notifyWarehouseMembers({
+        warehouseId: updated.warehouseId,
+        excludeUserId: req.user!.userId,
+        type: 'SALE',
+        title: '🔁 Trade registrato',
+        message: `${product.brand} ${product.name} scambiato${cust ? ` con ${cust}` : ''}`,
+      });
+    }
+
+    res.json(updated);
+  } catch (err: any) {
+    if (err.message === 'ALREADY_SOLD') return res.status(409).json({ error: 'Prodotto già venduto da un altro utente.' });
+    logger.error('Errore POST /products/:id/trade', { err: err.message });
+    res.status(500).json({ error: 'Errore registrazione trade' });
   }
 });
 

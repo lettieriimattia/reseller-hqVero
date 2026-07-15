@@ -25,6 +25,7 @@ export type AuditAction =
   | 'PRODUCT_EDIT'
   | 'PRODUCT_DELETE'
   | 'PRODUCT_SELL'
+  | 'PRODUCT_TRADE'
   | 'PRODUCT_RETURN'
   | 'WAREHOUSE_CREATE'
   | 'WAREHOUSE_JOIN'

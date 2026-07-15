@@ -19,7 +19,7 @@ import {
   KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon, ScanFace,
   Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal, Send,
   Footprints, Shirt, Watch, ShoppingBag, Gem, Glasses, SprayCan, Smartphone,
-  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check, Share2, CalendarDays, MessageCircle, SlidersHorizontal, ExternalLink
+  Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check, Share2, CalendarDays, MessageCircle, SlidersHorizontal, ExternalLink, Repeat
 } from 'lucide-react';
 
 // ==========================================
@@ -609,6 +609,18 @@ export default function App() {
   // la loro somma viene SOTTRATTA dal ricavo (aggiunta alle fees del prodotto).
   const [sellExtraCosts, setSellExtraCosts] = useState<{ desc: string; amount: string }[]>([]);
   const [sellExtraOpen, setSellExtraOpen] = useState(false);
+
+  // ----- TRADE (scambio concordato fuori piattaforma: dai un tuo prodotto, ricevi N oggetti + un conguaglio) -----
+  const [tradeModalOpen, setTradeModalOpen] = useState(false);
+  const [productToTrade, setProductToTrade] = useState<{ids: string[], name: string, maxQty: number, category?: string, warehouseId?: string} | null>(null);
+  const [tradeQuantity, setTradeQuantity] = useState('1');
+  const [tradeCashAmount, setTradeCashAmount] = useState('');
+  const [tradeCashDirection, setTradeCashDirection] = useState<'receive' | 'pay'>('receive');
+  const [tradeCounterparty, setTradeCounterparty] = useState('');
+  const [tradeNote, setTradeNote] = useState('');
+  const [tradeDate, setTradeDate] = useState('');
+  const [tradeReceivedItems, setTradeReceivedItems] = useState<{ name: string; category: string; quantity: string; price: string }[]>([]);
+
   const [smartLotOpen, setSmartLotOpen] = useState(false); // flusso "Lotto smart (IA)"
   const [dashPopular, setDashPopular] = useState<any[]>([]); // catalogo che scorre in dashboard
   const [enrichingPhotos, setEnrichingPhotos] = useState(false);
@@ -2119,6 +2131,7 @@ export default function App() {
       [showProfitSharesModal, () => setShowProfitSharesModal(false)],
       [bulkSellOpen, () => setBulkSellOpen(false)],
       [sellModalOpen, () => setSellModalOpen(false)],
+      [tradeModalOpen, () => setTradeModalOpen(false)],
       [lotOpen, () => setLotOpen(false)],
       [incomingOpen, () => setIncomingOpen(false)],
       [importOpen, () => setImportOpen(false)],
@@ -2144,7 +2157,7 @@ export default function App() {
     window.addEventListener('keydown', onKey);
     window.addEventListener('mousedown', onDown);
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onDown); };
-  }, [contactsPage, taskPanelOpen, periodPickerOpen, swipeDelete, zoomPhoto, lotDetail, modelDetail, marketDetail, notifPanelOpen, cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
+  }, [contactsPage, taskPanelOpen, periodPickerOpen, swipeDelete, zoomPhoto, lotDetail, modelDetail, marketDetail, notifPanelOpen, cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, tradeModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
 
   // Tasti FRECCIA ← → su PC: scorrono i set di 4 mesi del grafico a barre (solo in Analytics).
   useEffect(() => {
@@ -2169,14 +2182,14 @@ export default function App() {
 
   // BLOCCO SCROLL: quando un modale è aperto, la pagina sotto NON deve muoversi/scrollare.
   useEffect(() => {
-    const anyModalOpen = cmdOpen || barcodeModalOpen || deleteConfirmOpen || bulkDeleteConfirmOpen || planModalOpen || twoFaDisableOpen || twoFaSetupOpen || changePwdOpen || trackingModalOpen || sourcingOpen || showProfitSharesModal || bulkSellOpen || sellModalOpen || lotOpen || incomingOpen || importOpen || isFormOpen || editModalOpen || notifPrefsOpen || teamPanelOpen || adminPanelOpen || guideOpen || supportOpen || privacyOpen;
+    const anyModalOpen = cmdOpen || barcodeModalOpen || deleteConfirmOpen || bulkDeleteConfirmOpen || planModalOpen || twoFaDisableOpen || twoFaSetupOpen || changePwdOpen || trackingModalOpen || sourcingOpen || showProfitSharesModal || bulkSellOpen || sellModalOpen || tradeModalOpen || lotOpen || incomingOpen || importOpen || isFormOpen || editModalOpen || notifPrefsOpen || teamPanelOpen || adminPanelOpen || guideOpen || supportOpen || privacyOpen;
     if (!anyModalOpen) return;
     const prevBody = document.body.style.overflow;
     const prevHtml = document.documentElement.style.overflow;
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prevBody; document.documentElement.style.overflow = prevHtml; };
-  }, [cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
+  }, [cmdOpen, barcodeModalOpen, deleteConfirmOpen, bulkDeleteConfirmOpen, planModalOpen, twoFaDisableOpen, twoFaSetupOpen, changePwdOpen, trackingModalOpen, sourcingOpen, showProfitSharesModal, bulkSellOpen, sellModalOpen, tradeModalOpen, lotOpen, incomingOpen, importOpen, isFormOpen, editModalOpen, notifPrefsOpen, teamPanelOpen, adminPanelOpen, guideOpen, supportOpen, privacyOpen]);
 
   useEffect(() => {
     if (userCategories.length > 0 && category === '') setCategory(userCategories[0]);
@@ -3768,7 +3781,99 @@ export default function App() {
       showToast(t('ts.saleRecorded'), 'ok', { label: t('common.cancel'), onClick: () => undoSellIds(idsToProcess) });
     }
   };
-  
+
+  // ----- TRADE: come sellFromCard/openSellModal/confirmSell, ma invece di un prezzo fisso
+  // registri un conguaglio in denaro (può essere 0 o a tuo sfavore) + gli oggetti ricevuti,
+  // che vengono creati come nuovi prodotti nello stesso magazzino di quello scambiato. -----
+  const openTradeModal = (ids: string[], itemName: string, p: any) => {
+    setProductToTrade({ ids, name: itemName, maxQty: ids.length, category: p.category, warehouseId: p.warehouseId || baseWarehouse?.id });
+    setTradeQuantity('1');
+    setTradeCashAmount('');
+    setTradeCashDirection('receive');
+    setTradeCounterparty('');
+    setTradeNote('');
+    setTradeDate(new Date().toISOString().slice(0, 10));
+    setTradeReceivedItems([{ name: '', category: p.category || '', quantity: '1', price: '' }]);
+    setTradeModalOpen(true);
+  };
+
+  const tradeFromCard = (g: any) => {
+    if (g.isModel) { setModelDetail(g); return; }
+    if (g.isLot) { setLotDetail(g); return; }
+    openTradeModal(g.ids, `${fullName(g.brand, g.name)}`, g);
+  };
+
+  const confirmTrade = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productToTrade) return;
+
+    const qtyToProcess = parseInt(tradeQuantity) || 1;
+    const idsToProcess = productToTrade.ids.slice(0, qtyToProcess);
+    const signedCash = (parseFloat(tradeCashAmount) || 0) * (tradeCashDirection === 'pay' ? -1 : 1);
+    const unitCash = round2(signedCash / qtyToProcess) ?? 0;
+    const receivedRows = tradeReceivedItems.filter(r => r.name.trim());
+    const receivedSummary = receivedRows
+      .map(r => `${(parseInt(r.quantity) || 1) > 1 ? `${parseInt(r.quantity)}x ` : ''}${r.name.trim()}`)
+      .join(', ');
+    const counterparty = tradeCounterparty.trim() || null;
+    const fullNote = [receivedSummary, tradeNote.trim()].filter(Boolean).join(' — ') || null;
+    const soldDate = tradeDate && tradeDate !== new Date().toISOString().slice(0, 10) ? tradeDate : undefined;
+
+    let hasError = false;
+    for (const id of idsToProcess) {
+      const { ok } = await apiCall(`/products/${id}/trade`, {
+        method: 'POST',
+        body: JSON.stringify({ cashAmount: unitCash, counterparty, note: fullNote, ...(soldDate ? { soldDate } : {}) }),
+      });
+      if (!ok) hasError = true;
+    }
+    // Gli oggetti ricevuti in cambio diventano nuovi prodotti nello stesso magazzino.
+    if (!hasError) {
+      for (const item of receivedRows) {
+        const { ok, data } = await apiCall<any>('/products', {
+          method: 'POST',
+          body: JSON.stringify({
+            category: item.category.trim() || productToTrade.category || 'Altro',
+            warehouseId: productToTrade.warehouseId,
+            brand: item.name.trim().split(/\s+/)[0] || item.name.trim(),
+            name: item.name.trim(),
+            price: parseFloat(item.price) || 0,
+            customShares: [], photos: [], profitShareOverride: [],
+          }),
+        });
+        if (!ok) { hasError = true; continue; }
+        const qty = Math.max(1, parseInt(item.quantity) || 1);
+        // Pezzi aggiuntivi dello stesso oggetto ricevuto (se ne sono arrivati più di uno).
+        for (let i = 1; i < qty; i++) {
+          await apiCall('/products', {
+            method: 'POST',
+            body: JSON.stringify({
+              category: item.category.trim() || productToTrade.category || 'Altro',
+              warehouseId: productToTrade.warehouseId,
+              brand: item.name.trim().split(/\s+/)[0] || item.name.trim(),
+              name: item.name.trim(),
+              price: parseFloat(item.price) || 0,
+              customShares: [], photos: [], profitShareOverride: [],
+            }),
+          });
+        }
+        if (data?.id) {
+          await apiCall(`/products/${data.id}/notes`, {
+            method: 'PATCH',
+            body: JSON.stringify({ notes: `Ricevuto in trade${counterparty ? ` con ${counterparty}` : ''}` }),
+          });
+        }
+      }
+    }
+    if (hasError) showToast(t('ts.tradeError'), 'err');
+    else {
+      await fetchProducts();
+      setTradeModalOpen(false);
+      setProductToTrade(null);
+      showToast(t('ts.tradeRecorded'), 'ok');
+    }
+  };
+
   const openEditModal = (group: any) => {
     if (swipeActed.current) { swipeActed.current = false; return; } // tap subito dopo una swipe → ignora
     // I lotti aprono il dettaglio (lista pezzi), non la modifica diretta.
@@ -6129,6 +6234,8 @@ export default function App() {
                               </>
                             )}
                             <button onClick={() => sellFromCard(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> {t('mag.sell')}</button>
+                            <div className="w-px bg-[var(--fill)]" />
+                            <button onClick={() => tradeFromCard(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[#8397aa] hover:bg-[#8397aa]/10"><Repeat size={13} /> {t('mag.trade')}</button>
                           </div>
                         )}
                       </div>
@@ -6187,12 +6294,16 @@ export default function App() {
                                 className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> {g.toShip ? t('mag.inList') : t('dash.toShip')}</button>
                             </div>
                             {isAdmin ? (
-                              <div className="grid grid-cols-2 gap-1.5">
+                              <div className="grid grid-cols-3 gap-1.5">
                                 <button onClick={() => cardOr(g, openShipping)} className="py-2 rounded-lg text-xs font-bold bg-[#8397aa]/15 text-[#9fb0bd] hover:bg-[#8397aa]/25 hover:text-[#9fb0bd] transition-colors flex items-center justify-center gap-1"><Package size={12} /> {t('mag.ship')}</button>
                                 <button onClick={() => sellFromCard(g)} className="py-2 rounded-lg text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1"><DollarSign size={12} /> {t('mag.sell')}</button>
+                                <button onClick={() => tradeFromCard(g)} className="py-2 rounded-lg text-xs font-bold bg-[#8397aa]/15 text-[#8397aa] hover:bg-[#8397aa]/25 transition-colors flex items-center justify-center gap-1"><Repeat size={12} /> {t('mag.trade')}</button>
                               </div>
                             ) : (
-                              <button onClick={() => sellFromCard(g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> {t('mag.sell')}</button>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                <button onClick={() => sellFromCard(g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> {t('mag.sell')}</button>
+                                <button onClick={() => tradeFromCard(g)} className="py-2 rounded-lg text-sm font-bold bg-[#8397aa]/15 text-[#8397aa] hover:bg-[#8397aa]/25 transition-colors flex items-center justify-center gap-1.5"><Repeat size={14} /> {t('mag.trade')}</button>
+                              </div>
                             )}
                             {MARKETPLACE_ENABLED && (
                             <button onClick={() => quickTogglePublic(g)}
@@ -6243,6 +6354,7 @@ export default function App() {
                       'eBay': 'text-yellow-300 bg-yellow-500/15 border-yellow-500/20',
                       'Subito': 'text-[#9fb0bd] bg-[#8397aa]/15 border-[#8397aa]/20',
                       'Privato': 'text-[var(--text-muted)] bg-[var(--fill)] border-[var(--border-2)]',
+                      'Trade': 'text-[#8397aa] bg-[#8397aa]/15 border-[#8397aa]/25',
                     };
                     return <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-2.5 lg:gap-3">{groupedSoldArray.map((g: any) => {
                       const marginPct = g.totalRevenue > 0 && g.purchasePrice > 0
@@ -6287,7 +6399,7 @@ export default function App() {
                         );
                       }
 
-                      if (g.salePrice === 0) {
+                      if (g.salePrice === 0 && g.platform !== 'Trade') {
                         return (
                           <div key={g.ids.join(',')} className="bg-[var(--surface)] border border-yellow-500/20 rounded-2xl overflow-hidden">
                             <div className="flex items-center gap-3 p-4">
@@ -10619,7 +10731,124 @@ export default function App() {
           </div>
         </div>
       )}
-      
+
+      {/* ========== MODALE: TRADE (scambio fuori piattaforma) ========== */}
+      {tradeModalOpen && productToTrade && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setTradeModalOpen(false))}>
+          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
+            <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
+            <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between">
+              <h2 className="text-xl font-semibold flex items-center gap-2"><Repeat size={18} className="text-[#8397aa]" /> {t('mag.trade')}</h2>
+              <button onClick={() => setTradeModalOpen(false)}
+                className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={confirmTrade} className="p-5 space-y-4">
+              <p className="text-sm text-[var(--text-muted)]">{lang === 'en' ? 'You give:' : 'Dai via:'} <span className="font-bold text-[var(--text)]">{productToTrade.name}</span></p>
+
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.quantity')}</label>
+                <div className="flex items-stretch gap-2 max-w-[160px]">
+                  <button type="button" aria-label="-"
+                    onClick={() => setTradeQuantity(q => String(Math.max(1, (parseInt(q) || 1) - 1)))}
+                    className="w-10 shrink-0 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] text-lg font-black text-[var(--text)] hover:bg-[var(--fill)] active:scale-95 transition disabled:opacity-40"
+                    disabled={(parseInt(tradeQuantity) || 1) <= 1}>−</button>
+                  <input type="number" min="1" max={productToTrade.maxQty} inputMode="numeric"
+                    value={tradeQuantity}
+                    onChange={(e: any) => { const n = parseInt(e.target.value); setTradeQuantity(!n ? '' : String(Math.min(productToTrade!.maxQty, Math.max(1, n)))); }}
+                    className="w-full text-center bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm font-bold focus:border-[#8397aa] outline-none" />
+                  <button type="button" aria-label="+"
+                    onClick={() => setTradeQuantity(q => String(Math.min(productToTrade!.maxQty, (parseInt(q) || 1) + 1)))}
+                    className="w-10 shrink-0 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] text-lg font-black text-[var(--text)] hover:bg-[var(--fill)] active:scale-95 transition disabled:opacity-40"
+                    disabled={(parseInt(tradeQuantity) || 1) >= productToTrade.maxQty}>+</button>
+                </div>
+                <p className="text-[10px] text-[var(--text-soft)] mt-1">{t('sell.maxAvailable')}: {productToTrade.maxQty}</p>
+              </div>
+
+              {/* Conguaglio: può uscire o entrare, per questo il toggle direzione */}
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{lang === 'en' ? 'Cash difference' : 'Conguaglio in denaro'} <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">({lang === 'en' ? 'optional' : 'facoltativo'})</span></label>
+                <div className="flex gap-2">
+                  <div className="flex rounded-xl overflow-hidden border border-[var(--border-2)] shrink-0">
+                    <button type="button" onClick={() => setTradeCashDirection('receive')}
+                      className={`px-3 py-3 text-xs font-bold transition-colors ${tradeCashDirection === 'receive' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[var(--surface-2)] text-[var(--text-soft)]'}`}>
+                      {lang === 'en' ? 'I receive' : 'Ricevo'}
+                    </button>
+                    <button type="button" onClick={() => setTradeCashDirection('pay')}
+                      className={`px-3 py-3 text-xs font-bold transition-colors ${tradeCashDirection === 'pay' ? 'bg-red-500/20 text-red-400' : 'bg-[var(--surface-2)] text-[var(--text-soft)]'}`}>
+                      {lang === 'en' ? 'I pay' : 'Pago'}
+                    </button>
+                  </div>
+                  <input type="number" step="0.01" min="0" value={tradeCashAmount} placeholder="0"
+                    onChange={(e: any) => setTradeCashAmount(e.target.value)}
+                    className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><Users size={11} /> {lang === 'en' ? 'Traded with' : 'Con chi'} <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">({lang === 'en' ? 'optional' : 'facoltativo'})</span></label>
+                <input type="text" value={tradeCounterparty} onChange={e => setTradeCounterparty(e.target.value)} placeholder={lang === 'en' ? 'Name, @social…' : 'Nome, @social…'} maxLength={120}
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+              </div>
+
+              {/* Oggetti ricevuti in cambio: diventano nuovi prodotti nello stesso magazzino */}
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{lang === 'en' ? 'What you received' : 'Cosa hai ricevuto in cambio'}</label>
+                <div className="space-y-2">
+                  {tradeReceivedItems.map((item, i) => (
+                    <div key={i} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 space-y-2">
+                      <div className="flex gap-2">
+                        <input type="text" value={item.name} placeholder={lang === 'en' ? 'Item name…' : 'Nome oggetto…'}
+                          onChange={(e: any) => setTradeReceivedItems(arr => arr.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
+                          className="flex-1 min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                        {tradeReceivedItems.length > 1 && (
+                          <button type="button" onClick={() => setTradeReceivedItems(arr => arr.filter((_, j) => j !== i))}
+                            className="w-9 shrink-0 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"><X size={14} /></button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <input type="text" value={item.category} placeholder={lang === 'en' ? 'Category' : 'Categoria'}
+                          onChange={(e: any) => setTradeReceivedItems(arr => arr.map((x, j) => j === i ? { ...x, category: e.target.value } : x))}
+                          className="bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                        <input type="number" min="1" value={item.quantity} placeholder={lang === 'en' ? 'Qty' : 'Q.tà'}
+                          onChange={(e: any) => setTradeReceivedItems(arr => arr.map((x, j) => j === i ? { ...x, quantity: e.target.value } : x))}
+                          className="bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                        <input type="number" step="0.01" min="0" value={item.price} placeholder={lang === 'en' ? 'Value €' : 'Valore €'}
+                          onChange={(e: any) => setTradeReceivedItems(arr => arr.map((x, j) => j === i ? { ...x, price: e.target.value } : x))}
+                          className="bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                      </div>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => setTradeReceivedItems(arr => [...arr, { name: '', category: productToTrade.category || '', quantity: '1', price: '' }])}
+                    className="w-full py-2 rounded-lg border border-dashed border-[var(--border-2)] text-xs font-bold text-[#8397aa] hover:bg-[#8397aa]/10 flex items-center justify-center gap-1.5">
+                    <Plus size={13} /> {lang === 'en' ? 'Add item' : 'Aggiungi oggetto'}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{lang === 'en' ? 'Note' : 'Nota'} <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">({lang === 'en' ? 'optional' : 'facoltativo'})</span></label>
+                <input type="text" value={tradeNote} onChange={e => setTradeNote(e.target.value)} maxLength={300}
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><CalendarDays size={11} /> {lang === 'en' ? 'Trade date' : 'Data trade'}</label>
+                <input type="date" value={tradeDate} onChange={e => setTradeDate(e.target.value)} max={new Date().toISOString().slice(0, 10)}
+                  className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none appearance-none" />
+              </div>
+
+              <button type="submit"
+                className="w-full bg-[#8397aa] hover:bg-[#728496] py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
+                <Repeat size={16} /> {lang === 'en' ? 'Confirm trade' : 'Conferma trade'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ========== MODALE: MODIFICA PRODOTTO ========== */}
       {editModalOpen && productToEdit && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" {...swipeBack(() => setEditModalOpen(false))}>
@@ -10794,7 +11023,7 @@ export default function App() {
                       <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">Piattaforma</label>
                       <select value={editSalePlatform} onChange={e => setEditSalePlatform(e.target.value)}
                         className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-[#8397aa] outline-none">
-                        <option>Vinted</option><option>Subito</option><option>StockX</option><option>eBay</option><option>Privato</option>
+                        <option>Vinted</option><option>Subito</option><option>StockX</option><option>eBay</option><option>Privato</option><option>Trade</option>
                       </select>
                     </div>
                     <div>
