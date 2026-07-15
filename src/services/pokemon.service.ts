@@ -20,8 +20,13 @@ export async function pokemonSearch(query: string, limit = 12): Promise<CatalogC
   const raw = (query || '').trim();
   if (raw.length < 2) return [];
   // Ogni parola come prefisso wildcard (AND): "dark charizard" → name:dark* name:charizard*
+  // Rimuove i caratteri speciali della sintassi Lucene (es. "/" nei numeri carta tipo "154/172"),
+  // altrimenti l'API risponde 400 e la ricerca fallisce sempre.
   const terms = raw.split(/\s+/).filter(Boolean)
-    .map(w => `name:${w.replace(/["':]/g, '')}*`).join(' ');
+    .map(w => w.replace(/[+\-!(){}[\]^"~*?:\\/]/g, ''))
+    .filter(Boolean)
+    .map(w => `name:${w}*`).join(' ');
+  if (!terms) return [];
   const url = `${PTCG_BASE}/cards?q=${encodeURIComponent(terms)}&pageSize=${Math.min(Math.max(limit, 1), 50)}&orderBy=-set.releaseDate`;
   try {
     const headers: Record<string, string> = { Accept: 'application/json' };
