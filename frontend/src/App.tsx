@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { DynamicForm } from './components/DynamicForm';
 import CatalogBrowser from './components/CatalogBrowser';
@@ -10,8 +10,8 @@ import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
 const FACE_ID_ENABLED = false;
 import { getLang, setLangStorage, translate, LANGUAGES, MARKETPLACE_ENABLED, type Lang } from './i18n';
 // xlsx caricato on-demand (import dinamico) dentro gli handler: resta fuori dal bundle iniziale
-// Grafico caricato in lazy: recharts finisce in un chunk separato, fuori dal bundle iniziale
-const TrendChart = lazy(() => import('./components/TrendChart'));
+import HomeLedger from './components/HomeLedger';
+import AllocationPie3D from './components/AllocationPie3D';
 import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
@@ -108,7 +108,7 @@ function MonthFilter({ value, onChange, locale = 'it' }: { value: YM | null; onC
   const now = new Date();
   const atCurrent = value.y === now.getFullYear() && value.m >= now.getMonth();
   return (
-    <div className="shrink-0 flex items-center gap-0.5 bg-[#8397aa] text-white rounded-full pl-1 pr-1 py-0.5">
+    <div className="shrink-0 flex items-center gap-0.5 bg-brand text-white rounded-full pl-1 pr-1 py-0.5">
       <button onClick={() => shift(-1)} aria-label="prev" className="w-6 h-6 rounded-full hover:bg-white/20 flex items-center justify-center text-sm leading-none">‹</button>
       <span className="text-xs font-bold capitalize px-1 whitespace-nowrap">{label}</span>
       <button onClick={() => shift(1)} disabled={atCurrent} aria-label="next" className="w-6 h-6 rounded-full hover:bg-white/20 flex items-center justify-center text-sm leading-none disabled:opacity-40">›</button>
@@ -367,6 +367,11 @@ function stripDupBrand(brand?: string | null, name?: string | null): string {
 function fullName(brand?: string | null, name?: string | null): string {
   return `${(brand || '').trim()} ${stripDupBrand(brand, name)}`.trim();
 }
+// Importi in formato italiano, senza decimali: "1.234 €" (punto delle migliaia anche a 4 cifre).
+const EUR0 = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0, useGrouping: 'always' as any });
+function eur0(n?: number | null): string {
+  return EUR0.format(Math.round(Number(n) || 0) || 0);
+}
 // Valutazione di mercato: DISATTIVATA. La ricerca eBay generica dava prezzi falsi
 // (es. Rolex a 110€ perché pescava cinturini/parti/repliche). Riattivare SOLO con
 // fonti affidabili per categoria (StockX sneaker, Chrono24 orologi, ecc.).
@@ -486,11 +491,11 @@ export default function App() {
   // 'chrome' = tema premium cromato, ora DEFAULT per tutti gli account.
   const [theme, setTheme] = useState<'dark' | 'light' | 'glass' | 'lux' | 'chrome' | 'carbon'>(() => {
     try {
-      // Rollout CARBON (Pagani × JP Morgan): porta TUTTI al tema scuro/carbon UNA volta (poi
-      // resta modificabile dall'utente). 'dark' come valore → applica la colorazione carbon.
-      if (localStorage.getItem('hq-theme-rollout') !== 'carbon') {
+      // Rollout BOX (nuova identità): porta TUTTI al tema scuro "box" UNA volta (poi resta
+      // modificabile dall'utente). 'dark' come valore → applica la classe .box.
+      if (localStorage.getItem('hq-theme-rollout') !== 'box') {
         localStorage.setItem('hq-theme', 'dark');
-        localStorage.setItem('hq-theme-rollout', 'carbon');
+        localStorage.setItem('hq-theme-rollout', 'box');
         return 'dark';
       }
       return (localStorage.getItem('hq-theme') as 'dark' | 'light' | 'glass' | 'lux' | 'chrome' | 'carbon') || 'dark';
@@ -498,10 +503,9 @@ export default function App() {
   });
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('light', 'glass', 'lux', 'chrome', 'carbon');
-    // SCAMBIO look Scuro↔Cromato (richiesta utente): il "dark" attuale sembrava più cromato e
-    // viceversa. Ora l'etichetta "Scuro" (dark) applica il look .chrome e "Cromato" applica .carbon.
-    const cls = theme === 'dark' ? 'chrome' : theme === 'chrome' ? 'carbon' : theme;
+    root.classList.remove('box', 'light', 'glass', 'lux', 'chrome', 'carbon');
+    // "Scuro" (dark) = identità .box (default); "Cromato" resta disponibile come look .carbon.
+    const cls = theme === 'dark' ? 'box' : theme === 'chrome' ? 'carbon' : theme;
     root.classList.add(cls);
     try { localStorage.setItem('hq-theme', theme); } catch { /* storage non disponibile */ }
   }, [theme]);
@@ -512,6 +516,7 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
   const [filtersOpen, setFiltersOpen] = useState(false); // pannello filtri collassabile (magazzino minimal)
+  const [cardMenuKey, setCardMenuKey] = useState<string | null>(null); // menu "⋯" aperto su una card del magazzino (desktop)
   // PERIODO "Personal": pilota profitto personale + grafico dashboard + buyer/seller del periodo.
   const [personalPeriod, setPersonalPeriod] = useState<{ kind: '7d' | '30d' | 'year' | 'all' | 'custom'; from?: string; to?: string }>({ kind: 'all' });
   const [periodPickerOpen, setPeriodPickerOpen] = useState(false);
@@ -1149,7 +1154,7 @@ export default function App() {
   // Lucchetto cliccabile → apre i Piani. Mostralo accanto alle feature premium bloccate.
   const PlanLock = ({ plan = 'Pro' }: { plan?: string }) => (
     <button type="button" onClick={(e) => { e.stopPropagation(); openPlanModal(); }}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8397aa]/15 text-[#8397aa] shrink-0">
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand/15 text-brand shrink-0">
       <Lock size={10} /> {plan}
     </button>
   );
@@ -2381,22 +2386,6 @@ export default function App() {
     }
   });
   
-  // Grafico dashboard: SOLO LA MIA QUOTA (come la card Personale), su TUTTE le vendite del periodo
-  // (NON filtrate per la categoria del Magazzino). Ricavi e Profitto sono moltiplicati per la mia
-  // frazione (myProfitFactor): se sono da solo = 100% (nessun cambio); in team = solo la mia parte.
-  const trendData = useMemo(() => (Object.values(
-    products.filter(p => p.status === 'VENDUTO' && inPersonalPeriod(p.soldAt || p.createdAt)).reduce((acc, p) => {
-      const day = p.soldAt ? new Date(p.soldAt) : new Date();
-      const dateKey = day.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
-      if (!acc[dateKey]) acc[dateKey] = { date: dateKey, Ricavi: 0, Profitto: 0, _ts: new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime() };
-      const mine = myProfitFactor(p);
-      acc[dateKey].Ricavi += (p.salePrice || 0) * mine;
-      acc[dateKey].Profitto += ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)) * mine;
-      return acc;
-    }, {} as Record<string, any>)
-  ) as any[]).sort((a, b) => a._ts - b._ts)   // ordine CRONOLOGICO sull'asse X
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  , [products, personalPeriod]);
 
   const platformBreakdown = useMemo(() => {
     const bd: Record<string, { revenue: number; profit: number; count: number; fees: number }> = {};
@@ -2420,12 +2409,10 @@ export default function App() {
   const weekProfit = weekSales.reduce((a, p) => a + (((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)) * myProfitFactor(p)), 0);
   const totalItems = products.length;
   const sellThroughRate = totalItems > 0 ? Math.round((globalSold.length / totalItems) * 100) : 0;
-  const avgMarginPct = globalSold.length > 0
-    ? globalSold.reduce((a, p) => {
-        const m = p.purchasePrice > 0 ? ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)) / p.purchasePrice * 100 : 0;
-        return a + m;
-      }, 0) / globalSold.length
-    : 0;
+  // Margine medio = profitto totale / ricavi totali. (La media dei margini per pezzo esplodeva
+  // a valori tipo +1700% con un solo pezzo pagato quasi zero.)
+  const globalRevenue = globalSold.reduce((a, p) => a + (p.salePrice || 0), 0);
+  const avgMarginPct = globalRevenue > 0 ? (globalProfitto / globalRevenue) * 100 : 0;
   const avgDaysToSell = globalSold.filter(p => p.createdAt && p.soldAt).length > 0
     ? globalSold.filter(p => p.createdAt && p.soldAt).reduce((a, p) => {
         return a + Math.floor((new Date(p.soldAt!).getTime() - new Date(p.createdAt!).getTime()) / 86400000);
@@ -3271,7 +3258,7 @@ export default function App() {
         <Lock size={28} className="mx-auto text-[var(--text-faint)] mb-3" />
         <p className="text-sm font-bold">Funzione del piano {req?.name || 'superiore'}</p>
         <p className="text-xs text-[var(--text-soft)] mt-1">Disponibile da {req ? `${req.name} (${req.priceMonthly}€/mese)` : 'un piano superiore'}.</p>
-        <button onClick={() => setProTab('plans')} className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-[#8397aa] hover:bg-[#9fb0bd] text-white">Vedi i piani</button>
+        <button onClick={() => setProTab('plans')} className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-brand hover:bg-brand-hi text-white">Vedi i piani</button>
       </div>
     );
   };
@@ -4966,7 +4953,7 @@ export default function App() {
       <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] font-sans">
         <header className="sticky top-0 z-40 bg-[var(--bg-blur)] backdrop-blur-xl border-b border-[var(--border)] px-4 py-3 flex items-center justify-between">
           <span className="font-black text-lg">HQVault <span className="text-[var(--text-soft)]">Market</span></span>
-          <button onClick={() => setPublicMarket(false)} className="px-4 py-2 rounded-xl bg-[#8397aa] text-white text-sm font-bold">{t('auth.signIn')}</button>
+          <button onClick={() => setPublicMarket(false)} className="px-4 py-2 rounded-xl bg-brand text-white text-sm font-bold">{t('auth.signIn')}</button>
         </header>
         <div className="max-w-[1100px] mx-auto p-4 space-y-4">
           <div className="flex gap-2">
@@ -4975,20 +4962,20 @@ export default function App() {
               <input value={marketQuery} onChange={e => setMarketQuery(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') fetchMarket(); }}
                 placeholder="Cerca modello, colore, SKU…"
-                className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-[#8397aa]" />
+                className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-brand" />
             </div>
-            <button onClick={fetchMarket} className="px-4 py-2.5 rounded-xl bg-[#8397aa] text-white text-sm font-bold">Cerca</button>
+            <button onClick={fetchMarket} className="px-4 py-2.5 rounded-xl bg-brand text-white text-sm font-bold">Cerca</button>
           </div>
           {marketCats.length > 0 && (
             <div className="flex gap-2 flex-wrap">
-              <button onClick={() => setMarketCat('')} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${!marketCat ? 'bg-[#8397aa]/10 border-[#8397aa]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>Tutte</button>
+              <button onClick={() => setMarketCat('')} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${!marketCat ? 'bg-brand/10 border-brand' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>Tutte</button>
               {marketCats.map((c: string) => (
-                <button key={c} onClick={() => setMarketCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${marketCat === c ? 'bg-[#8397aa]/10 border-[#8397aa]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{c}</button>
+                <button key={c} onClick={() => setMarketCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${marketCat === c ? 'bg-brand/10 border-brand' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{c}</button>
               ))}
             </div>
           )}
           {marketLoading ? (
-            <div className="flex justify-center py-16"><Loader2 className="animate-spin text-[#8397aa]" size={28} /></div>
+            <div className="flex justify-center py-16"><Loader2 className="animate-spin text-brand" size={28} /></div>
           ) : marketItems.length === 0 ? (
             <div className="text-center py-16 text-[var(--text-soft)]">Nessun articolo in vetrina.</div>
           ) : (
@@ -5027,7 +5014,7 @@ export default function App() {
                   <p className="text-sm text-[var(--text-soft)] mt-1">{marketDetail.size} · {marketDetail.condition} · {marketDetail.category}</p>
                   <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
                   {marketDetail.breakdown && (
-                    <p className="text-sm font-bold text-[#8397aa] mt-0.5">
+                    <p className="text-sm font-bold text-brand mt-0.5">
                       {t('market.total')} {marketDetail.breakdown.total.toFixed(2)}€
                       <span className="font-normal text-[var(--text-soft)]"> · {t('market.totalIncl')}</span>
                     </p>
@@ -5037,7 +5024,7 @@ export default function App() {
               </div>
               <div className="border-t border-[var(--border)] p-3 shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
                 <button onClick={() => { setMarketDetail(null); setPublicMarket(false); }}
-                  className="w-full py-3 rounded-xl bg-[#8397aa] hover:bg-[#6f8394] text-white font-bold transition-colors">
+                  className="w-full py-3 rounded-xl bg-brand hover:bg-brand-lo text-white font-bold transition-colors">
                   {t('market.loginToBuy')}
                 </button>
               </div>
@@ -5066,10 +5053,10 @@ export default function App() {
               <p className="text-center text-[11px] text-[var(--text-faint)]">{t('auth.codeSent')}</p>
               <input value={verifyCode} onChange={e => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 inputMode="numeric" placeholder="______" maxLength={6}
-                className="w-full text-center tracking-[0.5em] text-xl font-bold bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl py-3 outline-none focus:border-[#8397aa]" />
+                className="w-full text-center tracking-[0.5em] text-xl font-bold bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl py-3 outline-none focus:border-brand" />
               {authError && <p className="text-red-400 text-sm text-center">{authError}</p>}
               <button type="button" onClick={submitVerify} disabled={authLoading}
-                className="w-full bg-[#8397aa] hover:bg-[#9fb0bd] py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center">
+                className="w-full bg-brand hover:bg-brand-hi py-3 rounded-xl text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center">
                 {authLoading ? <Loader2 className="animate-spin" size={20} /> : t('auth.verifyAndEnter')}
               </button>
               <div className="flex items-center justify-between text-sm">
@@ -5106,7 +5093,7 @@ export default function App() {
                     <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] mb-6">
                       <button type="button" onClick={() => setRegType('new_team')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
-                          regType === 'new_team' ? 'bg-[#8397aa] text-[var(--text)]' : 'text-[var(--text-soft)]'
+                          regType === 'new_team' ? 'bg-brand text-[var(--text)]' : 'text-[var(--text-soft)]'
                         }`}>{t('auth.foundCompany')}</button>
                       <button type="button" onClick={() => setRegType('join_team')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
@@ -5117,7 +5104,7 @@ export default function App() {
                     <div>
                       <label className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('auth.yourName')}</label>
                       <input type="text" required value={authName} onChange={e => setAuthName(e.target.value)}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#8397aa] outline-none"
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-brand outline-none"
                         placeholder={t('auth.namePlaceholder')} />
                     </div>
                     
@@ -5151,7 +5138,7 @@ export default function App() {
                   <label className="text-xs font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Email</label>
                   <input type="email" required value={authEmail}
                     onChange={e => setAuthEmail(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-[#8397aa] outline-none"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] focus:border-brand outline-none"
                     placeholder="mario@email.com" />
                 </div>
                 
@@ -5160,7 +5147,7 @@ export default function App() {
                   <div className="relative">
                     <input type={showPassword ? 'text' : 'password'} required value={authPassword}
                       onChange={e => setAuthPassword(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 pr-12 text-[var(--text)] focus:border-[#8397aa] outline-none"
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 pr-12 text-[var(--text)] focus:border-brand outline-none"
                       placeholder="••••••••" />
                     <button type="button" onClick={() => setShowPassword(s => !s)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)] hover:text-[var(--text)]">
@@ -5192,7 +5179,7 @@ export default function App() {
                 {/* Privacy (obbligatorio) — riga grande tappabile, niente più mini-checkbox */}
                 <button type="button" onClick={() => setPrivacyAccepted(v => !v)}
                   className="w-full flex items-start gap-3 text-left p-2.5 rounded-xl border border-[var(--border-2)] active:bg-white/5 transition-colors">
-                  <span className={`mt-0.5 shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${privacyAccepted ? 'bg-[#8397aa] border-[#8397aa]' : 'border-[var(--border-3)]'}`}>
+                  <span className={`mt-0.5 shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${privacyAccepted ? 'bg-brand border-brand' : 'border-[var(--border-3)]'}`}>
                     {privacyAccepted && <Check size={16} className="text-white" />}
                   </span>
                   <span className="text-[12px] text-[var(--text-soft)] leading-relaxed">
@@ -5207,7 +5194,7 @@ export default function App() {
                 {/* Marketing (opzionale) */}
                 <button type="button" onClick={() => setMarketingConsent(v => !v)}
                   className="w-full flex items-start gap-3 text-left p-2.5 rounded-xl border border-[var(--border-2)] active:bg-white/5 transition-colors">
-                  <span className={`mt-0.5 shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${marketingConsent ? 'bg-[#8397aa] border-[#8397aa]' : 'border-[var(--border-3)]'}`}>
+                  <span className={`mt-0.5 shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${marketingConsent ? 'bg-brand border-brand' : 'border-[var(--border-3)]'}`}>
                     {marketingConsent && <Check size={16} className="text-white" />}
                   </span>
                   <span className="text-[12px] text-[var(--text-soft)] leading-relaxed">
@@ -5219,7 +5206,7 @@ export default function App() {
             )}
 
             <button type="submit" disabled={authLoading}
-              className="w-full bg-[#8397aa] hover:bg-[#9fb0bd] py-3 rounded-xl text-[var(--text)] font-bold transition-all disabled:opacity-50 mt-4 flex items-center justify-center">
+              className="w-full bg-brand hover:bg-brand-hi py-3 rounded-xl text-[var(--text)] font-bold transition-all disabled:opacity-50 mt-4 flex items-center justify-center">
               {authLoading ? <Loader2 className="animate-spin" size={20} /> :
                 require2FA ? t('auth.verify2fa') : (authMode === 'login' ? t('auth.enter') : t('auth.register'))}
             </button>
@@ -5228,8 +5215,8 @@ export default function App() {
               <>
                 {FACE_ID_ENABLED && (
                 <button type="button" onClick={loginFaceId}
-                  className="w-full mt-3 py-3 rounded-xl border border-[var(--border-2)] text-[var(--text)] font-bold text-sm flex items-center justify-center gap-2 hover:border-[#8397aa] transition-colors">
-                  <ScanFace size={18} className="text-[#8397aa]" /> Entra con Face ID
+                  className="w-full mt-3 py-3 rounded-xl border border-[var(--border-2)] text-[var(--text)] font-bold text-sm flex items-center justify-center gap-2 hover:border-brand transition-colors">
+                  <ScanFace size={18} className="text-brand" /> Entra con Face ID
                 </button>
                 )}
                 <button type="button"
@@ -5253,7 +5240,7 @@ export default function App() {
                   <>
                     <p className="text-sm text-[var(--text-soft)] mb-4">Inserisci la tua email: ti invieremo un codice per reimpostare la password.</p>
                     <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="mario@email.com" autoFocus
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] outline-none focus:border-[#8397aa]" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] outline-none focus:border-brand" />
                     {forgotMsg && <p className="text-xs text-red-400 mt-2">{forgotMsg}</p>}
                     <button disabled={forgotBusy || !forgotEmail.trim()}
                       onClick={async () => {
@@ -5263,7 +5250,7 @@ export default function App() {
                         if (!ok) { setForgotMsg(data?.error || 'Errore. Riprova.'); return; }
                         setForgotStep('code');
                       }}
-                      className="w-full mt-4 py-3 rounded-xl bg-[#8397aa] hover:bg-[#6f8394] text-white font-bold disabled:opacity-40 flex items-center justify-center gap-2">
+                      className="w-full mt-4 py-3 rounded-xl bg-brand hover:bg-brand-lo text-white font-bold disabled:opacity-40 flex items-center justify-center gap-2">
                       {forgotBusy && <Loader2 size={18} className="animate-spin" />} Invia codice
                     </button>
                   </>
@@ -5271,9 +5258,9 @@ export default function App() {
                   <>
                     <p className="text-sm text-[var(--text-soft)] mb-4">Se l'email è registrata, ti abbiamo inviato un codice a <b className="text-[var(--text)]">{forgotEmail}</b>. Inseriscilo e scegli una nuova password.</p>
                     <input value={forgotCode} onChange={e => setForgotCode(e.target.value)} placeholder="Codice (6 cifre)" inputMode="numeric"
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] outline-none focus:border-[#8397aa] mb-2.5 tracking-[0.3em]" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] outline-none focus:border-brand mb-2.5 tracking-[0.3em]" />
                     <input type="password" value={forgotNewPw} onChange={e => setForgotNewPw(e.target.value)} placeholder="Nuova password"
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] outline-none focus:border-[#8397aa]" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm text-[var(--text)] outline-none focus:border-brand" />
                     <p className="text-[10px] text-[var(--text-faint)] mt-1.5">Min 10 caratteri: maiuscola, minuscola, numero e simbolo.</p>
                     {forgotMsg && <p className="text-xs text-red-400 mt-2">{forgotMsg}</p>}
                     <button disabled={forgotBusy || !forgotCode.trim() || !forgotNewPw}
@@ -5286,7 +5273,7 @@ export default function App() {
                         setAuthEmail(forgotEmail.trim());
                         showToast('Password reimpostata. Accedi con la nuova password.', 'ok');
                       }}
-                      className="w-full mt-4 py-3 rounded-xl bg-[#8397aa] hover:bg-[#6f8394] text-white font-bold disabled:opacity-40 flex items-center justify-center gap-2">
+                      className="w-full mt-4 py-3 rounded-xl bg-brand hover:bg-brand-lo text-white font-bold disabled:opacity-40 flex items-center justify-center gap-2">
                       {forgotBusy && <Loader2 size={18} className="animate-spin" />} Reimposta password
                     </button>
                     <button onClick={() => { setForgotStep('email'); setForgotMsg(null); }} className="w-full mt-2 text-xs text-[var(--text-soft)] hover:text-[var(--text)]">← Rimanda il codice / cambia email</button>
@@ -5323,7 +5310,7 @@ export default function App() {
   // Desktop = COCKPIT: altezza fissa, lo scroll avviene SOLO dentro <main> (cruscotto
   // inamovibile). Mobile resta a scroll di pagina normale.
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col text-[var(--text)] pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif", background: 'radial-gradient(120% 70% at 50% -25%, var(--page-glow, rgba(160,170,185,0.05)), transparent 55%), var(--bg)', paddingTop: 'var(--top-bar-h, 0px)' }}>
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden lg:flex lg:flex-col text-[var(--text)] pb-[calc(var(--bottom-nav-h,84px)+84px)] lg:pb-0" style={{ fontFamily: 'var(--font-sans)', background: 'radial-gradient(120% 70% at 50% -25%, var(--page-glow, rgba(160,170,185,0.05)), transparent 55%), var(--bg)', paddingTop: 'var(--top-bar-h, 0px)' }}>
 
       {/* ========== TOP NAV (solo desktop) — barra orizzontale stile private banking ========== */}
       <header className="hidden lg:flex items-center gap-1 h-16 shrink-0 z-40 px-6 border-b border-[var(--border)] bg-[var(--surface)]">
@@ -5350,9 +5337,9 @@ export default function App() {
             return (
               <button key={tab.id} onClick={() => navigateTo(tab.id as any)}
                 className={`relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-[13.5px] font-semibold transition-colors ${
-                  active ? 'bg-[#8397aa]/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
+                  active ? 'bg-brand/[0.12] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'
                 }`}>
-                {active && <span className="absolute left-1/2 -translate-x-1/2 bottom-0 w-6 h-[2px] bg-[#8397aa] rounded-full" />}
+                {active && <span className="absolute left-1/2 -translate-x-1/2 bottom-0 w-6 h-[2px] bg-brand rounded-full" />}
                 <Icon size={16} /> {tab.label}
                 {badge > 0 && <span className="min-w-[18px] h-[18px] px-1 bg-blue-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">{badge}</span>}
               </button>
@@ -5364,10 +5351,10 @@ export default function App() {
           <button onClick={() => setNotifPanelOpen(!notifPanelOpen)} aria-label={t('set.notifications')}
             className="relative p-2 rounded-xl hover:bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
             <Bell size={18} />
-            {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 bg-[#8397aa] text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+            {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 bg-brand text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
           </button>
           <button onClick={() => navigateTo('settings')} aria-label={t('nav.settings')}
-            className={`p-2 rounded-xl transition-colors ${currentView === 'settings' ? 'text-[#8397aa]' : 'text-[var(--text-muted)] hover:bg-[var(--fill)] hover:text-[var(--text)]'}`}>
+            className={`p-2 rounded-xl transition-colors ${currentView === 'settings' ? 'text-brand' : 'text-[var(--text-muted)] hover:bg-[var(--fill)] hover:text-[var(--text)]'}`}>
             <Settings size={18} />
           </button>
           {/* Menu "Altro" — Guide/Assistenza/Privacy/Wallet/Logout */}
@@ -5422,13 +5409,13 @@ export default function App() {
             {/* Portafoglio (solo mobile: icona in alto a destra, accesso rapido agli incassi) */}
             {MARKETPLACE_ENABLED && (
             <button onClick={() => navigateTo('wallet')}
-              className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'wallet' ? 'text-[#8397aa]' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
+              className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'wallet' ? 'text-brand' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
               <Wallet size={18} />
             </button>
             )}
             {/* Impostazioni (solo mobile: in alto, visto che non è più nella barra in basso) */}
             <button onClick={() => navigateTo('settings')}
-              className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'settings' ? 'text-[#8397aa]' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
+              className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'settings' ? 'text-brand' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
               <Settings size={18} />
             </button>
 
@@ -5437,7 +5424,7 @@ export default function App() {
               className="lg:hidden relative p-2 rounded-xl hover:bg-[var(--fill)] transition-colors">
               <Bell size={18} className="text-[var(--text-muted)]" />
               {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-[#8397aa] text-[var(--text)] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 bg-brand text-[var(--text)] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -5480,7 +5467,7 @@ export default function App() {
                       active ? 'text-[var(--text)]' : 'text-[var(--text-soft)] hover:text-gray-300'
                     }`}>
                     {active && (
-                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-[#8397aa] rounded-full" />
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-brand rounded-full" />
                     )}
                     <Icon size={18} /> {tab.label}
                     {trackingBadge > 0 && (
@@ -5516,7 +5503,7 @@ export default function App() {
                   <button key={n.id} onClick={() => markNotificationRead(n.id)}
                     className={`w-full text-left p-3.5 border-b border-[var(--border)] hover:bg-[var(--fill)] transition-colors ${!n.read ? 'bg-[var(--fill)]' : ''}`}>
                     <div className="flex items-start gap-3">
-                      {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-[#8397aa] mt-1.5 shrink-0" />}
+                      {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-brand mt-1.5 shrink-0" />}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-[var(--text)] truncate">{n.title}</p>
                         <p className="text-xs text-[var(--text-soft)] mt-0.5">{n.message}</p>
@@ -5554,7 +5541,7 @@ export default function App() {
               </div>
               {/* Add — sulla riga del saluto (desktop). Su mobile resta il "+" nella chatbox. */}
               <button onClick={() => openAddForm()}
-                className="hidden lg:flex shrink-0 items-center gap-2 bg-[#8397aa] hover:bg-[#6f8394] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors active:scale-95 mt-1">
+                className="hidden lg:flex shrink-0 items-center gap-2 bg-brand hover:bg-brand-lo text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors active:scale-95 mt-1">
                 <Plus size={16} /> {t('common.add')}
               </button>
             </div>
@@ -5563,23 +5550,23 @@ export default function App() {
                 non colleghiamo fonti affidabili per categoria (eBay generico dava prezzi falsi). */}
             {VALUATION_ENABLED && (
             <button onClick={openSourcing}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-[#8397aa]/30 bg-[#8397aa]/[0.06] hover:bg-[#8397aa]/[0.12] text-sm font-bold text-[var(--text)] transition-colors">
-              <DollarSign size={16} className="text-[#8397aa]" />
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-brand/30 bg-brand/[0.06] hover:bg-brand/[0.12] text-sm font-bold text-[var(--text)] transition-colors">
+              <DollarSign size={16} className="text-brand" />
               {t('dash.valueLookup')} <span className="text-[var(--text-soft)] font-medium hidden sm:inline">· {t('dash.valueLookupSub')}</span>
             </button>
             )}
 
             {/* Welcome / primo avvio — solo DOPO il caricamento, se davvero vuoto (niente flash ad ogni apertura) */}
             {productsLoaded && products.length === 0 && (
-              <section className="bg-[var(--surface)] border border-[#8397aa]/30 rounded-2xl p-6 lg:p-7 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[#8397aa]/[0.04] pointer-events-none" />
+              <section className="bg-[var(--surface)] border border-brand/30 rounded-2xl p-6 lg:p-7 relative overflow-hidden">
+                <div className="absolute inset-0 bg-brand/[0.04] pointer-events-none" />
                 <div className="relative">
-                  <p className="text-[10px] font-bold text-[#8397aa] uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5"><Sparkles size={12} /> {t('dash.welcome')}</p>
+                  <p className="text-[10px] font-bold text-brand uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5"><Sparkles size={12} /> {t('dash.welcome')}</p>
                   <h3 className="text-xl lg:text-2xl font-bold mb-1.5">{t('dash.welcomeTitle')}</h3>
                   <p className="text-sm text-[var(--text-soft)] mb-5 max-w-md">{t('dash.welcomeDesc')}</p>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => openAddForm()}
-                      className="bg-[#8397aa] hover:bg-[#6f8394] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
+                      className="bg-brand hover:bg-brand-lo text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
                       <Plus size={16} /> {t('dash.addFirst')}
                     </button>
                     <button onClick={() => navigateTo('settings')}
@@ -5591,124 +5578,28 @@ export default function App() {
               </section>
             )}
 
-            {/* KPI + NOTE + GRAFICO — mobile: Personal+Note in riga, poi grafico. Desktop:
-                Personal in alto-sx, GRAFICO grande in basso-sx, NOTE alte a destra (coprono il lato). */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-5 lg:items-stretch">
-              {/* Riga Personal: su desktop divisa a metà — sx PERSONAL (profitto/periodo), dx DA SPEDIRE
-                  (pacchi in attesa → apre il Tracking). Su mobile: solo Personal (il tracking è nella bottom-nav). */}
-              <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-5">
-                <button onClick={() => { setPpFrom(personalPeriod.from || ''); setPpTo(personalPeriod.to || ''); setPeriodPickerOpen(true); }}
-                  className="mech text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3.5 lg:p-4 hover:border-[var(--border-2)] group flex flex-col">
-                  <div className="flex items-center justify-between mb-2 lg:mb-2.5">
-                    <span className="flex items-center gap-2 text-[10px] lg:text-[11px] uppercase tracking-[0.14em] font-bold text-[var(--text-faint)]">
-                      <span className="w-6 h-6 lg:w-7 lg:h-7 rounded-lg bg-[var(--fill)] flex items-center justify-center"><Wallet size={13} className="text-[var(--text-soft)]" /></span>
-                      {t('dash.personal')}
-                    </span>
-                    <ChevronDown size={14} className="text-[var(--text-faint)] group-hover:text-[var(--text-soft)] transition-colors shrink-0" />
-                  </div>
-                  <p className="text-[26px] lg:text-[30px] font-black num text-[var(--teal)] leading-none tracking-tight">{periodProfit.toFixed(0)}€</p>
-                  <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] mt-1.5 truncate capitalize font-semibold">{periodLabel}</p>
-                </button>
-                {/* Box SMART: mostra la cosa più urgente — da spedire → fermi >30gg → valore stock. */}
-                {(() => {
-                  const shipN = toShipItems.length;
-                  const staleN = products.filter((p: any) => p.status === 'IN STOCK' && (p.oldestDate || p.createdAt) && (Date.now() - new Date(p.oldestDate || p.createdAt).getTime()) / 86400000 > 30).length;
-                  let icon, label, value, sub, onClick, valColor;
-                  if (shipN > 0) {
-                    icon = <Truck size={13} />; label = t('nav.tracking'); value = String(shipN); sub = t('dash.toShip'); valColor = 'text-[var(--text)]';
-                    onClick = () => navigateTo('tracking');
-                  } else if (staleN > 0) {
-                    icon = <AlertTriangle size={13} />; label = t('dash.stale'); value = String(staleN); sub = t('dash.staleSub'); valColor = 'text-amber-400';
-                    onClick = () => { setStaleOnly(true); navigateTo('magazzino'); };
-                  } else {
-                    icon = <Wallet size={13} />; label = t('mag.stockValue'); value = `${Math.round(stockValore).toLocaleString('it-IT')}€`; sub = t('dash.stock'); valColor = 'text-[#9fb0bd]';
-                    onClick = () => navigateTo('magazzino');
-                  }
-                  return (
-                    <button onClick={onClick}
-                      className="mech text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3.5 lg:p-4 hover:border-[var(--border-2)] group hidden lg:flex lg:flex-col">
-                      <div className="flex items-center justify-between mb-2 lg:mb-2.5">
-                        <span className="flex items-center gap-2 text-[10px] lg:text-[11px] uppercase tracking-[0.14em] font-bold text-[var(--text-faint)]">
-                          <span className="w-6 h-6 lg:w-7 lg:h-7 rounded-lg bg-[var(--fill)] flex items-center justify-center text-[var(--text-soft)]">{icon}</span>
-                          {label}
-                        </span>
-                        <ChevronDown size={14} className="-rotate-90 text-[var(--text-faint)] group-hover:text-[var(--text-soft)] transition-colors shrink-0" />
-                      </div>
-                      <p className={`text-[26px] lg:text-[30px] font-black num leading-none tracking-tight ${valColor}`}>{value}</p>
-                      <p className="text-[12px] lg:text-[13px] text-[var(--text-faint)] mt-1.5 truncate font-semibold">{sub}</p>
-                    </button>
-                  );
-                })()}
-              </div>
-
-              {/* NOTE / TASK — desktop: colonna ALTA a destra (row-span-2). */}
-              <button onClick={() => setTaskPanelOpen(true)}
-                className="mech text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 lg:p-5 hover:border-[var(--border-2)] group flex flex-col lg:row-span-2 lg:h-full">
-                {/* Header NOTE — icona in chip + conteggio (coerente con le KPI). */}
-                <div className="flex items-center justify-between mb-3 lg:mb-4">
-                  <span className="flex items-center gap-2 text-[10px] lg:text-[11px] uppercase tracking-[0.14em] font-bold text-[var(--text-faint)]">
-                    <span className="w-6 h-6 lg:w-7 lg:h-7 rounded-lg bg-[var(--fill)] flex items-center justify-center"><StickyNote size={13} className="text-[var(--text-soft)]" /></span>
-                    {t('task.title')}
-                  </span>
-                  {tasks.filter(x => !x.done).length > 0 && <span className="text-[10px] lg:text-[11px] font-bold bg-[#8397aa]/15 text-[#9fb0bd] px-2 py-0.5 rounded-full num">{tasks.filter(x => !x.done).length}</span>}
-                </div>
-                {tasks.filter(x => !x.done).length === 0 ? (
-                  <p className="text-[12px] lg:text-sm text-[var(--text-faint)] leading-snug flex-1">{t('task.empty')}</p>
-                ) : (
-                  <div className="space-y-2 lg:space-y-3 flex-1">
-                    {/* 2 note su mobile, fino a 7 su desktop (la card è alta). Testo più grande su PC. */}
-                    {tasks.filter(x => !x.done).slice(0, 2).map(tk => (
-                      <p key={tk.id} className="text-[12.5px] lg:text-[14.5px] text-[var(--text-soft)] truncate flex items-center gap-2.5"><span className="w-1.5 h-1.5 rounded-full bg-[#8397aa] shrink-0" />{tk.summary || tk.text}</p>
-                    ))}
-                    {tasks.filter(x => !x.done).slice(2, 7).map(tk => (
-                      <p key={tk.id} className="hidden lg:flex text-[14.5px] text-[var(--text-soft)] truncate items-center gap-2.5"><span className="w-1.5 h-1.5 rounded-full bg-[#8397aa] shrink-0" />{tk.summary || tk.text}</p>
-                    ))}
-                  </div>
-                )}
-                <p className="text-[11px] lg:text-[13px] text-[#9fb0bd] font-bold mt-3 lg:mt-4 group-hover:text-[#c0cbd6] transition-colors">{t('dash.see')} →</p>
-              </button>
-
-              {/* Grafico Andamento Vendite — nella STESSA griglia: mobile a tutta larghezza sotto,
-                  desktop grande in basso-sinistra (col-span-2) accanto alle Note alte. */}
-              {hasAdvancedAnalytics ? (
-              <section className="col-span-2 lg:col-span-2 flex flex-col bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
-                <div className="flex items-start justify-between gap-2 mb-3 flex-wrap">
-                  <div className="min-w-0">
-                    <h3 className="text-lg lg:text-xl font-bold">{t('an.salesTrend')}</h3>
-                    {/* Legenda subito sotto il titolo (colori allineati al grafico). */}
-                    <div className="flex items-center gap-4 mt-1.5">
-                      <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-soft)]"><span className="w-4 h-[3px] rounded-full inline-block" style={{ background: '#5e86b5' }} />{t('an.revenue')}</div>
-                      <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-soft)]"><span className="w-4 h-[3px] rounded-full inline-block" style={{ background: '#e6ebf0' }} />{t('dash.profit')}</div>
-                    </div>
-                  </div>
-                  {/* Il periodo si sceglie dalla card "Personal": qui mostro solo l'etichetta (tap → selettore). */}
-                  <button onClick={() => { setPpFrom(personalPeriod.from || ''); setPpTo(personalPeriod.to || ''); setPeriodPickerOpen(true); }}
-                    className="flex items-center gap-1.5 bg-[var(--surface-2)] px-3.5 py-2 rounded-xl border border-[var(--border-2)] text-[13px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] shrink-0 capitalize">
-                    {periodLabel} <ChevronDown size={14} />
-                  </button>
-                </div>
-                {trendData.length === 0 ? (
-                  <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
-                    <BarChart3 className="text-[var(--text-faint)] mb-3" size={36} />
-                    <p className="text-[var(--text-soft)] text-sm">{t('an.noDataPeriod')}</p>
-                  </div>
-                ) : (
-                  <div className="h-[200px] lg:h-[300px]">
-                    <Suspense fallback={<div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-[var(--text-faint)]" size={28} /></div>}>
-                      <TrendChart trendData={trendData} />
-                    </Suspense>
-                  </div>
-                )}
-              </section>
-              ) : (
-              <section className="col-span-2 lg:col-span-2 flex flex-col items-center justify-center text-center bg-[var(--surface)] border border-[#8397aa]/30 rounded-2xl p-5">
-                <div className="w-12 h-12 rounded-2xl bg-[#8397aa]/15 flex items-center justify-center mb-3"><BarChart3 size={22} className="text-[#8397aa]" /></div>
-                <h3 className="font-bold mb-1">Andamento e analisi avanzate</h3>
-                <p className="text-sm text-[var(--text-soft)] mb-4 max-w-xs">ROI, trend storico e performance per categoria/piattaforma sono inclusi nel piano Pro.</p>
-                <button onClick={() => openPlanModal()} className="bg-[#8397aa] hover:bg-[#6f8394] text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-colors">Sblocca con Pro</button>
-              </section>
-              )}
-            </div>
+            {/* HOME "A ETICHETTA": periodo (mese/trimestre/anno) confrontato col precedente,
+                codice a barre giornaliero, obiettivo + proiezione, coda Da fare, classifiche. */}
+            <HomeLedger
+              products={products}
+              myProfitFactor={myProfitFactor}
+              myCostFactor={myCostFactor}
+              t={t}
+              dateLocale={dateLocale}
+              hasAdvanced={hasAdvancedAnalytics}
+              toShipCount={toShipItems.length}
+              staleCount={staleCount}
+              openTasksCount={tasks.filter(x => !x.done).length}
+              stockValue={stockValore}
+              inStockCount={inStockItems.length}
+              onOpenShip={() => navigateTo('tracking')}
+              onOpenStale={() => { setStaleOnly(true); navigateTo('magazzino'); }}
+              onOpenTasks={() => setTaskPanelOpen(true)}
+              onOpenStock={() => navigateTo('magazzino')}
+              onUpgrade={() => openPlanModal()}
+              getCategoryIcon={getCategoryIcon}
+              fullName={fullName}
+            />
 
             {/* MOBILE: al posto del Libro Paga, due tabelle affiancate — migliori Buyer e Seller.
                 Tocca "Vedi tutti" per l'elenco completo con il numero di operazioni. Su desktop
@@ -5738,14 +5629,14 @@ export default function App() {
                       </div>
                     )}
                     {rows.length > 0 && (
-                      <button onClick={onAll} className="mt-2 text-[10px] font-bold text-[#8397aa]">{t('ct.seeAll')}</button>
+                      <button onClick={onAll} className="mt-2 text-[10px] font-bold text-brand">{t('ct.seeAll')}</button>
                     )}
                   </div>
                 );
                 return (<>
                   <Card title={t('ct.topBuyers')} icon={<Users size={12} className="text-emerald-400" />} rows={buyerAgg} accent="text-emerald-400"
                     onAll={() => { setContactPageExpanded(null); setContactsPage('buyers'); }} />
-                  <Card title={t('ct.topSellers')} icon={<Package size={12} className="text-[#8397aa]" />} rows={sellerAgg} accent="text-[#8397aa]"
+                  <Card title={t('ct.topSellers')} icon={<Package size={12} className="text-brand" />} rows={sellerAgg} accent="text-brand"
                     onAll={() => { setContactPageExpanded(null); setContactsPage('sellers'); }} />
                 </>);
               })()}
@@ -5756,7 +5647,7 @@ export default function App() {
               const active = products.filter((p: any) => p.trackingCode && ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING'));
               const stLabel = (s?: string) => {
                 if (s === 'IN_TRANSIT') return { t: t('track.stInTransit'), c: 'bg-blue-500/20 text-blue-400' };
-                if (s === 'OUT_FOR_DELIVERY') return { t: t('track.stOutForDelivery'), c: 'bg-[#8397aa]/20 text-[#9fb0bd]' };
+                if (s === 'OUT_FOR_DELIVERY') return { t: t('track.stOutForDelivery'), c: 'bg-brand/20 text-brand-hi' };
                 if (s === 'EXCEPTION') return { t: t('track.stException'), c: 'bg-red-500/20 text-red-400' };
                 return { t: t('track.stPending'), c: 'bg-[var(--fill)] text-[var(--text-soft)]' };
               };
@@ -5800,7 +5691,7 @@ export default function App() {
               <section>
                 <div className="flex items-center justify-between mb-3">
                   <p className="sys-label">{t('dash.fromCatalog')}</p>
-                  <button onClick={() => navigateTo('catalog')} className="text-xs font-bold text-[#8397aa] hover:text-[#9fb0bd] transition-colors">{t('dash.openCatalog')}</button>
+                  <button onClick={() => navigateTo('catalog')} className="text-xs font-bold text-brand hover:text-brand-hi transition-colors">{t('dash.openCatalog')}</button>
                 </div>
                 <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 cursor-pointer"
                   onClick={() => navigateTo('catalog')}>
@@ -5828,9 +5719,9 @@ export default function App() {
             {/* Banner UNIONE REPARTI: rileva reparti sinonimi (Vestiti/Vestiario/Abbigliamento) e
                 propone di unirli in uno solo. Riassegna i prodotti sul server. */}
             {!dismissedMerge && dupCategoryGroups.length > 0 && (
-              <div className="bg-[#8397aa]/10 border border-[#8397aa]/30 rounded-2xl p-4">
+              <div className="bg-brand/10 border border-brand/30 rounded-2xl p-4">
                 <div className="flex items-start gap-2">
-                  <Layers size={16} className="text-[#8397aa] shrink-0 mt-0.5" />
+                  <Layers size={16} className="text-brand shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[var(--text)]">{t('cat.mergeTitle')}</p>
                     <p className="text-[11px] text-[var(--text-soft)] mb-2">{t('cat.mergeHint')}</p>
@@ -5841,7 +5732,7 @@ export default function App() {
                           <span className="text-[11px] text-[var(--text-faint)]">{t('cat.mergeInto')}</span>
                           {group.map(target => (
                             <button key={target} disabled={mergingCat} onClick={() => mergeCategoryGroup(group, target)}
-                              className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#8397aa]/15 text-[#8397aa] hover:bg-[#8397aa]/25 disabled:opacity-50 transition-colors">
+                              className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-brand/15 text-brand hover:bg-brand/25 disabled:opacity-50 transition-colors">
                               {mergingCat ? '…' : target}
                             </button>
                           ))}
@@ -5873,7 +5764,7 @@ export default function App() {
                 <div className="flex bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] w-full lg:w-auto lg:ml-1">
                   <button onClick={() => { setMagazzinoView('instock'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
-                      magazzinoView === 'instock' ? 'bg-[#8397aa] text-[var(--text)]' : 'text-[var(--text-soft)]'
+                      magazzinoView === 'instock' ? 'bg-brand text-[var(--text)]' : 'text-[var(--text-soft)]'
                     }`}>{t('mag.inStock')}</button>
                   <button onClick={() => { setMagazzinoView('sold'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
@@ -5882,7 +5773,7 @@ export default function App() {
                 </div>
                 {bulkMode && (
                   <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
-                    className="px-3 py-1.5 text-xs font-bold rounded-xl border bg-[#8397aa] border-[#8397aa] text-[var(--text)] transition-colors">
+                    className="px-3 py-1.5 text-xs font-bold rounded-xl border bg-brand border-brand text-[var(--text)] transition-colors">
                     ✕ {t('common.cancel')}
                   </button>
                 )}
@@ -5894,11 +5785,11 @@ export default function App() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)]" size={16} />
                   <input type="text" placeholder={t('mag.searchPlaceholder')}
                     value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-[#8397aa] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-brand outline-none" />
                 </div>
                 {/* Desktop: reparto inline accanto alla ricerca */}
                 <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
-                  className="hidden lg:block lg:w-auto bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#8397aa] outline-none shrink-0">
+                  className="hidden lg:block lg:w-auto bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-brand outline-none shrink-0">
                   <option value="all">{t('mag.allDepartments')}</option>
                   {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -5908,12 +5799,12 @@ export default function App() {
                   return (
                     <button onClick={() => setFiltersOpen(o => !o)}
                       className={`lg:hidden relative shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-sm font-bold transition-colors ${
-                        filtersOpen || activeFilters > 0 ? 'bg-[#8397aa]/15 border-[#8397aa]/40 text-[#8397aa]' : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                        filtersOpen || activeFilters > 0 ? 'bg-brand/15 border-brand/40 text-brand' : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
                       }`}>
                       <SlidersHorizontal size={16} />
                       <span className="hidden sm:inline">{lang === 'en' ? 'Filters' : 'Filtri'}</span>
                       {activeFilters > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-[#8397aa] text-white text-[10px] font-black flex items-center justify-center">{activeFilters}</span>
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-brand text-white text-[10px] font-black flex items-center justify-center">{activeFilters}</span>
                       )}
                     </button>
                   );
@@ -5934,7 +5825,7 @@ export default function App() {
                       else { setSortField(f); setSortDir('desc'); }
                     }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                        sortField === f ? 'bg-[#8397aa] text-[var(--text)]' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                        sortField === f ? 'bg-brand text-[var(--text)]' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
                       }`}>
                       {f === 'date' ? t('mag.sortDate') : f === 'price' ? t('mag.sortPrice') : f === 'name' ? t('mag.sortName') : t('mag.sortMargin')}
                       {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
@@ -5942,7 +5833,7 @@ export default function App() {
                   ))}
                 </div>
                 <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
-                  className="lg:ml-auto bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]">
+                  className="lg:ml-auto bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-brand outline-none text-[var(--text-muted)]">
                   <option value="all">{t('mag.condition')}</option>
                   <option value="DS">DS</option>
                   <option value="VNDS">VNDS</option>
@@ -5951,10 +5842,10 @@ export default function App() {
                 <div className="flex gap-2">
                   <input type="number" placeholder="Min €" value={filterPriceMin}
                     onChange={(e: any) => setFilterPriceMin(e.target.value)}
-                    className="w-16 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]" />
+                    className="w-16 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-brand outline-none text-[var(--text-muted)]" />
                   <input type="number" placeholder="Max €" value={filterPriceMax}
                     onChange={(e: any) => setFilterPriceMax(e.target.value)}
-                    className="w-16 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]" />
+                    className="w-16 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-brand outline-none text-[var(--text-muted)]" />
                 </div>
               </div>
             )}
@@ -5966,7 +5857,7 @@ export default function App() {
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest">{t('mag.allDepartments')}</span>
                   <select value={filterCat} onChange={(e: any) => setFilterCat(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-[#8397aa] outline-none">
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:border-brand outline-none">
                     <option value="all">{t('mag.allDepartments')}</option>
                     {userCategories.map((c: string) => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -5985,7 +5876,7 @@ export default function App() {
                           else { setSortField(f); setSortDir('desc'); }
                         }}
                           className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                            sortField === f ? 'bg-[#8397aa] text-[var(--text)]' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                            sortField === f ? 'bg-brand text-[var(--text)]' : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-soft)] hover:text-[var(--text)]'
                           }`}>
                           {f === 'date' ? t('mag.sortDate') : f === 'price' ? t('mag.sortPrice') : f === 'name' ? t('mag.sortName') : t('mag.sortMargin')}
                           {sortField === f && (sortDir === 'desc' ? ' ↓' : ' ↑')}
@@ -5995,7 +5886,7 @@ export default function App() {
                     {/* Condizione + prezzo */}
                     <div className="flex flex-wrap items-center gap-2">
                       <select value={filterCondition} onChange={(e: any) => setFilterCondition(e.target.value)}
-                        className="bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]">
+                        className="bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs focus:border-brand outline-none text-[var(--text-muted)]">
                         <option value="all">{t('mag.condition')}</option>
                         <option value="DS">DS</option>
                         <option value="VNDS">VNDS</option>
@@ -6003,10 +5894,10 @@ export default function App() {
                       </select>
                       <input type="number" placeholder="Min €" value={filterPriceMin}
                         onChange={(e: any) => setFilterPriceMin(e.target.value)}
-                        className="w-20 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]" />
+                        className="w-20 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-brand outline-none text-[var(--text-muted)]" />
                       <input type="number" placeholder="Max €" value={filterPriceMax}
                         onChange={(e: any) => setFilterPriceMax(e.target.value)}
-                        className="w-20 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-[#8397aa] outline-none text-[var(--text-muted)]" />
+                        className="w-20 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs focus:border-brand outline-none text-[var(--text-muted)]" />
                     </div>
                   </>
                 )}
@@ -6039,10 +5930,10 @@ export default function App() {
                   </div>
                   <div className="flex items-baseline gap-2 sm:ml-auto">
                     <span className="sys-label">{t('mag.stockValue')}</span>
-                    <span className="text-lg lg:text-xl font-black num text-[var(--teal)] leading-none">{costo.toFixed(0)}€</span>
+                    <span className="text-lg lg:text-xl font-black num text-[var(--teal)] leading-none">{eur0(costo)}</span>
                   </div>
                   <button onClick={() => setSmartLotOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#8397aa]/15 text-[#8397aa] hover:bg-[#8397aa]/25 text-xs font-bold transition-colors">
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 text-brand hover:bg-brand/25 text-xs font-bold transition-colors">
                     <Sparkles size={13} /> Lotto smart
                   </button>
                 </div>
@@ -6073,7 +5964,7 @@ export default function App() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-bold text-sm truncate">{fullName(p.brand, p.name)}</span>
-                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${paid ? 'text-[#8397aa] bg-[#8397aa]/15' : 'text-amber-400 bg-amber-500/15'}`}>{paid ? t('mag.paidInApp') : t('mag.soldOutside')}</span>
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${paid ? 'text-brand bg-brand/15' : 'text-amber-400 bg-amber-500/15'}`}>{paid ? t('mag.paidInApp') : t('mag.soldOutside')}</span>
                                 {p.trackingCode && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase text-green-400 bg-green-500/15">{t('mag.shipped')}</span>}
                               </div>
                               <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition}</p>
@@ -6089,8 +5980,8 @@ export default function App() {
                           <div className="flex gap-2 mt-3">
                             {hasFeature('labels') ? (
                               (p.trackingCode || p.shippingLabel)
-                                ? <button onClick={() => viewSavedLabel(p)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#8397aa]/15 text-[#8397aa] flex items-center justify-center gap-1.5"><Package size={13} /> {t('mag.viewLabel')}</button>
-                                : <button onClick={() => openShipping(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[#8397aa]/15 text-[#8397aa] flex items-center justify-center gap-1.5"><Package size={13} /> {t('mag.createLabel')}</button>
+                                ? <button onClick={() => viewSavedLabel(p)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-brand/15 text-brand flex items-center justify-center gap-1.5"><Package size={13} /> {t('mag.viewLabel')}</button>
+                                : <button onClick={() => openShipping(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-brand/15 text-brand flex items-center justify-center gap-1.5"><Package size={13} /> {t('mag.createLabel')}</button>
                             ) : (
                               <button onClick={() => openTrackingModal(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)] flex items-center justify-center gap-1.5"><Truck size={13} /> {t('mag.tracking')}</button>
                             )}
@@ -6113,7 +6004,7 @@ export default function App() {
                       <p className="text-sm text-[var(--text-soft)] mt-1 mb-5 max-w-sm mx-auto">{t('mag.emptyDesc')}</p>
                       <div className="flex flex-wrap gap-2 justify-center">
                         <button onClick={() => openAddForm()}
-                          className="bg-[#8397aa] hover:bg-[#6f8394] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
+                          className="bg-brand hover:bg-brand-lo text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors active:scale-95">
                           <Plus size={16} /> {t('mag.addProduct')}
                         </button>
                         <button onClick={() => navigateTo('settings')}
@@ -6161,7 +6052,7 @@ export default function App() {
                       <div data-cardswipe className="lg:hidden relative overflow-hidden rounded-2xl">
                         {!bulkMode && ((g.isModel || g.isLot) ? (
                           // Modello/Lotto = contenitore: lo swipe APRE il dettaglio (dove scegli la taglia/pezzo).
-                          <div className="absolute inset-0 flex items-center justify-between px-5 rounded-2xl bg-[#8397aa]/25 text-[#c0cbd6] font-bold pointer-events-none" style={{ opacity: swipe?.key === groupKey && Math.abs(swipe.dx) > 8 ? 1 : 0 }}>
+                          <div className="absolute inset-0 flex items-center justify-between px-5 rounded-2xl bg-brand/25 text-brand-hi font-bold pointer-events-none" style={{ opacity: swipe?.key === groupKey && Math.abs(swipe.dx) > 8 ? 1 : 0 }}>
                             <span className="flex items-center gap-1.5"><Layers size={17} /> {t('mag.open')}</span>
                             <span className="flex items-center gap-1.5">{t('mag.open')} <Layers size={17} /></span>
                           </div>
@@ -6175,9 +6066,9 @@ export default function App() {
                         style={{ transform: swipe?.key === groupKey ? `translateX(${swipe.dx}px)` : undefined, transition: swipe?.key === groupKey ? 'none' : 'transform .22s ease', touchAction: 'pan-y' }}
                         className={`bg-[var(--surface)] border ring-1 ring-white/[0.02] rounded-2xl overflow-hidden ease-out active:scale-[0.99] relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
-                        } ${isSelected ? 'border-[#8397aa] shadow-sm' : 'border-[var(--border)]'}`}>
+                        } ${isSelected ? 'border-brand shadow-sm' : 'border-[var(--border)]'}`}>
                         {bulkMode && (
-                          <div className={`absolute top-3 right-3 z-10 min-w-6 h-6 px-1 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#8397aa] border-[#8397aa]' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
+                          <div className={`absolute top-3 right-3 z-10 min-w-6 h-6 px-1 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-brand border-brand' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
                             {isPartialSel ? <span className="text-[10px] font-black text-white">{selPieceCount}</span> : isSelected ? <CheckCircle size={14} className="text-[var(--text)]" /> : null}
                           </div>
                         )}
@@ -6189,10 +6080,10 @@ export default function App() {
                             onClick={!bulkMode ? () => openEditModal(g) : undefined}>
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-bold text-sm truncate">{fullName(g.brand, g.name)}</span>
-                              {g.quantity > 1 && <span className="text-[10px] bg-[#8397aa]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
+                              {g.quantity > 1 && <span className="text-[10px] bg-brand/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-bold shrink-0">×{g.quantity}</span>}
                               {daysBadge}{trackBadge}
                             </div>
-                            <p className="text-xs text-[var(--text-soft)] mt-1">{g.isModel ? modelSub(g) : <>{g.size} · {g.condition} · <span className="text-[var(--text-muted)] font-semibold">{g.purchasePrice.toFixed(0)}€</span></>}</p>
+                            <p className="text-xs text-[var(--text-soft)] mt-1">{g.isModel ? modelSub(g) : <>{g.size} · {g.condition} · <span className="text-[var(--text-muted)] font-semibold">{eur0(g.purchasePrice)}</span></>}</p>
                             {/* Tracking: link DIRETTO al corriere (senza aprire lo shipping). Solo prodotto singolo. */}
                             {g.trackingCode && !g.isModel && !g.isLot && (
                               <a href={trackingPublicUrl(g.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
@@ -6217,7 +6108,7 @@ export default function App() {
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>{g.toShip ? t('mag.inList') : t('dash.toShip')}</button>
                               {MARKETPLACE_ENABLED && (
                               <button onClick={() => quickTogglePublic(g)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.isPublic ? 'bg-[#8397aa]/20 text-[#8397aa]' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.isPublic ? 'bg-brand/20 text-brand' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>
                                 {g.isPublic ? t('mag.published') : t('mag.publish')}
                               </button>
                               )}
@@ -6229,13 +6120,13 @@ export default function App() {
                           <div className="flex border-t border-[var(--border)]">
                             {isAdmin && (
                               <>
-                                <button onClick={() => cardOr(g, openShipping)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[#9fb0bd] hover:bg-[var(--surface-2)]/15"><Package size={13} /> {t('mag.ship')}</button>
+                                <button onClick={() => cardOr(g, openShipping)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-brand-hi hover:bg-[var(--surface-2)]/15"><Package size={13} /> {t('mag.ship')}</button>
                                 <div className="w-px bg-[var(--fill)]" />
                               </>
                             )}
                             <button onClick={() => sellFromCard(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-green-400 hover:bg-green-900/15"><DollarSign size={13} /> {t('mag.sell')}</button>
                             <div className="w-px bg-[var(--fill)]" />
-                            <button onClick={() => tradeFromCard(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-[#8397aa] hover:bg-[#8397aa]/10"><Repeat size={13} /> {t('mag.trade')}</button>
+                            <button onClick={() => tradeFromCard(g)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-brand hover:bg-brand/10"><Repeat size={13} /> {t('mag.trade')}</button>
                           </div>
                         )}
                       </div>
@@ -6247,7 +6138,7 @@ export default function App() {
                         {...cardPressProps(groupKey)}
                         className={`hidden lg:flex flex-col bg-[var(--surface)] border rounded-2xl overflow-hidden transition-colors relative ${
                           bulkMode ? 'cursor-pointer select-none' : ''
-                        } ${isSelected ? 'border-[#8397aa] shadow-sm' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
+                        } ${isSelected ? 'border-brand shadow-sm' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
                         <div
                           className={`relative aspect-square bg-white flex items-center justify-center overflow-hidden ${!bulkMode ? 'cursor-pointer' : ''}`}
                           onClick={!bulkMode && isAdmin ? () => openEditModal(g) : undefined}>
@@ -6255,12 +6146,12 @@ export default function App() {
                             ? <img src={proxyImg(photoUrl)} alt="" className="w-full h-full object-contain" />
                             : <img src="/logo.png" alt="" className="w-1/2 h-1/2 object-contain opacity-20" />}
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
-                            {g.quantity > 1 && <span className="text-[10px] bg-[#8397aa] text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
+                            {g.quantity > 1 && <span className="text-[10px] bg-brand text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
                             {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-[var(--text)]' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-[var(--text-muted)]'}`}>{days}g</span>}
                             {g.trackingStatus && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500 text-[var(--text)]' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500 text-[var(--text)]' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500 text-[var(--text)]' : 'bg-black/50 backdrop-blur text-[var(--text-muted)]'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? t('mag.trTransit') : g.trackingStatus === 'DELIVERED' ? t('mag.trDelivered') : g.trackingStatus === 'OUT_FOR_DELIVERY' ? t('mag.trOutForDelivery') : t('mag.track')}</span>}
                           </div>
                           {bulkMode && (
-                            <div className={`absolute top-2 right-2 z-10 min-w-6 h-6 px-1 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-[#8397aa] border-[#8397aa]' : 'border-[var(--border-3)] bg-black/40 backdrop-blur'}`}>
+                            <div className={`absolute top-2 right-2 z-10 min-w-6 h-6 px-1 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-brand border-brand' : 'border-[var(--border-3)] bg-black/40 backdrop-blur'}`}>
                               {isPartialSel ? <span className="text-[10px] font-black text-white">{selPieceCount}</span> : isSelected ? <CheckCircle size={14} className="text-[var(--text)]" /> : null}
                             </div>
                           )}
@@ -6277,7 +6168,7 @@ export default function App() {
                               <ExternalLink size={10} className="shrink-0 opacity-70" />
                             </a>
                           )}
-                          <p className="text-2xl font-black text-[var(--text)] mt-auto pt-2 num tracking-tight leading-none">{g.purchasePrice.toFixed(0)}€</p>
+                          <p className="text-2xl font-black text-[var(--text)] mt-auto pt-2 num tracking-tight leading-none">{eur0(g.purchasePrice)}</p>
                           {shares?.length > 0 && <p className="text-[11px] text-blue-400/70 mt-1.5 truncate max-w-full">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                           {!bulkMode && (
                             <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
@@ -6286,31 +6177,47 @@ export default function App() {
                             </button>
                           )}
                         </div>
+                        {/* Azioni: UNA principale (Vendi), una secondaria (Spedisci, solo admin) e il resto
+                            nel menu "⋯" — la card resta leggibile invece di 5-6 pulsanti in griglia. */}
                         {!bulkMode && (
-                          <div className="border-t border-[var(--border)] p-2.5 flex flex-col gap-1.5">
-                            <div className="grid grid-cols-2 gap-1.5">
-                              <button onClick={() => cardOr(g, openTrackingModal)} className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.trackingCode ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> {t('mag.track')}</button>
-                              <button onClick={() => cardOr(g, gg => toggleToShip(gg, !gg.toShip))}
-                                className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)]'}`}><Truck size={12} /> {g.toShip ? t('mag.inList') : t('dash.toShip')}</button>
-                            </div>
-                            {isAdmin ? (
-                              <div className="grid grid-cols-3 gap-1.5">
-                                <button onClick={() => cardOr(g, openShipping)} className="py-2 rounded-lg text-xs font-bold bg-[#8397aa]/15 text-[#9fb0bd] hover:bg-[#8397aa]/25 hover:text-[#9fb0bd] transition-colors flex items-center justify-center gap-1"><Package size={12} /> {t('mag.ship')}</button>
-                                <button onClick={() => sellFromCard(g)} className="py-2 rounded-lg text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1"><DollarSign size={12} /> {t('mag.sell')}</button>
-                                <button onClick={() => tradeFromCard(g)} className="py-2 rounded-lg text-xs font-bold bg-[#8397aa]/15 text-[#8397aa] hover:bg-[#8397aa]/25 transition-colors flex items-center justify-center gap-1"><Repeat size={12} /> {t('mag.trade')}</button>
-                              </div>
-                            ) : (
-                              <div className="grid grid-cols-2 gap-1.5">
-                                <button onClick={() => sellFromCard(g)} className="py-2 rounded-lg text-sm font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 hover:text-green-300 transition-colors flex items-center justify-center gap-1.5"><DollarSign size={14} /> {t('mag.sell')}</button>
-                                <button onClick={() => tradeFromCard(g)} className="py-2 rounded-lg text-sm font-bold bg-[#8397aa]/15 text-[#8397aa] hover:bg-[#8397aa]/25 transition-colors flex items-center justify-center gap-1.5"><Repeat size={14} /> {t('mag.trade')}</button>
-                              </div>
-                            )}
-                            {MARKETPLACE_ENABLED && (
-                            <button onClick={() => quickTogglePublic(g)}
-                              className={`py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${g.isPublic ? 'bg-[#8397aa]/20 text-[#8397aa]' : 'bg-[var(--fill)] text-[var(--text-muted)] hover:text-[var(--text)]'}`}>
-                              <Store size={12} /> {g.isPublic ? t('mag.inShowcase') : t('mag.publish')}
+                          <div className="border-t border-[var(--border)] p-2.5 flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => sellFromCard(g)}
+                              className="flex-1 py-2 rounded-lg text-[13px] font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5">
+                              {t('mag.sell')}
                             </button>
+                            {isAdmin && (
+                              <button onClick={() => cardOr(g, openShipping)}
+                                className="flex-1 py-2 rounded-lg text-[13px] font-bold bg-[var(--fill)] text-[var(--text-muted)] hover:bg-[var(--fill-2)] hover:text-[var(--text)] transition-colors flex items-center justify-center gap-1.5">
+                                <Package size={13} /> {t('mag.ship')}
+                              </button>
                             )}
+                            <div className="relative">
+                              <button onClick={() => setCardMenuKey(k => k === groupKey ? null : groupKey)} aria-label={t('hdr.general')} aria-expanded={cardMenuKey === groupKey}
+                                className={`p-2 rounded-lg transition-colors ${cardMenuKey === groupKey ? 'bg-[var(--fill-2)] text-[var(--text)]' : 'text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)]'}`}>
+                                <MoreHorizontal size={16} />
+                              </button>
+                              {cardMenuKey === groupKey && (
+                                <>
+                                  <div className="fixed inset-0 z-[59]" onClick={() => setCardMenuKey(null)} />
+                                  <div className="absolute right-0 bottom-full mb-1.5 w-52 z-[60] bg-[var(--surface-blur)] backdrop-blur-xl border border-[var(--border-2)] rounded-xl shadow-2xl overflow-hidden py-1">
+                                    {[
+                                      { icon: Truck, label: g.trackingCode ? `${t('mag.track')} · ${g.trackingCode}` : t('mag.track'), run: () => cardOr(g, openTrackingModal) },
+                                      { icon: Truck, label: g.toShip ? `${t('mag.inList')} ✓` : t('dash.toShip'), run: () => cardOr(g, gg => toggleToShip(gg, !gg.toShip)) },
+                                      { icon: Repeat, label: t('mag.trade'), run: () => tradeFromCard(g) },
+                                      ...(MARKETPLACE_ENABLED ? [{ icon: Store, label: g.isPublic ? t('mag.inShowcase') : t('mag.publish'), run: () => quickTogglePublic(g) }] : []),
+                                    ].map(item => {
+                                      const Icon = item.icon;
+                                      return (
+                                        <button key={item.label} onClick={() => { setCardMenuKey(null); item.run(); }}
+                                          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] text-left">
+                                          <Icon size={14} className="shrink-0" /> <span className="truncate">{item.label}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -6326,7 +6233,7 @@ export default function App() {
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
                   {([['all', lang === 'en' ? 'All' : 'Tutti'], ['7d', '7g'], ['30d', '30g'], ['month', lang === 'en' ? 'Month' : 'Mese'], ['year', lang === 'en' ? 'Year' : 'Anno']] as const).map(([val, label]) => (
                     <button key={val} onClick={() => { setSoldPeriod(val as any); setSoldMonth(null); }}
-                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border ${!soldMonth && soldPeriod === val ? 'bg-[#8397aa] text-white border-[#8397aa]' : 'bg-[var(--surface)] text-[var(--text-soft)] border-[var(--border-2)] hover:text-[var(--text)]'}`}>
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border ${!soldMonth && soldPeriod === val ? 'bg-brand text-white border-brand' : 'bg-[var(--surface)] text-[var(--text-soft)] border-[var(--border-2)] hover:text-[var(--text)]'}`}>
                       {label}
                     </button>
                   ))}
@@ -6352,9 +6259,9 @@ export default function App() {
                       'Vinted': 'text-teal-300 bg-teal-500/15 border-teal-500/20',
                       'StockX': 'text-green-300 bg-green-500/15 border-green-500/20',
                       'eBay': 'text-yellow-300 bg-yellow-500/15 border-yellow-500/20',
-                      'Subito': 'text-[#9fb0bd] bg-[#8397aa]/15 border-[#8397aa]/20',
+                      'Subito': 'text-brand-hi bg-brand/15 border-brand/20',
                       'Privato': 'text-[var(--text-muted)] bg-[var(--fill)] border-[var(--border-2)]',
-                      'Trade': 'text-[#8397aa] bg-[#8397aa]/15 border-[#8397aa]/25',
+                      'Trade': 'text-brand bg-brand/15 border-brand/25',
                     };
                     return <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-2.5 lg:gap-3">{groupedSoldArray.map((g: any) => {
                       const marginPct = g.totalRevenue > 0 && g.purchasePrice > 0
@@ -6371,7 +6278,7 @@ export default function App() {
                       // PAGATO in attesa: pagato dal compratore, soldi in attesa di consegna.
                       if (g.isHeld) {
                         return (
-                          <div key={g.ids.join(',')} className="bg-[var(--surface)] border border-[#8397aa]/25 rounded-2xl overflow-hidden">
+                          <div key={g.ids.join(',')} className="bg-[var(--surface)] border border-brand/25 rounded-2xl overflow-hidden">
                             <div className="flex items-center gap-3 p-4">
                               {photos.length > 0
                                 ? <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[var(--border)]"><img src={photos[0]} alt="" className="w-full h-full object-cover" /></div>
@@ -6379,16 +6286,16 @@ export default function App() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <p className="font-bold text-sm truncate">{fullName(g.brand, g.name)}</p>
-                                  <span className="text-[9px] font-bold text-[#8397aa] bg-[#8397aa]/15 px-1.5 py-0.5 rounded-full uppercase">{t('mag.paidPending')}</span>
+                                  <span className="text-[9px] font-bold text-brand bg-brand/15 px-1.5 py-0.5 rounded-full uppercase">{t('mag.paidPending')}</span>
                                 </div>
-                                <p className="text-[10px] text-[var(--text-soft)]">{g.size} · {g.condition} · {(g.heldAmount ?? g.publicPrice ?? 0).toFixed(0)}€</p>
+                                <p className="text-[10px] text-[var(--text-soft)]">{g.size} · {g.condition} · {eur0((g.heldAmount ?? g.publicPrice ?? 0))}</p>
                               </div>
                             </div>
                             <div className="px-4 pb-3 flex flex-col gap-2">
                               <p className="text-[10px] text-[var(--text-soft)]">{t('mag.fundsReleaseHint')}</p>
                               {hasFeature('labels') ? (
                                 <button onClick={() => openShipping(g)}
-                                  className="w-full py-2 rounded-xl text-xs font-bold bg-[#8397aa]/15 text-[#8397aa] hover:bg-[#8397aa]/25 transition-colors flex items-center justify-center gap-1.5">
+                                  className="w-full py-2 rounded-xl text-xs font-bold bg-brand/15 text-brand hover:bg-brand/25 transition-colors flex items-center justify-center gap-1.5">
                                   <Package size={13} /> {t('mag.createLabelShip')}
                                 </button>
                               ) : (
@@ -6445,13 +6352,13 @@ export default function App() {
                                   <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)] flex items-center gap-1"><Users size={9} /> {buyers[0].name}</span>
                                 )}
                                 {buyers.length > 1 && (
-                                  <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[#8397aa]/15 text-[#8397aa] flex items-center gap-1"><Users size={9} /> {buyers.length} {t('ct.buyersWord')} {isExpanded ? '▲' : '▼'}</span>
+                                  <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-brand/15 text-brand flex items-center gap-1"><Users size={9} /> {buyers.length} {t('ct.buyersWord')} {isExpanded ? '▲' : '▼'}</span>
                                 )}
                               </div>
                             </div>
                             <div className="text-right shrink-0 ml-2">
                               <p className={`font-black text-base num tracking-tight leading-none ${g.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {g.totalProfit >= 0 ? '+' : ''}{g.totalProfit.toFixed(0)}€
+                                {g.totalProfit >= 0 ? '+' : ''}{eur0(g.totalProfit)}
                               </p>
                               {marginPct !== null && (
                                 <p className={`text-[10px] font-semibold ${marginPct >= 0 ? 'text-green-700' : 'text-red-700'}`}>
@@ -6462,12 +6369,12 @@ export default function App() {
                           </div>
                           <div className="flex items-center gap-2 px-4 pb-3 border-t border-[var(--border)] pt-2.5">
                             <span className="text-[10px] text-[var(--text-faint)] flex items-center gap-1">
-                              {g.purchasePrice?.toFixed(0)}€
+                              {eur0(g.purchasePrice)}
                               <span className="text-gray-800 mx-0.5">→</span>
-                              <span className="text-[var(--text-soft)] font-bold">{g.totalRevenue.toFixed(0)}€</span>
+                              <span className="text-[var(--text-soft)] font-bold">{eur0(g.totalRevenue)}</span>
                             </span>
                             {g.totalFees > 0 && (
-                              <span className="text-[10px] text-[var(--text-faint)]">· {g.totalFees.toFixed(0)}€ fee</span>
+                              <span className="text-[10px] text-[var(--text-faint)]">· {eur0(g.totalFees)} fee</span>
                             )}
                             <button onClick={() => openEditModal(g)}
                               className="ml-auto flex items-center gap-1.5 bg-[var(--fill)] border border-[var(--border-2)] text-[var(--text-soft)] hover:text-[var(--text)] px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
@@ -6485,7 +6392,7 @@ export default function App() {
                               {buyers.map((b, bi) => (
                                 <div key={bi} className="rounded-xl bg-[var(--fill)] border border-[var(--border)] px-3 py-2">
                                   <div className="flex items-center justify-between gap-2">
-                                    <span className="text-xs font-bold text-[var(--text)] flex items-center gap-1.5 min-w-0"><Users size={11} className="shrink-0 text-[#8397aa]" /> <span className="truncate">{b.name === '—' ? t('ct.noName') : b.name}</span></span>
+                                    <span className="text-xs font-bold text-[var(--text)] flex items-center gap-1.5 min-w-0"><Users size={11} className="shrink-0 text-brand" /> <span className="truncate">{b.name === '—' ? t('ct.noName') : b.name}</span></span>
                                     <span className="text-[11px] font-bold text-[var(--text-soft)] shrink-0">×{b.qty}</span>
                                   </div>
                                   <div className="mt-1.5 space-y-1">
@@ -6493,11 +6400,11 @@ export default function App() {
                                       <div key={s.id}>
                                         <div className="flex items-center justify-between gap-2 text-[11px]">
                                           <span className="text-[var(--text-faint)]">
-                                            {s.soldAt ? new Date(s.soldAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' }) : '—'} · {s.salePrice.toFixed(0)}€
+                                            {s.soldAt ? new Date(s.soldAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' }) : '—'} · {eur0(s.salePrice)}
                                           </span>
                                           <div className="flex items-center gap-1 shrink-0">
                                             <button onClick={(e) => { e.stopPropagation(); editingSaleId === s.id ? setEditingSaleId(null) : startInlineSaleEdit(s); }}
-                                              className={`flex items-center gap-1 font-semibold px-2 py-0.5 rounded-lg transition-colors ${editingSaleId === s.id ? 'text-[#8397aa] bg-[#8397aa]/10' : 'text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--fill)]'}`}>
+                                              className={`flex items-center gap-1 font-semibold px-2 py-0.5 rounded-lg transition-colors ${editingSaleId === s.id ? 'text-brand bg-brand/10' : 'text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--fill)]'}`}>
                                               <Edit size={11} /> {t('mag.edit')}
                                             </button>
                                             <button onClick={(e) => { e.stopPropagation(); handleReturnIds([s.id], `${fullName(g.brand, g.name)}`); }}
@@ -6508,38 +6415,38 @@ export default function App() {
                                         </div>
                                         {/* Editor INLINE: prezzo / fee / cliente / data — senza aprire il modale. */}
                                         {editingSaleId === s.id && (
-                                          <div className="mt-2 p-2.5 rounded-xl bg-[var(--surface)] border border-[#8397aa]/25 space-y-2" onClick={e => e.stopPropagation()}>
+                                          <div className="mt-2 p-2.5 rounded-xl bg-[var(--surface)] border border-brand/25 space-y-2" onClick={e => e.stopPropagation()}>
                                             <div className="grid grid-cols-2 gap-2">
                                               <div>
                                                 <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{lang === 'en' ? 'Price €' : 'Prezzo €'}</label>
                                                 <input type="number" step="0.01" inputMode="decimal" value={saleEdit.price}
                                                   onChange={e => setSaleEdit(v => ({ ...v, price: e.target.value }))}
-                                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-brand" />
                                               </div>
                                               <div>
                                                 <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">Fee €</label>
                                                 <input type="number" step="0.01" inputMode="decimal" value={saleEdit.fees}
                                                   onChange={e => setSaleEdit(v => ({ ...v, fees: e.target.value }))}
-                                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-brand" />
                                               </div>
                                               <div>
                                                 <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{t('edit.saleDate')}</label>
                                                 <input type="date" value={saleEdit.date} max={new Date().toISOString().slice(0, 10)}
                                                   onChange={e => setSaleEdit(v => ({ ...v, date: e.target.value }))}
-                                                  className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa] appearance-none" />
+                                                  className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-brand appearance-none" />
                                               </div>
                                               <div>
                                                 <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{lang === 'en' ? 'Customer' : 'Cliente'}</label>
                                                 <input type="text" value={saleEdit.customer} maxLength={120} placeholder="—"
                                                   onChange={e => setSaleEdit(v => ({ ...v, customer: e.target.value }))}
-                                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-brand" />
                                               </div>
                                             </div>
                                             <div className="flex gap-2">
                                               <button onClick={() => setEditingSaleId(null)}
                                                 className="flex-1 py-1.5 rounded-lg border border-[var(--border-2)] text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)]">{t('common.cancel')}</button>
                                               <button onClick={() => saveInlineSaleEdit(s.id)} disabled={saleEditSaving}
-                                                className="flex-1 py-1.5 rounded-lg bg-[#8397aa] hover:bg-[#6f8394] text-white text-[11px] font-black disabled:opacity-50 flex items-center justify-center gap-1">
+                                                className="flex-1 py-1.5 rounded-lg bg-brand hover:bg-brand-lo text-white text-[11px] font-black disabled:opacity-50 flex items-center justify-center gap-1">
                                                 {saleEditSaving ? <Loader2 size={12} className="animate-spin" /> : t('common.save')}
                                               </button>
                                             </div>
@@ -6568,18 +6475,18 @@ export default function App() {
         {currentView === 'analytics' && !hasAdvancedAnalytics && (
           <div className="space-y-5">
             <h2 className="text-3xl font-semibold">{t('nav.analytics')}</h2>
-            <section className="bg-[var(--surface)] border border-[#8397aa]/30 rounded-2xl p-8 text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-[#8397aa]/[0.05] pointer-events-none" />
+            <section className="bg-[var(--surface)] border border-brand/30 rounded-2xl p-8 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-brand/[0.05] pointer-events-none" />
               <div className="relative max-w-md mx-auto">
-                <div className="w-14 h-14 rounded-2xl bg-[#8397aa]/15 flex items-center justify-center mx-auto mb-4"><BarChart3 size={26} className="text-[#8397aa]" /></div>
+                <div className="w-14 h-14 rounded-2xl bg-brand/15 flex items-center justify-center mx-auto mb-4"><BarChart3 size={26} className="text-brand" /></div>
                 <h3 className="text-xl font-bold mb-2">{t('an.lockedTitle')}</h3>
                 <p className="text-sm text-[var(--text-soft)] mb-5">{t('an.lockedDesc')}</p>
                 <ul className="text-sm text-[var(--text-muted)] text-left space-y-2 mb-6 inline-block">
                   {[t('an.feat1'), t('an.feat2'), t('an.feat3'), t('an.feat4'), t('an.feat5')].map(x => (
-                    <li key={x} className="flex items-center gap-2"><CheckCircle size={15} className="text-[#8397aa] shrink-0" /> {x}</li>
+                    <li key={x} className="flex items-center gap-2"><CheckCircle size={15} className="text-brand shrink-0" /> {x}</li>
                   ))}
                 </ul>
-                <button onClick={() => openPlanModal()} className="bg-[#8397aa] hover:bg-[#6f8394] text-white px-6 py-3 rounded-xl font-bold text-sm transition-colors">{t('an.unlockStarter')}</button>
+                <button onClick={() => openPlanModal()} className="bg-brand hover:bg-brand-lo text-white px-6 py-3 rounded-xl font-bold text-sm transition-colors">{t('an.unlockStarter')}</button>
                 <p className="text-[11px] text-[var(--text-faint)] mt-4">{t('an.lockedNote')}</p>
               </div>
             </section>
@@ -6598,10 +6505,9 @@ export default function App() {
             {/* ===== GRAFICO A BARRE SOVRAPPOSTE (ultimi 6 mesi): Entrate/Uscite/Investimenti impilate.
                 Tocca una barra per selezionare quel mese (aggiorna il conto economico sotto). ===== */}
             {(() => {
-              // Palette FREDDA "private banking": rampa titanio/acciaio (light → steel → graphite),
-              // monocroma e sobria — niente arcobaleno. Entrate = titanio chiaro (spicca),
-              // Investimenti = acciaio medio, Uscite = graphite scuro (recede).
-              const COL = { Entrate: '#c0cbd6', Uscite: '#57626f', Investimenti: '#8397aa' };
+              // Colori dal tema: Entrate = inchiostro principale (spicca), Investimenti = accento,
+              // Uscite = grigio tenue (recede). Cambiano da soli col tema chiaro/scuro.
+              const COL = { Entrate: 'var(--text)', Uscite: 'var(--text-faint)', Investimenti: 'var(--accent)' };
               const legend = [
                 { k: 'Entrate', c: COL.Entrate, lbl: t('bub.income'), val: bubbleMonth.ricavi },
                 { k: 'Uscite', c: COL.Uscite, lbl: t('bub.expenses'), val: bubbleMonth.uscite },
@@ -6665,18 +6571,21 @@ export default function App() {
               );
             })()}
 
+            {/* ===== TORTA 3D: composizione per reparto (capitale € / quantità pezzi) ===== */}
+            <AllocationPie3D products={products} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale} getCategoryIcon={getCategoryIcon} />
+
             {/* ===== STOCK (spostato qui dalla dashboard) ===== */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <button onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); }}
                 className="text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 hover:border-[var(--border-2)] transition-colors">
                 <p className="sys-label mb-1 flex items-center gap-1.5"><Layers size={10} /> {t('dash.stock')}</p>
-                <p className="text-xl lg:text-2xl font-extrabold num">{stockValore.toFixed(0)}€</p>
+                <p className="text-xl lg:text-2xl font-extrabold num">{eur0(stockValore)}</p>
                 <p className="text-[10px] text-[var(--text-faint)] mt-1">{inStockItems.length} {t('dash.pieces')} · {t('dash.see')} →</p>
               </button>
               {liquidationValue > 0 && (
                 <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
                   <p className="sys-label mb-1 flex items-center gap-1.5"><TrendingDown size={10} /> Svendita</p>
-                  <p className="text-xl lg:text-2xl font-extrabold num text-amber-400/90">{liquidationValue.toFixed(0)}€</p>
+                  <p className="text-xl lg:text-2xl font-extrabold num text-amber-400/90">{eur0(liquidationValue)}</p>
                   <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('dash.stock')}</p>
                 </div>
               )}
@@ -6702,7 +6611,7 @@ export default function App() {
                   <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl">
                     <TrendingUp size={16} className="text-emerald-400 shrink-0" />
                     <div>
-                      <p className="text-sm font-bold text-[var(--text)]">{weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')} {t('home.thisWeek')}{weekProfit > 0 && ` · +${weekProfit.toFixed(0)}€`}</p>
+                      <p className="text-sm font-bold text-[var(--text)]">{weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')} {t('home.thisWeek')}{weekProfit > 0 && ` · +${eur0(weekProfit)}`}</p>
                       <p className="text-[10px] text-[var(--text-soft)]">{t('home.goodPace')}</p>
                     </div>
                   </div>
@@ -6712,7 +6621,7 @@ export default function App() {
                     <span className="text-xl shrink-0">{getCategoryIcon(bestCategoryEntry.cat)}</span>
                     <div>
                       <p className="text-sm font-bold">{bestCategoryEntry.cat} {t('home.bestDeptSuffix')}</p>
-                      <p className="text-[10px] text-[var(--text-soft)]">+{bestCategoryEntry.profit.toFixed(0)}€ · {bestCategoryEntry.count} {t('dash.salesPlural')}</p>
+                      <p className="text-[10px] text-[var(--text-soft)]">+{eur0(bestCategoryEntry.profit)} · {bestCategoryEntry.count} {t('dash.salesPlural')}</p>
                     </div>
                   </div>
                 )}
@@ -6754,7 +6663,7 @@ export default function App() {
                           </div>
                           <div className="h-0.5 bg-[var(--fill)] rounded-full overflow-hidden"><div className="h-full bg-[var(--fill-3)] rounded-full transition-all" style={{ width: `${(socio.profit / maxP) * 100}%` }} /></div>
                         </div>
-                        <span className="font-extrabold text-[var(--teal)] shrink-0 text-sm num">{socio.profit.toFixed(0)}€</span>
+                        <span className="font-extrabold text-[var(--teal)] shrink-0 text-sm num">{eur0(socio.profit)}</span>
                       </div>
                     );
                   })}
@@ -6769,7 +6678,7 @@ export default function App() {
                 <h3 className="text-lg font-bold tracking-tighter">{t('an.extraCosts')}</h3>
                 {!hasFeature('accounting') && <PlanLock plan="Pro" />}
                 <span className="text-[11px] text-[var(--text-faint)] ml-auto num">
-                  {expenses.length > 0 ? `${expenses.length} ${t('an.entries')} · -${expenses.reduce((a: number, e: any) => a + (e.amount || 0), 0).toFixed(0)}€` : t('an.none')}
+                  {expenses.length > 0 ? `${expenses.length} ${t('an.entries')} · -${eur0(expenses.reduce((a: number, e: any) => a + (e.amount || 0), 0))}` : t('an.none')}
                 </span>
                 <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${expensesOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -6777,16 +6686,16 @@ export default function App() {
               {expensesOpen && (<>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 mt-4">
                 <input type="number" step="0.01" min="0" value={expAmount} onChange={e => setExpAmount(e.target.value)}
-                  placeholder={t('an.amount')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa]" />
+                  placeholder={t('an.amount')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand" />
                 <input type="text" value={expDesc} onChange={e => setExpDesc(e.target.value)}
-                  placeholder={t('an.description')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa]" />
+                  placeholder={t('an.description')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand" />
                 <select value={expCat} onChange={e => setExpCat(e.target.value)}
-                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa]">
+                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand">
                   {[['Sacchetti', t('an.catBags')], ['Spedizioni', t('an.catShipping')], ['Materiali', t('an.catMaterials')], ['Commissioni', t('an.catFees')], ['Altro', t('an.catOther')]].map(([v, lbl]) => <option key={v} value={v}>{lbl}</option>)}
                 </select>
                 {warehouses.filter((w: any) => !w.parentId).length > 1 ? (
                   <select value={expWarehouse || baseWarehouse?.id || ''} onChange={e => setExpWarehouse(e.target.value)}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa]">
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand">
                     {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                   </select>
                 ) : <div className="hidden sm:block" />}
@@ -6820,7 +6729,7 @@ export default function App() {
                 <BarChart3 size={18} className="text-[var(--teal)]" />
                 <h3 className="text-lg font-bold tracking-tighter">{t('mm.title')}</h3>
                 <span className="text-[11px] text-[var(--text-faint)] ml-auto num">
-                  {manualMonths.length > 0 ? `${manualMonths.length} · +${manualMonths.reduce((a, m) => a + ((m.revenue || 0) - (m.cost || 0)), 0).toFixed(0)}€` : t('ct.none')}
+                  {manualMonths.length > 0 ? `${manualMonths.length} · +${eur0(manualMonths.reduce((a, m) => a + ((m.revenue || 0) - (m.cost || 0)), 0))}` : t('ct.none')}
                 </span>
                 <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${manualOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -6828,15 +6737,15 @@ export default function App() {
               {manualOpen && (<>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 mb-3">
                   <select value={mmMonth} onChange={e => setMmMonth(e.target.value)}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa]">
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand">
                     {Array.from({ length: 12 }, (_, i) => <option key={i} value={i} className="capitalize">{new Date(2000, i, 1).toLocaleDateString(dateLocale, { month: 'long' })}</option>)}
                   </select>
                   <input type="number" value={mmYear} onChange={e => setMmYear(e.target.value)} placeholder={t('mm.year')}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa] num" />
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand num" />
                   <input type="number" step="0.01" min="0" value={mmRevenue} onChange={e => setMmRevenue(e.target.value)} placeholder={t('mm.revenue')}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa] num" />
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand num" />
                   <input type="number" step="0.01" min="0" value={mmCost} onChange={e => setMmCost(e.target.value)} placeholder={t('mm.cost')}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa] num" />
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand num" />
                 </div>
                 <button onClick={addManualMonth} disabled={isAddingMM}
                   className="w-full sm:w-auto px-5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 text-black text-sm font-bold transition-opacity disabled:opacity-50 mb-3">
@@ -6850,8 +6759,8 @@ export default function App() {
                       return (
                         <div key={m.id} className="flex items-center justify-between gap-2 bg-[var(--surface-2)] rounded-lg px-3 py-2">
                           <span className="text-sm font-bold text-[var(--text)] w-20 shrink-0">{mn} {m.year}</span>
-                          <span className="text-[11px] text-[var(--text-soft)] flex-1 num">{(m.revenue || 0).toFixed(0)}€ − {(m.cost || 0).toFixed(0)}€</span>
-                          <span className={`text-sm font-bold num shrink-0 ${prof >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{prof >= 0 ? '+' : ''}{prof.toFixed(0)}€</span>
+                          <span className="text-[11px] text-[var(--text-soft)] flex-1 num">{eur0((m.revenue || 0))} − {eur0((m.cost || 0))}</span>
+                          <span className={`text-sm font-bold num shrink-0 ${prof >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{prof >= 0 ? '+' : ''}{eur0(prof)}</span>
                           <button onClick={() => deleteManualMonth(m.id)} className="text-[var(--text-faint)] hover:text-red-400 shrink-0"><Trash2 size={14} /></button>
                         </div>
                       );
@@ -6889,7 +6798,7 @@ export default function App() {
                     <button type="button" onClick={() => { setContactSearch(''); setContactsPage('buyers'); }} className="w-full flex items-center gap-2">
                       <Users size={18} className="text-emerald-400" />
                       <h3 className="text-lg font-bold tracking-tighter">{t('ct.buyers')}</h3>
-                      <span className="text-[11px] text-[var(--text-faint)] ml-auto num">{buyerStats.length > 0 ? `${buyerStats.length} · ${buyerStats.reduce((a, b) => a + b.revenue, 0).toFixed(0)}€` : t('ct.none')}</span>
+                      <span className="text-[11px] text-[var(--text-faint)] ml-auto num">{buyerStats.length > 0 ? `${buyerStats.length} · ${eur0(buyerStats.reduce((a, b) => a + b.revenue, 0))}` : t('ct.none')}</span>
                       <ChevronDown size={18} className="text-[var(--text-soft)] -rotate-90" />
                     </button>
                     <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('ct.buyersHint')}</p>
@@ -6903,7 +6812,7 @@ export default function App() {
                               <button onClick={() => setExpandedContact(open ? null : ck)} className="w-full flex items-center gap-2 px-3 py-2.5 text-left">
                                 <span className="w-6 text-[11px] font-black text-[var(--text-faint)] shrink-0">{i + 1}</span>
                                 <span className="text-sm font-bold text-[var(--text)] truncate flex-1">{b.name}</span>
-                                <span className="text-[11px] font-bold text-emerald-400 shrink-0 num">{b.revenue.toFixed(0)}€</span>
+                                <span className="text-[11px] font-bold text-emerald-400 shrink-0 num">{eur0(b.revenue)}</span>
                                 <span className="text-[10px] text-[var(--text-faint)] shrink-0 num">×{b.count}</span>
                                 <ChevronDown size={14} className={`text-[var(--text-faint)] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
                               </button>
@@ -6912,7 +6821,7 @@ export default function App() {
                                   {b.items.map((p: any) => (
                                     <div key={p.id} className="flex items-center justify-between gap-2 text-[11px]">
                                       <span className="text-[var(--text-soft)] truncate">{fullName(p.brand, p.name)} <span className="text-[var(--text-faint)]">· {p.size}</span></span>
-                                      <span className="text-[var(--text-faint)] shrink-0 num">{dfmt(p.soldAt)} · {(p.salePrice || 0).toFixed(0)}€</span>
+                                      <span className="text-[var(--text-faint)] shrink-0 num">{dfmt(p.soldAt)} · {eur0((p.salePrice || 0))}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -6927,9 +6836,9 @@ export default function App() {
                   {/* FORNITORI */}
                   <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                     <button type="button" onClick={() => { setContactSearch(''); setContactsPage('sellers'); }} className="w-full flex items-center gap-2">
-                      <Package size={18} className="text-[#8397aa]" />
+                      <Package size={18} className="text-brand" />
                       <h3 className="text-lg font-bold tracking-tighter">{t('ct.sellers')}</h3>
-                      <span className="text-[11px] text-[var(--text-faint)] ml-auto num">{sellerStats.length > 0 ? `${sellerStats.length} · ${sellerStats.reduce((a, b) => a + b.spent, 0).toFixed(0)}€` : t('ct.none')}</span>
+                      <span className="text-[11px] text-[var(--text-faint)] ml-auto num">{sellerStats.length > 0 ? `${sellerStats.length} · ${eur0(sellerStats.reduce((a, b) => a + b.spent, 0))}` : t('ct.none')}</span>
                       <ChevronDown size={18} className="text-[var(--text-soft)] -rotate-90" />
                     </button>
                     <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('ct.sellersHint')}</p>
@@ -6943,7 +6852,7 @@ export default function App() {
                               <button onClick={() => setExpandedContact(open ? null : ck)} className="w-full flex items-center gap-2 px-3 py-2.5 text-left">
                                 <span className="w-6 text-[11px] font-black text-[var(--text-faint)] shrink-0">{i + 1}</span>
                                 <span className="text-sm font-bold text-[var(--text)] truncate flex-1">{s.name}</span>
-                                <span className="text-[11px] font-bold text-[#8397aa] shrink-0 num">{s.spent.toFixed(0)}€</span>
+                                <span className="text-[11px] font-bold text-brand shrink-0 num">{eur0(s.spent)}</span>
                                 <span className="text-[10px] text-[var(--text-faint)] shrink-0 num">×{s.count}</span>
                                 <ChevronDown size={14} className={`text-[var(--text-faint)] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
                               </button>
@@ -6952,7 +6861,7 @@ export default function App() {
                                   {s.items.map((p: any) => (
                                     <div key={p.id} className="flex items-center justify-between gap-2 text-[11px]">
                                       <span className="text-[var(--text-soft)] truncate">{fullName(p.brand, p.name)} <span className="text-[var(--text-faint)]">· {p.size}</span></span>
-                                      <span className="text-[var(--text-faint)] shrink-0 num">{dfmt(p.createdAt)} · {(p.purchasePrice || 0).toFixed(0)}€</span>
+                                      <span className="text-[var(--text-faint)] shrink-0 num">{dfmt(p.createdAt)} · {eur0((p.purchasePrice || 0))}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -7056,17 +6965,17 @@ export default function App() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                       <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
                         <p className="sys-label mb-1">{t('an.revenue')}</p>
-                        <p className="text-2xl font-extrabold num text-[var(--teal)]">{ricavi.toFixed(0)}€</p>
+                        <p className="text-2xl font-extrabold num text-[var(--teal)]">{eur0(ricavi)}</p>
                         <p className="text-[11px] text-[var(--text-soft)] mt-1">{monthSold.length} {monthSold.length === 1 ? t('dash.sale') : t('dash.salesPlural')}</p>
                       </div>
                       <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
                         <p className="sys-label mb-1">{t('an.costsFees')}</p>
-                        <p className="text-2xl font-extrabold num text-[var(--text-soft)]">-{(costo + fees).toFixed(0)}€</p>
-                        <p className="text-[11px] text-[var(--text-soft)] mt-1">{costo.toFixed(0)}€ {t('an.goods')} · {fees.toFixed(0)}€ {t('an.fee')}</p>
+                        <p className="text-2xl font-extrabold num text-[var(--text-soft)]">-{eur0((costo + fees))}</p>
+                        <p className="text-[11px] text-[var(--text-soft)] mt-1">{eur0(costo)} {t('an.goods')} · {eur0(fees)} {t('an.fee')}</p>
                       </div>
                       <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
                         <p className="sys-label mb-1">{t('an.netProfit')}</p>
-                        <p className={`text-2xl font-extrabold num ${netto >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>{netto >= 0 ? '+' : ''}{netto.toFixed(0)}€</p>
+                        <p className={`text-2xl font-extrabold num ${netto >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>{netto >= 0 ? '+' : ''}{eur0(netto)}</p>
                         <p className="text-[11px] text-[var(--text-soft)] mt-1">
                           ROI {roi >= 0 ? '+' : ''}{roi.toFixed(0)}%
                           {hasPrev && <span className={`ml-1.5 font-bold ${deltaPct >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>{deltaPct >= 0 ? '▲' : '▼'}{Math.abs(deltaPct).toFixed(0)}% <span className="font-normal text-[var(--text-faint)]">{t('an.vsPrevMonth')}</span></span>}
@@ -7075,7 +6984,7 @@ export default function App() {
                       <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
                         <p className="sys-label mb-1">{t('an.topPlatform')}</p>
                         <p className="text-2xl font-extrabold truncate">{topPlat ? topPlat[0] : '—'}</p>
-                        {topPlat && <p className="text-[11px] text-[var(--text-soft)] mt-1 num">{topPlat[1] >= 0 ? '+' : ''}{topPlat[1].toFixed(0)}€ {t('an.profit')}</p>}
+                        {topPlat && <p className="text-[11px] text-[var(--text-soft)] mt-1 num">{topPlat[1] >= 0 ? '+' : ''}{eur0(topPlat[1])} {t('an.profit')}</p>}
                       </div>
                     </div>
                     {catRows.length > 0 && (
@@ -7088,7 +6997,7 @@ export default function App() {
                               <div className="flex-1 h-2 bg-[var(--fill)] rounded-full overflow-hidden">
                                 <div className={`h-full rounded-full ${val >= 0 ? 'bg-emerald-500' : 'bg-red-500'}`} style={{ width: `${(Math.abs(val) / maxCatAbs) * 100}%` }} />
                               </div>
-                              <span className={`text-xs font-bold num w-16 text-right ${val >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{val >= 0 ? '+' : ''}{val.toFixed(0)}€</span>
+                              <span className={`text-xs font-bold num w-16 text-right ${val >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{val >= 0 ? '+' : ''}{eur0(val)}</span>
                             </div>
                           ))}
                         </div>
@@ -7113,21 +7022,21 @@ export default function App() {
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <Wallet size={10} /> {t('an.netProfitKpi')}
                 </p>
-                <p className={`text-2xl lg:text-3xl font-bold num ${profittoNetto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{profittoNetto.toFixed(0)}€</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.afterFees')} · {ricaviTotali.toFixed(0)}€ {t('an.revenueLower')}</p>
+                <p className={`text-2xl lg:text-3xl font-bold num ${profittoNetto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{eur0(profittoNetto)}</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.afterFees')} · {eur0(ricaviTotali)} {t('an.revenueLower')}</p>
               </div>
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <Layers size={10} /> {t('dash.stock')}
                 </p>
-                <p className="text-2xl lg:text-3xl font-bold num">{stockValore.toFixed(0)}€</p>
+                <p className="text-2xl lg:text-3xl font-bold num">{eur0(stockValore)}</p>
                 <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.capitalLocked')}</p>
               </div>
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <DollarSign size={10} /> {t('an.sales')}
                 </p>
-                <p className="text-2xl lg:text-3xl font-bold text-[#9fb0bd] num">{soldItemsTotal.length}</p>
+                <p className="text-2xl lg:text-3xl font-bold text-brand-hi num">{soldItemsTotal.length}</p>
                 <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.totals')} · {sellThroughRate}% sell-through</p>
               </div>
             </div>
@@ -7135,7 +7044,7 @@ export default function App() {
             {/* KPI row 2: metriche operative */}
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
-                <p className={`text-[clamp(14px,4.2vw,20px)] font-bold num tracking-tight leading-none whitespace-nowrap ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-[#9fb0bd]' : 'text-red-400'}`}>
+                <p className={`text-[clamp(14px,4.2vw,20px)] font-bold num tracking-tight leading-none whitespace-nowrap ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-brand-hi' : 'text-red-400'}`}>
                   {avgMarginPct >= 0 ? '+' : ''}{avgMarginPct.toFixed(1)}%
                 </p>
                 <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
@@ -7144,7 +7053,7 @@ export default function App() {
                 </p>
               </div>
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
-                <p className="text-xl font-bold text-[#9fb0bd] num">{Math.round(avgDaysToSell)}</p>
+                <p className="text-xl font-bold text-brand-hi num">{Math.round(avgDaysToSell)}</p>
                 <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
                   <span className="sm:hidden">{t('an.daysPerSaleShort')}</span>
                   <span className="hidden sm:inline">{t('an.daysPerSaleLong')}</span>
@@ -7176,16 +7085,16 @@ export default function App() {
                             <span className="text-sm font-bold">{plat}</span>
                             <div className="flex items-center gap-3">
                               <span className="text-[10px] text-[var(--text-soft)]">{stats.count} {t('an.salesAbbr')}</span>
-                              <span className="text-sm font-semibold text-green-400">+{stats.profit.toFixed(0)}€</span>
+                              <span className="text-sm font-semibold text-green-400">+{eur0(stats.profit)}</span>
                             </div>
                           </div>
                           <div className="h-2 bg-black/40 rounded-full overflow-hidden mb-1">
-                            <div className="h-full bg-gradient-to-r from-[#8397aa] to-[#9fb0bd] rounded-full"
+                            <div className="h-full bg-gradient-to-r from-brand to-brand-hi rounded-full"
                               style={{ width: `${(stats.revenue / maxRev) * 100}%` }} />
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-[10px] text-[var(--text-faint)]">{stats.revenue.toFixed(0)}€ {t('an.revenueLower')} · {stats.fees.toFixed(0)}€ {t('an.fee')}</span>
-                            <span className="text-[10px] text-[var(--text-soft)]">{platMargin >= 0 ? '+' : ''}{platMargin.toFixed(0)}€/{t('an.salesAbbr')}</span>
+                            <span className="text-[10px] text-[var(--text-faint)]">{eur0(stats.revenue)} {t('an.revenueLower')} · {eur0(stats.fees)} {t('an.fee')}</span>
+                            <span className="text-[10px] text-[var(--text-soft)]">{platMargin >= 0 ? '+' : ''}{eur0(platMargin)}/{t('an.salesAbbr')}</span>
                           </div>
                         </div>
                       );
@@ -7197,7 +7106,7 @@ export default function App() {
               {Object.keys(sociProfits).length > 0 && (
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
-                    <Users className="text-[#9fb0bd]" size={15} />
+                    <Users className="text-brand-hi" size={15} />
                     <h3 className="font-semibold">{t('an.partners')}</h3>
                   </div>
                   <div className="space-y-4">
@@ -7216,10 +7125,10 @@ export default function App() {
                                 </div>
                                 <span className="text-sm font-bold">{socio.name}</span>
                                 {socio.name === user.name && (
-                                  <span className="text-[9px] bg-[#8397aa]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full">{t('an.you')}</span>
+                                  <span className="text-[9px] bg-brand/20 text-[var(--text)] px-1.5 py-0.5 rounded-full">{t('an.you')}</span>
                                 )}
                               </div>
-                              <span className="font-semibold text-green-400">{socio.profit.toFixed(0)}€</span>
+                              <span className="font-semibold text-green-400">{eur0(socio.profit)}</span>
                             </div>
                             <div className="h-2 bg-black/40 rounded-full overflow-hidden">
                               <div className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full"
@@ -7255,10 +7164,10 @@ export default function App() {
                           <span className="text-lg shrink-0">{medals[i]}</span>
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-sm truncate">{fullName(p.brand, p.name)}</p>
-                            <p className="text-[10px] text-[var(--text-soft)]">{p.size} · {p.platform} · {p.purchasePrice.toFixed(0)}€→{(p.salePrice || 0).toFixed(0)}€</p>
+                            <p className="text-[10px] text-[var(--text-soft)]">{p.size} · {p.platform} · {eur0(p.purchasePrice)}→{eur0((p.salePrice || 0))}</p>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="font-semibold text-green-400">+{p.profit.toFixed(0)}€</p>
+                            <p className="font-semibold text-green-400">+{eur0(p.profit)}</p>
                             <p className="text-[10px] text-green-600">+{margin.toFixed(0)}%</p>
                           </div>
                         </div>
@@ -7304,18 +7213,18 @@ export default function App() {
                           <tr key={r.cat} className="hover:bg-[var(--fill)] transition-colors">
                             <td className="py-2.5 pr-4 font-bold text-[var(--text)]">{getCategoryIcon(r.cat)} {r.cat}</td>
                             <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.total}</td>
-                            <td className="py-2.5 pr-4 text-[#9fb0bd] num">{r.sold}</td>
+                            <td className="py-2.5 pr-4 text-brand-hi num">{r.sold}</td>
                             <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.inStock}</td>
                             <td className="py-2.5 pr-4">
                               <div className="flex items-center gap-2">
                                 <div className="w-16 h-1.5 bg-[var(--fill)] rounded-full overflow-hidden">
-                                  <div className="h-full bg-[#8397aa] rounded-full" style={{ width: `${r.st}%` }} />
+                                  <div className="h-full bg-brand rounded-full" style={{ width: `${r.st}%` }} />
                                 </div>
                                 <span className={`num font-semibold ${r.st >= 60 ? 'text-emerald-400' : r.st >= 30 ? 'text-yellow-400' : 'text-red-400'}`}>{r.st}%</span>
                               </div>
                             </td>
-                            <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.capital.toFixed(0)}€</td>
-                            <td className={`py-2.5 pr-4 num font-semibold ${r.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{r.profit >= 0 ? '+' : ''}{r.profit.toFixed(0)}€</td>
+                            <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{eur0(r.capital)}</td>
+                            <td className={`py-2.5 pr-4 num font-semibold ${r.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{r.profit >= 0 ? '+' : ''}{eur0(r.profit)}</td>
                             <td className="py-2.5 text-[var(--text-soft)] num">{r.avgDays ?? '—'}</td>
                           </tr>
                         ))}
@@ -7335,7 +7244,7 @@ export default function App() {
                     <h3 className="font-semibold">{t('an.deadStock')}</h3>
                     <span className="bg-yellow-500/10 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded-full">{staleProducts.length} {t('an.products')}</span>
                   </div>
-                  <span className="text-[10px] text-[var(--text-faint)]">{t('an.staleFor')}{staleThreshold} {t('an.daysLocked')} · {staleProducts.reduce((s: number, p: any) => s + (p.purchasePrice || 0), 0).toFixed(0)}€ {t('an.locked')}</span>
+                  <span className="text-[10px] text-[var(--text-faint)]">{t('an.staleFor')}{staleThreshold} {t('an.daysLocked')} · {eur0(staleProducts.reduce((s: number, p: any) => s + (p.purchasePrice || 0), 0))} {t('an.locked')}</span>
                 </div>
                 <div className="space-y-2">
                   {staleProducts.slice(0, 5).map((p: any) => {
@@ -7350,7 +7259,7 @@ export default function App() {
                           <p className="text-[10px] text-[var(--text-soft)]">{p.size} · {p.condition}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-semibold text-[var(--text)]">{(p.purchasePrice || 0).toFixed(0)}€</p>
+                          <p className="text-sm font-semibold text-[var(--text)]">{eur0((p.purchasePrice || 0))}</p>
                           <p className="text-[10px] text-yellow-600">{days} {t('an.days')}</p>
                         </div>
                       </div>
@@ -7379,20 +7288,20 @@ export default function App() {
                 <input value={marketQuery} onChange={e => setMarketQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') fetchMarket(); }}
                   placeholder={t('market.searchPlaceholder')}
-                  className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-[#8397aa]" />
+                  className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-brand" />
               </div>
-              <button onClick={fetchMarket} className="px-4 py-2.5 rounded-xl bg-[#8397aa] text-white text-sm font-bold">{t('market.searchBtn')}</button>
+              <button onClick={fetchMarket} className="px-4 py-2.5 rounded-xl bg-brand text-white text-sm font-bold">{t('market.searchBtn')}</button>
             </div>
             {marketCats.length > 0 && (
               <div className="flex gap-2 flex-wrap">
-                <button onClick={() => { setMarketCat(''); }} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${!marketCat ? 'bg-[#8397aa]/10 border-[#8397aa]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{t('market.all')}</button>
+                <button onClick={() => { setMarketCat(''); }} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${!marketCat ? 'bg-brand/10 border-brand' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{t('market.all')}</button>
                 {marketCats.map((c: string) => (
-                  <button key={c} onClick={() => setMarketCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${marketCat === c ? 'bg-[#8397aa]/10 border-[#8397aa]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{c}</button>
+                  <button key={c} onClick={() => setMarketCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${marketCat === c ? 'bg-brand/10 border-brand' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>{c}</button>
                 ))}
               </div>
             )}
             {marketLoading ? (
-              <div className="flex justify-center py-16"><Loader2 className="animate-spin text-[#8397aa]" size={28} /></div>
+              <div className="flex justify-center py-16"><Loader2 className="animate-spin text-brand" size={28} /></div>
             ) : marketItems.length === 0 ? (
               <div className="text-center py-16 text-[var(--text-soft)]">{t('market.empty')}</div>
             ) : (
@@ -7419,7 +7328,7 @@ export default function App() {
         {currentView === 'wallet' && (
           <div className="space-y-4 max-w-2xl">
             <div className="flex items-center gap-2">
-              <Wallet className="text-[#8397aa]" size={26} />
+              <Wallet className="text-brand" size={26} />
               <h2 className="text-3xl font-semibold">{t('nav.wallet')}</h2>
               {connectStatus?.chargesEnabled
                 ? <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">{t('wallet.accountActive')}</span>
@@ -7445,7 +7354,7 @@ export default function App() {
                 </div>
 
                 <button type="button" onClick={withdrawFunds} disabled={withdrawing || (wallet?.available ?? 0) <= 0}
-                  className="w-full py-3 bg-[#8397aa] hover:bg-[#6f8394] rounded-2xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
+                  className="w-full py-3 bg-brand hover:bg-brand-lo rounded-2xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
                   {withdrawing ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}
                   {(wallet?.available ?? 0) > 0 ? `${t('wallet.collect')} ${(wallet?.available ?? 0).toFixed(2)}€` : t('wallet.nothingToCollect')}
                 </button>
@@ -7536,7 +7445,7 @@ export default function App() {
                   {activeConvo.role === 'buyer' && activeConvo.productStatus === 'PAGATO' && !activeConvo.disputeStatus && (
                     <>
                       <button onClick={confirmDelivery}
-                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8397aa] text-white flex items-center gap-1.5"><CheckCircle size={13} /> {t('chat.delivered')}</button>
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-brand text-white flex items-center gap-1.5"><CheckCircle size={13} /> {t('chat.delivered')}</button>
                       <button onClick={() => setDisputeForm(f => ({ ...f, open: true }))}
                         className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-500/15 text-red-400 flex items-center gap-1.5"><AlertTriangle size={13} /> {t('chat.problem')}</button>
                     </>
@@ -7558,7 +7467,7 @@ export default function App() {
                     <button onClick={() => trackShipment(activeConvo.trackingCode)}
                       className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-500/15 text-blue-400">{t('chat.track')}</button>
                     <button onClick={() => openDemoLabel(activeConvo.productName, activeConvo.role === 'seller' ? (user?.name || t('market.seller')) : t('market.seller'), activeConvo.role === 'buyer' ? (user?.name || t('chat.buyer')) : (activeConvo.otherName || t('chat.buyer')), activeConvo.trackingCode, activeConvo.trackingCarrier || 'Corriere')}
-                      className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#8397aa]/15 text-[#8397aa]">{t('chat.label')}</button>
+                      className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-brand/15 text-brand">{t('chat.label')}</button>
                   </div>
                 )}
                 {/* Banner contestazione */}
@@ -7600,7 +7509,7 @@ export default function App() {
                   {chatMessages.map((m: any) => (
                     m.offerAmount != null ? (
                       <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
-                        <div className="max-w-[80%] px-3 py-2 rounded-2xl text-sm bg-[var(--surface-2)] border border-[#8397aa]/30">
+                        <div className="max-w-[80%] px-3 py-2 rounded-2xl text-sm bg-[var(--surface-2)] border border-brand/30">
                           <p className="font-bold">💶 {t('chat.offerLabel')}: {m.offerAmount.toFixed(2)}€</p>
                           {m.offerStatus === 'accepted' && <p className="text-[11px] text-green-400 font-semibold mt-0.5">{t('chat.accepted')}</p>}
                           {m.offerStatus === 'declined' && <p className="text-[11px] text-red-400 font-semibold mt-0.5">{t('chat.declined')}</p>}
@@ -7615,7 +7524,7 @@ export default function App() {
                       </div>
                     ) : (
                     <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm ${m.mine ? 'bg-[#8397aa] text-white' : 'bg-[var(--surface-2)] text-[var(--text)]'}`}>{m.text}</div>
+                      <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm ${m.mine ? 'bg-brand text-white' : 'bg-[var(--surface-2)] text-[var(--text)]'}`}>{m.text}</div>
                     </div>
                     )
                   ))}
@@ -7625,9 +7534,9 @@ export default function App() {
                   <input value={chatInput} onChange={e => setChatInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
                     placeholder={t('chat.messagePlaceholder')}
-                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa]" />
+                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand" />
                   <button onClick={sendMessage} disabled={chatSending || !chatInput.trim()}
-                    className="px-4 py-2 rounded-xl bg-[#8397aa] text-white text-sm font-bold disabled:opacity-50">{t('chat.send')}</button>
+                    className="px-4 py-2 rounded-xl bg-brand text-white text-sm font-bold disabled:opacity-50">{t('chat.send')}</button>
                 </div>
               </div>
             )}
@@ -7645,7 +7554,7 @@ export default function App() {
                   <div className="space-y-4">
                     {activeConvo.productStatus === 'PAGATO' && (
                       <button onClick={shipTestLabel} disabled={shipping}
-                        className="w-full py-3 rounded-xl bg-[#8397aa]/15 text-[#8397aa] font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                        className="w-full py-3 rounded-xl bg-brand/15 text-brand font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
                         {shipping ? <Loader2 className="animate-spin" size={16} /> : <Package size={16} />} {t('ship.genTestLabel')}
                       </button>
                     )}
@@ -7653,13 +7562,13 @@ export default function App() {
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('ship.agreedPrice')}</label>
                       <input type="number" step="0.01" value={shipForm.price} onChange={e => setShipForm(f => ({ ...f, price: e.target.value }))}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8397aa]" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-brand" />
                     </div>
                     )}
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.trackingCode')} {activeConvo.productStatus === 'PAGATO' ? '' : `(${t('form.optional')})`}</label>
                       <input value={shipForm.code} onChange={e => setShipForm(f => ({ ...f, code: e.target.value }))} placeholder={t('ship.codePlaceholder')}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8397aa]" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-brand" />
                       <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('ship.noLinks')}</p>
                     </div>
                     <div className="flex gap-2">
@@ -7680,19 +7589,19 @@ export default function App() {
               <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setChatOffer(o => ({ ...o, open: false }))} {...swipeBack(() => setChatOffer(o => ({ ...o, open: false })))}>
                 <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
                   <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-                  <h2 className="text-xl font-semibold mb-1 flex items-center gap-2"><DollarSign size={18} className="text-[#8397aa]" /> {t('offer.title')}</h2>
+                  <h2 className="text-xl font-semibold mb-1 flex items-center gap-2"><DollarSign size={18} className="text-brand" /> {t('offer.title')}</h2>
                   <p className="text-xs text-[var(--text-soft)] mb-5">{activeConvo.productName}{activeConvo.price != null ? ` · ${t('offer.price')} ${activeConvo.price}€` : ''}</p>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('offer.yourOffer')}</label>
                   <input type="number" inputMode="decimal" step="0.01" autoFocus value={chatOffer.amount}
                     onChange={e => setChatOffer(o => ({ ...o, amount: e.target.value }))}
                     onKeyDown={e => { if (e.key === 'Enter') submitChatOffer(); }}
                     placeholder="es. 120"
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-lg font-bold num outline-none focus:border-[#8397aa]" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-lg font-bold num outline-none focus:border-brand" />
                   <div className="flex gap-2 mt-5">
                     <button onClick={() => setChatOffer(o => ({ ...o, open: false }))}
                       className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">{t('common.cancel')}</button>
                     <button onClick={submitChatOffer}
-                      className="flex-1 py-3 rounded-xl bg-[#8397aa] text-white font-bold flex items-center justify-center gap-1.5"><DollarSign size={16} /> {t('offer.send')}</button>
+                      className="flex-1 py-3 rounded-xl bg-brand text-white font-bold flex items-center justify-center gap-1.5"><DollarSign size={16} /> {t('offer.send')}</button>
                   </div>
                 </div>
               </div>
@@ -7709,14 +7618,14 @@ export default function App() {
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('dispute.reason')}</label>
                       <select value={disputeForm.reason} onChange={e => setDisputeForm(f => ({ ...f, reason: e.target.value }))}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8397aa]">
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-brand">
                         {DISPUTE_REASONS_FE.map(r => <option key={r.v} value={r.v}>{r.l}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('dispute.describe')}</label>
                       <textarea value={disputeForm.note} onChange={e => setDisputeForm(f => ({ ...f, note: e.target.value.slice(0, 1000) }))} rows={3} placeholder={t('dispute.describePh')}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-[#8397aa] resize-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm outline-none focus:border-brand resize-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('dispute.proofPhotos')}</label>
@@ -7782,7 +7691,7 @@ export default function App() {
                         <div className="flex gap-2 p-3 overflow-x-auto">
                           {photos.map((ph, i) => (
                             <button key={i} onClick={() => setMarketPhotoIdx(i)}
-                              className={`w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-colors ${i === idx ? 'border-[#8397aa]' : 'border-[var(--border-2)]'}`}>
+                              className={`w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-colors ${i === idx ? 'border-brand' : 'border-[var(--border-2)]'}`}>
                               <img src={ph} alt="" className="w-full h-full object-cover" />
                             </button>
                           ))}
@@ -7797,7 +7706,7 @@ export default function App() {
                   {marketDetail.sku && <p className="text-[11px] text-[var(--text-faint)] mt-1">SKU: {marketDetail.sku}</p>}
                   <p className="text-3xl font-bold mt-3">{marketDetail.price != null ? `${marketDetail.price}€` : '—'}</p>
                   {marketDetail.breakdown && (
-                    <p className="text-sm font-bold text-[#8397aa] mt-0.5">
+                    <p className="text-sm font-bold text-brand mt-0.5">
                       {t('market.total')} {marketDetail.breakdown.total.toFixed(2)}€
                       <span className="font-normal text-[var(--text-soft)]"> · {t('market.totalIncl')}</span>
                     </p>
@@ -7822,10 +7731,10 @@ export default function App() {
                   <div className="flex gap-2">
                     {marketDetail.payEnabled ? (
                       <button onClick={() => payProduct(marketDetail.id)}
-                        className="flex-1 py-3 rounded-xl bg-[#8397aa] hover:bg-[#6f8394] text-white font-bold transition-colors">{t('market.buyNow')}</button>
+                        className="flex-1 py-3 rounded-xl bg-brand hover:bg-brand-lo text-white font-bold transition-colors">{t('market.buyNow')}</button>
                     ) : (
                       <button onClick={() => contactSeller(marketDetail.id, `${t('market.buyMsgPre')}${fullName(marketDetail.brand, marketDetail.name)}${t('market.buyMsgPost')}`)}
-                        className="flex-1 py-3 rounded-xl bg-[#8397aa] hover:bg-[#6f8394] text-white font-bold transition-colors">{t('market.buy')}</button>
+                        className="flex-1 py-3 rounded-xl bg-brand hover:bg-brand-lo text-white font-bold transition-colors">{t('market.buy')}</button>
                     )}
                     <button onClick={() => contactSeller(marketDetail.id)}
                       className="flex-1 py-3 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] font-bold transition-colors">{t('market.contactSeller')}</button>
@@ -7834,7 +7743,7 @@ export default function App() {
                   </>
                 ) : (
                   <button onClick={() => { setMarketDetail(null); setPublicMarket(false); }}
-                    className="w-full py-3 rounded-xl bg-[#8397aa] hover:bg-[#6f8394] text-white font-bold transition-colors">{t('market.loginToBuy')}</button>
+                    className="w-full py-3 rounded-xl bg-brand hover:bg-brand-lo text-white font-bold transition-colors">{t('market.loginToBuy')}</button>
                 )}
               </div>
             </div>
@@ -7847,7 +7756,7 @@ export default function App() {
             <div className="bg-white text-black rounded-2xl w-full max-w-sm p-6 relative" onClick={e => e.stopPropagation()}>
               <button onClick={() => setLabelData(null)} aria-label={lang === 'en' ? 'Close' : 'Chiudi'}
                 className="absolute top-3 right-3 p-2 rounded-lg hover:bg-black/5 active:scale-95"><X size={20} /></button>
-              <span className="inline-block bg-[#8397aa] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">ETICHETTA DI PROVA</span>
+              <span className="inline-block bg-brand text-white text-[11px] font-bold px-2 py-0.5 rounded-full">ETICHETTA DI PROVA</span>
               <h3 className="text-lg font-bold mt-3">{labelData.productName}</h3>
               <div className="text-sm text-gray-700 mt-2 space-y-1">
                 <p><b>Mittente:</b> {labelData.sender}</p>
@@ -7858,7 +7767,7 @@ export default function App() {
               <div className="h-12 mt-2 rounded" style={{ background: 'repeating-linear-gradient(90deg,#111 0 3px,#fff 3px 6px)' }} />
               <p className="text-[11px] text-gray-500 mt-3">Etichetta dimostrativa — non valida per la spedizione reale.</p>
               <button onClick={() => setLabelData(null)}
-                className="mt-4 w-full py-3 rounded-xl bg-[#8397aa] text-white font-bold">Chiudi</button>
+                className="mt-4 w-full py-3 rounded-xl bg-brand text-white font-bold">Chiudi</button>
             </div>
           </div>
         ), document.body)}
@@ -7875,7 +7784,7 @@ export default function App() {
               <div className="p-4 space-y-2">
                 {([['7d', t('per.7d')], ['30d', t('per.30d')], ['year', t('per.year')], ['all', t('per.all')]] as const).map(([k, lbl]) => (
                   <button key={k} onClick={() => { setPersonalPeriod({ kind: k as any }); setPeriodPickerOpen(false); }}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-colors ${personalPeriod.kind === k ? 'bg-[#8397aa] text-white' : 'bg-[var(--surface-2)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-colors ${personalPeriod.kind === k ? 'bg-brand text-white' : 'bg-[var(--surface-2)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
                     {lbl} {personalPeriod.kind === k && <Check size={16} />}
                   </button>
                 ))}
@@ -7885,16 +7794,16 @@ export default function App() {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="min-w-0">
                       <label className="text-[10px] text-[var(--text-faint)]">{t('per.from')}</label>
-                      <input type="date" value={ppFrom} onChange={e => setPpFrom(e.target.value)} className="w-full min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2 py-2 text-sm outline-none focus:border-[#8397aa] appearance-none" />
+                      <input type="date" value={ppFrom} onChange={e => setPpFrom(e.target.value)} className="w-full min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2 py-2 text-sm outline-none focus:border-brand appearance-none" />
                     </div>
                     <div className="min-w-0">
                       <label className="text-[10px] text-[var(--text-faint)]">{t('per.to')}</label>
-                      <input type="date" value={ppTo} onChange={e => setPpTo(e.target.value)} className="w-full min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2 py-2 text-sm outline-none focus:border-[#8397aa] appearance-none" />
+                      <input type="date" value={ppTo} onChange={e => setPpTo(e.target.value)} className="w-full min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2 py-2 text-sm outline-none focus:border-brand appearance-none" />
                     </div>
                   </div>
                   <button onClick={() => { if (ppFrom || ppTo) { setPersonalPeriod({ kind: 'custom', from: ppFrom || undefined, to: ppTo || undefined }); setPeriodPickerOpen(false); } }}
                     disabled={!ppFrom && !ppTo}
-                    className="w-full py-2 rounded-lg bg-[#8397aa] hover:bg-[#6f8394] text-white text-sm font-bold disabled:opacity-40">{t('per.apply')}</button>
+                    className="w-full py-2 rounded-lg bg-brand hover:bg-brand-lo text-white text-sm font-bold disabled:opacity-40">{t('per.apply')}</button>
                 </div>
               </div>
             </div>
@@ -7907,23 +7816,23 @@ export default function App() {
             <div className="bg-[var(--surface)] w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl border-t sm:border border-[var(--border-2)] max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}
               style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)] shrink-0" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
-                <h3 className="font-extrabold flex items-center gap-2"><StickyNote size={18} className="text-[#8397aa]" /> {t('task.title')}</h3>
+                <h3 className="font-extrabold flex items-center gap-2"><StickyNote size={18} className="text-brand" /> {t('task.title')}</h3>
                 <button onClick={() => { setTaskPanelOpen(false); setExpandedTask(null); }} className="p-1.5 rounded-full text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5"><X size={22} /></button>
               </div>
               {/* Aggiungi (testo + promemoria facoltativo con notifica) */}
               <div className="px-5 py-3 border-b border-[var(--border)] shrink-0 space-y-2">
                 <div className="flex gap-2">
                   <input value={taskInput} onChange={e => setTaskInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addTask(); }} maxLength={2000}
-                    placeholder={t('task.placeholder')} className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa]" />
+                    placeholder={t('task.placeholder')} className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-brand" />
                   <button onClick={addTask} disabled={taskSaving || !taskInput.trim()}
-                    className="px-4 rounded-xl bg-[#8397aa] hover:bg-[#6f8394] text-white text-sm font-bold disabled:opacity-40 shrink-0">
+                    className="px-4 rounded-xl bg-brand hover:bg-brand-lo text-white text-sm font-bold disabled:opacity-40 shrink-0">
                     {taskSaving ? <Loader2 size={16} className="animate-spin" /> : t('task.add')}
                   </button>
                 </div>
                 <div className="flex items-center gap-2 text-[var(--text-soft)]">
                   <span className="text-sm">🔔</span>
                   <input type="datetime-local" value={taskRemind} onChange={e => setTaskRemind(e.target.value)}
-                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-[#8397aa] text-[var(--text)]" />
+                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-brand text-[var(--text)]" />
                   {taskRemind
                     ? <button onClick={() => setTaskRemind('')} className="text-[var(--text-faint)] hover:text-red-400 text-xs font-bold px-1">✕</button>
                     : <span className="text-[10px] text-[var(--text-faint)]">{t('task.remindHint')}</span>}
@@ -7940,22 +7849,22 @@ export default function App() {
                       {editing ? (
                         <div className="space-y-2">
                           <textarea value={editText} onChange={e => setEditText(e.target.value)} rows={2} maxLength={2000} autoFocus
-                            className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2.5 py-2 text-sm outline-none focus:border-[#8397aa] resize-none" />
+                            className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2.5 py-2 text-sm outline-none focus:border-brand resize-none" />
                           <div className="flex items-center gap-2">
                             <span className="text-sm">🔔</span>
                             <input type="datetime-local" value={editRemind} onChange={e => setEditRemind(e.target.value)}
-                              className="flex-1 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-[#8397aa] text-[var(--text)]" />
+                              className="flex-1 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-brand text-[var(--text)]" />
                             {editRemind && <button onClick={() => setEditRemind('')} className="text-[var(--text-faint)] hover:text-red-400 text-xs font-bold px-1">✕</button>}
                           </div>
                           <div className="flex justify-end gap-2">
                             <button onClick={() => setEditingTask(null)} className="px-3 py-1.5 text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)]">{t('common.cancel')}</button>
-                            <button onClick={() => saveTaskEdit(tk.id)} disabled={!editText.trim()} className="px-4 py-1.5 rounded-lg bg-[#8397aa] hover:bg-[#6f8394] text-white text-xs font-bold disabled:opacity-40">{t('task.save')}</button>
+                            <button onClick={() => saveTaskEdit(tk.id)} disabled={!editText.trim()} className="px-4 py-1.5 rounded-lg bg-brand hover:bg-brand-lo text-white text-xs font-bold disabled:opacity-40">{t('task.save')}</button>
                           </div>
                         </div>
                       ) : (
                         <>
                           <div className="flex items-center gap-2.5">
-                            <button onClick={() => toggleTask(tk)} className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${tk.done ? 'bg-[#8397aa] border-[#8397aa]' : 'border-[var(--border-3)]'}`}>
+                            <button onClick={() => toggleTask(tk)} className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${tk.done ? 'bg-brand border-brand' : 'border-[var(--border-3)]'}`}>
                               {tk.done && <Check size={13} className="text-white" />}
                             </button>
                             {/* Tap sulla nota = MODIFICA (testo + promemoria) */}
@@ -7965,7 +7874,7 @@ export default function App() {
                             <button onClick={() => deleteTask(tk.id)} className="text-[var(--text-faint)] hover:text-red-400 shrink-0"><Trash2 size={14} /></button>
                           </div>
                           {remindStr && (
-                            <p className="text-[11px] text-[#9fb0bd] mt-1.5 pl-7 flex items-center gap-1">🔔 {remindStr}{tk.notified ? ` · ${t('task.notified')}` : ''}</p>
+                            <p className="text-[11px] text-brand-hi mt-1.5 pl-7 flex items-center gap-1">🔔 {remindStr}{tk.notified ? ` · ${t('task.notified')}` : ''}</p>
                           )}
                           {tk.text && tk.text !== (tk.summary || '') && (
                             <p className="text-[12px] text-[var(--text-soft)] mt-1 pl-7 whitespace-pre-wrap leading-relaxed line-clamp-3">{tk.text}</p>
@@ -7984,13 +7893,13 @@ export default function App() {
         {notifyPrompt && createPortal((
           <div className="fixed inset-0 z-[220] bg-black/60 backdrop-blur-sm flex items-center justify-center p-5" onClick={() => setNotifyPrompt(false)}>
             <div className="bg-[var(--surface)] border border-[var(--border-2)] rounded-3xl p-6 w-full max-w-sm text-center" onClick={e => e.stopPropagation()}>
-              <div className="w-14 h-14 rounded-2xl bg-[#8397aa]/15 text-[#8397aa] flex items-center justify-center mb-3 mx-auto text-3xl">🔔</div>
+              <div className="w-14 h-14 rounded-2xl bg-brand/15 text-brand flex items-center justify-center mb-3 mx-auto text-3xl">🔔</div>
               <h3 className="text-lg font-black">{t('task.notifTitle')}</h3>
               <p className="text-sm text-[var(--text-soft)] mt-1.5 mb-4">{t('task.notifBody')}</p>
               <div className="flex gap-2">
                 <button onClick={() => setNotifyPrompt(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--border-2)] text-sm font-bold text-[var(--text-soft)] hover:text-[var(--text)]">{t('task.notifLater')}</button>
                 <button onClick={async () => { setNotifyPrompt(false); await enablePush(); }} disabled={pushBusy}
-                  className="flex-1 py-2.5 rounded-xl bg-[#8397aa] hover:bg-[#6f8394] text-white text-sm font-bold disabled:opacity-50">{t('task.notifEnable')}</button>
+                  className="flex-1 py-2.5 rounded-xl bg-brand hover:bg-brand-lo text-white text-sm font-bold disabled:opacity-50">{t('task.notifEnable')}</button>
               </div>
             </div>
           </div>
@@ -8000,18 +7909,18 @@ export default function App() {
         {shareResult && createPortal((
           <div className="fixed inset-0 z-[210] bg-black/60 backdrop-blur-sm flex items-center justify-center p-5" onClick={() => setShareResult(null)}>
             <div className="bg-[var(--surface)] border border-[var(--border-2)] rounded-3xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-              <div className="w-12 h-12 rounded-2xl bg-[#8397aa]/15 text-[#8397aa] flex items-center justify-center mb-3"><Share2 size={22} /></div>
+              <div className="w-12 h-12 rounded-2xl bg-brand/15 text-brand flex items-center justify-center mb-3"><Share2 size={22} /></div>
               <h3 className="text-lg font-black">Vetrina creata · {shareResult.count} prodotti</h3>
               <p className="text-sm text-[var(--text-soft)] mt-1 mb-3">Link copiato negli appunti. Mostra <b>solo</b> questi prodotti (niente prezzi d'acquisto, clienti o resto del magazzino).</p>
               <div className="flex items-center gap-2 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5">
                 <span className="text-[12px] text-[var(--text-soft)] truncate flex-1">{shareResult.url}</span>
                 <button onClick={() => { navigator.clipboard.writeText(shareResult.url).catch(() => {}); showToast('Link copiato'); }}
-                  className="text-[#8397aa] hover:text-[#9fb0bd] shrink-0"><Copy size={16} /></button>
+                  className="text-brand hover:text-brand-hi shrink-0"><Copy size={16} /></button>
               </div>
               <div className="flex gap-2 mt-4">
                 <a href={shareResult.url} target="_blank" rel="noopener noreferrer"
                   className="flex-1 py-2.5 rounded-xl border border-[var(--border-2)] text-sm font-bold text-center text-[var(--text-soft)] hover:text-[var(--text)]">Apri</a>
-                <button onClick={() => setShareResult(null)} className="flex-1 py-2.5 rounded-xl bg-[#8397aa] hover:bg-[#6f8394] text-white text-sm font-bold">Ok</button>
+                <button onClick={() => setShareResult(null)} className="flex-1 py-2.5 rounded-xl bg-brand hover:bg-brand-lo text-white text-sm font-bold">Ok</button>
               </div>
             </div>
           </div>
@@ -8051,7 +7960,7 @@ export default function App() {
           ).sort((a: any, b: any) => b.amount - a.amount);
           const q = contactSearch.trim().toLowerCase();
           const stats = q ? all.filter((s: any) => s.name.toLowerCase().includes(q)) : all;
-          const accent = isBuyers ? 'text-emerald-400' : 'text-[#8397aa]';
+          const accent = isBuyers ? 'text-emerald-400' : 'text-brand';
           const dfmt = (v: any) => v ? new Date(v).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
           const close = () => { setContactsPage(null); setContactSearch(''); setContactsMonth(null); };
           return (
@@ -8062,10 +7971,10 @@ export default function App() {
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)] shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
                   <div className="min-w-0 flex-1">
                     <h2 className="text-lg font-black truncate flex items-center gap-1.5">
-                      {isBuyers ? <Users size={16} className="text-emerald-400" /> : <Package size={16} className="text-[#8397aa]" />}
+                      {isBuyers ? <Users size={16} className="text-emerald-400" /> : <Package size={16} className="text-brand" />}
                       {isBuyers ? t('ct.buyers') : t('ct.sellers')}
                     </h2>
-                    <p className="text-[11px] text-[var(--text-soft)]">{all.length} · {all.reduce((a, s) => a + s.amount, 0).toFixed(0)}€</p>
+                    <p className="text-[11px] text-[var(--text-soft)]">{all.length} · {eur0(all.reduce((a, s) => a + s.amount, 0))}</p>
                   </div>
                   <button onClick={close} aria-label={t('common.close')}
                     className="p-2 -mr-1 rounded-full text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-white/5 shrink-0 active:scale-95 transition-transform"><X size={22} /></button>
@@ -8092,7 +8001,7 @@ export default function App() {
                       <button onClick={() => setContactPageExpanded(open ? null : s.name)} className="w-full flex items-center gap-3 px-4 py-3 text-left">
                         <span className="w-6 text-sm font-black text-[var(--text-faint)] shrink-0">{i + 1}</span>
                         <span className="text-sm font-bold text-[var(--text)] truncate flex-1">{s.name}</span>
-                        <span className={`text-sm font-bold num shrink-0 ${accent}`}>{s.amount.toFixed(0)}€</span>
+                        <span className={`text-sm font-bold num shrink-0 ${accent}`}>{eur0(s.amount)}</span>
                         <span className="text-[11px] text-[var(--text-faint)] num shrink-0 w-10 text-right">×{s.count}</span>
                         <ChevronDown size={16} className={`text-[var(--text-faint)] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
                       </button>
@@ -8101,7 +8010,7 @@ export default function App() {
                           {s.items.map((p: any) => (
                             <div key={p.id} className="flex items-center justify-between gap-2 text-[12px]">
                               <span className="text-[var(--text-soft)] truncate">{fullName(p.brand, p.name)} <span className="text-[var(--text-faint)]">· {p.size}</span></span>
-                              <span className="text-[var(--text-faint)] shrink-0 num">{dfmt(isBuyers ? p.soldAt : p.createdAt)} · {(isBuyers ? (p.salePrice || 0) : (p.purchasePrice || 0)).toFixed(0)}€</span>
+                              <span className="text-[var(--text-faint)] shrink-0 num">{dfmt(isBuyers ? p.soldAt : p.createdAt)} · {eur0((isBuyers ? (p.salePrice || 0) : (p.purchasePrice || 0)))}</span>
                             </div>
                           ))}
                         </div>
@@ -8152,7 +8061,7 @@ export default function App() {
                         <p className="font-black text-lg leading-none">{s.size}</p>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold">×{s.quantity} <span className="text-[var(--text-faint)] font-normal">· {(s.purchasePrice || 0).toFixed(0)}€ {t('mag.each')}</span></p>
+                        <p className="text-sm font-bold">×{s.quantity} <span className="text-[var(--text-faint)] font-normal">· {eur0((s.purchasePrice || 0))} {t('mag.each')}</span></p>
                         {(s.condition || s.supplier || s.date) && (
                           <p className="text-[11px] text-[var(--text-soft)] truncate mt-0.5">
                             {s.condition ? `${s.condition} · ` : ''}
@@ -8178,7 +8087,7 @@ export default function App() {
                       </button>
                       {isAdminUser && (
                         <button onClick={() => { setModelDetail(null); openShipping(s.group); }}
-                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-[#8397aa]/15 text-[#9fb0bd] hover:bg-[#8397aa]/25 transition-colors">
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-brand/15 text-brand-hi hover:bg-brand/25 transition-colors">
                           <Package size={11} /> {t('mag.ship')}
                         </button>
                       )}
@@ -8206,7 +8115,7 @@ export default function App() {
                   <ChevronDown size={20} className="rotate-90" /> <span className="text-sm font-bold">{t('common.back')}</span>
                 </button>
                 <div className="min-w-0 flex-1 text-center">
-                  <p className="font-bold truncate flex items-center justify-center gap-1.5"><Layers size={16} className="text-[#8397aa]" /> {lotDetail.lotName}</p>
+                  <p className="font-bold truncate flex items-center justify-center gap-1.5"><Layers size={16} className="text-brand" /> {lotDetail.lotName}</p>
                   <p className="text-[11px] text-[var(--text-soft)]">{lotDetail.category}</p>
                 </div>
                 <button onClick={() => setLotDetail(null)} aria-label={lang === 'en' ? 'Close' : 'Chiudi'}
@@ -8219,7 +8128,7 @@ export default function App() {
                 return (
                   <>
                     <div className="px-4 py-2 border-b border-[var(--border)] text-[11px] text-[var(--text-soft)] shrink-0">
-                      {pieces.length} pezzi · costo totale {tot.toFixed(0)}€ · {(tot / (pieces.length || 1)).toFixed(2)}€ cad.
+                      {pieces.length} pezzi · costo totale {eur0(tot)} · {(tot / (pieces.length || 1)).toFixed(2)}€ cad.
                       <span className="block text-[10px] text-[var(--text-soft)]/70 mt-0.5">Tieni premuto un pezzo per selezionarlo e venderlo insieme ad altri</span>
                     </div>
                     <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2">
@@ -8231,16 +8140,16 @@ export default function App() {
                           onMouseDown={() => startPieceLongPress(p.id)} onMouseUp={cancelLongPress} onMouseLeave={cancelLongPress}
                           onTouchStart={() => startPieceLongPress(p.id)} onTouchEnd={cancelLongPress}
                           onClick={() => { if (longPressFired.current) { longPressFired.current = false; return; } if (selecting) togglePieceSelection(p.id); }}
-                          className={`flex flex-col gap-2 rounded-xl p-3 select-none transition-all ${picked ? 'bg-[#8397aa]/15 ring-1 ring-[#8397aa]/60' : 'bg-[var(--surface-2)]'} ${selecting ? 'cursor-pointer' : ''}`}>
+                          className={`flex flex-col gap-2 rounded-xl p-3 select-none transition-all ${picked ? 'bg-brand/15 ring-1 ring-brand/60' : 'bg-[var(--surface-2)]'} ${selecting ? 'cursor-pointer' : ''}`}>
                           <div className="flex items-center justify-between gap-2">
                           {selecting && (
-                            <div className={`shrink-0 w-5 h-5 rounded-md border flex items-center justify-center ${picked ? 'bg-[#8397aa] border-[#8397aa]' : 'border-[var(--border-2)]'}`}>
+                            <div className={`shrink-0 w-5 h-5 rounded-md border flex items-center justify-center ${picked ? 'bg-brand border-brand' : 'border-[var(--border-2)]'}`}>
                               {picked && <Check size={14} className="text-white" />}
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold truncate">{fullName(p.brand, p.name)}</p>
-                            <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition} · {p.purchasePrice?.toFixed(0)}€</p>
+                            <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition} · {eur0(p.purchasePrice)}</p>
                             {p.trackingCode && (
                               <a href={trackingPublicUrl(p.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
                                 className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 hover:text-blue-300 max-w-full">
@@ -8270,7 +8179,7 @@ export default function App() {
                               </button>
                               {isAdminUser && (
                                 <button onClick={(e) => { e.stopPropagation(); setLotDetail(null); openShipping({ ...p, ids: [p.id] }); }}
-                                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-[#8397aa]/15 text-[#9fb0bd] hover:bg-[#8397aa]/25 transition-colors">
+                                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-brand/15 text-brand-hi hover:bg-brand/25 transition-colors">
                                   <Package size={11} /> {t('mag.ship')}
                                 </button>
                               )}
@@ -8313,10 +8222,10 @@ export default function App() {
 
           const statusLabel = (s?: string) => {
             if (s === 'IN_TRANSIT') return { text: t('track.stInTransit'), cls: 'bg-blue-500/20 text-blue-400', dot: 'bg-blue-400' };
-            if (s === 'OUT_FOR_DELIVERY') return { text: t('track.stOutForDelivery'), cls: 'bg-[#8397aa]/20 text-[#9fb0bd]', dot: 'bg-[#9fb0bd]' };
+            if (s === 'OUT_FOR_DELIVERY') return { text: t('track.stOutForDelivery'), cls: 'bg-brand/20 text-brand-hi', dot: 'bg-brand-hi' };
             if (s === 'DELIVERED') return { text: t('track.stDelivered'), cls: 'bg-green-500/20 text-green-400', dot: 'bg-green-400' };
             if (s === 'EXCEPTION') return { text: t('track.stException'), cls: 'bg-red-500/20 text-red-400', dot: 'bg-red-400' };
-            if (s === 'RETURNED') return { text: t('track.stReturned'), cls: 'bg-[#8397aa]/20 text-[#9fb0bd]', dot: 'bg-[#9fb0bd]' };
+            if (s === 'RETURNED') return { text: t('track.stReturned'), cls: 'bg-brand/20 text-brand-hi', dot: 'bg-brand-hi' };
             return { text: t('track.stPending'), cls: 'bg-[var(--fill)] text-[var(--text-soft)]', dot: 'bg-gray-600' };
           };
 
@@ -8492,10 +8401,10 @@ export default function App() {
             <h2 className="text-3xl font-semibold">{t('set.title')}</h2>
 
             {/* SEZIONE: Piani & Pro */}
-            <section className="bg-gradient-to-br from-[#8397aa]/10 to-[var(--surface)] border border-[#8397aa]/30 rounded-2xl p-6">
+            <section className="bg-gradient-to-br from-brand/10 to-[var(--surface)] border border-brand/30 rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <Sparkles className="text-[#8397aa] mt-0.5" size={22} />
+                  <Sparkles className="text-brand mt-0.5" size={22} />
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.plansTitle')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">
@@ -8504,7 +8413,7 @@ export default function App() {
                   </div>
                 </div>
                 <button onClick={() => openPlanModal()}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#8397aa] hover:bg-[#9fb0bd] text-white transition-colors whitespace-nowrap">
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-brand hover:bg-brand-hi text-white transition-colors whitespace-nowrap">
                   {t('set.seePlans')}
                 </button>
               </div>
@@ -8514,7 +8423,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <Bell className={pushEnabled ? 'text-[#8397aa] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
+                  <Bell className={pushEnabled ? 'text-brand mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.notifications')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">
@@ -8526,7 +8435,7 @@ export default function App() {
                 </div>
                 <button onClick={() => pushEnabled ? disablePush() : enablePush()} disabled={pushBusy || !pushSupported}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap disabled:opacity-40 ${
-                    pushEnabled ? 'bg-red-600/20 hover:bg-red-600/30 text-red-400' : 'bg-[#8397aa] hover:bg-[#9fb0bd] text-white'
+                    pushEnabled ? 'bg-red-600/20 hover:bg-red-600/30 text-red-400' : 'bg-brand hover:bg-brand-hi text-white'
                   }`}>
                   {pushBusy ? <Loader2 size={14} className="animate-spin" /> : pushEnabled ? t('set.disable') : t('set.enable')}
                 </button>
@@ -8552,7 +8461,7 @@ export default function App() {
               <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
-                    <Sparkles className={voiceWake ? 'text-[#8397aa] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
+                    <Sparkles className={voiceWake ? 'text-brand mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
                     <div>
                       <h3 className="text-lg font-bold tracking-tighter">Assistente vocale “Ehy HQ”</h3>
                       <p className="text-xs text-[var(--text-soft)] mt-1 max-w-md">
@@ -8563,7 +8472,7 @@ export default function App() {
                     </div>
                   </div>
                   <button onClick={toggleVoiceWake}
-                    className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${voiceWake ? 'bg-[#8397aa]' : 'bg-[var(--fill-2)]'}`}>
+                    className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${voiceWake ? 'bg-brand' : 'bg-[var(--fill-2)]'}`}>
                     <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${voiceWake ? 'left-6' : 'left-1'}`} />
                   </button>
                 </div>
@@ -8576,14 +8485,14 @@ export default function App() {
             {/* SEZIONE: Lingua */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-1">
-                <Glasses className="text-[#8397aa]" size={18} />
+                <Glasses className="text-brand" size={18} />
                 <h3 className="text-lg font-bold tracking-tighter">{t('settings.language')}</h3>
               </div>
               <p className="text-xs text-[var(--text-soft)] mb-4">{t('settings.languageDesc')}</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {LANGUAGES.filter(l => l.ready).map(l => (
                   <button key={l.code} onClick={() => changeLang(l.code)}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold border transition-colors ${lang === l.code ? 'bg-[#8397aa] text-white border-[#8397aa]' : 'bg-[var(--surface-2)] text-[var(--text-soft)] border-[var(--border-2)] hover:text-[var(--text)]'}`}>
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold border transition-colors ${lang === l.code ? 'bg-brand text-white border-brand' : 'bg-[var(--surface-2)] text-[var(--text-soft)] border-[var(--border-2)] hover:text-[var(--text)]'}`}>
                     <span className="text-lg">{l.flag}</span> {l.label}
                   </button>
                 ))}
@@ -8596,7 +8505,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <Store className={autoPublishOn ? 'text-[#8397aa] mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
+                  <Store className={autoPublishOn ? 'text-brand mt-0.5' : 'text-[var(--text-soft)] mt-0.5'} size={22} />
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.publicWh')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1 max-w-md">
@@ -8607,7 +8516,7 @@ export default function App() {
                   </div>
                 </div>
                 <button onClick={toggleAutoPublish}
-                  className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${autoPublishOn ? 'bg-[#8397aa]' : 'bg-[var(--fill-2)]'}`}>
+                  className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${autoPublishOn ? 'bg-brand' : 'bg-[var(--fill-2)]'}`}>
                   <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${autoPublishOn ? 'left-6' : 'left-1'}`} />
                 </button>
               </div>
@@ -8635,7 +8544,7 @@ export default function App() {
                     setStaleThreshold(v);
                     localStorage.setItem('staleThreshold', v.toString());
                   }}
-                  className="w-24 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm text-right focus:border-[#8397aa] outline-none"
+                  className="w-24 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm text-right focus:border-brand outline-none"
                 />
                 <span className="text-sm text-[var(--text-muted)]">{t('set.days')}</span>
               </div>
@@ -8686,7 +8595,7 @@ export default function App() {
                   </button>
                 ) : (
                   <button onClick={handle2FASetupStart} disabled={twoFaLoading}
-                    className="px-4 py-2 bg-[#8397aa] hover:bg-[#9fb0bd] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
+                    className="px-4 py-2 bg-brand hover:bg-brand-hi rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
                     {t('set.enable2fa')}
                   </button>
                 )}
@@ -8713,7 +8622,7 @@ export default function App() {
                   </button>
                 ) : (
                   <button onClick={enableFaceId}
-                    className="px-4 py-2 bg-[#8397aa] hover:bg-[#9fb0bd] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
+                    className="px-4 py-2 bg-brand hover:bg-brand-hi rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
                     Attiva
                   </button>
                 )}
@@ -8732,7 +8641,7 @@ export default function App() {
                   </div>
                 </div>
                 <button onClick={() => { setEditNameValue(user?.name || ''); setEditNameOpen(true); }}
-                  className="px-4 py-2 bg-[#8397aa] hover:bg-[#9fb0bd] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
+                  className="px-4 py-2 bg-brand hover:bg-brand-hi rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
                   {t('set.change')}
                 </button>
               </div>
@@ -8749,7 +8658,7 @@ export default function App() {
                   </div>
                 </div>
                 <button onClick={() => setChangePwdOpen(true)}
-                  className="px-4 py-2 bg-[#8397aa] hover:bg-[#9fb0bd] rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
+                  className="px-4 py-2 bg-brand hover:bg-brand-hi rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
                   {t('set.change')}
                 </button>
               </div>
@@ -8769,7 +8678,7 @@ export default function App() {
               {/* Selettore magazzino (se possiedi più reparti) */}
               {ownedWarehouses.length > 1 && (
                 <select value={shopifyWhId} onChange={e => { setShopifyWhId(e.target.value); fetchShopifyStatus(e.target.value); }}
-                  className="w-full mb-3 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa]">
+                  className="w-full mb-3 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-brand">
                   {ownedWarehouses.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </select>
               )}
@@ -8820,7 +8729,7 @@ export default function App() {
                     {!shopifyStatus.webhookConfigured && (
                       <>
                         <input type="password" value={shopifyWebhookSecretInput} onChange={e => setShopifyWebhookSecretInput(e.target.value)} placeholder={lang === 'en' ? 'App Client secret' : 'Client secret dell\'app'} autoCapitalize="none" spellCheck={false}
-                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#8397aa]" />
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-xs outline-none focus:border-brand" />
                         <p className="text-[10px] text-[var(--text-faint)] leading-relaxed">{lang === 'en' ? 'Found next to the Admin API token in the custom app credentials. Needed to verify order webhooks.' : 'Si trova accanto al token Admin API nelle credenziali dell\'app custom. Serve per verificare i webhook degli ordini.'}</p>
                       </>
                     )}
@@ -8847,17 +8756,17 @@ export default function App() {
                   <div>
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">{lang === 'en' ? 'Store domain (.myshopify.com)' : 'Dominio store (.myshopify.com)'}</label>
                     <input type="text" value={shopifyDomainInput} onChange={e => setShopifyDomainInput(e.target.value)} placeholder="tuonegozio.myshopify.com" autoCapitalize="none" spellCheck={false}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa]" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-brand" />
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">Admin API access token</label>
                     <input type="password" value={shopifyTokenInput} onChange={e => setShopifyTokenInput(e.target.value)} placeholder="shpat_…" autoCapitalize="none" spellCheck={false}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa]" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-brand" />
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">{lang === 'en' ? 'Client secret (optional, for order notifications)' : 'Client secret (facoltativo, per le notifiche ordini)'}</label>
                     <input type="password" value={shopifyWebhookSecretInput} onChange={e => setShopifyWebhookSecretInput(e.target.value)} placeholder="shpss_… / •••" autoCapitalize="none" spellCheck={false}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa]" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-brand" />
                   </div>
                   <button onClick={connectShopify} disabled={shopifyBusy}
                     className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#95BF47] hover:bg-[#7fa53c] text-white disabled:opacity-50 flex items-center justify-center gap-2">
@@ -8875,7 +8784,7 @@ export default function App() {
             {MARKETPLACE_ENABLED && (
             <button type="button" onClick={() => navigateTo('wallet')}
               className="w-full text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 hover:border-[var(--border-2)] transition-colors flex items-center gap-3">
-              <Wallet className="text-[#8397aa]" size={20} />
+              <Wallet className="text-brand" size={20} />
               <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-bold tracking-tighter">{t('set.walletTitle')}</h3>
                 <p className="text-xs text-[var(--text-soft)]">{t('set.walletBalance')} {(wallet?.available ?? 0).toFixed(2)}€ · {t('set.walletPending')} {(wallet?.pending ?? 0).toFixed(2)}€</p>
@@ -8903,7 +8812,7 @@ export default function App() {
                   <div key={w.id} className="bg-[var(--surface-2)] p-4 rounded-xl border border-[var(--border-2)]">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl"><Layers size={22} className="text-[#8397aa]" /></span>
+                        <span className="text-2xl"><Layers size={22} className="text-brand" /></span>
                         <div>
                           <p className="font-bold">{w.name}</p>
                           <p className="text-[10px] text-[var(--text-soft)] uppercase">
@@ -8926,11 +8835,11 @@ export default function App() {
                       return (
                         <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2 min-w-0">
-                            <Store size={14} className="text-[#8397aa] shrink-0" />
+                            <Store size={14} className="text-brand shrink-0" />
                             <span className="text-xs text-[var(--text-soft)]">{t('set.showcase')}: <b className="text-[var(--text)]">{pub}/{whProds.length}</b> {t('set.public')}</span>
                           </div>
                           <div className="flex gap-2 shrink-0">
-                            <button onClick={() => toggleWarehousePublic(w.id, true)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#8397aa] text-white">{t('set.publishAll')}</button>
+                            <button onClick={() => toggleWarehousePublic(w.id, true)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-brand text-white">{t('set.publishAll')}</button>
                             <button onClick={() => toggleWarehousePublic(w.id, false)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--fill)] border border-[var(--border-2)] text-[var(--text-soft)]">{t('set.makePrivate')}</button>
                           </div>
                         </div>
@@ -8948,9 +8857,9 @@ export default function App() {
                     <input type="text" value={newWarehouseName}
                       onChange={(e: any) => setNewWarehouseName(e.target.value)}
                       placeholder={t('set.newWhPlaceholder')}
-                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#8397aa] outline-none" />
+                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-brand outline-none" />
                     <button type="submit" disabled={isAddingWarehouse}
-                      className="bg-[#8397aa] hover:bg-[#9fb0bd] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap text-white">
+                      className="bg-brand hover:bg-brand-hi px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap text-white">
                       {isAddingWarehouse ? <Loader2 className="animate-spin" size={16} /> : t('set.addWarehouse')}
                     </button>
                   </form>
@@ -8959,7 +8868,7 @@ export default function App() {
                     <input type="text" value={newCatName}
                       onChange={(e: any) => setNewCatName(e.target.value)}
                       placeholder={t('set.newCatPlaceholder')}
-                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-[#8397aa] outline-none" />
+                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-4 py-2 text-sm focus:border-brand outline-none" />
                     <button type="submit" disabled={isAddingCat}
                       className="bg-[var(--fill)] hover:bg-[var(--fill-2)] border border-[var(--border-2)] px-5 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap">
                       {isAddingCat ? <Loader2 className="animate-spin" size={16} /> : t('set.addCategory')}
@@ -9037,7 +8946,7 @@ export default function App() {
                       </div>
                       <input type="number" min="0" max="100" value={m.percentage} title="Quota utili"
                         onChange={(e: any) => updateMemberPercentage(team.warehouseId, m.membershipId, e.target.value, 'percentage')}
-                        className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right focus:border-[#8397aa] outline-none" />
+                        className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right focus:border-brand outline-none" />
                       <input type="number" min="0" max="100" value={m.costPercentage ?? 0} title="Quota costi"
                         onChange={(e: any) => updateMemberPercentage(team.warehouseId, m.membershipId, e.target.value, 'costPercentage')}
                         className="w-20 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-right focus:border-amber-500 outline-none" />
@@ -9127,7 +9036,7 @@ export default function App() {
             {/* SEZIONE: Aiuto & Assistenza — il messaggio arriva all'admin via email */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-1">
-                <Mail size={18} className="text-[#8397aa]" />
+                <Mail size={18} className="text-brand" />
                 <h3 className="text-lg font-bold tracking-tighter">{t('set.helpTitle')}</h3>
               </div>
               <p className="text-xs text-[var(--text-soft)] mb-4">
@@ -9143,7 +9052,7 @@ export default function App() {
                   <button key={o.v} type="button" onClick={() => setFeedbackType(o.v)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
                       feedbackType === o.v
-                        ? 'bg-[#8397aa]/10 border-[#8397aa] text-[var(--text)]'
+                        ? 'bg-brand/10 border-brand text-[var(--text)]'
                         : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)] hover:border-gray-600'
                     }`}>
                     <o.Icon size={14} /> {o.label}
@@ -9153,11 +9062,11 @@ export default function App() {
               <textarea value={feedbackMsg} onChange={(e: any) => setFeedbackMsg(e.target.value)}
                 maxLength={4000} rows={4}
                 placeholder={t('set.fbPlaceholder')}
-                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none resize-none" />
+                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none resize-none" />
               <div className="flex items-center justify-between gap-3 mt-3">
                 <span className="text-[10px] text-[var(--text-faint)]">{feedbackMsg.length}/4000</span>
                 <button onClick={sendFeedback} disabled={feedbackSending || feedbackMsg.trim().length < 3}
-                  className="px-5 py-2 bg-[#8397aa] hover:bg-[#9fb0bd] rounded-xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center gap-2">
+                  className="px-5 py-2 bg-brand hover:bg-brand-hi rounded-xl text-sm font-bold transition-colors disabled:opacity-40 flex items-center gap-2">
                   {feedbackSending ? <Loader2 className="animate-spin" size={16} /> : <Mail size={15} />}
                   {t('set.send')}
                 </button>
@@ -9168,7 +9077,7 @@ export default function App() {
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  {theme === 'light' ? <Sun className="text-[#8397aa] mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-[#8397aa] mt-0.5" size={22} /> : theme === 'lux' ? <Gem className="text-[#1fa89f] mt-0.5" size={22} /> : theme === 'chrome' ? <Gem className="text-[#c2c9d2] mt-0.5" size={22} /> : <Moon className="text-[#b9c0c9] mt-0.5" size={22} />}
+                  {theme === 'light' ? <Sun className="text-brand mt-0.5" size={22} /> : theme === 'glass' ? <Sparkles className="text-brand mt-0.5" size={22} /> : theme === 'lux' ? <Gem className="text-[#1fa89f] mt-0.5" size={22} /> : theme === 'chrome' ? <Gem className="text-[#c2c9d2] mt-0.5" size={22} /> : <Moon className="text-[#b9c0c9] mt-0.5" size={22} />}
                   <div>
                     <h3 className="text-lg font-bold tracking-tighter">{t('set.appearance')}</h3>
                     <p className="text-xs text-[var(--text-soft)] mt-1">{t('set.appearanceDesc')}</p>
@@ -9177,13 +9086,13 @@ export default function App() {
                 <div className="flex flex-wrap gap-1 justify-center bg-[var(--surface-2)] p-1 rounded-xl border border-[var(--border-2)] self-center sm:self-auto">
                   <button onClick={() => setTheme('dark')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'dark' ? 'bg-[#8397aa] text-white' : 'text-[var(--text-soft)]'
+                      theme === 'dark' ? 'bg-brand text-white' : 'text-[var(--text-soft)]'
                     }`}>
                     <Moon size={13} /> {t('set.themeDark')}
                   </button>
                   <button onClick={() => setTheme('light')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                      theme === 'light' ? 'bg-[#8397aa] text-white' : 'text-[var(--text-soft)]'
+                      theme === 'light' ? 'bg-brand text-white' : 'text-[var(--text-soft)]'
                     }`}>
                     <Sun size={13} /> {t('set.themeLight')}
                   </button>
@@ -9220,7 +9129,7 @@ export default function App() {
         {currentView === 'admin' && isAdminEmail(user.email) && (
           <div className="space-y-5">
             <div className="flex items-center gap-2">
-              <Shield size={24} className="text-[#8397aa]" />
+              <Shield size={24} className="text-brand" />
               <h2 className="text-3xl font-semibold">Admin</h2>
             </div>
 
@@ -9244,25 +9153,25 @@ export default function App() {
               {/* Toggle vista: Utenti / Richieste */}
               <div className="px-5 py-3 flex gap-2 border-b border-[var(--border)]">
                 <button onClick={() => setAdminView('users')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${adminView === 'users' ? 'bg-[#8397aa] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${adminView === 'users' ? 'bg-brand text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   Utenti
                 </button>
                 <button onClick={() => { setAdminView('feedback'); fetchAdminFeedback(); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'feedback' ? 'bg-[#8397aa] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'feedback' ? 'bg-brand text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   Richieste
                   {adminFbNuove > 0 && (
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'feedback' ? 'bg-white/25' : 'bg-[#8397aa] text-white'}`}>{adminFbNuove}</span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'feedback' ? 'bg-white/25' : 'bg-brand text-white'}`}>{adminFbNuove}</span>
                   )}
                 </button>
                 <button onClick={() => { setAdminView('disputes'); fetchAdminDisputes(); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'disputes' ? 'bg-[#8397aa] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${adminView === 'disputes' ? 'bg-brand text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   Contestazioni
                   {adminDisputes.filter(d => d.status === 'ESCALATED').length > 0 && (
                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${adminView === 'disputes' ? 'bg-white/25' : 'bg-red-500 text-white'}`}>{adminDisputes.filter(d => d.status === 'ESCALATED').length}</span>
                   )}
                 </button>
                 <button onClick={() => { setAdminView('stats'); fetchAdminStats(); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${adminView === 'stats' ? 'bg-[#8397aa] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${adminView === 'stats' ? 'bg-brand text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   Statistiche
                 </button>
               </div>
@@ -9301,7 +9210,7 @@ export default function App() {
                           <div className="flex items-center gap-1.5 mt-1.5">
                             <span className="text-[9px] text-[var(--text-faint)] uppercase">Piano</span>
                             <select value={u.plan || 'free'} onChange={e => setUserPlan(u.id, e.target.value)}
-                              className="text-[10px] bg-[var(--fill)] border border-[var(--border-2)] rounded-lg px-2 py-1 outline-none focus:border-[#8397aa]">
+                              className="text-[10px] bg-[var(--fill)] border border-[var(--border-2)] rounded-lg px-2 py-1 outline-none focus:border-brand">
                               <option value="free">Free</option>
                               <option value="starter">Starter 9.99</option>
                               <option value="pro">Pro 19.99</option>
@@ -9332,12 +9241,12 @@ export default function App() {
                   {/* Distinzione: assistenza DA RISPONDERE vs GIÀ RISOLTA */}
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--border)] sticky top-0 bg-[var(--surface)] z-10">
                     <button onClick={() => setFbFilter('nuove')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${fbFilter === 'nuove' ? 'bg-[#8397aa] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${fbFilter === 'nuove' ? 'bg-brand text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                       Da rispondere
-                      {nuove.length > 0 && <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${fbFilter === 'nuove' ? 'bg-white/25' : 'bg-[#8397aa] text-white'}`}>{nuove.length}</span>}
+                      {nuove.length > 0 && <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${fbFilter === 'nuove' ? 'bg-white/25' : 'bg-brand text-white'}`}>{nuove.length}</span>}
                     </button>
                     <button onClick={() => setFbFilter('risolte')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${fbFilter === 'risolte' ? 'bg-[#8397aa] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${fbFilter === 'risolte' ? 'bg-brand text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                       Risolte
                       {risolte.length > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400">{risolte.length}</span>}
                     </button>
@@ -9352,7 +9261,7 @@ export default function App() {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-[var(--fill)] text-[var(--text-soft)]">{f.type}</span>
                             {f.status === 'nuova'
-                              ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#8397aa] text-white font-bold">nuova</span>
+                              ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand text-white font-bold">nuova</span>
                               : <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 font-bold">risposta</span>}
                             <span className="text-[11px] font-semibold truncate">{f.userName || f.userEmail}</span>
                           </div>
@@ -9377,12 +9286,12 @@ export default function App() {
                           <textarea value={replyText} onChange={(e: any) => setReplyText(e.target.value)}
                             rows={3} maxLength={6000} autoFocus
                             placeholder={`Rispondi a ${f.userEmail}…`}
-                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm focus:border-[#8397aa] outline-none resize-none" />
+                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm focus:border-brand outline-none resize-none" />
                           <div className="flex items-center justify-end gap-2 mt-2">
                             <button onClick={() => { setReplyingId(null); setReplyText(''); }}
                               className="px-3 py-1.5 text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors">Annulla</button>
                             <button onClick={() => sendAdminReply(f.id)} disabled={replySending || replyText.trim().length < 2}
-                              className="px-4 py-1.5 bg-[#8397aa] hover:bg-[#9fb0bd] rounded-lg text-xs font-bold transition-colors disabled:opacity-40 flex items-center gap-1.5">
+                              className="px-4 py-1.5 bg-brand hover:bg-brand-hi rounded-lg text-xs font-bold transition-colors disabled:opacity-40 flex items-center gap-1.5">
                               {replySending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
                               Invia via email
                             </button>
@@ -9390,7 +9299,7 @@ export default function App() {
                         </div>
                       ) : (
                         <button onClick={() => { setReplyingId(f.id); setReplyText(f.reply || ''); }}
-                          className="mt-2 text-xs font-bold text-[#8397aa] hover:text-[#9fb0bd] transition-colors">
+                          className="mt-2 text-xs font-bold text-brand hover:text-brand-hi transition-colors">
                           {f.reply ? 'Modifica risposta' : '↩ Rispondi'}
                         </button>
                       )}
@@ -9419,7 +9328,7 @@ export default function App() {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-2xl p-4">
                           <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold">Iscritti waitlist</p>
-                          <p className="text-3xl font-black mt-1 text-[#8397aa]">{adminStats.waitlist?.total ?? 0}</p>
+                          <p className="text-3xl font-black mt-1 text-brand">{adminStats.waitlist?.total ?? 0}</p>
                         </div>
                         <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-2xl p-4">
                           <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold">Visite (30 gg)</p>
@@ -9436,7 +9345,7 @@ export default function App() {
                               <div key={k} className="flex items-center gap-3">
                                 <span className="text-xs font-bold w-24 shrink-0 truncate">{pageLabels[k] || k}</span>
                                 <div className="flex-1 h-2.5 rounded-full bg-[var(--fill)] overflow-hidden">
-                                  <div className="h-full rounded-full bg-[#8397aa]" style={{ width: `${(v / maxPage) * 100}%` }} />
+                                  <div className="h-full rounded-full bg-brand" style={{ width: `${(v / maxPage) * 100}%` }} />
                                 </div>
                                 <span className="text-xs font-black w-10 text-right num">{v}</span>
                               </div>
@@ -9543,7 +9452,7 @@ export default function App() {
             <div className="text-5xl mb-4">🛠️</div>
             <h1 className="text-2xl font-bold mb-2">Aggiornamento in corso</h1>
             <p className="text-[var(--text-soft)] text-sm">Stiamo migliorando l'app. Torna tra qualche minuto — i tuoi dati sono al sicuro.</p>
-            <div className="mt-6 flex justify-center"><Loader2 className="animate-spin text-[#8397aa]" size={24} /></div>
+            <div className="mt-6 flex justify-center"><Loader2 className="animate-spin text-brand" size={24} /></div>
           </div>
         </div>
       ), document.body)}
@@ -9567,7 +9476,7 @@ export default function App() {
                     <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{c.desc}</p>
                   </div>
                   <button onClick={() => toggleNotifPref(c.key)}
-                    className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${on ? 'bg-[#8397aa]' : 'bg-[var(--fill-2)]'}`}>
+                    className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${on ? 'bg-brand' : 'bg-[var(--fill-2)]'}`}>
                     <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${on ? 'left-6' : 'left-1'}`} />
                   </button>
                 </div>
@@ -9589,7 +9498,7 @@ export default function App() {
             <p className="text-sm text-[var(--text-soft)] mb-6">{confirmState.message}</p>
             <div className="flex gap-2">
               <button onClick={() => closeConfirm(false)} className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">{t('common.cancel')}</button>
-              <button onClick={() => closeConfirm(true)} className={`flex-1 py-3 rounded-xl text-white font-bold ${confirmState.danger ? 'bg-red-600' : 'bg-[#8397aa]'}`}>{confirmState.confirmLabel}</button>
+              <button onClick={() => closeConfirm(true)} className={`flex-1 py-3 rounded-xl text-white font-bold ${confirmState.danger ? 'bg-red-600' : 'bg-brand'}`}>{confirmState.confirmLabel}</button>
             </div>
           </div>
         </div>
@@ -9605,10 +9514,10 @@ export default function App() {
             <input autoFocus value={promptState.value} placeholder={promptState.placeholder}
               onChange={e => setPromptState(s => s ? { ...s, value: e.target.value } : s)}
               onKeyDown={e => { if (e.key === 'Enter') closePrompt(promptState.value); }}
-              className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-base outline-none focus:border-[#8397aa]" />
+              className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-base outline-none focus:border-brand" />
             <div className="flex gap-2 mt-5">
               <button onClick={() => closePrompt(null)} className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-muted)] font-bold">{t('common.cancel')}</button>
-              <button onClick={() => closePrompt(promptState.value)} className="flex-1 py-3 rounded-xl bg-[#8397aa] text-white font-bold">{t('common.confirm')}</button>
+              <button onClick={() => closePrompt(promptState.value)} className="flex-1 py-3 rounded-xl bg-brand text-white font-bold">{t('common.confirm')}</button>
             </div>
           </div>
         </div>
@@ -9718,7 +9627,7 @@ export default function App() {
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <div className="flex items-center gap-2">
-                <DollarSign size={20} className="text-[#8397aa]" />
+                <DollarSign size={20} className="text-brand" />
                 <h2 className="text-xl font-semibold">Ricerca valore</h2>
               </div>
               <button onClick={() => setSourcingOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors"><X size={20} /></button>
@@ -9729,10 +9638,10 @@ export default function App() {
 
               {/* Solo foto */}
               <button type="button" onClick={() => sourcingCamInputRef.current?.click()} disabled={sourcingScanning || sourcingCalcLoading}
-                className="w-full py-4 rounded-2xl border border-[#8397aa]/40 bg-[#8397aa]/10 hover:bg-[#8397aa]/20 text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
+                className="w-full py-4 rounded-2xl border border-brand/40 bg-brand/10 hover:bg-brand/20 text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
                 {(sourcingScanning || sourcingCalcLoading)
-                  ? <><Loader2 size={18} className="animate-spin text-[#9fb0bd]" /> {sourcingScanning ? 'Riconoscimento…' : 'Valutazione…'}</>
-                  : <><Camera size={18} className="text-[#9fb0bd]" /> Scatta foto</>}
+                  ? <><Loader2 size={18} className="animate-spin text-brand-hi" /> {sourcingScanning ? 'Riconoscimento…' : 'Valutazione…'}</>
+                  : <><Camera size={18} className="text-brand-hi" /> Scatta foto</>}
               </button>
 
               {/* Cosa ha riconosciuto l'IA */}
@@ -9765,7 +9674,7 @@ export default function App() {
                     <div className="flex gap-2">
                       {[30, 50, 100, 200].map(m => (
                         <button key={m} onClick={() => setSourcingMargin(m)}
-                          className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${sourcingMargin === m ? 'bg-[#8397aa]/10 border-[#8397aa] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
+                          className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${sourcingMargin === m ? 'bg-brand/10 border-brand text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
                           +{m}%
                         </button>
                       ))}
@@ -9835,7 +9744,7 @@ export default function App() {
                 <div className="relative">
                   <Icon size={22} strokeWidth={active ? 2 : 1.5} />
                   {badge > 0 && (
-                    <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 bg-[#8397aa] text-[var(--text)] rounded-full text-[8px] font-bold flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 bg-brand text-[var(--text)] rounded-full text-[8px] font-bold flex items-center justify-center">
                       {badge}
                     </span>
                   )}
@@ -9878,7 +9787,7 @@ export default function App() {
                 <h2 className="text-xl font-semibold">{t('form.addTitle')}</h2>
                 <button type="button"
                   onClick={() => { setIsFormOpen(false); setSmartLotOpen(true); }}
-                  className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#8397aa]/15 text-[#8397aa] hover:bg-[#8397aa]/25 text-xs font-bold transition-colors">
+                  className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand/15 text-brand hover:bg-brand/25 text-xs font-bold transition-colors">
                   <Layers size={14} /> {t('form.buyingLot')}
                 </button>
               </div>
@@ -9902,7 +9811,7 @@ export default function App() {
                         const isSel = (selectedWarehouseId || baseWarehouse?.id) === w.id;
                         return (
                           <button key={w.id} type="button" onClick={() => setSelectedWarehouseId(w.id)}
-                            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${isSel ? 'bg-[#8397aa]/10 border-[#8397aa] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
+                            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${isSel ? 'bg-brand/10 border-brand text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
                             {w.name}
                           </button>
                         );
@@ -9914,7 +9823,7 @@ export default function App() {
                 {/* Stato categoria (rilevata dall'IA) + scrivi a mano */}
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <span className="text-[11px] text-[var(--text-soft)] flex items-center gap-1.5 min-w-0">
-                    <Sparkles size={12} className="text-[#9fb0bd] shrink-0" />
+                    <Sparkles size={12} className="text-brand-hi shrink-0" />
                     {category && category !== AUTO_CATEGORY ? (
                       <>{t('form.category')}: <b className="text-[var(--text)]">{category}</b></>
                     ) : detectedReparto ? (
@@ -9936,12 +9845,12 @@ export default function App() {
                     <input list="form-cat-suggestions" value={formCatInput} onChange={e => setFormCatInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); useManualCategory(); } }}
                       placeholder={t('form.catPlaceholder')} autoFocus
-                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa]" />
+                      className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand" />
                     <datalist id="form-cat-suggestions">
                       {userCategories.map((c: string) => <option key={c} value={c} />)}
                     </datalist>
                     <button type="button" onClick={useManualCategory} disabled={isAddingCat || !formCatInput.trim()}
-                      className="px-4 py-2 rounded-xl bg-[#8397aa] text-white text-sm font-bold disabled:opacity-50">
+                      className="px-4 py-2 rounded-xl bg-brand text-white text-sm font-bold disabled:opacity-50">
                       {isAddingCat ? <Loader2 size={14} className="animate-spin" /> : t('form.use')}
                     </button>
                   </div>
@@ -9949,10 +9858,10 @@ export default function App() {
               </div>
 
               {/* FOTO + IA SCAN — multi-foto (max 5) */}
-              <div className="bg-gradient-to-br from-[#8397aa]/10 to-[#8397aa]/10 border border-[#8397aa]/30 rounded-2xl p-4">
+              <div className="bg-gradient-to-br from-brand/10 to-brand/10 border border-brand/30 rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <label className="flex items-center gap-2">
-                    <Sparkles className="text-[#9fb0bd]" size={16} />
+                    <Sparkles className="text-brand-hi" size={16} />
                     <span className="text-xs font-bold text-[var(--text)]">{t('form.photoAI')}</span>
                   </label>
                   <span className="text-[10px] text-[var(--text-soft)]">{productPhotos.length}/5 {t('form.photos')}</span>
@@ -9965,15 +9874,15 @@ export default function App() {
 
                 {/* Scansiona barcode: legge il codice e prova a riconoscere il prodotto */}
                 <button type="button" onClick={openBarcodeScanner} disabled={barcodeBusy}
-                  className="w-full mb-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[#8397aa] text-sm font-bold text-[var(--text)] transition-colors disabled:opacity-50">
-                  {barcodeBusy ? <Loader2 size={15} className="animate-spin" /> : <ScanLine size={15} className="text-[#8397aa]" />}
+                  className="w-full mb-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-brand text-sm font-bold text-[var(--text)] transition-colors disabled:opacity-50">
+                  {barcodeBusy ? <Loader2 size={15} className="animate-spin" /> : <ScanLine size={15} className="text-brand" />}
                   {t('form.scanBarcode')}
                 </button>
 
                 {/* Griglia foto */}
                 <div className="grid grid-cols-5 gap-2 mb-3">
                   {productPhotos.map((photo, i) => (
-                    <div key={i} className={`relative aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border ${i === 0 ? 'border-[var(--teal)] ring-1 ring-[var(--teal)]' : 'border-[#8397aa]/30'}`}>
+                    <div key={i} className={`relative aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border ${i === 0 ? 'border-[var(--teal)] ring-1 ring-[var(--teal)]' : 'border-brand/30'}`}>
                       <img src={/^https?:\/\//.test(photo) ? proxyImg(photo) : photo} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removePhoto(i)}
                         className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
@@ -9988,7 +9897,7 @@ export default function App() {
                       )}
                       <button type="button" onClick={() => runAIScan(photo, category)}
                         disabled={isScanning}
-                        className="absolute bottom-0 left-0 right-0 bg-[#6f8394]/80 hover:bg-[#8397aa]/90 py-0.5 text-[9px] font-bold text-center transition-colors disabled:opacity-40">
+                        className="absolute bottom-0 left-0 right-0 bg-brand-lo/80 hover:bg-brand/90 py-0.5 text-[9px] font-bold text-center transition-colors disabled:opacity-40">
                         {t('form.scan')}
                       </button>
                     </div>
@@ -9997,10 +9906,10 @@ export default function App() {
                     // Tile principale: apre DIRETTAMENTE la fotocamera (capture) su mobile.
                     // Resta attivo anche durante lo scan: puoi aggiungere altre foto mentre
                     // l'IA ragiona (si accodano alla galleria, non interrompono il riconoscimento).
-                    <label className="aspect-square rounded-xl border-2 border-dashed border-[#8397aa]/30 hover:border-[#8397aa] flex flex-col items-center justify-center cursor-pointer transition-colors">
+                    <label className="aspect-square rounded-xl border-2 border-dashed border-brand/30 hover:border-brand flex flex-col items-center justify-center cursor-pointer transition-colors">
                       <input type="file" accept="image/*" capture="environment" className="hidden"
                         onChange={(e: any) => handlePhotoAdd(e, false)} />
-                      <Camera size={18} className="text-[#9fb0bd] mb-1" />
+                      <Camera size={18} className="text-brand-hi mb-1" />
                       <span className="text-[9px] text-[var(--text-soft)]">{t('form.take')}</span>
                     </label>
                   )}
@@ -10009,16 +9918,16 @@ export default function App() {
                 {/* Alternativa: scegli dalla libreria (senza capture → galleria/file).
                     Disponibile anche durante lo scan per aggiungere altre foto. */}
                 {productPhotos.length < 5 && (
-                  <label className="flex items-center justify-center gap-2 w-full mb-3 py-2 rounded-xl border border-[#8397aa]/30 hover:border-[#8397aa] text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] cursor-pointer transition-colors">
+                  <label className="flex items-center justify-center gap-2 w-full mb-3 py-2 rounded-xl border border-brand/30 hover:border-brand text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] cursor-pointer transition-colors">
                     <input type="file" accept="image/*" multiple className="hidden"
                       onChange={(e: any) => handlePhotoAdd(e, false)} />
-                    <ImageIcon size={13} className="text-[#9fb0bd]" />
+                    <ImageIcon size={13} className="text-brand-hi" />
                     {t('form.chooseLibrary')}
                   </label>
                 )}
 
                 {isScanning && (
-                  <p className="text-xs text-[#9fb0bd] flex items-center gap-2 mb-2">
+                  <p className="text-xs text-brand-hi flex items-center gap-2 mb-2">
                     <Loader2 className="animate-spin" size={12} /> {t('form.aiAnalyzing')}
                   </p>
                 )}
@@ -10145,7 +10054,7 @@ export default function App() {
                     <input type="text" required value={pokeName}
                       onChange={(e: any) => setPokeName(e.target.value)}
                       placeholder="Es. Charizard"
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                   </div>
                   {/* Numero carta — rilevato dall'IA, correggibile: serve per il prezzo esatto */}
                   <div>
@@ -10155,9 +10064,9 @@ export default function App() {
                     <div className="flex gap-2">
                       <input type="text" value={cardNumber} onChange={(e: any) => setCardNumber(e.target.value)}
                         placeholder="es. 4/102, SWSH076"
-                        className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm font-mono focus:border-[#8397aa] outline-none" />
+                        className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm font-mono focus:border-brand outline-none" />
                       <button type="button" onClick={revalueCard} disabled={revaluingCard}
-                        className="px-4 rounded-xl bg-[#8397aa]/15 text-[#8397aa] text-xs font-bold hover:bg-[#8397aa]/25 disabled:opacity-50 transition-colors flex items-center gap-1.5 whitespace-nowrap">
+                        className="px-4 rounded-xl bg-brand/15 text-brand text-xs font-bold hover:bg-brand/25 disabled:opacity-50 transition-colors flex items-center gap-1.5 whitespace-nowrap">
                         {revaluingCard ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />} {t('nf.priceBtn')}
                       </button>
                     </div>
@@ -10167,7 +10076,7 @@ export default function App() {
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.graded')}</label>
                       <select value={pokeGraded} onChange={(e: any) => { setPokeGraded(e.target.value); setTimeout(revalueCard, 0); }}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none">
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none">
                         <option value="No">{t('nf.gradedNo')}</option>
                         <option value="Si">{t('nf.gradedYes')}</option>
                       </select>
@@ -10179,7 +10088,7 @@ export default function App() {
                           onChange={(e: any) => setPokeGrade(e.target.value)}
                           onBlur={revalueCard}
                           placeholder="10, 9.5..."
-                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                       </div>
                     )}
                   </div>
@@ -10192,14 +10101,14 @@ export default function App() {
                       <input type="text" required value={watchBrand}
                         onChange={(e: any) => setWatchBrand(e.target.value)}
                         placeholder="Rolex"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.model')}</label>
                       <input type="text" required value={watchModel}
                         onChange={(e: any) => setWatchModel(e.target.value)}
                         placeholder="Submariner"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
@@ -10208,27 +10117,27 @@ export default function App() {
                       <input type="text" value={watchCase}
                         onChange={(e: any) => setWatchCase(e.target.value)}
                         placeholder="41mm"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.strap')}</label>
                       <input type="text" value={watchStrap}
                         onChange={(e: any) => setWatchStrap(e.target.value)}
                         placeholder="Oyster"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('nf.material')}</label>
                       <input type="text" value={watchMaterial}
                         onChange={(e: any) => setWatchMaterial(e.target.value)}
                         placeholder="Acciaio"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                     </div>
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('mag.condition')}</label>
                     <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none">
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none">
                       <option value="">{t('form.conditionNone')}</option>
                       <option value="Full Set">{t('nf.cdFullSet')}</option>
                       <option value="Solo Box">{t('nf.cdBoxOnly')}</option>
@@ -10259,7 +10168,7 @@ export default function App() {
                               {f.type === 'select' ? (
                                 <select value={val} onChange={(e: any) => setVal(e.target.value)}
                                   required={f.required}
-                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none">
+                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none">
                                   <option value="">{t('nf.select')}</option>
                                   {(f.options || []).map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
@@ -10268,7 +10177,7 @@ export default function App() {
                                   value={val} onChange={(e: any) => setVal(e.target.value)}
                                   required={f.required}
                                   placeholder={f.placeholder || ''}
-                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                               )}
                             </div>
                           );
@@ -10277,7 +10186,7 @@ export default function App() {
                         <div>
                           <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('mag.condition')}</label>
                           <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
-                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none">
+                            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none">
                             <option value="">{t('form.conditionNone')}</option>
                             {(catConfig.conditionOptions || ['Nuovo','Ottimo','Buono','Usato']).map((opt: string) => (
                               <option key={opt} value={opt}>{opt}</option>
@@ -10299,7 +10208,7 @@ export default function App() {
                         <input type="text" required value={brand}
                           onChange={(e: any) => setBrand(e.target.value)}
                           placeholder={category === 'Vestiti' ? 'Supreme' : 'Louis Vuitton'}
-                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                       </div>
                     )}
                     <div>
@@ -10307,7 +10216,7 @@ export default function App() {
                       <input type="text" required value={name}
                         onChange={(e: any) => setName(e.target.value)}
                         placeholder={category === 'Scarpe' ? 'Air Jordan 1 Chicago' : category === 'Vestiti' ? 'Box Logo Hoodie' : 'Neverfull MM'}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -10321,7 +10230,7 @@ export default function App() {
                         value={size}
                         onChange={(e: any) => setSize(e.target.value)}
                         placeholder={category === 'Scarpe' ? 'es. 42, 42.5, US 9' : category === 'Vestiti' ? 'es. M, L, XL' : 'es. MM, 30cm, Small'}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none"
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none"
                       />
                       <datalist id={`size-suggestions-${category}`}>
                         {category === 'Scarpe'
@@ -10338,7 +10247,7 @@ export default function App() {
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('mag.condition')}</label>
                       <select value={condition} onChange={(e: any) => setCondition(e.target.value)}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none">
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none">
                         <option value="">{t('form.conditionNone')}</option>
                         <option value="DS">{t('form.condDS')}</option>
                         <option value="VNDS">{t('form.condVNDS')}</option>
@@ -10380,7 +10289,7 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.purchasePrice')}{(parseInt(quantity) || 1) > 1 ? ' (totale)' : ''}</label>
                   <input type="number" step="0.01" required value={price}
                     onChange={(e: any) => setPrice(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                   {(parseInt(quantity) || 1) > 1 && parseFloat(price) > 0 && (
                     <p className="text-[10px] text-[var(--text-faint)] mt-1 num">= {(parseFloat(price) / (parseInt(quantity) || 1)).toFixed(2)}€ a pezzo</p>
                   )}
@@ -10389,7 +10298,7 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.quantity')}</label>
                   <input type="number" min="1" required value={quantity}
                     onChange={(e: any) => setQuantity(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                 </div>
               </div>
 
@@ -10397,18 +10306,18 @@ export default function App() {
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sup.label')} <span className="text-[var(--text-faint)] normal-case font-normal">{t('sup.hint')}</span></label>
                 <input type="text" value={productSupplier} onChange={(e: any) => setProductSupplier(e.target.value)} maxLength={120} placeholder={t('sup.placeholder')}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
               </div>
 
               {/* Conto vendita — prodotto di un terzo */}
               <div className="border-t border-[var(--border-2)] pt-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Store size={14} className="text-[#8397aa]" />
+                    <Store size={14} className="text-brand" />
                     <span className="text-sm font-bold">{t('form.consignment')}</span>
                   </div>
                   <button type="button" onClick={() => setIsConsignment(v => !v)}
-                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${isConsignment ? 'bg-[#8397aa]' : 'bg-[var(--fill-3)]'}`}>
+                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${isConsignment ? 'bg-brand' : 'bg-[var(--fill-3)]'}`}>
                     <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${isConsignment ? 'translate-x-5' : ''}`} />
                   </button>
                 </div>
@@ -10418,12 +10327,12 @@ export default function App() {
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.name')} <span className="text-red-400">*</span></label>
                       <input type="text" value={consignmentName} onChange={(e: any) => setConsignmentName(e.target.value)} placeholder="es. Marco R."
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.percent')} <span className="text-[var(--text-faint)] normal-case font-medium">({t('form.optionalShort')})</span></label>
                       <input type="number" min="0" max="100" step="1" value={consignmentPercent} onChange={(e: any) => setConsignmentPercent(e.target.value)} placeholder="es. 20"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                     </div>
                   </div>
                 )}
@@ -10444,7 +10353,7 @@ export default function App() {
                       {!isSharedPurchase ? (
                         <button type="button"
                           onClick={() => setIsSharedPurchase(true)}
-                          className="text-xs text-[var(--text)] hover:text-[#9fb0bd] font-bold transition-colors">
+                          className="text-xs text-[var(--text)] hover:text-brand-hi font-bold transition-colors">
                           {t('form.changePercent')}
                         </button>
                       ) : (
@@ -10494,7 +10403,7 @@ export default function App() {
               })()}
               
               <button type="submit" disabled={isSaving}
-                className="w-full bg-[#8397aa] hover:bg-[#9fb0bd] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
+                className="w-full bg-brand hover:bg-brand-hi py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
                 {isSaving ? <Loader2 className="animate-spin" size={20} /> : t('form.saveProduct')}
               </button>
               </>)}
@@ -10529,16 +10438,16 @@ export default function App() {
               <input type="number" min="0" max={bulkQtyGroup.ids.length} inputMode="numeric"
                 value={bulkQtyValue}
                 onChange={(e: any) => { const n = parseInt(e.target.value); setBulkQtyValue(e.target.value === '' ? '' : String(Math.min(bulkQtyGroup.ids.length, Math.max(0, n || 0)))); }}
-                className="w-24 text-center bg-[var(--surface-2)] border border-[var(--border-2)] rounded-2xl p-3 text-2xl font-black focus:border-[#8397aa] outline-none" />
+                className="w-24 text-center bg-[var(--surface-2)] border border-[var(--border-2)] rounded-2xl p-3 text-2xl font-black focus:border-brand outline-none" />
               <button type="button" onClick={() => setBulkQtyValue(q => String(Math.min(bulkQtyGroup.ids.length, (parseInt(q) || 0) + 1)))}
                 className="w-14 h-14 rounded-2xl bg-[var(--surface-2)] border border-[var(--border-2)] text-2xl font-black hover:bg-[var(--fill)] active:scale-95 transition disabled:opacity-40"
                 disabled={(parseInt(bulkQtyValue) || 0) >= bulkQtyGroup.ids.length}>+</button>
             </div>
             <button type="button" onClick={() => setBulkQtyValue(String(bulkQtyGroup.ids.length))}
-              className="w-full mb-2 text-xs font-bold text-[#8397aa] hover:underline">{lang === 'en' ? 'Select all' : 'Seleziona tutti'} ({bulkQtyGroup.ids.length})</button>
+              className="w-full mb-2 text-xs font-bold text-brand hover:underline">{lang === 'en' ? 'Select all' : 'Seleziona tutti'} ({bulkQtyGroup.ids.length})</button>
             <div className="flex gap-2">
               <button type="button" onClick={() => setBulkQtyGroup(null)} className="flex-1 py-3 rounded-xl border border-[var(--border-2)] text-sm font-bold text-[var(--text-soft)] hover:text-[var(--text)]">{t('common.cancel')}</button>
-              <button type="button" onClick={applyBulkQty} className="flex-1 py-3 rounded-xl bg-[#8397aa] hover:bg-[#6f8394] text-white text-sm font-black">OK</button>
+              <button type="button" onClick={applyBulkQty} className="flex-1 py-3 rounded-xl bg-brand hover:bg-brand-lo text-white text-sm font-black">OK</button>
             </div>
           </div>
         </div>
@@ -10572,7 +10481,7 @@ export default function App() {
                     <input type="number" min="1" max={productToSell.maxQty} inputMode="numeric"
                       value={sellQuantity}
                       onChange={(e: any) => { const n = parseInt(e.target.value); setSellQuantity(!n ? '' : String(Math.min(productToSell!.maxQty, Math.max(1, n)))); }}
-                      className="w-full text-center bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm font-bold focus:border-[#8397aa] outline-none" />
+                      className="w-full text-center bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm font-bold focus:border-brand outline-none" />
                     <button type="button" aria-label="+"
                       onClick={() => setSellQuantity(q => String(Math.min(productToSell!.maxQty, (parseInt(q) || 1) + 1)))}
                       className="w-10 shrink-0 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] text-lg font-black text-[var(--text)] hover:bg-[var(--fill)] active:scale-95 transition disabled:opacity-40"
@@ -10582,7 +10491,7 @@ export default function App() {
                     <p className="text-[10px] text-[var(--text-soft)]">{t('sell.maxAvailable')}: {productToSell.maxQty}</p>
                     {productToSell.maxQty > 1 && (
                       <button type="button" onClick={() => setSellQuantity(String(productToSell!.maxQty))}
-                        className="text-[10px] font-bold text-[#8397aa] hover:underline">{lang === 'en' ? 'All' : 'Tutti'}</button>
+                        className="text-[10px] font-bold text-brand hover:underline">{lang === 'en' ? 'All' : 'Tutti'}</button>
                     )}
                   </div>
                 </div>
@@ -10590,14 +10499,14 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.totalPrice')}</label>
                   <input type="number" step="0.01" required value={sellPrice}
                     onChange={(e: any) => setSellPrice(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                 </div>
               </div>
               
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.platform')}</label>
                 <select value={sellPlatform} onChange={(e: any) => setSellPlatform(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none">
                   <option value="Vinted">Vinted</option>
                   <option value="Subito">Subito</option>
                   <option value="StockX">StockX (12% fee)</option>
@@ -10609,7 +10518,7 @@ export default function App() {
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sell.paymentMethod')}</label>
                 <select value={sellPaymentMethod} onChange={(e: any) => setSellPaymentMethod(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none">
                   <option value="Nessuna Fee (Contanti/Bonifico)">{t('sell.noFee')}</option>
                   <option value="PayPal Beni e Servizi">{t('sell.paypal')}</option>
                 </select>
@@ -10619,14 +10528,14 @@ export default function App() {
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><Users size={11} /> {lang === 'en' ? 'Customer' : 'Cliente'} <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">({lang === 'en' ? 'optional' : 'facoltativo'})</span></label>
                 <input type="text" value={sellCustomer} onChange={e => setSellCustomer(e.target.value)} placeholder={lang === 'en' ? 'Name, @social or customer code…' : 'Nome, @social o codice cliente…'} maxLength={120}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
               </div>
 
               {/* Data vendita (default: oggi). Cambiala qui invece di correggerla dopo dall'Edit. */}
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><CalendarDays size={11} /> {t('edit.saleDate')}</label>
                 <input type="date" value={sellDate} onChange={e => setSellDate(e.target.value)} max={new Date().toISOString().slice(0, 10)}
-                  className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none appearance-none" />
+                  className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none appearance-none" />
               </div>
 
               {/* Costi extra alla vendita (scatola, etichetta spedizione, dogana…): tendina con
@@ -10639,7 +10548,7 @@ export default function App() {
                   </span>
                   {(() => { const ex = sellExtraCosts.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0); return (
                     <span className="flex items-center gap-1.5">
-                      <span className={`text-xs font-bold ${ex > 0 ? 'text-red-400' : 'text-[#8397aa]'}`}>{ex > 0 ? `-${ex.toFixed(2)}€` : (lang === 'en' ? 'Add' : 'Aggiungi')}</span>
+                      <span className={`text-xs font-bold ${ex > 0 ? 'text-red-400' : 'text-brand'}`}>{ex > 0 ? `-${ex.toFixed(2)}€` : (lang === 'en' ? 'Add' : 'Aggiungi')}</span>
                       <ChevronDown size={14} className={`text-[var(--text-faint)] transition-transform ${sellExtraOpen ? 'rotate-180' : ''}`} />
                     </span>
                   ); })()}
@@ -10650,16 +10559,16 @@ export default function App() {
                       <div key={i} className="flex gap-2">
                         <input type="text" value={c.desc} placeholder={lang === 'en' ? 'Description (e.g. Box)' : 'Descrizione (es. Scatola)'}
                           onChange={(e: any) => setSellExtraCosts(arr => arr.map((x, j) => j === i ? { ...x, desc: e.target.value } : x))}
-                          className="flex-1 min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                          className="flex-1 min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-brand" />
                         <input type="number" step="0.01" value={c.amount} placeholder="€"
                           onChange={(e: any) => setSellExtraCosts(arr => arr.map((x, j) => j === i ? { ...x, amount: e.target.value } : x))}
-                          className="w-20 shrink-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                          className="w-20 shrink-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-brand" />
                         <button type="button" onClick={() => setSellExtraCosts(arr => arr.filter((_, j) => j !== i))}
                           className="w-9 shrink-0 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"><X size={14} /></button>
                       </div>
                     ))}
                     <button type="button" onClick={() => setSellExtraCosts(arr => [...arr, { desc: '', amount: '' }])}
-                      className="w-full py-2 rounded-lg border border-dashed border-[var(--border-2)] text-xs font-bold text-[#8397aa] hover:bg-[#8397aa]/10 flex items-center justify-center gap-1.5">
+                      className="w-full py-2 rounded-lg border border-dashed border-[var(--border-2)] text-xs font-bold text-brand hover:bg-brand/10 flex items-center justify-center gap-1.5">
                       <Plus size={13} /> {lang === 'en' ? 'Add cost' : 'Aggiungi costo'}
                     </button>
                   </div>
@@ -10712,9 +10621,9 @@ export default function App() {
                 <div className="grid grid-cols-2 gap-3">
                   <input type="text" value={sellTrackingCode} onChange={(e: any) => setSellTrackingCode(e.target.value)}
                     placeholder={t('sell.trackingCode')}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                   <select value={sellTrackingCarrier} onChange={(e: any) => setSellTrackingCarrier(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none">
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none">
                     {['Auto','BRT','GLS','Poste Italiane','SDA','DHL','UPS','FedEx','TNT','Amazon Logistics','Nexive'].map(c => (
                       <option key={c} value={c}>{c === 'Auto' ? t('sell.autoDetect') : c}</option>
                     ))}
@@ -10738,7 +10647,7 @@ export default function App() {
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-1 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
             <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] p-5 flex items-center justify-between">
-              <h2 className="text-xl font-semibold flex items-center gap-2"><Repeat size={18} className="text-[#8397aa]" /> {t('mag.trade')}</h2>
+              <h2 className="text-xl font-semibold flex items-center gap-2"><Repeat size={18} className="text-brand" /> {t('mag.trade')}</h2>
               <button onClick={() => setTradeModalOpen(false)}
                 className="p-2 hover:bg-[var(--fill)] rounded-lg transition-colors">
                 <X size={20} />
@@ -10758,7 +10667,7 @@ export default function App() {
                   <input type="number" min="1" max={productToTrade.maxQty} inputMode="numeric"
                     value={tradeQuantity}
                     onChange={(e: any) => { const n = parseInt(e.target.value); setTradeQuantity(!n ? '' : String(Math.min(productToTrade!.maxQty, Math.max(1, n)))); }}
-                    className="w-full text-center bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm font-bold focus:border-[#8397aa] outline-none" />
+                    className="w-full text-center bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm font-bold focus:border-brand outline-none" />
                   <button type="button" aria-label="+"
                     onClick={() => setTradeQuantity(q => String(Math.min(productToTrade!.maxQty, (parseInt(q) || 1) + 1)))}
                     className="w-10 shrink-0 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] text-lg font-black text-[var(--text)] hover:bg-[var(--fill)] active:scale-95 transition disabled:opacity-40"
@@ -10783,14 +10692,14 @@ export default function App() {
                   </div>
                   <input type="number" step="0.01" min="0" value={tradeCashAmount} placeholder="0"
                     onChange={(e: any) => setTradeCashAmount(e.target.value)}
-                    className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                    className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                 </div>
               </div>
 
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><Users size={11} /> {lang === 'en' ? 'Traded with' : 'Con chi'} <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">({lang === 'en' ? 'optional' : 'facoltativo'})</span></label>
                 <input type="text" value={tradeCounterparty} onChange={e => setTradeCounterparty(e.target.value)} placeholder={lang === 'en' ? 'Name, @social…' : 'Nome, @social…'} maxLength={120}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
               </div>
 
               {/* Oggetti ricevuti in cambio: diventano nuovi prodotti nello stesso magazzino */}
@@ -10802,7 +10711,7 @@ export default function App() {
                       <div className="flex gap-2">
                         <input type="text" value={item.name} placeholder={lang === 'en' ? 'Item name…' : 'Nome oggetto…'}
                           onChange={(e: any) => setTradeReceivedItems(arr => arr.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
-                          className="flex-1 min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                          className="flex-1 min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-brand" />
                         {tradeReceivedItems.length > 1 && (
                           <button type="button" onClick={() => setTradeReceivedItems(arr => arr.filter((_, j) => j !== i))}
                             className="w-9 shrink-0 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"><X size={14} /></button>
@@ -10811,18 +10720,18 @@ export default function App() {
                       <div className="grid grid-cols-3 gap-2">
                         <input type="text" value={item.category} placeholder={lang === 'en' ? 'Category' : 'Categoria'}
                           onChange={(e: any) => setTradeReceivedItems(arr => arr.map((x, j) => j === i ? { ...x, category: e.target.value } : x))}
-                          className="bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                          className="bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-brand" />
                         <input type="number" min="1" value={item.quantity} placeholder={lang === 'en' ? 'Qty' : 'Q.tà'}
                           onChange={(e: any) => setTradeReceivedItems(arr => arr.map((x, j) => j === i ? { ...x, quantity: e.target.value } : x))}
-                          className="bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                          className="bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-brand" />
                         <input type="number" step="0.01" min="0" value={item.price} placeholder={lang === 'en' ? 'Value €' : 'Valore €'}
                           onChange={(e: any) => setTradeReceivedItems(arr => arr.map((x, j) => j === i ? { ...x, price: e.target.value } : x))}
-                          className="bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-[#8397aa]" />
+                          className="bg-[var(--surface)] border border-[var(--border-2)] rounded-lg p-2 text-xs outline-none focus:border-brand" />
                       </div>
                     </div>
                   ))}
                   <button type="button" onClick={() => setTradeReceivedItems(arr => [...arr, { name: '', category: productToTrade.category || '', quantity: '1', price: '' }])}
-                    className="w-full py-2 rounded-lg border border-dashed border-[var(--border-2)] text-xs font-bold text-[#8397aa] hover:bg-[#8397aa]/10 flex items-center justify-center gap-1.5">
+                    className="w-full py-2 rounded-lg border border-dashed border-[var(--border-2)] text-xs font-bold text-brand hover:bg-brand/10 flex items-center justify-center gap-1.5">
                     <Plus size={13} /> {lang === 'en' ? 'Add item' : 'Aggiungi oggetto'}
                   </button>
                 </div>
@@ -10831,17 +10740,17 @@ export default function App() {
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{lang === 'en' ? 'Note' : 'Nota'} <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">({lang === 'en' ? 'optional' : 'facoltativo'})</span></label>
                 <input type="text" value={tradeNote} onChange={e => setTradeNote(e.target.value)} maxLength={300}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
               </div>
 
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><CalendarDays size={11} /> {lang === 'en' ? 'Trade date' : 'Data trade'}</label>
                 <input type="date" value={tradeDate} onChange={e => setTradeDate(e.target.value)} max={new Date().toISOString().slice(0, 10)}
-                  className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none appearance-none" />
+                  className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none appearance-none" />
               </div>
 
               <button type="submit"
-                className="w-full bg-[#8397aa] hover:bg-[#728496] py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
+                className="w-full bg-brand hover:bg-[#728496] py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
                 <Repeat size={16} /> {lang === 'en' ? 'Confirm trade' : 'Conferma trade'}
               </button>
             </form>
@@ -10859,7 +10768,7 @@ export default function App() {
               <div className="flex items-center gap-2 min-w-0">
                 {/* Etichetta lotto: si vede SOLO qui (in alto a destra) — idea utente */}
                 {productToEdit?.lotName && (
-                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#8397aa]/15 text-[#8397aa] flex items-center gap-1.5 truncate" title={productToEdit.lotName}>
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-brand/15 text-brand flex items-center gap-1.5 truncate" title={productToEdit.lotName}>
                     <Layers size={11} className="shrink-0" /> <span className="truncate">Lotto: {productToEdit.lotName}</span>
                   </span>
                 )}
@@ -10878,14 +10787,14 @@ export default function App() {
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.brand')}</label>
                     <input type="text" required value={editBrand}
                       onChange={(e: any) => setEditBrand(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                   </div>
                 )}
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.name')}</label>
                   <input type="text" required value={editName}
                     onChange={(e: any) => setEditName(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                 </div>
               </div>
               {/* Sposta in un altro magazzino: cambiandolo, il prodotto eredita le percentuali soci del nuovo magazzino. */}
@@ -10893,11 +10802,11 @@ export default function App() {
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.warehouse')}</label>
                   <select value={editWarehouseId || baseWarehouse?.id || ''} onChange={(e: any) => setEditWarehouseId(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none">
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none">
                     {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                   </select>
                   {productToEdit?.lotName && (
-                    <p className="text-[11px] text-[#8397aa] font-semibold mt-1.5 flex items-center gap-1">
+                    <p className="text-[11px] text-brand font-semibold mt-1.5 flex items-center gap-1">
                       <Layers size={11} className="shrink-0" /> {t('sup.moveWholeLot').replace('{name}', productToEdit.lotName)}
                     </p>
                   )}
@@ -10908,13 +10817,13 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.size')}</label>
                   <input type="text" value={editSize}
                     onChange={(e: any) => setEditSize(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('mag.condition')}</label>
                   <input type="text" value={editCondition}
                     onChange={(e: any) => setEditCondition(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                 </div>
               </div>
 
@@ -10922,12 +10831,12 @@ export default function App() {
               <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <TrendingUp size={15} className="text-[#8397aa] shrink-0" />
+                    <TrendingUp size={15} className="text-brand shrink-0" />
                     <span className="text-sm font-bold">{t('val.title')}</span>
                     {!hasFeature('stockx_pricing') && <PlanLock plan="Pro" />}
                   </div>
                   <button type="button" onClick={() => fetchValuation(productToEdit)} disabled={valLoading}
-                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#8397aa] text-white hover:bg-[#6f8394] disabled:opacity-50 transition-colors flex items-center gap-1.5">
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-brand text-white hover:bg-brand-lo disabled:opacity-50 transition-colors flex items-center gap-1.5">
                     {valLoading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />} {t('val.evaluate')}
                   </button>
                 </div>
@@ -10957,14 +10866,14 @@ export default function App() {
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('form.purchasePrice')}</label>
                 <input type="number" step="0.01" required value={editPrice}
                   onChange={(e: any) => setEditPrice(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
               </div>
 
               {/* Fornitore: da CHI ho acquistato il pezzo (facoltativo) → alimenta la tabella "Fornitori". */}
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('sup.label')} <span className="text-[var(--text-faint)] normal-case font-normal">{t('sup.hint')}</span></label>
                 <input type="text" value={editSupplier} onChange={e => setEditSupplier(e.target.value)} maxLength={120} placeholder={t('sup.placeholder')}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
               </div>
 
               {/* Date (facoltative): acquisto sempre, vendita solo se venduto. min-w-0 = le input
@@ -10973,13 +10882,13 @@ export default function App() {
                 <div className="min-w-0">
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('edit.purchaseDate')}</label>
                   <input type="date" value={editPurchaseDate} onChange={e => setEditPurchaseDate(e.target.value)}
-                    className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none appearance-none" />
+                    className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none appearance-none" />
                 </div>
                 {productToEdit.status === 'VENDUTO' && (productToEdit.ids?.length || 1) === 1 && (
                   <div className="min-w-0">
                     <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('edit.saleDate')}</label>
                     <input type="date" value={editSoldDate} onChange={e => setEditSoldDate(e.target.value)}
-                      className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none appearance-none" />
+                      className="w-full min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none appearance-none" />
                   </div>
                 )}
               </div>
@@ -10989,15 +10898,15 @@ export default function App() {
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><TrendingDown size={12} className="text-amber-400" /> Prezzo svendita <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">(sell panic, facoltativo)</span></label>
                   <input type="number" step="0.01" value={editQuickSale} onChange={e => setEditQuickSale(e.target.value)} placeholder="A quanto lo daresti per venderlo SUBITO?"
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                 </div>
               )}
 
               {/* Gruppo multi-pezzo venduto: ogni vendita può avere data/cliente diversi →
                   si modificano singolarmente dalla tendina compratori, non in blocco. */}
               {productToEdit.status === 'VENDUTO' && (productToEdit.ids?.length || 1) > 1 && (
-                <div className="bg-[#8397aa]/[0.08] border border-[#8397aa]/25 rounded-xl p-3.5 flex items-start gap-2.5">
-                  <Users size={14} className="text-[#8397aa] shrink-0 mt-0.5" />
+                <div className="bg-brand/[0.08] border border-brand/25 rounded-xl p-3.5 flex items-start gap-2.5">
+                  <Users size={14} className="text-brand shrink-0 mt-0.5" />
                   <p className="text-[11px] text-[var(--text-soft)] leading-relaxed">
                     {t('edit.multiSaleHint').replace('{n}', String(productToEdit.ids.length))}
                   </p>
@@ -11012,24 +10921,24 @@ export default function App() {
                     <div>
                       <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">Prezzo vendita</label>
                       <input type="number" step="0.01" value={editSalePrice} onChange={e => setEditSalePrice(e.target.value)}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-[#8397aa] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-brand outline-none" />
                     </div>
                     <div>
                       <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">Fee</label>
                       <input type="number" step="0.01" value={editSaleFees} onChange={e => setEditSaleFees(e.target.value)}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-[#8397aa] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-brand outline-none" />
                     </div>
                     <div>
                       <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">Piattaforma</label>
                       <select value={editSalePlatform} onChange={e => setEditSalePlatform(e.target.value)}
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-[#8397aa] outline-none">
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-brand outline-none">
                         <option>Vinted</option><option>Subito</option><option>StockX</option><option>eBay</option><option>Privato</option><option>Trade</option>
                       </select>
                     </div>
                     <div>
                       <label className="text-[9px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1.5">Cliente</label>
                       <input type="text" value={editSaleCustomer} onChange={e => setEditSaleCustomer(e.target.value)} maxLength={120} placeholder="facoltativo"
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-[#8397aa] outline-none" />
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg p-2.5 text-sm focus:border-brand outline-none" />
                     </div>
                   </div>
                 </div>
@@ -11040,12 +10949,12 @@ export default function App() {
               {(productToEdit.lotName || (productToEdit.quantity || 1) > 1) && (
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5">
-                    <Layers size={11} className="text-[#8397aa]" />
+                    <Layers size={11} className="text-brand" />
                     {productToEdit.lotName ? `${t('edit.lotPieces')} "${productToEdit.lotName}"` : t('edit.qtyPieces')}
                   </label>
                   <input type="number" min="1" step="1" value={editQuantity}
                     onChange={(e: any) => setEditQuantity(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                   <p className="text-[11px] text-[var(--text-faint)] mt-1.5">
                     {t('edit.current')}: {productToEdit.lotName ? editLotIds.length : (productToEdit.ids?.length || 1)} {t('edit.qtyHint')}
                   </p>
@@ -11056,7 +10965,7 @@ export default function App() {
               <div className="border-t border-[var(--border-2)] pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Camera size={14} className="text-[#9fb0bd]" />
+                    <Camera size={14} className="text-brand-hi" />
                     <span className="text-sm font-bold">{t('edit.photos')}</span>
                   </div>
                   <span className="text-[10px] text-[var(--text-soft)]">{editPhotos.length}/5</span>
@@ -11072,7 +10981,7 @@ export default function App() {
                     </div>
                   ))}
                   {editPhotos.length < 5 && (
-                    <label className="aspect-square rounded-xl border-2 border-dashed border-gray-700 hover:border-[#8397aa] flex flex-col items-center justify-center cursor-pointer transition-colors">
+                    <label className="aspect-square rounded-xl border-2 border-dashed border-gray-700 hover:border-brand flex flex-col items-center justify-center cursor-pointer transition-colors">
                       <input type="file" accept="image/*" multiple className="hidden"
                         onChange={(e: any) => handlePhotoAdd(e, true)} />
                       <Camera size={16} className="text-[var(--text-soft)] mb-0.5" />
@@ -11087,7 +10996,7 @@ export default function App() {
               <div className="border-t border-[var(--border-2)] pt-4">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
-                    <Store size={15} className="text-[#8397aa]" />
+                    <Store size={15} className="text-brand" />
                     <span className="text-sm font-bold">{t('edit.marketplacePublic')}</span>
                     {!hasFeature('marketplace') && <PlanLock plan="Starter" />}
                   </div>
@@ -11098,11 +11007,11 @@ export default function App() {
                   <input type="number" step="0.01" min="0" value={editPublicPrice}
                     onChange={(e: any) => setEditPublicPrice(e.target.value)}
                     placeholder={t('edit.publicPrice')}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa]" />
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand" />
                   <input type="number" step="0.01" min="0" value={editShippingCost}
                     onChange={(e: any) => setEditShippingCost(e.target.value)}
                     placeholder={t('edit.shippingCost')}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa]" />
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand" />
                 </div>
                 <div className="flex gap-2">
                   {editIsPublic ? (
@@ -11110,7 +11019,7 @@ export default function App() {
                       className="px-4 py-2 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] text-sm font-bold disabled:opacity-50">{t('edit.withdraw')}</button>
                   ) : (
                     <button type="button" onClick={() => savePublish(productToEdit, true)} disabled={isPublishing}
-                      className="px-4 py-2 rounded-xl bg-[#8397aa] text-white text-sm font-bold disabled:opacity-50">
+                      className="px-4 py-2 rounded-xl bg-brand text-white text-sm font-bold disabled:opacity-50">
                       {isPublishing ? <Loader2 size={15} className="animate-spin" /> : t('mag.publish')}
                     </button>
                   )}
@@ -11137,7 +11046,7 @@ export default function App() {
                               userId: m.userId, name: m.name, percentage: m.percentage,
                             })));
                           }}
-                          className="text-xs text-[var(--text)] hover:text-[#9fb0bd] font-bold transition-colors">
+                          className="text-xs text-[var(--text)] hover:text-brand-hi font-bold transition-colors">
                           {t('form.changePercent')}
                         </button>
                       ) : (
@@ -11187,7 +11096,7 @@ export default function App() {
 
               <div className="flex gap-3">
                 <button type="submit" disabled={isSaving}
-                  className="flex-1 bg-[#8397aa] hover:bg-[#9fb0bd] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
+                  className="flex-1 bg-brand hover:bg-brand-hi py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
                   {isSaving ? <Loader2 className="animate-spin" size={20} /> : t('edit.save')}
                 </button>
                 <button type="button"
@@ -11235,11 +11144,11 @@ export default function App() {
                     <input type="text" inputMode="numeric" value={twoFaCode}
                       onChange={(e: any) => setTwoFaCode(e.target.value)}
                       placeholder="000000" maxLength={6}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-center font-mono text-2xl tracking-widest focus:border-[#8397aa] outline-none" />
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-center font-mono text-2xl tracking-widest focus:border-brand outline-none" />
                   </div>
                   
                   <button onClick={handle2FAVerify} disabled={twoFaLoading || twoFaCode.length !== 6}
-                    className="w-full bg-[#8397aa] hover:bg-[#9fb0bd] py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
+                    className="w-full bg-brand hover:bg-brand-hi py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
                     {twoFaLoading ? <Loader2 className="animate-spin" size={20} /> : t('twofa.enable')}
                   </button>
                 </>
@@ -11273,7 +11182,7 @@ export default function App() {
                   </p>
 
                   <button onClick={() => { setTwoFaSetupOpen(false); setTwoFaBackupCodes(null); setTwoFaCode(''); }}
-                    className="w-full bg-[#8397aa] hover:bg-[#9fb0bd] py-3 rounded-xl font-bold transition-colors">
+                    className="w-full bg-brand hover:bg-brand-hi py-3 rounded-xl font-bold transition-colors">
                     {t('twofa.savedCodes')}
                   </button>
                 </>
@@ -11326,7 +11235,7 @@ export default function App() {
         <div className="fixed left-0 right-0 z-40 px-4 transition-all bottom-[calc(5rem+env(safe-area-inset-bottom)+8px)] lg:bottom-6">
           {(() => { const selCount = getBulkSelectedIds().length; return (
           <div className={`bg-[var(--surface)] border rounded-2xl p-3 flex items-center gap-2 shadow-2xl transition-all max-w-md mx-auto ${
-            selCount > 0 ? 'border-[#8397aa]/50' : 'border-gray-700'
+            selCount > 0 ? 'border-brand/50' : 'border-gray-700'
           }`}>
             <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); setSelectedPieceIds(new Set()); }}
               className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-300 hover:text-white transition-colors">
@@ -11349,7 +11258,7 @@ export default function App() {
                 onClick={shareSelected}
                 disabled={selCount === 0 || shareCreating}
                 title="Condividi selezionati"
-                className="px-3 py-2 bg-[#8397aa]/25 hover:bg-[#8397aa]/35 text-[#b9a8f0] rounded-xl text-xs font-bold disabled:opacity-30 transition-colors">
+                className="px-3 py-2 bg-brand/25 hover:bg-brand/35 text-[#b9a8f0] rounded-xl text-xs font-bold disabled:opacity-30 transition-colors">
                 {shareCreating ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
               </button>
             )}
@@ -11385,13 +11294,13 @@ export default function App() {
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Prezzo TOTALE €</label>
                   <input type="number" step="0.01" required value={bulkSellPrice}
                     onChange={e => setBulkSellPrice(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Fees TOTALI €</label>
                   <input type="number" step="0.01" value={bulkSellFees}
                     onChange={e => setBulkSellFees(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none" />
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                 </div>
               </div>
               {(() => {
@@ -11406,7 +11315,7 @@ export default function App() {
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">Piattaforma</label>
                 <select value={bulkSellPlatform} onChange={e => setBulkSellPlatform(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-[#8397aa] outline-none">
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none">
                   <option>Vinted</option><option>Subito</option><option>StockX</option>
                   <option>eBay</option><option>Privato</option>
                 </select>
@@ -11483,7 +11392,7 @@ export default function App() {
                       <div key={f.key}>
                         <label className="text-[10px] text-[var(--text-soft)] block mb-1">{f.label}</label>
                         <select value={importMap[f.key] || ''} onChange={e => setImportField(f.key, e.target.value)}
-                          className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2 py-1.5 text-xs outline-none focus:border-[#8397aa]">
+                          className="w-full bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-2 py-1.5 text-xs outline-none focus:border-brand">
                           <option value="">— nessuna —</option>
                           {importHeaders.map(h => {
                             const sample = (importRaw.find((r: any) => r[h] !== '' && r[h] != null) || {})[h];
@@ -11508,7 +11417,7 @@ export default function App() {
                   Reparto di default <span className="text-[var(--text-faint)]">(per righe senza colonna Categoria)</span>
                 </label>
                 <select value={importCategory} onChange={e => setImportCategory(e.target.value)}
-                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm focus:border-[#8397aa] outline-none">
+                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm focus:border-brand outline-none">
                   {userCategories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -11518,7 +11427,7 @@ export default function App() {
                 <div className="flex items-center gap-3">
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest flex-1">{t('form.warehouse')}</label>
                   <select value={importWarehouseId || baseWarehouse?.id || ''} onChange={e => setImportWarehouseId(e.target.value)}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm focus:border-[#8397aa] outline-none">
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-sm focus:border-brand outline-none">
                     {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                   </select>
                 </div>
@@ -11578,7 +11487,7 @@ export default function App() {
                   Annulla
                 </button>
                 <button onClick={confirmImport} disabled={isImporting || importRows.length === 0}
-                  className="flex-1 bg-[#8397aa] hover:bg-[#9fb0bd] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2">
+                  className="flex-1 bg-brand hover:bg-brand-hi disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2">
                   {isImporting
                     ? <><Loader2 className="animate-spin" size={16} /> Importazione...</>
                     : `Importa ${importRows.filter(r => r.brand && r.name && r.price > 0).length} prodotti`}
@@ -11621,7 +11530,7 @@ export default function App() {
                       const isSel = (lotWarehouseId || baseWarehouse?.id) === w.id;
                       return (
                         <button key={w.id} type="button" onClick={() => setLotWarehouseId(w.id)}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${isSel ? 'bg-[#8397aa]/10 border-[#8397aa] text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
+                          className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${isSel ? 'bg-brand/10 border-brand text-[var(--text)]' : 'bg-[var(--surface-2)] border-[var(--border-2)] text-[var(--text-soft)]'}`}>
                           {w.name}
                         </button>
                       );
@@ -11659,7 +11568,7 @@ export default function App() {
                       {existingLots.map(l => <option key={l} value={l} />)}
                     </datalist>
                     {isAppending ? (
-                      <p className="text-[11px] text-[#8397aa] font-semibold mt-1.5 flex items-center gap-1"><Layers size={11} /> Lotto esistente: i pezzi verranno aggiunti (numerazione continua)</p>
+                      <p className="text-[11px] text-brand font-semibold mt-1.5 flex items-center gap-1"><Layers size={11} /> Lotto esistente: i pezzi verranno aggiunti (numerazione continua)</p>
                     ) : existingLots.length > 0 ? (
                       <p className="text-[11px] text-[var(--text-faint)] mt-1.5">Suggerimento: scegli un lotto esistente per aggiungerci altri pezzi</p>
                     ) : null}
@@ -11718,7 +11627,7 @@ export default function App() {
                     <button type="button" onClick={() => setLotPhotos([])} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center"><X size={13} /></button>
                   </div>
                 ) : (
-                  <label className="flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[var(--border-2)] text-[var(--text-soft)] text-sm cursor-pointer hover:border-[#8397aa] hover:text-[var(--text)] transition-colors">
+                  <label className="flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[var(--border-2)] text-[var(--text-soft)] text-sm cursor-pointer hover:border-brand hover:text-[var(--text)] transition-colors">
                     <Camera size={16} /> Aggiungi foto
                     <input type="file" accept="image/*" className="hidden" onChange={onLotPhotoFile} />
                   </label>
@@ -11910,7 +11819,7 @@ export default function App() {
           <div className="bg-[var(--surface)] border border-[var(--border)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-2xl max-h-[92vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-5 border-b border-[var(--border)] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <Sparkles className="text-[#8397aa]" size={20} />
+                <Sparkles className="text-brand" size={20} />
                 <h2 className="font-semibold text-base">{t('set.plansTitle')}</h2>
                 <span className="text-[10px] uppercase font-bold bg-[var(--fill)] px-2 py-0.5 rounded-full">{myPlan}</span>
               </div>
@@ -11922,7 +11831,7 @@ export default function App() {
             <div className="flex gap-1.5 p-3 border-b border-[var(--border)] overflow-x-auto shrink-0" style={{ display: 'none' }}>
               {([['plans',t('plan.tabPlans')]] as [typeof proTab,string][]).map(([id,label]) => (
                 <button key={id} onClick={() => setProTab(id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${proTab === id ? 'bg-[#8397aa] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${proTab === id ? 'bg-brand text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                   {label}
                 </button>
               ))}
@@ -11933,7 +11842,7 @@ export default function App() {
               {proTab === 'plans' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {planCatalog.map(p => (
-                    <div key={p.id} className={`rounded-2xl border p-4 ${p.id === myPlan ? 'border-[#8397aa] bg-[#8397aa]/5' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
+                    <div key={p.id} className={`rounded-2xl border p-4 ${p.id === myPlan ? 'border-brand bg-brand/5' : 'border-[var(--border-2)] bg-[var(--surface-2)]'}`}>
                       <div className="flex items-baseline justify-between">
                         <h3 className="font-bold text-lg">{p.name}</h3>
                         <span className="font-bold num">{p.priceMonthly === 0 ? t('plan.free') : `${p.priceMonthly}€`}<span className="text-[10px] text-[var(--text-faint)] font-normal">{p.priceMonthly === 0 ? '' : t('plan.perMonth')}</span></span>
@@ -11942,19 +11851,19 @@ export default function App() {
                       <ul className="mt-3 space-y-1.5">
                         {p.highlights.map((h: string, i: number) => (
                           <li key={i} className="flex items-start gap-2 text-[11px] text-[var(--text-soft)]">
-                            <CheckCircle size={13} className="text-[#8397aa] mt-0.5 shrink-0" /> <span>{h}</span>
+                            <CheckCircle size={13} className="text-brand mt-0.5 shrink-0" /> <span>{h}</span>
                           </li>
                         ))}
                       </ul>
                       {p.id === myPlan ? (
                         <>
-                          <p className="mt-3 text-center text-[10px] font-bold text-[#8397aa] uppercase">{t('set.currentPlan')}</p>
+                          <p className="mt-3 text-center text-[10px] font-bold text-brand uppercase">{t('set.currentPlan')}</p>
                           {p.priceMonthly > 0 && (
                             <button onClick={manageBilling} className="mt-2 w-full py-2 rounded-xl bg-[var(--fill)] border border-[var(--border-2)] text-xs font-bold text-[var(--text-soft)]">{t('plan.manageSub')}</button>
                           )}
                         </>
                       ) : p.priceMonthly > 0 && (
-                        <button onClick={() => subscribeToPlan(p.id)} className="mt-3 w-full py-2.5 rounded-xl bg-[#8397aa] hover:bg-[#6f8394] text-white text-sm font-bold transition-colors">{t('plan.subscribe')}</button>
+                        <button onClick={() => subscribeToPlan(p.id)} className="mt-3 w-full py-2.5 rounded-xl bg-brand hover:bg-brand-lo text-white text-sm font-bold transition-colors">{t('plan.subscribe')}</button>
                       )}
                     </div>
                   ))}
@@ -11973,7 +11882,7 @@ export default function App() {
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-[var(--text-soft)]">{t('plan.repricingDesc')}</p>
                       <button onClick={loadRepricing} disabled={repricingLoading}
-                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#8397aa] hover:bg-[#9fb0bd] text-white disabled:opacity-40">
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-brand hover:bg-brand-hi text-white disabled:opacity-40">
                         {repricingLoading ? <Loader2 size={14} className="animate-spin" /> : t('plan.analyze')}
                       </button>
                     </div>
@@ -11985,7 +11894,7 @@ export default function App() {
                           <p className="text-[10px] text-[var(--text-faint)]">{r.daysInStock} {t('plan.daysWord')} · {t('plan.sizeWord')} {r.size}</p>
                         </div>
                         <div className="text-right shrink-0 ml-3">
-                          <p className="text-sm font-bold text-[#8397aa] num">{r.suggestedPrice}€</p>
+                          <p className="text-sm font-bold text-brand num">{r.suggestedPrice}€</p>
                           <p className="text-[10px] text-yellow-500">-{r.suggestedDiscount}%</p>
                         </div>
                       </div>
@@ -12001,7 +11910,7 @@ export default function App() {
                 ) : (
                   <div className="space-y-3">
                     <select value={offerProductId} onChange={e => setOfferProductId(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#8397aa]">
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-brand">
                       <option value="">{t('plan.chooseProduct')}</option>
                       {products.filter((p: any) => p.status === 'IN STOCK').map((p: any) => (
                         <option key={p.id} value={p.id}>{fullName(p.brand, p.name)} ({p.size})</option>
@@ -12009,12 +11918,12 @@ export default function App() {
                     </select>
                     <div className="flex gap-2">
                       <input type="number" inputMode="decimal" value={offerAmount} onChange={e => setOfferAmount(e.target.value)} placeholder={t('plan.offerReceived')}
-                        className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#8397aa]" />
+                        className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-brand" />
                       <input type="number" inputMode="decimal" value={offerMargin} onChange={e => setOfferMargin(e.target.value)} placeholder={t('plan.minMargin')}
-                        className="w-28 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#8397aa]" />
+                        className="w-28 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-brand" />
                     </div>
                     <button onClick={runOffer} disabled={offerLoading}
-                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#8397aa] hover:bg-[#9fb0bd] text-white disabled:opacity-40 flex items-center justify-center gap-2">
+                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-brand hover:bg-brand-hi text-white disabled:opacity-40 flex items-center justify-center gap-2">
                       {offerLoading ? <Loader2 size={16} className="animate-spin" /> : t('plan.whatReply')}
                     </button>
                     {offerResult && (
@@ -12029,7 +11938,7 @@ export default function App() {
                         <div className="flex items-center justify-between">
                           <p className="text-[10px] text-[var(--text-faint)] italic">{offerResult.reasoning}</p>
                           <button onClick={() => { navigator.clipboard?.writeText(offerResult.message); showToast(t('plan.msgCopied')); }}
-                            className="flex items-center gap-1 text-[10px] font-bold text-[#8397aa]"><Copy size={12} /> {t('plan.copy')}</button>
+                            className="flex items-center gap-1 text-[10px] font-bold text-brand"><Copy size={12} /> {t('plan.copy')}</button>
                         </div>
                       </div>
                     )}
@@ -12045,7 +11954,7 @@ export default function App() {
                   <div className="space-y-3">
                     <p className="text-xs text-[var(--text-soft)]">{t('plan.channelsDesc')}</p>
                     <select value={chProductId} onChange={e => setChProductId(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-[#8397aa]">
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-2.5 text-sm outline-none focus:border-brand">
                       <option value="">{t('plan.chooseProduct')}</option>
                       {products.filter((p: any) => p.status === 'IN STOCK').map((p: any) => (
                         <option key={p.id} value={p.id}>{fullName(p.brand, p.name)} ({p.size})</option>
@@ -12056,14 +11965,14 @@ export default function App() {
                         const on = chSelected.includes(pl);
                         return (
                           <button key={pl} onClick={() => setChSelected(prev => on ? prev.filter(x => x !== pl) : [...prev, pl])}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${on ? 'bg-[#8397aa] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${on ? 'bg-brand text-white' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                             {pl}
                           </button>
                         );
                       })}
                     </div>
                     <button onClick={saveChannels} disabled={chSaving}
-                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#8397aa] hover:bg-[#9fb0bd] text-white disabled:opacity-40 flex items-center justify-center gap-2">
+                      className="w-full py-2.5 rounded-xl text-sm font-bold bg-brand hover:bg-brand-hi text-white disabled:opacity-40 flex items-center justify-center gap-2">
                       {chSaving ? <Loader2 size={16} className="animate-spin" /> : <><Store size={15} /> {t('plan.saveChannels')}</>}
                     </button>
                   </div>
@@ -12082,7 +11991,7 @@ export default function App() {
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-lg h-[85vh] sm:h-[600px] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)] shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#8397aa]/15 flex items-center justify-center"><HelpCircle size={18} className="text-[#8397aa]" /></div>
+                <div className="w-9 h-9 rounded-xl bg-brand/15 flex items-center justify-center"><HelpCircle size={18} className="text-brand" /></div>
                 <div>
                   <h2 className="font-semibold text-base leading-tight">{t('hdr.support')}</h2>
                   <p className="text-[11px] text-[var(--text-soft)]">Ti risponde l'assistente. Se serve, passa a un operatore.</p>
@@ -12098,7 +12007,7 @@ export default function App() {
               )}
               {supportMsgs.map((m, i) => (
                 <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-[13.5px] leading-relaxed whitespace-pre-wrap ${m.role === 'user' ? 'bg-[#8397aa] text-white rounded-br-md' : 'bg-[var(--fill)] text-[var(--text)] rounded-bl-md'}`}>{m.content}</div>
+                  <div className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-[13.5px] leading-relaxed whitespace-pre-wrap ${m.role === 'user' ? 'bg-brand text-white rounded-br-md' : 'bg-[var(--fill)] text-[var(--text)] rounded-bl-md'}`}>{m.content}</div>
                 </div>
               ))}
               {supportLoading && <div className="flex justify-start"><div className="bg-[var(--fill)] px-3.5 py-2.5 rounded-2xl rounded-bl-md text-[13px] text-[var(--text-soft)]">sto scrivendo…</div></div>}
@@ -12112,9 +12021,9 @@ export default function App() {
               <input value={supportInput} onChange={e => setSupportInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendSupport(); } }}
                 placeholder="Scrivi la tua domanda…"
-                className="flex-1 bg-[var(--fill)] rounded-xl px-3.5 py-2.5 text-[14px] outline-none focus:ring-2 focus:ring-[#8397aa]/40" />
+                className="flex-1 bg-[var(--fill)] rounded-xl px-3.5 py-2.5 text-[14px] outline-none focus:ring-2 focus:ring-brand/40" />
               <button onClick={sendSupport} disabled={supportLoading || !supportInput.trim()}
-                className="w-10 h-10 rounded-xl bg-[#8397aa] text-white flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0">
+                className="w-10 h-10 rounded-xl bg-brand text-white flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0">
                 <Send size={17} />
               </button>
             </div>
@@ -12127,7 +12036,7 @@ export default function App() {
           <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)] shrink-0">
               <div>
-                <h2 className="font-semibold text-base flex items-center gap-2"><BookOpen size={18} className="text-[#8397aa]" /> {lang === 'en' ? 'Quick guide' : 'Guida rapida'}</h2>
+                <h2 className="font-semibold text-base flex items-center gap-2"><BookOpen size={18} className="text-brand" /> {lang === 'en' ? 'Quick guide' : 'Guida rapida'}</h2>
                 <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{lang === 'en' ? 'Get the most out of HQ in a few steps' : 'Come sfruttare HQ in pochi passi'}</p>
               </div>
               <button onClick={() => setGuideOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
@@ -12155,7 +12064,7 @@ export default function App() {
                 const I = s.icon;
                 return (
                   <div key={s.t} className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[#8397aa]/15 flex items-center justify-center shrink-0"><I size={16} className="text-[#8397aa]" /></div>
+                    <div className="w-9 h-9 rounded-xl bg-brand/15 flex items-center justify-center shrink-0"><I size={16} className="text-brand" /></div>
                     <div>
                       <p className="font-semibold text-sm text-[var(--text)]">{s.t}</p>
                       <p className="text-[13px] text-[var(--text-muted)] leading-relaxed mt-0.5">{s.d}</p>
@@ -12164,7 +12073,7 @@ export default function App() {
                 );
               })}
               <div className="pt-1 text-center">
-                <button onClick={() => { setGuideOpen(false); navigateTo('settings'); }} className="text-xs text-[#8397aa] font-semibold hover:underline">
+                <button onClick={() => { setGuideOpen(false); navigateTo('settings'); }} className="text-xs text-brand font-semibold hover:underline">
                   {lang === 'en' ? 'Need help? Settings → Help & Support' : 'Serve aiuto? Impostazioni → Aiuto & Assistenza'}
                 </button>
               </div>
@@ -12396,14 +12305,14 @@ export default function App() {
                 <input type="password" required value={changePwdCurrent}
                   onChange={e => setChangePwdCurrent(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#8397aa]" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-brand" />
               </div>
               <div>
                 <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('pwd.new')}</label>
                 <input type="password" required value={changePwdNew}
                   onChange={e => setChangePwdNew(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#8397aa]" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-brand" />
                 <p className="text-[10px] text-[var(--text-soft)] mt-1">{t('pwd.rule')}</p>
               </div>
               <div>
@@ -12411,7 +12320,7 @@ export default function App() {
                 <input type="password" required value={changePwdConfirm}
                   onChange={e => setChangePwdConfirm(e.target.value)}
                   placeholder="••••••••"
-                  className={`w-full bg-[var(--surface-2)] border rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#8397aa] ${
+                  className={`w-full bg-[var(--surface-2)] border rounded-xl p-3 text-[var(--text)] outline-none focus:border-brand ${
                     changePwdConfirm && changePwdNew !== changePwdConfirm ? 'border-red-500' : 'border-[var(--border-2)]'
                   }`} />
               </div>
@@ -12421,7 +12330,7 @@ export default function App() {
                   {t('common.cancel')}
                 </button>
                 <button type="submit" disabled={changePwdLoading || (!!changePwdConfirm && changePwdNew !== changePwdConfirm)}
-                  className="flex-1 bg-[#8397aa] hover:bg-[#9fb0bd] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center">
+                  className="flex-1 bg-brand hover:bg-brand-hi disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center">
                   {changePwdLoading ? <Loader2 className="animate-spin" size={16} /> : t('common.save')}
                 </button>
               </div>
@@ -12445,7 +12354,7 @@ export default function App() {
                 <input type="text" required autoFocus value={editNameValue} maxLength={20}
                   onChange={e => setEditNameValue(e.target.value)}
                   placeholder={t('name.placeholder')}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-[#8397aa]" />
+                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-brand" />
                 <p className="text-[10px] text-[var(--text-soft)] mt-1">{t('name.hint')}</p>
               </div>
               <div className="flex gap-3 pt-2">
@@ -12454,7 +12363,7 @@ export default function App() {
                   {t('common.cancel')}
                 </button>
                 <button type="submit" disabled={editNameLoading || editNameValue.trim().length < 2}
-                  className="flex-1 bg-[#8397aa] hover:bg-[#9fb0bd] disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center">
+                  className="flex-1 bg-brand hover:bg-brand-hi disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center">
                   {editNameLoading ? <Loader2 className="animate-spin" size={16} /> : t('common.save')}
                 </button>
               </div>
@@ -12570,7 +12479,7 @@ export default function App() {
                       const done = !isException && i <= curIdx;
                       return (
                         <button key={s.key} onClick={() => setManualStatus(s.key)}
-                          className={`py-2.5 rounded-xl text-center transition-colors ${done ? 'bg-[#8397aa] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
+                          className={`py-2.5 rounded-xl text-center transition-colors ${done ? 'bg-brand text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
                           <div className="text-base leading-none">{s.icon}</div>
                           <div className="text-[9px] font-bold mt-1 leading-tight">{s.label}</div>
                         </button>
@@ -12711,8 +12620,8 @@ export default function App() {
               {/* Header sticky */}
               <div className="sticky top-0 bg-[var(--surface-blur)] backdrop-blur-xl border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#8397aa]/15 border border-[#8397aa]/20 flex items-center justify-center">
-                    <Users className="text-[#9fb0bd]" size={18} />
+                  <div className="w-10 h-10 rounded-2xl bg-brand/15 border border-brand/20 flex items-center justify-center">
+                    <Users className="text-brand-hi" size={18} />
                   </div>
                   <div>
                     <h2 className="font-semibold text-base leading-none">{t('tp.title')}</h2>
@@ -12727,7 +12636,7 @@ export default function App() {
               {/* Stats rapide globali */}
               <div className="grid grid-cols-4 gap-2 p-4 border-b border-[var(--border)]">
                 {[
-                  { label: t('an.partners'), value: totalSoci, color: 'text-[#9fb0bd]' },
+                  { label: t('an.partners'), value: totalSoci, color: 'text-brand-hi' },
                   { label: t('tp.inStock'), value: totalStock, color: 'text-[var(--text)]' },
                   { label: t('an.thSold'), value: totalSoldCount, color: 'text-blue-400' },
                   { label: t('dash.profit'), value: (totalProfit >= 0 ? '+' : '') + totalProfit.toFixed(0) + '€', color: totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' },
@@ -12786,7 +12695,7 @@ export default function App() {
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] flex items-center justify-center text-xl shrink-0">
-                              <Layers size={18} className="text-[#8397aa]" />
+                              <Layers size={18} className="text-brand" />
                             </div>
                             <div>
                               <p className="font-bold">{team.warehouseName}</p>
@@ -12795,15 +12704,15 @@ export default function App() {
                           </div>
                           <div className="text-right">
                             <p className={`font-semibold num ${teamProfit > 0 ? 'text-emerald-400' : teamProfit < 0 ? 'text-red-400' : 'text-[var(--text-faint)]'}`}>
-                              {teamProfit > 0 ? '+' : ''}{teamProfit.toFixed(0)}€
+                              {teamProfit > 0 ? '+' : ''}{eur0(teamProfit)}
                             </p>
-                            <p className="text-[10px] text-[var(--text-faint)] mt-0.5">{teamRevenue.toFixed(0)}€ {t('an.revenueLower')} · {sellThrough}% sell-through</p>
+                            <p className="text-[10px] text-[var(--text-faint)] mt-0.5">{eur0(teamRevenue)} {t('an.revenueLower')} · {sellThrough}% sell-through</p>
                           </div>
                         </div>
 
                         {/* Mini progress sell-through */}
                         <div className="h-1 bg-[var(--fill)] rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-[#8397aa] to-[#9fb0bd] rounded-full transition-all" style={{ width: `${sellThrough}%` }} />
+                          <div className="h-full bg-gradient-to-r from-brand to-brand-hi rounded-full transition-all" style={{ width: `${sellThrough}%` }} />
                         </div>
                       </div>
 
@@ -12815,10 +12724,10 @@ export default function App() {
                           const canKick = isOwnerHere && !isMe && m.role !== 'OWNER';
                           return (
                             <div key={m.membershipId}>
-                              <div className={`flex items-center gap-3 p-3.5 transition-colors ${isMe ? 'bg-[#8397aa]/[0.04]' : 'hover:bg-[var(--fill)]'}`}>
+                              <div className={`flex items-center gap-3 p-3.5 transition-colors ${isMe ? 'bg-brand/[0.04]' : 'hover:bg-[var(--fill)]'}`}>
                                 {/* Rank medal o avatar */}
                                 <div className="relative shrink-0">
-                                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#8397aa] to-blue-600 flex items-center justify-center font-black text-xs shadow-sm">
+                                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-blue-600 flex items-center justify-center font-black text-xs shadow-sm">
                                     {m.name[0]?.toUpperCase()}
                                   </div>
                                   {idx < 3 && teamSold.length > 0 && (
@@ -12830,8 +12739,8 @@ export default function App() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-bold text-sm">{m.name}</span>
-                                    {isMe && <span className="text-[8px] bg-[#8397aa]/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-semibold">{t('an.you')}</span>}
-                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${m.role === 'OWNER' ? 'bg-[#8397aa]/15 text-[var(--text)]/80' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
+                                    {isMe && <span className="text-[8px] bg-brand/20 text-[var(--text)] px-1.5 py-0.5 rounded-full font-semibold">{t('an.you')}</span>}
+                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${m.role === 'OWNER' ? 'bg-brand/15 text-[var(--text)]/80' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}>
                                       {m.role === 'OWNER' ? t('tp.owner') : t('set.partner')}
                                     </span>
                                   </div>
@@ -12848,13 +12757,13 @@ export default function App() {
                                       type="number" min="0" max="100" step="1"
                                       value={editQuoteValues[m.membershipId] ?? m.percentage}
                                       onChange={e => setEditQuoteValues(prev => ({ ...prev, [m.membershipId]: e.target.value }))}
-                                      className="w-14 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-1 text-xs text-center text-[var(--text)] outline-none focus:border-[#8397aa]"
+                                      className="w-14 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-1 text-xs text-center text-[var(--text)] outline-none focus:border-brand"
                                     />
                                   ) : (
                                     <span className="text-[10px] text-[var(--text-soft)] font-semibold bg-[var(--fill)] px-2 py-1 rounded-lg">{m.percentage}%</span>
                                   )}
                                   <span className={`font-semibold text-sm w-16 text-right num ${m.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                    {m.profit >= 0 ? '+' : ''}{m.profit.toFixed(0)}€
+                                    {m.profit >= 0 ? '+' : ''}{eur0(m.profit)}
                                   </span>
                                   {canKick && !isEditing && (
                                     <button
@@ -12891,13 +12800,13 @@ export default function App() {
                             <div className="flex items-center gap-1.5 mb-2.5">
                               <DollarSign size={11} className="text-emerald-500" />
                               <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{t('tp.settle')}</p>
-                              <span className="ml-auto text-[10px] text-[var(--text-faint)] num">{t('tp.revenueW')} {teamRevenue.toFixed(0)}€ · {t('tp.costsW')} {teamCosts.toFixed(0)}€ · {t('tp.profitW')} {teamProfit.toFixed(0)}€</span>
+                              <span className="ml-auto text-[10px] text-[var(--text-faint)] num">{t('tp.revenueW')} {eur0(teamRevenue)} · {t('tp.costsW')} {eur0(teamCosts)} · {t('tp.profitW')} {eur0(teamProfit)}</span>
                             </div>
                             <div className="space-y-1.5">
                               {settleAmounts.map((m: any) => (
                                 <div key={m.membershipId} className="flex items-center justify-between">
                                   <div className="flex items-center gap-1.5 min-w-0">
-                                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#8397aa] to-blue-600 flex items-center justify-center font-black text-[7px] shrink-0">
+                                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-brand to-blue-600 flex items-center justify-center font-black text-[7px] shrink-0">
                                       {m.name[0]?.toUpperCase()}
                                     </div>
                                     <span className="text-xs text-[var(--text-muted)] truncate">{m.name}</span>
@@ -12933,7 +12842,7 @@ export default function App() {
                                   {t('common.cancel')}
                                 </button>
                                 <button onClick={() => saveEditedQuotes(team)} disabled={isSavingTeam}
-                                  className="flex-1 py-2 text-xs font-bold text-[var(--text)] bg-[#8397aa]/80 hover:bg-[#8397aa] rounded-xl transition-colors disabled:opacity-40">
+                                  className="flex-1 py-2 text-xs font-bold text-[var(--text)] bg-brand/80 hover:bg-brand rounded-xl transition-colors disabled:opacity-40">
                                   {isSavingTeam ? t('tp.saving') : t('set.saveShares')}
                                 </button>
                               </div>
@@ -13020,7 +12929,7 @@ export default function App() {
             {/* Header */}
             <div className="sticky top-0 bg-[var(--surface-blur)] backdrop-blur-xl border-b border-[var(--border)] p-5 flex items-center justify-between z-10">
               <div>
-                <h2 className="font-semibold flex items-center gap-2"><Package size={16} className="text-[#9fb0bd]" /> {t('sh.title')}</h2>
+                <h2 className="font-semibold flex items-center gap-2"><Package size={16} className="text-brand-hi" /> {t('sh.title')}</h2>
                 <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{shippingProduct.brand} {shippingProduct.name} · {shippingProduct.size}</p>
               </div>
               <button onClick={() => setShippingProduct(null)} className="p-2 hover:bg-[var(--fill)] rounded-xl transition-colors">
@@ -13050,7 +12959,7 @@ export default function App() {
                           value={shipFrom[f.key] || ''}
                           onChange={e => setShipFrom((p: any) => ({ ...p, [f.key]: e.target.value }))}
                           placeholder={f.placeholder}
-                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-[#8397aa]/50"
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-brand/50"
                         />
                       </div>
                     ))}
@@ -13074,7 +12983,7 @@ export default function App() {
                           value={shipTo[f.key as keyof typeof shipTo] || ''}
                           onChange={e => setShipTo(p => ({ ...p, [f.key]: e.target.value }))}
                           placeholder={f.placeholder}
-                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-[#8397aa]/50"
+                          className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder-gray-700 outline-none focus:border-brand/50"
                         />
                       </div>
                     ))}
@@ -13089,7 +12998,7 @@ export default function App() {
                       <button key={p.label} onClick={() => setShipPreset(p)}
                         className={`p-2.5 rounded-xl border text-center transition-all ${
                           shipPreset.label === p.label
-                            ? 'bg-[#8397aa]/15 border-[#8397aa]/40 text-[var(--text)]'
+                            ? 'bg-brand/15 border-brand/40 text-[var(--text)]'
                             : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-soft)] hover:border-[var(--border-3)]'
                         }`}>
                         <p className="text-xs font-bold">{p.label}</p>
@@ -13101,7 +13010,7 @@ export default function App() {
                 </div>
 
                 <button onClick={fetchRates} disabled={isLoadingRates}
-                  className="w-full py-3.5 bg-[#6f8394]/80 hover:bg-[#6f8394] disabled:opacity-40 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                  className="w-full py-3.5 bg-brand-lo/80 hover:bg-brand-lo disabled:opacity-40 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                   {isLoadingRates ? <><Loader2 size={15} className="animate-spin" /> {t('sh.findingRates')}</> : <><Package size={15} /> {t('sh.seeRates')}</>}
                 </button>
               </>)}
@@ -13116,14 +13025,14 @@ export default function App() {
                     <button key={r.id} onClick={() => setSelectedRate(r)}
                       className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all text-left ${
                         selectedRate?.id === r.id
-                          ? 'bg-[#8397aa]/10 border-[#8397aa]/40'
+                          ? 'bg-brand/10 border-brand/40'
                           : 'bg-[var(--surface-2)] border-[var(--border)] hover:border-[var(--border-3)]'
                       }`}>
                       <div>
                         <p className="font-bold text-sm text-[var(--text)]">{r.carrier}</p>
                         <p className="text-[11px] text-[var(--text-soft)]">{r.name}{r.transitHours ? ` · ${r.transitHours}h` : ''}</p>
                       </div>
-                      <p className={`font-bold text-base num ${selectedRate?.id === r.id ? 'text-[#9fb0bd]' : 'text-[var(--text)]'}`}>
+                      <p className={`font-bold text-base num ${selectedRate?.id === r.id ? 'text-brand-hi' : 'text-[var(--text)]'}`}>
                         {r.price.toFixed(2)}€
                       </p>
                     </button>
@@ -13131,7 +13040,7 @@ export default function App() {
                 </div>
                 {selectedRate && (
                   <button onClick={bookShipment} disabled={isBooking}
-                    className="w-full py-3.5 bg-[#6f8394]/80 hover:bg-[#6f8394] disabled:opacity-40 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                    className="w-full py-3.5 bg-brand-lo/80 hover:bg-brand-lo disabled:opacity-40 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                     {isBooking
                       ? <><Loader2 size={15} className="animate-spin" /> {t('sh.generating')}</>
                       : selectedRate.demo
@@ -13210,7 +13119,7 @@ export default function App() {
                       onClick={() => setListingPlatform(p.id)}
                       className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border text-center transition-all active:scale-95 ${
                         listingPlatform === p.id
-                          ? 'bg-[#8397aa]/15 border-[#8397aa]/40 text-[var(--text)]'
+                          ? 'bg-brand/15 border-brand/40 text-[var(--text)]'
                           : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-soft)] hover:border-[var(--border-3)] hover:text-gray-300'
                       }`}>
                       <span className="text-lg">{p.emoji}</span>
@@ -13224,7 +13133,7 @@ export default function App() {
               <button
                 onClick={() => generateListingForProduct(listingPlatform)}
                 disabled={isGeneratingListing}
-                className="w-full py-3.5 bg-[#6f8394]/80 hover:bg-[#6f8394] disabled:bg-[#6f8394]/30 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                className="w-full py-3.5 bg-brand-lo/80 hover:bg-brand-lo disabled:bg-brand-lo/30 rounded-2xl text-sm font-bold text-[var(--text)] transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
                 {isGeneratingListing
                   ? <><Loader2 size={16} className="animate-spin" /> {t('lst.generating')}</>
                   : <><Sparkles size={16} /> {t('lst.generateAI')}</>}
@@ -13277,7 +13186,7 @@ export default function App() {
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {listingResult.hashtags.map((tag: string) => (
-                          <span key={tag} className="text-[11px] bg-[#8397aa]/10 text-[#9fb0bd] border border-[#8397aa]/20 px-2 py-0.5 rounded-full">{tag}</span>
+                          <span key={tag} className="text-[11px] bg-brand/10 text-brand-hi border border-brand/20 px-2 py-0.5 rounded-full">{tag}</span>
                         ))}
                       </div>
                     </div>
@@ -13308,7 +13217,7 @@ export default function App() {
                     className={`w-full py-3 rounded-2xl text-sm font-bold transition-all active:scale-[0.98] ${
                       copiedField === 'all'
                         ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                        : 'bg-[#6f8394]/70 hover:bg-[#6f8394] text-[var(--text)]'
+                        : 'bg-brand-lo/70 hover:bg-brand-lo text-[var(--text)]'
                     }`}>
                     {copiedField === 'all' ? t('lst.allCopied') : t('lst.copyAll')}
                   </button>
@@ -13450,7 +13359,7 @@ export default function App() {
           <div className="bg-[var(--card)] rounded-3xl p-5 w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-[var(--text)] flex items-center gap-2">
-                <ScanLine size={18} className="text-[#8397aa]" /> {t('form.scanBarcode')}
+                <ScanLine size={18} className="text-brand" /> {t('form.scanBarcode')}
               </h3>
               <button onClick={() => setBarcodeModalOpen(false)} className="p-2 hover:bg-[var(--fill)] rounded-lg">
                 <X size={20} />
@@ -13461,7 +13370,7 @@ export default function App() {
               <>
                 <div className="relative rounded-2xl overflow-hidden bg-black aspect-[4/3] mb-3">
                   <video ref={barcodeVideoRef} playsInline muted className="w-full h-full object-cover" />
-                  <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-0.5 bg-[#8397aa] shadow-[0_0_12px_2px_rgba(131,151,170,0.7)]" />
+                  <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-0.5 bg-brand shadow-[0_0_12px_2px_rgba(131,151,170,0.7)]" />
                 </div>
                 <p className="text-[11px] text-[var(--text-soft)] text-center mb-3">{t('bc.aim')}</p>
               </>
@@ -13476,9 +13385,9 @@ export default function App() {
               className="flex gap-2">
               <input value={barcodeManual} onChange={e => setBarcodeManual(e.target.value)}
                 placeholder={t('bc.manualPlaceholder')}
-                className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8397aa]" />
+                className="flex-1 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand" />
               <button type="submit" disabled={!barcodeManual.trim()}
-                className="px-4 py-2 rounded-xl bg-[#8397aa] text-white text-sm font-bold disabled:opacity-50">{t('market.searchBtn')}</button>
+                className="px-4 py-2 rounded-xl bg-brand text-white text-sm font-bold disabled:opacity-50">{t('market.searchBtn')}</button>
             </form>
           </div>
         </div>

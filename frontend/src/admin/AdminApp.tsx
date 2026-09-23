@@ -130,15 +130,15 @@ export default function AdminApp() {
             <p className="text-xs text-neutral-400 mt-1">Pannello amministrazione</p>
           </div>
           <input type="email" placeholder="Email admin" value={email} onChange={e => setEmail(e.target.value)} required
-            className="w-full bg-neutral-800 border border-neutral-700 rounded-xl p-3 text-sm outline-none focus:border-[#8397aa]" />
+            className="w-full bg-neutral-800 border border-neutral-700 rounded-xl p-3 text-sm outline-none focus:border-brand" />
           <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required
-            className="w-full bg-neutral-800 border border-neutral-700 rounded-xl p-3 text-sm outline-none focus:border-[#8397aa]" />
+            className="w-full bg-neutral-800 border border-neutral-700 rounded-xl p-3 text-sm outline-none focus:border-brand" />
           {require2FA && (
             <input inputMode="numeric" placeholder="Codice 2FA" value={twoFA} onChange={e => setTwoFA(e.target.value)}
-              className="w-full bg-neutral-800 border border-neutral-700 rounded-xl p-3 text-sm outline-none focus:border-[#8397aa]" />
+              className="w-full bg-neutral-800 border border-neutral-700 rounded-xl p-3 text-sm outline-none focus:border-brand" />
           )}
           {loginErr && <p className="text-xs text-red-400">{loginErr}</p>}
-          <button disabled={loggingIn} className="w-full py-3 rounded-xl bg-[#6f8394] hover:bg-[#8397aa] font-bold text-sm disabled:opacity-50">
+          <button disabled={loggingIn} className="w-full py-3 rounded-xl bg-brand-lo hover:bg-brand font-bold text-sm disabled:opacity-50">
             {loggingIn ? 'Accesso…' : 'Entra'}
           </button>
           <p className="text-[10px] text-neutral-500 text-center">Accesso riservato agli amministratori HQ.</p>
@@ -156,7 +156,7 @@ export default function AdminApp() {
       <header className="sticky top-0 z-10 bg-neutral-950/90 backdrop-blur border-b border-neutral-800 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xl font-black tracking-tight">HQ</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-[#6f8394]/20 text-[#9fb0bd] font-bold">ADMIN</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-brand-lo/20 text-brand-hi font-bold">ADMIN</span>
         </div>
         <button onClick={logout} className="text-xs font-bold text-neutral-400 hover:text-white">Esci</button>
       </header>
@@ -165,7 +165,7 @@ export default function AdminApp() {
       <nav className="flex gap-1 px-4 py-3 border-b border-neutral-800 overflow-x-auto">
         {([['users', 'Utenti'], ['feedback', 'Assistenza'], ['deliveries', 'Consegne'], ['disputes', 'Rimborsi'], ['stats', 'Statistiche']] as [Tab, string][]).map(([t, l]) => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 ${tab === t ? 'bg-[#6f8394] text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white'}`}>
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 ${tab === t ? 'bg-brand-lo text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white'}`}>
             {l}
             {t === 'disputes' && escalated > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500 text-white">{escalated}</span>}
           </button>
@@ -179,7 +179,7 @@ export default function AdminApp() {
         {tab === 'users' && !loading && (
           <div className="space-y-3">
             <input placeholder="Cerca per nome o email…" value={q} onChange={e => setQ(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-sm outline-none focus:border-[#8397aa]" />
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3 text-sm outline-none focus:border-brand" />
             <p className="text-xs text-neutral-500">{filteredUsers.length} utenti</p>
             {filteredUsers.map(u => (
               <div key={u.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-3.5">
@@ -198,7 +198,7 @@ export default function AdminApp() {
                   <span className="text-[10px] text-neutral-500 uppercase font-bold mr-1">Piano:</span>
                   {PLANS.map(p => (
                     <button key={p} onClick={() => changePlan(u.id, p)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${u.plan === p ? 'bg-[#6f8394] text-white' : 'bg-neutral-800 text-neutral-400 hover:text-white'}`}>
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${u.plan === p ? 'bg-brand-lo text-white' : 'bg-neutral-800 text-neutral-400 hover:text-white'}`}>
                       {PLAN_LABEL[p]}{p === 'business' && u.plan !== p ? ' 🎁' : ''}
                     </button>
                   ))}
@@ -217,11 +217,11 @@ export default function AdminApp() {
           <div className="space-y-3">
             <div className="flex gap-2">
               <button onClick={() => setFbFilter('nuove')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 ${fbFilter === 'nuove' ? 'bg-[#6f8394] text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white'}`}>
-                Da rispondere {nuove.length > 0 && <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${fbFilter === 'nuove' ? 'bg-white/25' : 'bg-[#6f8394] text-white'}`}>{nuove.length}</span>}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 ${fbFilter === 'nuove' ? 'bg-brand-lo text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white'}`}>
+                Da rispondere {nuove.length > 0 && <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${fbFilter === 'nuove' ? 'bg-white/25' : 'bg-brand-lo text-white'}`}>{nuove.length}</span>}
               </button>
               <button onClick={() => setFbFilter('risolte')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 ${fbFilter === 'risolte' ? 'bg-[#6f8394] text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white'}`}>
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 ${fbFilter === 'risolte' ? 'bg-brand-lo text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white'}`}>
                 Risolte {risolte.length > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-600/25 text-green-300">{risolte.length}</span>}
               </button>
             </div>
@@ -233,7 +233,7 @@ export default function AdminApp() {
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-neutral-800 text-neutral-400">{f.type}</span>
                       {f.status === 'nuova'
-                        ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#6f8394] text-white font-bold">nuova</span>
+                        ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-lo text-white font-bold">nuova</span>
                         : <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-600/20 text-green-400 font-bold">risposta</span>}
                       <span className="text-xs font-semibold truncate">{f.userName || f.userEmail}</span>
                     </div>
@@ -246,14 +246,14 @@ export default function AdminApp() {
                 {replyId === f.id ? (
                   <div className="mt-2">
                     <textarea value={replyText} onChange={e => setReplyText(e.target.value)} rows={3} autoFocus placeholder={`Rispondi a ${f.userEmail}…`}
-                      className="w-full bg-neutral-800 border border-neutral-700 rounded-xl p-2.5 text-sm outline-none focus:border-[#8397aa] resize-none" />
+                      className="w-full bg-neutral-800 border border-neutral-700 rounded-xl p-2.5 text-sm outline-none focus:border-brand resize-none" />
                     <div className="flex justify-end gap-2 mt-2">
                       <button onClick={() => { setReplyId(null); setReplyText(''); }} className="px-3 py-1.5 text-xs font-bold text-neutral-400">Annulla</button>
-                      <button onClick={() => sendReply(f.id)} disabled={replyText.trim().length < 2} className="px-4 py-1.5 bg-[#6f8394] rounded-lg text-xs font-bold disabled:opacity-40">Invia via email</button>
+                      <button onClick={() => sendReply(f.id)} disabled={replyText.trim().length < 2} className="px-4 py-1.5 bg-brand-lo rounded-lg text-xs font-bold disabled:opacity-40">Invia via email</button>
                     </div>
                   </div>
                 ) : (
-                  <button onClick={() => { setReplyId(f.id); setReplyText(f.reply || ''); }} className="mt-2 text-xs font-bold text-[#9fb0bd]">{f.reply ? 'Modifica risposta' : '↩ Rispondi'}</button>
+                  <button onClick={() => { setReplyId(f.id); setReplyText(f.reply || ''); }} className="mt-2 text-xs font-bold text-brand-hi">{f.reply ? 'Modifica risposta' : '↩ Rispondi'}</button>
                 )}
               </div>
             ))}
@@ -329,7 +329,7 @@ export default function AdminApp() {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
                 <p className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold">Iscritti waitlist</p>
-                <p className="text-3xl font-black mt-1 text-[#9fb0bd]">{stats.waitlist?.total ?? 0}</p>
+                <p className="text-3xl font-black mt-1 text-brand-hi">{stats.waitlist?.total ?? 0}</p>
               </div>
               <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
                 <p className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold">Visite (30 gg)</p>
@@ -344,7 +344,7 @@ export default function AdminApp() {
                   {pages.map(([k, v]) => (
                     <div key={k} className="flex items-center gap-3">
                       <span className="text-xs font-bold w-24 shrink-0 truncate">{pageLabels[k] || k}</span>
-                      <div className="flex-1 h-2.5 rounded-full bg-neutral-800 overflow-hidden"><div className="h-full rounded-full bg-[#8397aa]" style={{ width: `${(v / maxPage) * 100}%` }} /></div>
+                      <div className="flex-1 h-2.5 rounded-full bg-neutral-800 overflow-hidden"><div className="h-full rounded-full bg-brand" style={{ width: `${(v / maxPage) * 100}%` }} /></div>
                       <span className="text-xs font-black w-10 text-right">{v}</span>
                     </div>
                   ))}
@@ -388,7 +388,7 @@ export default function AdminApp() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
                   <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3"><p className="text-[9px] uppercase tracking-widest text-neutral-500 font-bold">Ricerche</p><p className="text-xl font-black mt-1">{stats.priceChecks.total}</p></div>
                   <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3"><p className="text-[9px] uppercase tracking-widest text-neutral-500 font-bold">Visitatori (IP)</p><p className="text-xl font-black mt-1">{stats.priceChecks.uniqueIps}</p></div>
-                  <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3"><p className="text-[9px] uppercase tracking-widest text-neutral-500 font-bold">Hanno riusato</p><p className="text-xl font-black mt-1 text-[#9fb0bd]">{stats.priceChecks.reusedIps}</p></div>
+                  <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3"><p className="text-[9px] uppercase tracking-widest text-neutral-500 font-bold">Hanno riusato</p><p className="text-xl font-black mt-1 text-brand-hi">{stats.priceChecks.reusedIps}</p></div>
                   <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3"><p className="text-[9px] uppercase tracking-widest text-neutral-500 font-bold">Con esito</p><p className="text-xl font-black mt-1">{stats.priceChecks.found}</p></div>
                 </div>
                 {stats.priceChecks.topReusers?.length > 0 && (
@@ -418,7 +418,7 @@ export default function AdminApp() {
         })()}
       </main>
 
-      {toast && <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#6f8394] text-white text-sm font-bold px-4 py-2 rounded-xl shadow-lg z-50">{toast}</div>}
+      {toast && <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-brand-lo text-white text-sm font-bold px-4 py-2 rounded-xl shadow-lg z-50">{toast}</div>}
     </div>
   );
 }

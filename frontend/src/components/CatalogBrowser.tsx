@@ -167,7 +167,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
     <div className="w-full">
       <div className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h1 className="text-xl font-black text-[var(--text)]">Catalogo</h1>
-        <p className="text-sm text-[var(--text-soft)]">Tocca <span className="text-[#8397aa] font-bold">+</span> per aggiungere al magazzino con la foto ufficiale.</p>
+        <p className="text-sm text-[var(--text-soft)]">Tocca <span className="text-brand font-bold">+</span> per aggiungere al magazzino con la foto ufficiale.</p>
       </div>
 
       {/* Barra ricerca — FISSA in cima: sticky top-0, lo sfondo copre il notch e l'input
@@ -178,14 +178,14 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
           <input value={query} onChange={e => setQuery(e.target.value)} autoFocus
             placeholder="Cerca... (es. Jordan 4, Palace tee, DV1748-100)"
             className="flex-1 bg-transparent outline-none text-[var(--text)] placeholder:text-[var(--text-faint)]" />
-          {loading && <Loader2 size={18} className="text-[#8397aa] animate-spin" />}
+          {loading && <Loader2 size={18} className="text-brand animate-spin" />}
         </div>
         {/* Filtro tipo — scorrevole in orizzontale (7 categorie non ci stanno in larghezza) */}
         <div className="flex gap-2 mt-2 overflow-x-auto flex-nowrap -mx-1 px-1">
           {TYPES.map(tp => (
             <button key={tp.id} onClick={() => setType(tp.id)}
               className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                type === tp.id ? 'bg-[#8397aa] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                type === tp.id ? 'bg-brand text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'
               }`}>{tp.label}</button>
           ))}
           {/* Categorie personalizzate dell'utente (doppio tap per rimuovere) */}
@@ -193,11 +193,11 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
             <button key={c} onClick={() => setType(c.toLowerCase())} onDoubleClick={() => removeCustomType(c)}
               title="Doppio tap per rimuovere"
               className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                type === c.toLowerCase() ? 'bg-[#8397aa] text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'
+                type === c.toLowerCase() ? 'bg-brand text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'
               }`}>{c}</button>
           ))}
           <button onClick={() => { setNewCat(''); setCatModalOpen(true); }}
-            className="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--fill)] text-[#8397aa] hover:bg-[#8397aa]/10 flex items-center gap-1">
+            className="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--fill)] text-brand hover:bg-brand/10 flex items-center gap-1">
             <Plus size={13} /> Categoria
           </button>
         </div>
@@ -226,7 +226,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
               <button onClick={() => (onAddDetailed ? detailedAdd(item) : quickAdd(item))} disabled={isAdding}
                 aria-label="Aggiungi al magazzino"
                 className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                  isAdded ? 'bg-green-500/15 text-green-500' : 'text-[#8397aa] hover:bg-[#8397aa]/10'
+                  isAdded ? 'bg-green-500/15 text-green-500' : 'text-brand hover:bg-brand/10'
                 }`}>
                 {isAdding ? <Loader2 size={20} className="animate-spin" /> : isAdded ? <Check size={22} /> : <Plus size={24} />}
               </button>
@@ -264,7 +264,7 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
             <p className="text-white font-extrabold text-lg leading-tight">{preview.name}</p>
             <p className="text-white/50 text-sm mt-0.5">{preview.brand}{preview.sku ? ' · ' + preview.sku : ''}</p>
             <button onClick={() => { quickAdd(preview); setPreview(null); }}
-              className="mt-4 w-full py-3.5 rounded-2xl bg-[#8397aa] hover:bg-[#6f8394] text-white font-bold flex items-center justify-center gap-2 transition-colors">
+              className="mt-4 w-full py-3.5 rounded-2xl bg-brand hover:bg-brand-lo text-white font-bold flex items-center justify-center gap-2 transition-colors">
               <Plus size={18} /> Aggiungi al magazzino
             </button>
           </div>
@@ -279,21 +279,21 @@ export default function CatalogBrowser({ apiCall, showToast, categories, warehou
           <div className="w-full max-w-sm rounded-3xl bg-[var(--surface)] border border-[var(--border-2)] p-5 shadow-2xl"
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2.5 mb-1">
-              <span className="w-9 h-9 rounded-xl bg-[#8397aa]/15 text-[#8397aa] flex items-center justify-center shrink-0"><Plus size={18} /></span>
+              <span className="w-9 h-9 rounded-xl bg-brand/15 text-brand flex items-center justify-center shrink-0"><Plus size={18} /></span>
               <h3 className="font-extrabold text-[var(--text)] text-lg leading-tight">Nuova categoria</h3>
             </div>
             <p className="text-xs text-[var(--text-soft)] mb-4 pl-0.5">Scrivila e cerco i prodotti giusti dal vivo. Es. <span className="text-[var(--text)] font-semibold">Profumi, Vinili, Orologi</span>.</p>
             <input value={newCat} onChange={e => setNewCat(e.target.value)} autoFocus
               onKeyDown={e => { if (e.key === 'Enter') confirmAddCategory(); if (e.key === 'Escape') setCatModalOpen(false); }}
               placeholder="Nome categoria…"
-              className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3.5 py-3 text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[#8397aa]" />
+              className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3.5 py-3 text-sm text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-brand" />
             <div className="flex gap-2.5 mt-4">
               <button onClick={() => setCatModalOpen(false)}
                 className="flex-1 py-3 rounded-xl bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)] font-bold text-sm transition-colors">
                 Annulla
               </button>
               <button onClick={confirmAddCategory} disabled={!newCat.trim()}
-                className="flex-1 py-3 rounded-xl bg-[#8397aa] hover:bg-[#6f8394] text-white font-bold text-sm transition-colors disabled:opacity-40">
+                className="flex-1 py-3 rounded-xl bg-brand hover:bg-brand-lo text-white font-bold text-sm transition-colors disabled:opacity-40">
                 Aggiungi
               </button>
             </div>

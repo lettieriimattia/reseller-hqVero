@@ -3,14 +3,12 @@
 @tailwind utilities;
 
 /* ========================================
-   FONT — logica iPhone/minimal:
-   1) San Francisco nativo su Apple (iPhone PWA, Mac) → look iOS autentico
-   2) Inter come fallback raffinato su Windows/Android (SF-like)
+   FONT — identità "scatola/etichetta" del reselling:
+   - Archivo (variabile in larghezza): corpo in larghezza normale, titoli e cifre grandi
+     ALLARGATI e pesanti, come la stampa sulle scatole e sui cartellini.
+   - Martian Mono: etichette di sistema, codici, date — il "codice articolo" dell'etichetta.
    ======================================== */
-/* Inter = corpo/dati (grotesque pulito, legibilità massima sui numeri).
-   Fraunces = DISPLAY serif (titoli/wordmark): carattere "crafted + wealth" — l'eleganza
-   istituzionale/private-banking che eleva l'app. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Fraunces:opsz,wght@9..144,380..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Martian+Mono:wdth,wght@75..112.5,300..700&display=swap');
 
 /* ========================================
    LEGGIBILITÀ DESKTOP: su PC le micro-scritte (9/10/11px) erano troppo piccole.
@@ -25,51 +23,59 @@
 }
 
 :root {
-  /* Colore brand — cambialo QUI in un punto solo per ritoccare l'accent ovunque */
-  --accent: #6b54c6;
-  --accent-hover: #8a78d9;
-  /* Dettaglio "lusso": champagne/oro usato con PARSIMONIA (hairline, valori, hover).
-     Non sostituisce il viola: lo accompagna come finitura premium. */
-  --gold: #c6ced7;
-  --gold-soft: rgba(198,206,215,0.14);
-  --gold-line: rgba(198,206,215,0.34);
-  /* ===== Materiali "Pagani" (cockpit desktop) =====
-     Dati critici di profitto, grafici e CTA = ottanio (teal) o ruggine desaturato.
-     Testo secondario = beige tenue (calore). Sfondi = antracite/nero (già --bg/--surface). */
-  --teal: #2c9c8e;         /* ottanio */
-  --teal-soft: rgba(44,156,142,0.14);
-  --teal-line: rgba(44,156,142,0.40);
-  --rust: #b5613a;         /* arancio ruggine */
-  --rust-soft: rgba(181,97,58,0.14);
-  --beige: #c9c0ad;        /* testo secondario caldo */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
-    'Inter', 'Helvetica Neue', system-ui, sans-serif;
-  /* Serif display (titoli/wordmark) — "status" istituzionale. Numeri e corpo restano sans. */
-  --font-display: 'Fraunces', 'Newsreader', Georgia, 'Times New Roman', serif;
+  /* ===== TEMA "BOX" (scuro, default) =====
+     Grafite calda (il cartone nero della scatola), carta osso per l'etichetta,
+     cobalto come unico accento (inchiostro del timbro). Positivo/negativo tenui. */
+  --accent: #3f5ef5;
+  --accent-hover: #5f7bff;
+  /* Canali RGB del marchio → Tailwind bg-brand / text-brand-hi / bg-brand-lo (con opacità). */
+  --brand-rgb: 63 94 245;
+  --brand-hi-rgb: 139 160 255;
+  --brand-lo-rgb: 58 84 222;
+  --gold: #c9c2b4;
+  --gold-soft: rgba(201,194,180,0.12);
+  --gold-line: rgba(201,194,180,0.30);
+  /* Valori/profitto (--teal), negativi (--rust), secondario caldo (--beige). */
+  --teal: #6fc79a;
+  --teal-soft: rgba(111,199,154,0.12);
+  --teal-line: rgba(111,199,154,0.38);
+  --rust: #ee6a5c;
+  --rust-soft: rgba(238,106,92,0.12);
+  --beige: #b8b1a4;
+  /* Crescita / calo (delta vs periodo precedente) */
+  --up: #6fc79a;
+  --down: #ee6a5c;
+  /* ETICHETTA (firma visiva): carta osso con inchiostro grafite */
+  --paper: #efebe3;
+  --paper-ink: #151412;
+  --paper-soft: #6f685c;
+  --paper-line: rgba(21,20,18,0.16);
+  --paper-ghost: rgba(21,20,18,0.13);
+  /* Serie categoriali dei grafici (ordine fisso, validato per daltonismo) */
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+  --series-4: #c98500; --series-5: #d55181; --series-6: #008300; --series-other: #8a857c;
+  --page-glow: transparent;
 
-  /* ===== TEMA SCURO (default) =====
-     Token semantici usati in tutta l'app via bg-[var(--surface)] ecc.
-     Palette con una leggera TINTA FREDDA VIOLA (coerente con l'accent): le superfici
-     non sono nero neutro ma quasi-neri leggermente saturi, i bordi/fill hanno un velo
-     viola → look più curato e "vivo" senza essere pacchiano. */
-  --bg: #060509;            /* sfondo pagina: quasi-nero profondo con un soffio di viola */
-  --surface: #110f18;       /* card / pannelli: antracite con tinta */
-  --surface-2: #0c0b12;     /* inset, input, sezioni annidate */
-  --border: rgba(132,120,176,0.08);   /* bordo sottile (velo viola) */
-  --border-2: rgba(132,120,176,0.12); /* bordo più marcato */
-  --text: #ffffff;          /* testo primario */
-  --text-soft: #7d7b90;     /* testo secondario (grigio leggermente viola) */
-  --text-muted: #a6a3ba;    /* testo attenuato */
-  --text-faint: #56546a;    /* testo molto tenue */
-  --border-3: rgba(132,120,176,0.20); /* bordo accentato */
-  /* Fill (chip, hover, inset) — 3 intensità, con velo viola */
-  --fill: rgba(132,120,176,0.07);
-  --fill-2: rgba(132,120,176,0.13);
-  --fill-3: rgba(132,120,176,0.22);
-  /* Superfici translucide (header/modali con backdrop-blur) */
-  --bg-blur: rgba(6,5,9,0.95);
-  --bg-overlay: rgba(6,5,9,0.72);
-  --surface-blur: rgba(17,15,24,0.95);
+  --font-sans: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Martian Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --bg: #121110;
+  --surface: #1b1a17;
+  --surface-2: #161513;
+  --border: rgba(237,232,222,0.07);
+  --border-2: rgba(237,232,222,0.12);
+  --border-3: rgba(237,232,222,0.22);
+  --text: #efebe3;
+  --text-soft: #9a948a;
+  --text-muted: #c4beb2;
+  --text-faint: #6b665e;
+  --fill: rgba(237,232,222,0.05);
+  --fill-2: rgba(237,232,222,0.09);
+  --fill-3: rgba(237,232,222,0.15);
+  --bg-blur: rgba(18,17,16,0.94);
+  --bg-overlay: rgba(18,17,16,0.74);
+  --surface-blur: rgba(27,26,23,0.97);
 }
 
 /* Wordmark "HQVault" in CROMO argento (gradiente clip sul testo) — usato in accedi/registrati. */
@@ -83,29 +89,47 @@
 
 /* ===== TEMA CHIARO — palette Apple ===== */
 .light {
-  /* Esattamente i colori di apple.com: sfondo grigio #f5f5f7, card bianche #fff,
-     testo near-black #1d1d1f e i grigi secondari di Apple (#6e6e73 / #86868b).
-     Non "acceca" perché il bianco puro è solo sulle card, su base grigia. */
-  --bg: #e6e6eb;            /* sfondo pagina: grigino (non bianco acceso) */
-  --surface: #ffffff;       /* card bianche → staccano sul grigio */
-  --surface-2: #eeeef2;     /* inset/input: grigio leggermente più chiaro del bg */
-  --border: rgba(0,0,0,0.08);
-  --border-2: #d2d2d7;
-  --border-3: rgba(0,0,0,0.22);
-  --text: #1d1d1f;
-  --text-soft: #6e6e73;
-  --text-muted: #424245;
-  --text-faint: #86868b;
-  --fill: rgba(0,0,0,0.04);
-  --fill-2: rgba(0,0,0,0.07);
-  --fill-3: rgba(0,0,0,0.12);
-  --bg-blur: rgba(230,230,235,0.85);
-  --bg-overlay: rgba(230,230,235,0.72);
-  --surface-blur: rgba(255,255,255,0.90);
-  /* Cromo scuro: leggibile/raffinato su sfondo chiaro */
-  --gold: #7d858f;
-  --gold-soft: rgba(125,133,143,0.14);
-  --gold-line: rgba(125,133,143,0.42);
+  /* Tema CHIARO "carta": fondo carta da pacchi chiara, card bianco-osso, inchiostro grafite.
+     L'etichetta si inverte (nera con scritte osso), come i label scuri delle scatole premium. */
+  --accent: #2f4de0;
+  --accent-hover: #4562ee;
+  --brand-rgb: 47 77 224;
+  --brand-hi-rgb: 47 77 224;
+  --brand-lo-rgb: 36 60 190;
+  --bg: #e9e5dc;
+  --surface: #f8f6f1;
+  --surface-2: #efebe3;
+  --border: rgba(22,21,18,0.09);
+  --border-2: rgba(22,21,18,0.16);
+  --border-3: rgba(22,21,18,0.28);
+  --text: #161512;
+  --text-soft: #6b655b;
+  --text-muted: #3d3a34;
+  --text-faint: #8f897e;
+  --fill: rgba(22,21,18,0.04);
+  --fill-2: rgba(22,21,18,0.07);
+  --fill-3: rgba(22,21,18,0.12);
+  --bg-blur: rgba(233,229,220,0.90);
+  --bg-overlay: rgba(233,229,220,0.74);
+  --surface-blur: rgba(248,246,241,0.96);
+  --gold: #6b655b;
+  --gold-soft: rgba(107,101,91,0.12);
+  --gold-line: rgba(107,101,91,0.34);
+  --teal: #1f8a57;
+  --teal-soft: rgba(31,138,87,0.10);
+  --teal-line: rgba(31,138,87,0.34);
+  --rust: #c8412f;
+  --rust-soft: rgba(200,65,47,0.10);
+  --beige: #6b655b;
+  --up: #1f8a57;
+  --down: #c8412f;
+  --paper: #1b1a17;
+  --paper-ink: #efebe3;
+  --paper-soft: #a39d92;
+  --paper-line: rgba(239,235,227,0.16);
+  --paper-ghost: rgba(239,235,227,0.14);
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
+  --series-4: #eda100; --series-5: #e87ba4; --series-6: #008300; --series-other: #a39d92;
 }
 
 /* ===== TEMA "LUX" — Carbon + LED Teal (PREMIUM, anteprima admin) =====
@@ -260,6 +284,9 @@
 /* Alone di sfondo pagina: nel carbon è TITANIO neutro (non il viola degli altri temi). */
 .carbon { --page-glow: rgba(196,206,218,0.05); }
 .chrome { --page-glow: rgba(190,202,214,0.05); }
+/* Temi facoltativi (Chrome/Carbon/Glass/Lux): mantengono il loro accento acciaio/teal. */
+.chrome, .carbon, .glass { --brand-rgb: 131 151 170; --brand-hi-rgb: 159 176 189; --brand-lo-rgb: 111 131 148; }
+.lux { --brand-rgb: 31 168 159; --brand-hi-rgb: 52 194 184; --brand-lo-rgb: 24 140 132; }
 .carbon .sys-label { letter-spacing: 0.2em; }
 .carbon .bg-\[\#6b54c6\]     { background-color: var(--accent) !important; color: #0b0c0d !important; }
 .carbon .text-\[\#6b54c6\]   { color: var(--accent) !important; }
@@ -313,16 +340,11 @@
 /* ===== TEMA CHIARO: colori semantici accentati =====
    Le tinte -400 di Tailwind sono troppo chiare su sfondo bianco.
    Le scuriamo solo in light mode (override più specifico). */
-.light .text-emerald-400 { color: #047857; }
-.light .text-green-400   { color: #15803d; }
-.light .text-green-300   { color: #166534; }
-.light .text-red-400     { color: #dc2626; }
-.light .text-red-300     { color: #b91c1c; }
-.light .text-yellow-400  { color: #b45309; }
-.light .text-yellow-300  { color: #92400e; }
-.light .text-blue-400    { color: #2563eb; }
-.light .text-violet-400  { color: #5d44b0; }
-.light .text-violet-300  { color: #6d28d9; }
+.light .text-emerald-400, .light .text-green-400, .light .text-green-300 { color: var(--up); }
+.light .text-red-400, .light .text-red-300 { color: var(--down); }
+.light .text-yellow-400  { color: #9a6a08; }
+.light .text-yellow-300  { color: #7c5406; }
+.light .text-blue-400, .light .text-violet-400, .light .text-violet-300 { color: var(--accent); }
 
 /* ===== TEMA GLASS (vetro smerigliato stile Apple) =====
    Superfici translucide + blur sopra uno sfondo sfumato che dà profondità. */
@@ -399,9 +421,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   /* Testo netto su retina */
   text-rendering: optimizeLegibility;
-  /* OpenType: 'a'/'g' single-story + alternate (rende Inter più simile a SF) */
-  font-feature-settings: 'cv11' 1, 'ss01' 1, 'cv02' 1, 'cv03' 1, 'cv04' 1;
-  letter-spacing: -0.011em;
+  /* Archivo: forme native, nessuna alternata. */
+  font-feature-settings: normal;
+  letter-spacing: -0.003em;
   /* Cifre tabulari ovunque: in un gestionale le colonne di numeri/€ restano allineate
      (look financial-grade, dettaglio "lusso"). */
   font-variant-numeric: tabular-nums;
@@ -409,7 +431,7 @@ body {
 
 /* Deep-dark: un solo alone viola MOLTO tenue in alto + una vignettatura scura ai bordi.
    Niente neon: dà profondità "premium" senza accendere lo sfondo. */
-html:not(.light):not(.glass) body {
+html.chrome body, html.carbon body, html.lux body {
   background-image:
     radial-gradient(820px 520px at 50% -16%, rgba(107,84,198,0.06), transparent 62%),
     radial-gradient(1200px 1200px at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%);
@@ -417,14 +439,11 @@ html:not(.light):not(.glass) body {
   background-repeat: no-repeat;
 }
 
-/* Titoli — tracking stretto stile SF Pro Display */
-h1, h2, h3, .num { letter-spacing: -0.02em; }
-h1 { letter-spacing: -0.03em; }
-/* DISPLAY serif (Fraunces) sui titoli grandi + wordmark = "status" istituzionale/private-banking.
-   Il serif ha bisogno di più respiro: annulliamo il tracking stretto. I NUMERI restano sempre
-   Inter tabulare (leggibilità dati intatta), anche dentro un titolo serif. */
-h1, h2, .font-display { font-family: var(--font-display); font-optical-sizing: auto; letter-spacing: -0.005em; }
-h1 .num, h2 .num, .font-display .num, .num { font-family: var(--font-sans); letter-spacing: -0.02em; }
+/* Titoli: Archivo allargato e pesante (stampa da scatola); cifre semi-allargate e tabulari. */
+h1, h2, h3 { letter-spacing: -0.015em; }
+h1 { letter-spacing: -0.02em; }
+h1, h2, .font-display { font-family: var(--font-display); font-stretch: 116%; letter-spacing: -0.02em; }
+.num { font-family: var(--font-sans); font-stretch: 106%; letter-spacing: -0.01em; }
 
 /* Scrollbar completamente nascosta (anche su mobile) — lo scroll resta funzionante */
 * { scrollbar-width: none; -ms-overflow-style: none; }
@@ -499,7 +518,7 @@ button:active { opacity: 0.75; }
 .bg-teal-soft { background-color: var(--teal-soft); }
 .ring-teal  { box-shadow: inset 0 0 0 1px var(--teal-line); }
 /* Etichetta di sistema (IN STOCK, ROI...): minuscola, uppercase, kerning largo */
-.sys-label { font-size: 11px; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.14em; font-weight: 700; color: var(--text-faint); }
+.sys-label { font-family: var(--font-mono); font-size: 10px; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; color: var(--text-faint); }
 @media (min-width: 1280px) { .sys-label { font-size: 12.5px; } }
 /* FAB assistente: viola premium con sfumatura che "si muove" (gradiente animato). */
 .fab-violet {
@@ -631,3 +650,48 @@ button, a { touch-action: manipulation; }
   letter-spacing: -0.01em;
 }
 .ios-btn-primary:active { opacity: 0.8; transform: scale(0.98); }
+
+/* ========================================
+   IDENTITÀ "BOX" — tema scuro di default (html.box) e chiaro (html.light)
+   ======================================== */
+/* Wordmark: niente cromo, stampa piena allargata come il logo su una scatola. */
+html.box .txt-chrome, html.light .txt-chrome {
+  background: none; -webkit-text-fill-color: currentColor; color: var(--text); filter: none;
+  font-family: var(--font-display); font-stretch: 125%; font-weight: 900; letter-spacing: -0.03em;
+}
+/* Verdi/rossi/blu di Tailwind sparsi nell'app → colori di crescita/calo e accento del tema. */
+html.box .text-green-400, html.box .text-emerald-400, html.box .text-green-300 { color: var(--up); }
+html.box .text-red-400, html.box .text-red-300 { color: var(--down); }
+html.box .text-blue-400, html.box .text-blue-300, html.box .text-violet-400 { color: rgb(var(--brand-hi-rgb)); }
+html.box .bg-blue-500, html.light .bg-blue-500 { background-color: var(--accent); }
+html.box .bg-\[\#6b54c6\], html.light .bg-\[\#6b54c6\] { background-color: var(--accent); }
+html.box .text-\[\#6b54c6\], html.light .text-\[\#6b54c6\] { color: var(--accent); }
+/* Filo sotto l'header: statico, niente "respiro" luminoso. */
+html.box .lux-underline::after, html.light .lux-underline::after { animation: none; opacity: 1; background: var(--border-2); }
+/* Pulsante assistente: tinta piena dell'accento, senza gradiente animato. */
+html.box .fab-violet, html.light .fab-violet { background: var(--accent); animation: none; }
+
+/* Utility tipografiche */
+.hq-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.hq-wide { font-stretch: 125%; }
+.hq-cond { font-stretch: 85%; }
+
+/* ===== ETICHETTA (firma visiva della home) =====
+   Il riepilogo del periodo è stampato come l'etichetta di una scatola: carta osso,
+   inchiostro grafite, righe a filo e un codice a barre che è il grafico dei giorni. */
+.hq-label {
+  background: var(--paper);
+  color: var(--paper-ink);
+  border-radius: 10px;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 18px 40px -24px rgba(0,0,0,0.6);
+}
+.hq-label .lbl-soft { color: var(--paper-soft); }
+.hq-label .lbl-rule { border-color: var(--paper-line); }
+.hq-label .lbl-up { color: #1c7a4b; }
+.hq-label .lbl-down { color: #b8382a; }
+html.light .hq-label .lbl-up { color: #7fd3a6; }
+html.light .hq-label .lbl-down { color: #ff8a7a; }
+/* Barre del codice a barre: crescono dalla base all'apertura (una volta sola). */
+@keyframes barRise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.hq-bar { transform-origin: bottom; animation: barRise .55s cubic-bezier(.2,.7,.2,1) both; }
+.hq-bar-neg { transform-origin: top; }

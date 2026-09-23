@@ -174,7 +174,7 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)] shrink-0" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
           <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-xl bg-[#8397aa]/15 text-[#8397aa] flex items-center justify-center"><Wand2 size={18} /></span>
+            <span className="w-9 h-9 rounded-xl bg-brand/15 text-brand flex items-center justify-center"><Wand2 size={18} /></span>
             <div className="leading-tight">
               <h3 className="font-extrabold text-[var(--text)]">{t('slot.title')}</h3>
               <p className="text-[11px] text-[var(--text-soft)]">{t('slot.subtitle')}</p>
@@ -186,14 +186,14 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
         {/* Corpo scrollabile */}
         <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-3">
           <input value={lotName} onChange={e => setLotName(e.target.value)} placeholder={t('slot.namePlaceholder')}
-            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3.5 py-3 text-sm outline-none focus:border-[#8397aa]" />
+            className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3.5 py-3 text-sm outline-none focus:border-brand" />
 
           {/* Magazzino / socio del lotto: scegli DOVE finiscono i pezzi (sempre visibile). */}
           {warehouses.length >= 1 && (
             <div>
               <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{t('slot.warehouse')}</label>
               <select value={lotWarehouseId} onChange={e => setLotWarehouseId(e.target.value)}
-                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa]">
+                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-brand">
                 {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
             </div>
@@ -203,19 +203,19 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
             <div>
               <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{t('slot.department')}</label>
               <select value={category} onChange={e => setCategory(e.target.value)}
-                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-2 py-2.5 text-sm outline-none focus:border-[#8397aa]">
+                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-2 py-2.5 text-sm outline-none focus:border-brand">
                 {(categories.length ? categories : ['Carte']).map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
               <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{t('slot.pieces')}</label>
               <input type="number" min={0} max={200} value={qty} onChange={e => setCount(e.target.value)} placeholder="20"
-                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa] num" />
+                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-brand num" />
             </div>
             <div>
               <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-1">{t('slot.paidTotal')}</label>
               <input type="number" step="0.01" value={totalCost} onChange={e => setTotalCost(e.target.value)} placeholder="105"
-                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8397aa] num" />
+                className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-brand num" />
             </div>
           </div>
           {total > 0 && rows.length > 0 && (
@@ -243,9 +243,9 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
                 {r.photo ? <img src={/^https?:\/\//i.test(r.photo) ? `/api/catalog/img?u=${encodeURIComponent(r.photo)}` : r.photo} alt="" className="w-full h-full object-contain" /> : null}
               </div>
               <input value={r.name} onChange={e => updRow(r.id, { name: e.target.value })} onBlur={() => lookupPhoto(r.id, r.name)} placeholder={t('slot.namePh')}
-                className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2.5 py-2 text-xs outline-none focus:border-[#8397aa]" />
+                className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2.5 py-2 text-xs outline-none focus:border-brand" />
               <input value={r.size} onChange={e => updRow(r.id, { size: e.target.value })} placeholder={t('slot.sizePh')}
-                className="w-24 shrink-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-2 text-xs outline-none focus:border-[#8397aa]" />
+                className="w-24 shrink-0 bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-2 py-2 text-xs outline-none focus:border-brand" />
               <button onClick={() => removeRow(r.id)} className="p-1 text-red-400/80 hover:text-red-400 shrink-0"><Trash2 size={14} /></button>
             </div>
           ))}
@@ -259,7 +259,7 @@ export default function SmartLotModal({ apiCall, showToast, onDone, onClose, war
         {/* Footer */}
         <div className="shrink-0 border-t border-[var(--border)] px-5 py-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
           <button onClick={create} disabled={busy || scanning || filled === 0 || !lotName.trim()}
-            className="w-full py-3.5 rounded-2xl bg-[#8397aa] hover:bg-[#6f8394] text-white font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
+            className="w-full py-3.5 rounded-2xl bg-brand hover:bg-brand-lo text-white font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
             {busy ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
             {busy ? t('slot.creating') : `${t('slot.create')} (${filled} ${t('slot.piecesWord')})`}
           </button>
