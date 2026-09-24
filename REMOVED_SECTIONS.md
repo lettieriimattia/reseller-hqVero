@@ -38,4 +38,18 @@ Fatti nel commit "step1: esplora i numeri in dashboard". Punto di ripristino: il
 |---|---|---|---|
 | "Esplora i numeri" (`components/AnalyticsExplorer.tsx`): grafico del periodo, filtri per reparto / piattaforma / brand, età del magazzino | Pagina Analytics, in alto | Dashboard, in alto, subito sotto il saluto | In Analytics, al suo posto, c'è il commento `{/* Spostato: … */}`. Il componente è lo stesso, non è stato duplicato. Nuove funzioni: opzione **Mese** (predefinita: dal giorno 1 all'ultimo del mese corrente, confrontato con tutto il mese precedente) e **Personalizzato** (date Da / A) |
 
-In attesa di conferma, **non ancora tolto**: l'elemento bianco della Dashboard, cioè l'"etichetta" di `components/HomeLedger.tsx`.
+# Step 2 — KPI in Dashboard
+
+Fatto nel commit "step2: kpi dashboard". Punto di ripristino: il commit "pre-step2".
+
+| Sezione | File del componente | Dove si trova ora il codice | Stato |
+|---|---|---|---|
+| Etichetta bianca della Dashboard (profitto netto in grande, 6 caselle ricavi / pezzi / ROI / prezzo medio / giorni medi / acquistato col confronto, codice a barre giornaliero) | `components/HomeLedger.tsx` | `components/_archived/home-etichetta-bianca.tsx.txt`. I calcoli restano in HomeLedger.tsx, senza essere mostrati | Rimosso, recuperabile. Il suo posto l'hanno preso il grafico di "Esplora i numeri" e i 3 KPI qui sotto |
+
+Aggiunto: `components/DashboardKpis.tsx`, con 3 riquadri sotto a "Esplora i numeri":
+- **Ricavo ultimi 3 mesi**: mese corrente + i 2 precedenti, contro i 3 mesi prima;
+- **Ricavo del mese** e **Profitto del mese**: mese corrente, contro il mese precedente.
+
+Riusano i calcoli dei riquadri tolti nella pulizia: `aggregate` e `valueOf`, spostati fuori dal componente in `AnalyticsExplorer.tsx` ed esportati, con la stessa logica. Se un periodo non ha vendite, mostrano "—".
+
+Resta in HomeLedger il selettore Mese / Trimestre / Anno: ora guida solo l'obiettivo, la proiezione e le classifiche sotto.

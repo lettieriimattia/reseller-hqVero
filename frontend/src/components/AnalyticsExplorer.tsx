@@ -6,16 +6,16 @@
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent as RPointerEvent, type KeyboardEvent as RKeyboardEvent } from 'react';
 import { X, ArrowUpRight, ArrowDownRight, RotateCcw, ZoomOut, Package } from 'lucide-react';
 
-interface XProduct {
+export interface XProduct {
   id: string; category?: string; brand: string; name: string; size?: string; status: string;
   purchasePrice: number; salePrice?: number; fees?: number; platform?: string;
   createdAt?: string; soldAt?: string; photos?: string;
 }
 
 type RangeKey = 'month' | '7d' | '30d' | '90d' | '12m' | 'ytd' | 'all' | 'custom';
-type Metric = 'profit' | 'revenue' | 'count' | 'margin' | 'spent';
+export type Metric = 'profit' | 'revenue' | 'count' | 'margin' | 'spent';
 type Dim = 'category' | 'platform' | 'brand';
-type Range = { start: Date; end: Date };
+export type Range = { start: Date; end: Date };
 type Bucket = Range & { label: string; tick: string };
 type Sel = { kind: 'bucket' | 'aging'; i: number } | null;
 
@@ -61,8 +61,26 @@ function firstPhoto(p: XProduct): string | null {
   } catch { return null; }
 }
 
+// Somme di un periodo sulla quota dell'utente: vendite (profitto, ricavi, pezzi) per data di
+// vendita, acquisti (acquistato) per data d'inserimento.
+export type Agg = { profit: number; revenue: number; count: number; spent: number };
+export function aggregate(items: XProduct[], soldRange: Range, boughtRange: Range, myProfitFactor: (p: any) => number, myCostFactor: (p: any) => number): Agg {
+  const a: Agg = { profit: 0, revenue: 0, count: 0, spent: 0 };
+  items.forEach(p => {
+    if (p.status === 'VENDUTO' && p.soldAt && inR(dateOf(p.soldAt), soldRange)) {
+      const f = myProfitFactor(p);
+      a.profit += ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)) * f;
+      a.revenue += (p.salePrice || 0) * f;
+      a.count++;
+    }
+    if (p.createdAt && inR(dateOf(p.createdAt), boughtRange)) a.spent += p.purchasePrice * myCostFactor(p);
+  });
+  return a;
+}
+export const valueOf = (a: Agg, m: Metric): number | null => (m === 'margin' ? (a.revenue > 0 ? (a.profit / a.revenue) * 100 : null) : a[m]);
+
 // Numero che "scorre" verso il nuovo valore quando cambi periodo/filtro.
-function useCountUp(value: number) {
+export function useCountUp(value: number) {
   const [v, setV] = useState(value);
   const cur = useRef(value);
   useEffect(() => {
@@ -181,16 +199,7 @@ export default function AnalyticsExplorer({ products, myProfitFactor, myCostFact
   const relevant = (p: XProduct) => (usesPurchases ? !!p.createdAt : isSold(p));
   const when = (p: XProduct) => (usesPurchases ? dateOf(p.createdAt) : dateOf(p.soldAt));
 
-  type Agg = { profit: number; revenue: number; count: number; spent: number };
-  const agg = (items: XProduct[], soldRange: Range, boughtRange: Range): Agg => {
-    const a: Agg = { profit: 0, revenue: 0, count: 0, spent: 0 };
-    items.forEach(p => {
-      if (isSold(p) && inR(dateOf(p.soldAt), soldRange)) { a.profit += profitOf(p); a.revenue += revenueOf(p); a.count++; }
-      if (p.createdAt && inR(dateOf(p.createdAt), boughtRange)) a.spent += spentOf(p);
-    });
-    return a;
-  };
-  const valueOf = (a: Agg, m: Metric): number | null => (m === 'margin' ? (a.revenue > 0 ? (a.profit / a.revenue) * 100 : null) : a[m]);
+  const agg = (items: XProduct[], soldRange: Range, boughtRange: Range): Agg => aggregate(items, soldRange, boughtRange, myProfitFactor, myCostFactor);
 
   const pool = products.filter(p => matches(p));
   const cur = agg(pool, range, range);

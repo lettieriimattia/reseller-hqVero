@@ -1,0 +1,84 @@
+// ARCHIVIO — Etichetta bianca della Dashboard (profitto netto, 6 caselle con confronto, codice a barre giornaliero)
+// Blocco JSX tolto da components/HomeLedger.tsx (righe 254-332 al commit "pre-step2").
+// I calcoli (data, cells, profitDelta, bars…) restano in HomeLedger.tsx, non mostrati.
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato. Vedi REMOVED_SECTIONS.md.
+
+        {/* ===== ETICHETTA ===== */}
+        <section className="hq-label lg:col-span-8 p-4 sm:p-5 lg:p-6 flex flex-col" aria-label={t('home.netProfit')}>
+          <div className="flex items-start justify-between gap-3 hq-mono text-[10px] sm:text-[10.5px] uppercase tracking-[0.06em] lbl-soft">
+            <span>{t('home.netProfit')}{data.shared ? ` · ${t('home.yourShare')}` : ''}</span>
+            <span className="text-right">{periodTitle}</span>
+          </div>
+
+          <div className="flex items-end justify-between gap-3 mt-2 sm:mt-3">
+            <p className="font-display hq-wide font-black leading-[0.9] tracking-[-0.035em] text-[44px] sm:text-[60px] lg:text-[72px] num" style={{ fontStretch: '125%' }}>
+              {eur(cur.profit)}
+            </p>
+            <div className="text-right pb-1 shrink-0">
+              <div className="text-[15px] sm:text-[17px]"><Delta v={profitDelta} /></div>
+              <p className="hq-mono text-[9.5px] sm:text-[10px] lbl-soft mt-1 normal-case">{compareText}</p>
+            </div>
+          </div>
+
+          {/* Celle metriche: come le colonne taglia US/UK/EU di un'etichetta. */}
+          <div className="grid grid-cols-3 sm:grid-cols-6 mt-4 sm:mt-5 border-t border-l lbl-rule">
+            {cells.map(c => (
+              <div key={c.label} className="border-r border-b lbl-rule px-2.5 py-2 sm:py-2.5 min-w-0">
+                <p className="hq-mono text-[8.5px] sm:text-[9px] uppercase tracking-[0.05em] lbl-soft truncate">{c.label}</p>
+                <p className="num font-bold text-[15px] sm:text-[16px] mt-1 truncate">{c.value}</p>
+                <p className="text-[11px] mt-0.5 truncate">{c.delta}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Codice a barre = profitto per giorno (settimana nella vista anno). */}
+          {hasAdvanced ? (
+            <div className="mt-4 sm:mt-5 flex-1 flex flex-col">
+              <div className="relative flex-1 flex flex-col" onMouseLeave={() => setHover(null)}>
+                {hoverBar && (
+                  <div className="absolute -top-1 z-10 pointer-events-none px-2 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap"
+                    style={{ background: 'var(--paper-ink)', color: 'var(--paper)', left: `${Math.min(85, Math.max(15, ((hoverBar.i + 0.5) / data.bars.length) * 100))}%`, transform: 'translate(-50%, -100%)' }}>
+                    {data.step === 7 ? `${fmtDay(barDate(hoverBar.i))} →` : fmtDay(barDate(hoverBar.i))} · {hoverBar.count} {t('home.salesWord')} · {eur(hoverBar.profit)}
+                  </div>
+                )}
+                <div className="flex-1 min-h-[88px] flex items-end gap-[2px] sm:gap-[3px]"
+                  role="img" aria-label={`${t('home.barcodeAria')}. ${best && best.profit > 0 ? `${t('home.bestDay')}: ${fmtDay(barDate(best.i))} ${eur(best.profit)}` : t('home.noSales')}`}>
+                  {data.bars.map(b => {
+                    const future = b.i >= futureFrom;
+                    const h = b.profit > 0 ? `max(4px, ${(b.profit / maxPos) * 100}%)` : '3px';
+                    const gh = b.prevProfit > 0 ? `${(b.prevProfit / maxPos) * 100}%` : '';
+                    return (
+                      <div key={b.i} className="relative flex-1 h-full flex items-end justify-center cursor-default"
+                        onMouseEnter={() => !future && setHover(b.i)}>
+                        {gh && <span className="absolute bottom-0 inset-x-0 rounded-[1px]" style={{ height: gh, background: 'var(--paper-ghost)' }} />}
+                        {future
+                          ? <span className="relative w-full rounded-[1px]" style={{ height: 3, background: 'var(--paper-line)' }} />
+                          : <span className="hq-bar relative w-[58%] min-w-[2px] rounded-[1px]"
+                              style={{ height: h, background: b.profit > 0 ? 'var(--paper-ink)' : 'var(--paper-soft)', opacity: hover != null && hover !== b.i ? 0.45 : 1, animationDelay: `${Math.min(b.i, 60) * 8}ms` }} />}
+                      </div>
+                    );
+                  })}
+                </div>
+                {negH > 0 && (
+                  <div className="flex items-start gap-[2px] sm:gap-[3px] border-t lbl-rule" style={{ height: negH }} aria-hidden="true">
+                    {data.bars.map(b => (
+                      <div key={b.i} className="flex-1 flex justify-center">
+                        {b.profit < 0 && <span className="hq-bar hq-bar-neg w-[58%] min-w-[2px] rounded-[1px] lbl-down" style={{ height: Math.max(3, (-b.profit / maxNeg) * negH), background: 'currentColor' }} />}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center justify-between gap-2 mt-2 hq-mono text-[9px] sm:text-[9.5px] uppercase tracking-[0.05em] lbl-soft">
+                <span>{fmtDay(start)}</span>
+                <span className="truncate">{code} · {isCurrent ? `${elapsedDays}/${totalDays}` : totalDays} {t('home.daysShort')}{cur.count === 0 ? ` · ${t('home.noSales')}` : ''}</span>
+                <span>{fmtDay(new Date(end.getTime() - DAY))}</span>
+              </div>
+            </div>
+          ) : (
+            <button onClick={props.onUpgrade} className="mt-4 sm:mt-5 flex items-center justify-between gap-3 border lbl-rule rounded-lg px-3 py-3 text-left">
+              <span className="flex items-center gap-2 text-[12.5px] font-semibold"><Lock size={14} /> {t('home.unlock')}</span>
+              <span className="hq-mono text-[10px] uppercase tracking-[0.05em]">{t('home.unlockCta')} →</span>
+            </button>
+          )}
+        </section>

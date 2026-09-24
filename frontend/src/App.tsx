@@ -13,6 +13,7 @@ import { getLang, setLangStorage, translate, LANGUAGES, MARKETPLACE_ENABLED, typ
 import HomeLedger from './components/HomeLedger';
 import AllocationPie3D from './components/AllocationPie3D';
 import AnalyticsExplorer from './components/AnalyticsExplorer';
+import DashboardKpis from './components/DashboardKpis';
 import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
@@ -5582,6 +5583,9 @@ export default function App() {
             {/* ESPLORA I NUMERI: grafico del periodo col confronto sul precedente, filtri incrociati, pezzi */}
             <AnalyticsExplorer products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
               getCategoryIcon={getCategoryIcon} fullName={fullName} onOpenProduct={openEditPiece} />
+
+            {/* KPI: ricavo ultimi 3 mesi, ricavo e profitto del mese, col confronto */}
+            <DashboardKpis products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale} />
 
             {/* HOME "A ETICHETTA": periodo (mese/trimestre/anno) confrontato col precedente,
                 codice a barre giornaliero, obiettivo + proiezione, coda Da fare, classifiche. */}

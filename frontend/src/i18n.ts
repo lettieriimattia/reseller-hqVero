@@ -37,6 +37,7 @@ const it: Dict = {
   'dash.personal': 'Personale',
   // Esplora i numeri (AnalyticsExplorer)
   'ex.title': 'Esplora i numeri',
+  'kpi.rev3m': 'Ricavo ultimi 3 mesi', 'kpi.revMonth': 'Ricavo del mese', 'kpi.profitMonth': 'Profitto del mese', 'kpi.vs': 'vs',
   'ex.r.month': 'Mese', 'ex.r.custom': 'Personalizzato', 'ex.from': 'Da', 'ex.to': 'A',
   'ex.period': 'Periodo',
   'ex.metric': 'Metrica',
@@ -2057,6 +2058,7 @@ const de: Dict = {
 const enExtra: Dict = {
   // Analytics explorer
   'ex.title': 'Explore your numbers',
+  'kpi.rev3m': 'Revenue, last 3 months', 'kpi.revMonth': 'Revenue this month', 'kpi.profitMonth': 'Profit this month', 'kpi.vs': 'vs',
   'ex.r.month': 'Month', 'ex.r.custom': 'Custom', 'ex.from': 'From', 'ex.to': 'To',
   'ex.period': 'Period',
   'ex.metric': 'Metric',
