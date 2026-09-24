@@ -1,15 +1,13 @@
-// AllocationPie3D — torta tridimensionale della composizione per reparto.
-// Due criteri: CAPITALE (€ di costo d'acquisto, sulla mia quota) e QUANTITÀ (numero di pezzi);
-// due ambiti: pezzi ancora IN MAGAZZINO oppure TUTTI gli acquisti. Cambiando criterio le fette
-// si trasformano con un'animazione; passando sopra una fetta (o sulla riga della tabella) la
-// fetta si solleva e il riquadro a lato mostra il dettaglio.
-// Il colore segue il REPARTO, non la posizione: resta lo stesso quando cambi criterio/ambito.
+// AllocationPie3D — torta 3D del MAGAZZINO ATTUALE (solo pezzi IN STOCK oggi), divisa per reparto.
+// Due torte, a scelta: CAPITALE (quanto ho pagato IO, cioè costo d'acquisto × mia quota) e QUANTITÀ
+// (numero di pezzi). Al centro il totale del magazzino; toccando una fetta (o la riga del reparto)
+// la fetta si solleva e a lato compaiono valore, pezzi e % sul totale.
+// Il colore segue il REPARTO, non la posizione: resta lo stesso quando cambi torta.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 interface PieProduct { category?: string; purchasePrice: number; status: string }
 
 type Criterion = 'capital' | 'qty';
-type Scope = 'stock' | 'all';
 
 interface Props {
   products: PieProduct[];
@@ -32,36 +30,45 @@ const reducedMotion = () => {
 
 export default function AllocationPie3D({ products, myCostFactor, t, dateLocale, getCategoryIcon }: Props) {
   const [criterion, setCriterion] = useState<Criterion>('capital');
-  const [scope, setScope] = useState<Scope>('stock');
   const [hover, setHover] = useState<string | null>(null);
+  const boxRef = useRef<HTMLElement>(null);
+  // Tocco fuori dalla torta → chiude il dettaglio del reparto (utile col dito, dove non c'è "mouse che esce").
+  useEffect(() => {
+    if (!hover) return;
+    const out = (e: PointerEvent) => { if (boxRef.current && !boxRef.current.contains(e.target as Node)) setHover(null); };
+    document.addEventListener('pointerdown', out);
+    return () => document.removeEventListener('pointerdown', out);
+  }, [hover]);
 
   const eur = (n: number) => new Intl.NumberFormat(dateLocale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0, useGrouping: 'always' as any }).format(Math.round(n) || 0);
   const int = (n: number) => new Intl.NumberFormat(dateLocale, { maximumFractionDigits: 0, useGrouping: 'always' as any }).format(Math.round(n) || 0);
-  const fmt = (v: number) => (criterion === 'capital' ? eur(v) : `${int(v)} ${Math.round(v) === 1 ? t('pie.pc') : t('pie.pcs')}`);
+  const pcs = (v: number) => `${int(v)} ${Math.round(v) === 1 ? t('pie.pc') : t('pie.pcs')}`;
+  const fmt = (v: number) => (criterion === 'capital' ? eur(v) : pcs(v));
 
-  // Ordine STABILE dei reparti (per capitale su tutti gli acquisti): decide colore e chi finisce in "Altro".
+  const stock = useMemo(() => products.filter(p => p.status === 'IN STOCK'), [products]);
+  // Ordine STABILE dei reparti (per capitale in magazzino): decide colore e chi finisce in "Altro".
   const ranking = useMemo(() => {
     const tot: Record<string, number> = {};
-    products.forEach(p => { const c = p.category || '—'; tot[c] = (tot[c] || 0) + (p.purchasePrice || 0); });
+    stock.forEach(p => { const c = p.category || '—'; tot[c] = (tot[c] || 0) + (p.purchasePrice || 0); });
     return Object.keys(tot).sort((a, b) => tot[b] - tot[a] || a.localeCompare(b));
-  }, [products]);
+  }, [stock]);
   const named = ranking.slice(0, MAX_NAMED);
   const colorOf = (key: string) => (key === OTHER ? 'var(--series-other)' : `var(--series-${named.indexOf(key) + 1})`);
   const labelOf = (key: string) => (key === OTHER ? t('pie.other') : key);
 
-  // Valori bersaglio per il criterio/ambito scelto.
-  const target = useMemo(() => {
-    const v: Record<string, number> = {};
-    products
-      .filter(p => (scope === 'stock' ? p.status === 'IN STOCK' : true))
-      .forEach(p => {
-        const c = p.category || '—';
-        const key = named.includes(c) ? c : OTHER;
-        v[key] = (v[key] || 0) + (criterion === 'capital' ? (p.purchasePrice || 0) * myCostFactor(p) : 1);
-      });
-    return v;
+  // Per ogni reparto: capitale (quanto ho pagato io) e numero di pezzi in magazzino.
+  const { cap, qty } = useMemo(() => {
+    const c: Record<string, number> = {}, q: Record<string, number> = {};
+    stock.forEach(p => {
+      const cat = p.category || '—';
+      const key = named.includes(cat) ? cat : OTHER;
+      c[key] = (c[key] || 0) + (p.purchasePrice || 0) * myCostFactor(p);
+      q[key] = (q[key] || 0) + 1;
+    });
+    return { cap: c, qty: q };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products, criterion, scope, named.join('|')]);
+  }, [stock, named.join('|')]);
+  const target = criterion === 'capital' ? cap : qty;
 
   // Animazione: i valori mostrati inseguono il bersaglio (fette che si trasformano).
   const [shown, setShown] = useState<Record<string, number>>(() => {
@@ -167,7 +174,7 @@ export default function AllocationPie3D({ products, myCostFactor, t, dateLocale,
       <path key={`t-${s.key}`} d={topPath(s.a1, s.a2)} fill={fill} transform={liftOf(s)} opacity={dim}
         stroke="var(--surface)" strokeWidth={slices.length > 1 ? 1.5 : 0} strokeLinejoin="round"
         style={{ cursor: 'pointer', transition: 'opacity .2s' }}
-        onMouseEnter={() => setHover(s.key)} onClick={() => setHover(h => (h === s.key ? null : s.key))} />
+        onMouseEnter={() => setHover(s.key)} onClick={() => setHover(s.key)} />
     );
   };
   // Prima tutte le pareti, poi tutti i piani; la fetta sollevata per ultima (sta "sopra").
@@ -184,7 +191,7 @@ export default function AllocationPie3D({ products, myCostFactor, t, dateLocale,
   );
 
   return (
-    <section className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-5">
+    <section ref={boxRef} className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-5">
       <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div>
           <h3 className="font-bold text-lg">{t('pie.title')}</h3>
@@ -192,7 +199,6 @@ export default function AllocationPie3D({ products, myCostFactor, t, dateLocale,
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Seg value={t('pie.criterion')} cur={criterion} set={setCriterion} opts={[['capital', t('pie.capital')], ['qty', t('pie.qty')]]} />
-          <Seg value={t('pie.scope')} cur={scope} set={setScope} opts={[['stock', t('pie.stock')], ['all', t('pie.all')]]} />
         </div>
       </div>
 
@@ -223,6 +229,12 @@ export default function AllocationPie3D({ products, myCostFactor, t, dateLocale,
               <path d={topPath(-Math.PI / 2, Math.PI * 1.5)} fill="url(#pie-gloss)" pointerEvents="none" />
               {lifted.map(s => drawSlice(s, 'wall'))}
               {lifted.map(s => drawSlice(s, 'top'))}
+              {/* Al centro: il totale del magazzino */}
+              <g pointerEvents="none">
+                <rect x={CX - 62} y={CY - 25} width={124} height={46} rx={12} fill="var(--surface)" opacity={0.9} />
+                <text x={CX} y={CY - 7} textAnchor="middle" fontSize={8.5} fontWeight={700} letterSpacing={0.8} fill="var(--text-faint)">{t('pie.centerLabel').toUpperCase()}</text>
+                <text x={CX} y={CY + 13} textAnchor="middle" fontSize={19} fontWeight={900} fill="var(--text)" style={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(total)}</text>
+              </g>
             </svg>
           </div>
 
@@ -233,8 +245,10 @@ export default function AllocationPie3D({ products, myCostFactor, t, dateLocale,
               <p className="num font-black text-[28px] leading-tight font-display" style={{ fontStretch: '118%' }}>
                 {fmt(focus ? target[focus] : total)}
               </p>
-              <p className="text-[12.5px] text-[var(--text-soft)] mt-0.5">
-                {focus ? `${Math.round((target[focus] / total) * 100)}% ${t('pie.ofTotal')}` : t('pie.hint')}
+              <p className="text-[12.5px] text-[var(--text-soft)] mt-0.5 num">
+                {focus
+                  ? `${criterion === 'capital' ? pcs(qty[focus] || 0) : eur(cap[focus] || 0)} · ${Math.round((target[focus] / total) * 100)}% ${t('pie.ofTotal')}`
+                  : t('pie.hint')}
               </p>
             </div>
             {/* Tabella: identità mai affidata al solo colore */}
@@ -242,6 +256,7 @@ export default function AllocationPie3D({ products, myCostFactor, t, dateLocale,
               {rows.map(([k, v]) => (
                 <li key={k}>
                   <button onMouseEnter={() => setHover(k)} onMouseLeave={() => setHover(null)} onFocus={() => setHover(k)} onBlur={() => setHover(null)}
+                    onClick={() => setHover(k)} aria-pressed={hover === k}
                     className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left transition-colors ${hover === k ? 'bg-[var(--fill-2)]' : 'hover:bg-[var(--fill)]'}`}>
                     <span className="w-3 h-3 rounded-[3px] shrink-0" style={{ background: colorOf(k) }} />
                     {k !== OTHER && <span className="text-[var(--text-soft)] text-[13px] shrink-0">{getCategoryIcon(k)}</span>}

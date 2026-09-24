@@ -143,3 +143,20 @@ Aggiunto: `components/ProfitRevenueBlock.tsx`, il blocco unico in cima alla Dash
 - Toccando una barra compare l'elenco dei pezzi, raggruppato come nello step 5.
 
 Calcoli: riusano `aggregate` e `SelectionList`, esportati da `AnalyticsExplorer.tsx`. Verificati barra per barra con un calcolo indipendente sui dati grezzi, sia con dati di prova (casi limite di orario inclusi) sia con i dati veri dell'account demo: **0 differenze**.
+
+# Step 7 — Torta Analytics: solo magazzino attuale
+
+Fatto nel commit "step7: torta solo magazzino". Punto di ripristino: il commit "pre-step7 torta analytics".
+
+| Sezione | Dove stava | Dove si trova ora il codice | Stato |
+|---|---|---|---|
+| Selettore "In magazzino / Tutti gli acquisti" della torta 3D (ambito "Tutti gli acquisti") | `components/AllocationPie3D.tsx`, Analytics | `components/_archived/torta-ambito-tutti-acquisti.tsx.txt` | Rimosso. **I dati di acquisti e vendite non sono stati toccati**: restano nel database per il resto delle Analytics |
+
+Com'è ora la torta ("Magazzino per reparto"):
+- **Cosa conta**: solo i pezzi IN STOCK oggi, divisi per reparto. Anche l'ordine dei colori e il gruppo "Altro" ora si calcolano sul magazzino.
+- **Due torte**, a scelta dell'utente, che ha chiesto di tenerle entrambe:
+  - **Capitale**: quanto ha pagato l'utente, cioè costo d'acquisto × la sua quota, non il costo pieno dei pezzi in società;
+  - **Quantità**: numero di pezzi.
+- **Al centro**: il totale del magazzino ("In magazzino 1.620 €" oppure "6 pezzi").
+- **Toccando una fetta o la riga del reparto**: valore, numero di pezzi e % sul totale. Toccando fuori si chiude.
+- Verificata sui dati grezzi dell'account demo: 0 differenze.

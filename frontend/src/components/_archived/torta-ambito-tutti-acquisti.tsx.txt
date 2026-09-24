@@ -1,0 +1,22 @@
+// ARCHIVIO — Torta 3D in Analytics: ambito "Tutti gli acquisti" (selettore In magazzino / Tutti gli acquisti).
+// Motivo (step 7): la torta mostra SOLO il magazzino attuale. Dati di acquisti e vendite NON toccati.
+// Righe di components/AllocationPie3D.tsx al commit "pre-step7 torta analytics". Non compilato (.txt). Vedi REMOVED_SECTIONS.md.
+
+// Stato dell'ambito (riga 35):
+  const [scope, setScope] = useState<Scope>('stock');
+
+// Ordine dei reparti calcolato su TUTTI gli acquisti (righe 42-47):
+  // Ordine STABILE dei reparti (per capitale su tutti gli acquisti): decide colore e chi finisce in "Altro".
+  const ranking = useMemo(() => {
+    const tot: Record<string, number> = {};
+    products.forEach(p => { const c = p.category || '—'; tot[c] = (tot[c] || 0) + (p.purchasePrice || 0); });
+    return Object.keys(tot).sort((a, b) => tot[b] - tot[a] || a.localeCompare(b));
+  }, [products]);
+
+// Filtro per ambito (righe 55-57):
+    products
+      .filter(p => (scope === 'stock' ? p.status === 'IN STOCK' : true))
+      .forEach(p => {
+
+// Selettore ambito (riga 195):
+          <Seg value={t('pie.scope')} cur={scope} set={setScope} opts={[['stock', t('pie.stock')], ['all', t('pie.all')]]} />
