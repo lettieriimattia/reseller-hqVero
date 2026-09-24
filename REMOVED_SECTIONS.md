@@ -107,3 +107,19 @@ Restano, perché non sono il tracking:
 ⚠️ Cose lato server rimaste attive (non toccate, perché lo step riguardava solo l'interfaccia):
 - **Aggiornamento automatico del tracking**: in `src/services/tracking.service.ts`, sui pezzi che hanno già un codice. Quando un pacco risulta consegnato, invia la notifica "📦 Spedizione consegnata!" (tipo SALE) e l'email, e segna il pezzo come VENDUTO.
 - **Strumento `aggiungi_tracking` dell'assistente in chat**: può ancora salvare un codice.
+
+# Step 5 — Dashboard solo ricavi e profitti
+
+Fatto nel commit "step5: dashboard solo ricavi e profitti". Punto di ripristino: il commit "pre-step5".
+
+| Sezione | Dove stava | Dove si trova ora il codice | Stato |
+|---|---|---|---|
+| Età del magazzino, con il totale "In magazzino" (capitale per fasce 0–30 / 31–60 / 61–90 / 90+ giorni). In passato era stata tenuta, ora va tolta | `components/AnalyticsExplorer.tsx`, Dashboard | `components/_archived/dashboard-eta-magazzino.tsx.txt`. I calcoli (`aging`, `stockCap`) restano nel componente | Rimosso, recuperabile. Candidata per Analytics |
+
+Correzione di un errore dello step 4: il blocco **"Dal catalogo"**, cioè la striscia di prodotti del catalogo in fondo alla Dashboard, era finito per sbaglio nel taglio di "Spedizioni in corso". Non è tracking, quindi è stato **ripristinato** in `App.tsx`. Nell'archivio del tracking resta solo come traccia, segnalato da una nota.
+
+Migliorato nello stesso step, su richiesta dell'utente: l'elenco che compare toccando una barra di "Esplora i numeri" ora **raggruppa i prodotti identici** (stessa marca e stesso nome). Esempio: "20× Yeezy Boost 350 V2 Bone · 190 € cad. · totale 3.800 €". Se i prezzi sono diversi, mostra la media con minimo e massimo. Toccando la riga si aprono i singoli pezzi.
+
+# IDEE FUTURE PER ANALYTICS
+
+- "Valore magazzino al costo, cumulato mese per mese, per vedere la crescita del patrimonio (es. marzo 10k → giugno 15k). Da ricostruire con data acquisto/data vendita dei pezzi."

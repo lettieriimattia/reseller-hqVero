@@ -4,7 +4,7 @@
 // tutto il resto) → età del magazzino (tocca una fascia per i pezzi fermi).
 // Importi sulla quota dell'utente, come la home.
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent as RPointerEvent, type KeyboardEvent as RKeyboardEvent } from 'react';
-import { X, ArrowUpRight, ArrowDownRight, RotateCcw, ZoomOut, Package } from 'lucide-react';
+import { X, ArrowUpRight, ArrowDownRight, RotateCcw, ZoomOut, Package, ChevronDown } from 'lucide-react';
 
 export interface XProduct {
   id: string; category?: string; brand: string; name: string; size?: string; status: string;
@@ -434,7 +434,7 @@ export default function AnalyticsExplorer({ products, myProfitFactor, myCostFact
       {/* Pezzi della selezione */}
       {sel && (
         <SelectionList title={selTitle} items={selItems} metric={itemMetric} fmt={fmt} t={t} sortBy={sortBy} setSortBy={setSortBy}
-          shown={shown} setShown={setShown} onClose={() => setSel(null)} onOpen={onOpenProduct} fullName={fullName} dShort={dShort} />
+          shown={shown} setShown={setShown} onClose={() => setSel(null)} onOpen={onOpenProduct} fullName={fullName} dShort={dShort} dateLocale={dateLocale} />
       )}
 
       {/* Classifiche: tocca per filtrare tutto */}
@@ -481,50 +481,7 @@ export default function AnalyticsExplorer({ products, myProfitFactor, myCostFact
         })}
       </div>
 
-      {/* Età del magazzino */}
-      <div className="bg-[var(--surface-2)] border border-[var(--border)] rounded-xl p-3 sm:p-4">
-        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold">{t('ex.aging')}</p>
-            <p className="text-[11px] text-[var(--text-soft)] mt-0.5">{t('ex.agingSub')}</p>
-          </div>
-          <p className="text-sm"><span className="text-[var(--text-faint)] text-xs">{t('ex.stockCap')} </span><span className="font-extrabold num">{eur(stockCap)}</span></p>
-        </div>
-        {stockCap <= 0 ? (
-          <p className="text-xs text-[var(--text-soft)]">{t('ex.noStock')}</p>
-        ) : (
-          <>
-            <div className="flex h-9 rounded-lg overflow-hidden gap-[2px]">
-              {aging.map((b, i) => b.capital > 0 && (
-                <button key={b.label} onClick={() => setSel(s => (s?.kind === 'aging' && s.i === i ? null : { kind: 'aging', i }))}
-                  aria-pressed={sel?.kind === 'aging' && sel.i === i}
-                  title={`${b.label} ${t('ex.days')} · ${eur(b.capital)} · ${pcs(b.items.length)}`}
-                  className="h-full transition-all duration-300 hover:brightness-110 motion-reduce:transition-none"
-                  style={{
-                    width: `${(b.capital / stockCap) * 100}%`, minWidth: 6,
-                    background: `color-mix(in srgb, var(--accent) ${[30, 55, 78, 100][i]}%, var(--surface))`,
-                    outline: sel?.kind === 'aging' && sel.i === i ? '2px solid var(--text)' : undefined, outlineOffset: -2,
-                    opacity: sel?.kind === 'aging' && sel.i !== i ? 0.45 : 1,
-                  }} />
-              ))}
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-              {aging.map((b, i) => (
-                <button key={b.label} onClick={() => b.items.length && setSel(s => (s?.kind === 'aging' && s.i === i ? null : { kind: 'aging', i }))}
-                  disabled={!b.items.length}
-                  className={`text-left rounded-lg px-2.5 py-2 border transition-colors disabled:opacity-40 ${sel?.kind === 'aging' && sel.i === i ? 'border-brand/50 bg-brand/10' : 'border-[var(--border)] hover:border-[var(--border-2)]'}`}>
-                  <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-soft)]">
-                    <span className="w-2.5 h-2.5 rounded-[2px]" style={{ background: `color-mix(in srgb, var(--accent) ${[30, 55, 78, 100][i]}%, var(--surface))` }} />
-                    {b.label} {t('ex.days')}
-                  </span>
-                  <span className="block font-extrabold num text-sm mt-0.5">{eur(b.capital)}</span>
-                  <span className="block text-[10px] text-[var(--text-faint)]">{pcs(b.items.length)}</span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+      {/* Rimosso: Età del magazzino → components/_archived/dashboard-eta-magazzino.tsx.txt (vedi REMOVED_SECTIONS.md) */}
     </section>
   );
 }
@@ -565,18 +522,53 @@ function MetricTile({ m, active, onClick, value, prev, spark, label, fmt, t, sub
   );
 }
 
-function SelectionList({ title, items, metric, fmt, t, sortBy, setSortBy, shown, setShown, onClose, onOpen, fullName, dShort }: {
-  title: string; items: { p: XProduct; v: number; d: Date | null }[]; metric: Metric;
+type SelItem = { p: XProduct; v: number; d: Date | null };
+
+// Elenco dei pezzi di una barra: i prodotti IDENTICI (stessa marca + stesso nome) diventano una riga
+// sola — "20× Yeezy … · 190 € cad. · totale 3.800 €". Toccando la riga si aprono i singoli pezzi.
+function SelectionList({ title, items, metric, fmt, t, sortBy, setSortBy, shown, setShown, onClose, onOpen, fullName, dShort, dateLocale }: {
+  title: string; items: SelItem[]; metric: Metric;
   fmt: (m: Metric, v: number | null) => string; t: (k: string) => string;
   sortBy: 'value' | 'date'; setSortBy: (s: 'value' | 'date') => void; shown: number; setShown: (n: number) => void;
   onClose: () => void; onOpen: (id: string) => void; fullName: (b?: string, n?: string) => string; dShort: (d: Date) => string;
+  dateLocale: string;
 }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const isCost = metric === 'spent';
+  const priceOf = (p: XProduct) => (isCost ? p.purchasePrice : p.salePrice) || 0;
+  const eur = (n: number) => new Intl.NumberFormat(dateLocale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0, useGrouping: 'always' as any }).format(Math.round(n) || 0);
+  const keyOf = (p: XProduct) => `${(p.brand || '').trim().toLowerCase()}|${(p.name || '').trim().toLowerCase()}`;
+  const map = new Map<string, SelItem[]>();
+  items.forEach(it => { const k = keyOf(it.p); map.set(k, [...(map.get(k) || []), it]); });
+  const groups = [...map.entries()].map(([k, list]) => {
+    const prices = list.map(x => priceOf(x.p));
+    const total = prices.reduce((a, b) => a + b, 0);
+    return {
+      k, list, first: list[0].p, n: list.length,
+      value: list.reduce((a, x) => a + x.v, 0),
+      last: Math.max(...list.map(x => x.d?.getTime() || 0)),
+      min: Math.min(...prices), max: Math.max(...prices), total, avg: total / list.length,
+    };
+  }).sort((a, b) => (sortBy === 'value' ? b.value - a.value : b.last - a.last));
+  type Group = typeof groups[number];
+  // Per il margine il valore del gruppo è la media, per il resto la somma.
+  const groupValue = (g: Group) => (metric === 'margin' ? g.value / g.n : g.value);
+  const priceLine = (g: Group) => {
+    const pre = isCost ? `${t('ex.costWord')} ` : '';
+    const unit = g.min === g.max
+      ? `${pre}${eur(g.min)} ${t('ex.each')}`
+      : `${pre}${t('ex.avg')} ${eur(g.avg)} (${eur(g.min)}–${eur(g.max)})`;
+    return g.n > 1 ? `${unit} · ${t('ex.total')} ${eur(g.total)}` : unit;
+  };
   return (
     <div className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-[var(--border)]">
         <div className="min-w-0">
           <p className="text-sm font-bold truncate">{title}</p>
-          <p className="text-[11px] text-[var(--text-faint)]">{items.length} {items.length === 1 ? t('ex.pc') : t('ex.pcs')}</p>
+          <p className="text-[11px] text-[var(--text-faint)]">
+            {items.length} {items.length === 1 ? t('ex.pc') : t('ex.pcs')}
+            {groups.length !== items.length && <> · {groups.length} {groups.length === 1 ? t('ex.product') : t('ex.products')}</>}
+          </p>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {(['value', 'date'] as const).map(s => (
@@ -585,31 +577,54 @@ function SelectionList({ title, items, metric, fmt, t, sortBy, setSortBy, shown,
           <button onClick={onClose} aria-label={t('ex.close')} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-[var(--fill)] text-[var(--text-soft)]"><X size={15} /></button>
         </div>
       </div>
-      {items.length === 0 ? (
+      {groups.length === 0 ? (
         <p className="text-xs text-[var(--text-soft)] px-3 py-4">{t('ex.noItems')}</p>
       ) : (
-        <ul className="divide-y divide-[var(--border)] max-h-[360px] overflow-y-auto">
-          {items.slice(0, shown).map(({ p, v, d }) => {
-            const ph = firstPhoto(p);
+        <ul className="divide-y divide-[var(--border)] max-h-[420px] overflow-y-auto">
+          {groups.slice(0, shown).map(g => {
+            const ph = firstPhoto(g.first);
+            const multi = g.n > 1;
+            const isOpen = open === g.k;
+            const gv = groupValue(g);
             return (
-              <li key={p.id}>
-                <button onClick={() => onOpen(p.id)} className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-[var(--fill)] transition-colors">
-                  <span className="w-9 h-9 rounded-md bg-[var(--fill)] overflow-hidden shrink-0 flex items-center justify-center">
+              <li key={g.k}>
+                <button onClick={() => (multi ? setOpen(isOpen ? null : g.k) : onOpen(g.first.id))} aria-expanded={multi ? isOpen : undefined}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-[var(--fill)] transition-colors">
+                  <span className="w-10 h-10 rounded-md bg-[var(--fill)] overflow-hidden shrink-0 flex items-center justify-center">
                     {ph ? <img src={ph} alt="" className="w-full h-full object-cover" loading="lazy" /> : <Package size={15} className="text-[var(--text-faint)]" />}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-xs font-bold truncate">{fullName(p.brand, p.name)}</span>
-                    <span className="block text-[10px] text-[var(--text-faint)] truncate">{[d ? dShort(d) : null, p.size, p.platform, p.category].filter(Boolean).join(' · ')}</span>
+                    <span className="block text-xs font-bold truncate">
+                      {multi && <span className="num text-brand-hi mr-1">{g.n}×</span>}{fullName(g.first.brand, g.first.name)}
+                    </span>
+                    <span className="block text-[11px] text-[var(--text-soft)] num truncate">{priceLine(g)}</span>
+                    {!multi && <span className="block text-[10px] text-[var(--text-faint)] truncate">{[g.list[0].d ? dShort(g.list[0].d) : null, g.first.size, g.first.platform].filter(Boolean).join(' · ')}</span>}
                   </span>
-                  <span className={`text-xs font-extrabold num shrink-0 ${metric === 'profit' && v < 0 ? 'text-[var(--down)]' : ''}`}>{fmt(metric, v)}</span>
+                  <span className="flex items-center gap-1.5 shrink-0">
+                    <span className="flex flex-col items-end leading-tight"><span className={`text-xs font-extrabold num ${metric === 'profit' && gv < 0 ? 'text-[var(--down)]' : ''}`}>{fmt(metric, gv)}</span><span className="text-[9px] text-[var(--text-faint)] lowercase">{t(`ex.m.${metric}`)}</span></span>
+                    {multi && <ChevronDown size={14} className={`text-[var(--text-faint)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
+                  </span>
                 </button>
+                {multi && isOpen && (
+                  <ul className="bg-[var(--surface)] border-t border-[var(--border)]">
+                    {[...g.list].sort((a, b) => (b.d?.getTime() || 0) - (a.d?.getTime() || 0)).map(({ p, v, d }) => (
+                      <li key={p.id}>
+                        <button onClick={() => onOpen(p.id)} className="w-full flex items-center gap-3 pl-[3.75rem] pr-3 py-2 text-left hover:bg-[var(--fill)] transition-colors">
+                          <span className="min-w-0 flex-1 text-[11px] text-[var(--text-soft)] truncate">{[d ? dShort(d) : null, p.size, p.platform].filter(Boolean).join(' · ')}</span>
+                          <span className="text-[11px] num text-[var(--text-soft)] shrink-0">{eur(priceOf(p))}</span>
+                          <span className={`text-[11px] font-bold num shrink-0 w-16 text-right ${metric === 'profit' && v < 0 ? 'text-[var(--down)]' : ''}`}>{fmt(metric, v)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             );
           })}
         </ul>
       )}
-      {items.length > shown && (
-        <button onClick={() => setShown(shown + 20)} className="w-full py-2 text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] border-t border-[var(--border)]">{t('ex.showMore')} ({items.length - shown})</button>
+      {groups.length > shown && (
+        <button onClick={() => setShown(shown + 20)} className="w-full py-2 text-xs font-bold text-[var(--text-soft)] hover:text-[var(--text)] border-t border-[var(--border)]">{t('ex.showMore')} ({groups.length - shown})</button>
       )}
     </div>
   );

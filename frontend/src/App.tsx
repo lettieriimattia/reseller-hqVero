@@ -5611,6 +5611,31 @@ export default function App() {
             {/* Rimosso: Dashboard (solo telefono): Migliori compratori / Migliori fornitori → components/_archived/dashboard-mobile-compratori-fornitori.tsx.txt (vedi REMOVED_SECTIONS.md). */}
 
             {/* Rimosso: Dashboard: riquadro "Spedizioni in corso" → components/_archived/tracking-rimosso.tsx.txt (vedi REMOVED_SECTIONS.md) */}
+
+            {/* Catalogo che scorre — SOTTO tutto (scambiato con le spedizioni). */}
+            {dashPopular.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="sys-label">{t('dash.fromCatalog')}</p>
+                  <button onClick={() => navigateTo('catalog')} className="text-xs font-bold text-brand hover:text-brand-hi transition-colors">{t('dash.openCatalog')}</button>
+                </div>
+                <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 cursor-pointer"
+                  onClick={() => navigateTo('catalog')}>
+                  <div className="flex gap-3.5 px-3 animate-marquee" style={{ width: 'max-content' }}>
+                    {[...dashPopular, ...dashPopular].map((it, i) => (
+                      <div key={i} className="w-28 shrink-0">
+                        <div className="w-28 h-28 rounded-xl bg-[#ededf1] overflow-hidden flex items-center justify-center border border-[var(--border-2)] p-1.5">
+                          {it.image ? <img src={proxyImg(it.image)} alt="" loading="lazy" className="w-full h-full object-contain" /> : null}
+                        </div>
+                        <p className="text-[11.5px] text-[var(--text-soft)] mt-1.5 truncate leading-tight">{it.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[var(--surface)] to-transparent" />
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[var(--surface)] to-transparent" />
+                </div>
+              </section>
+            )}
           </div>
         )}
 

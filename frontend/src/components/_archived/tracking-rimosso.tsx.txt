@@ -47,6 +47,8 @@
               );
             })()}
 
+            // ⚠️ NOTA (step 5): le righe "Catalogo che scorre" qui sotto NON erano tracking: erano state tolte per errore nello step 4
+            // e sono state RIPRISTINATE in App.tsx. Restano qui solo come traccia.
             {/* Catalogo che scorre — SOTTO tutto (scambiato con le spedizioni). */}
             {dashPopular.length > 0 && (
               <section>
