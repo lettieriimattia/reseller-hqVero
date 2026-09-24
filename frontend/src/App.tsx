@@ -13,6 +13,8 @@ import { getLang, setLangStorage, translate, LANGUAGES, MARKETPLACE_ENABLED, typ
 import HomeLedger from './components/HomeLedger';
 import AllocationPie3D from './components/AllocationPie3D';
 import ProfitRevenueBlock from './components/ProfitRevenueBlock';
+import SalesTotals from './components/SalesTotals';
+import DeptStats from './components/DeptStats';
 import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
@@ -512,6 +514,8 @@ export default function App() {
   }, [theme]);
 
   // ----- UI STATE -----
+  // Cresce quando si tocca "Osserva i prodotti venduti": apre Analytics › Dati totali.
+  const [salesFocus, setSalesFocus] = useState(0);
   const [currentView, setCurrentView] = useState<'dashboard' | 'magazzino' | 'analytics' | 'tracking' | 'settings' | 'admin' | 'market' | 'chat' | 'wallet' | 'catalog'>('dashboard');
   const [magazzinoView, setMagazzinoView] = useState<'instock' | 'sold' | 'toship'>('instock');
   const [searchTerm, setSearchTerm] = useState('');
@@ -5668,18 +5672,14 @@ export default function App() {
               </div>
             )}
 
-            {/* Banner riprezzamento: prodotti fermi da oltre 30 giorni → apre lo strumento Pro */}
-            {magazzinoView === 'instock' && (() => {
-              const staleCount = products.filter((p: any) => p.status === 'IN STOCK' && (p.oldestDate || p.createdAt) && (Date.now() - new Date(p.oldestDate || p.createdAt).getTime()) / 86400000 > 30).length;
-              if (staleCount === 0) return null;
-              return (
-                <button onClick={() => openPlanModal('repricing')}
-                  className="w-full flex items-center justify-between gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl px-4 py-3 hover:bg-yellow-500/15 transition-colors">
-                  <span className="flex items-center gap-2 text-sm font-bold text-yellow-500"><AlertTriangle size={16} /> {staleCount} {t('mag.staleProducts')}</span>
-                  <span className="text-xs font-bold text-yellow-400 shrink-0">{t('mag.reprice')}</span>
-                </button>
-              );
-            })()}
+            {/* Rimosso: avviso "prodotti fermi da oltre 30 giorni" → components/_archived/magazzino-banner-prodotti-fermi.tsx.txt (vedi REMOVED_SECTIONS.md) */}
+            {/* Collegamento alle vendite: apre Analytics › Dati totali con le vendite mese per mese */}
+            <div className="flex justify-end">
+              <button onClick={() => { navigateTo('analytics'); setSalesFocus(n => n + 1); }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[var(--border-2)] bg-[var(--surface)] hover:border-[var(--border-3)] hover:bg-[var(--fill)] text-sm font-bold transition-colors">
+                <BarChart3 size={15} className="text-brand-hi" /> {t('mag.seeSold')} →
+              </button>
+            </div>
             {/* Riga 1: titolo + toggle IN STOCK/VENDUTI accanto, ricerca inline su desktop */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center shrink-0 w-full lg:w-auto lg:gap-4">
@@ -6398,11 +6398,19 @@ export default function App() {
               </button>
             </div>
 
+            {/* ===== DATI TOTALI: ricavi e profitto su tutto lo storico + vendite mese per mese ===== */}
+            <SalesTotals products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
+              fullName={fullName} onOpenProduct={openEditPiece} focusSignal={salesFocus} />
+
             {/* Spostato: "Esplora i numeri" ora sta in cima alla Dashboard (vedi REMOVED_SECTIONS.md) */}
 
             {/* Rimosso: Istogramma "Analisi" (Entrate / Uscite / Investimenti) → components/_archived/analytics-istogramma-entrate-uscite.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* ===== TORTA 3D: composizione per reparto (capitale € / quantità pezzi) ===== */}
             <AllocationPie3D products={products} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale} getCategoryIcon={getCategoryIcon} />
+
+            {/* ===== STATISTICHE DEI PRODOTTI VENDUTI: per reparto → classifica modelli/brand → singole vendite ===== */}
+            <DeptStats products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
+              fullName={fullName} onOpenProduct={openEditPiece} getCategoryIcon={getCategoryIcon} apiCall={apiCall} />
 
             {/* Rimosso: Riquadro Stock + Svendita → components/_archived/analytics-riquadro-stock-svendita.tsx.txt (vedi REMOVED_SECTIONS.md). */}
             {/* Rimosso: Insights (pezzi fermi, vendite della settimana, reparto migliore, sell-through rate) → components/_archived/analytics-insights.tsx.txt (vedi REMOVED_SECTIONS.md). */}
@@ -6562,31 +6570,7 @@ export default function App() {
             })()}
 
             {/* Rimosso: Conto economico mensile → components/_archived/analytics-conto-economico.tsx.txt (vedi REMOVED_SECTIONS.md) */}
-            {/* KPI row 1: principali */}
-            <div className="grid grid-cols-3 gap-2 lg:gap-3">
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
-                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
-                  <TrendingUp size={10} /> ROI
-                </p>
-                <p className={`text-2xl lg:text-3xl font-bold num ${parseFloat(roi) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{roi}%</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.roiSub')}</p>
-              </div>
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
-                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
-                  <Wallet size={10} /> {t('an.netProfitKpi')}
-                </p>
-                <p className={`text-2xl lg:text-3xl font-bold num ${profittoNetto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{eur0(profittoNetto)}</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.afterFees')} · {eur0(ricaviTotali)} {t('an.revenueLower')}</p>
-              </div>
-              {/* Rimosso: Riquadro KPI Stock → components/_archived/analytics-kpi-stock.tsx.txt (vedi REMOVED_SECTIONS.md). */}
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
-                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
-                  <DollarSign size={10} /> {t('an.sales')}
-                </p>
-                <p className="text-2xl lg:text-3xl font-bold text-brand-hi num">{soldItemsTotal.length}</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.totals')}</p>
-              </div>
-            </div>
+            {/* Rimosso: riquadri ROI % / Profitto netto / Vendite → components/_archived/analytics-kpi-roi-profitto-vendite.tsx.txt (vedi REMOVED_SECTIONS.md). Sostituiti da "Dati totali" */}
 
             {/* Rimosso: Margine medio / Giorni medi di vendita / Sell-through → components/_archived/analytics-margine-giorni-sellthrough.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* Grafico Andamento rimosso da Analytics: è già in Dashboard (niente duplicati). */}

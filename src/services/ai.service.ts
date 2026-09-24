@@ -220,6 +220,29 @@ Rispondi SOLO col nome ufficiale su una riga, senza virgolette né spiegazioni. 
   } catch { return q; }
 }
 
+// Raggruppa nomi di prodotti scritti in modi diversi sotto il loro MODELLO (es. "Yeezy Boost 350 V2 Bone"
+// → "Yeezy 350", "AJ4 Bred Reimagined" → "Jordan 4"). UNA sola chiamata per un gruppo di nomi; chi chiama
+// salva il risultato, così lo stesso nome non torna mai all'IA. Se l'IA fallisce → [] (si usano le regole).
+export async function groupModelNames(items: { brand: string; name: string }[]): Promise<string[]> {
+  if (items.length === 0) return [];
+  const list = items.map((it, i) => `${i + 1}. ${`${it.brand || ''} ${it.name || ''}`.trim().slice(0, 120)}`).join('\n');
+  const prompt = `Sei un esperto di resell (sneakers, streetwear, orologi, carte, accessori). Per ogni prodotto qui sotto scrivi il MODELLO a cui appartiene, senza colorazione, taglia, anno, collaborazione o edizione.
+Esempi: "adidas Yeezy Boost 350 V2 Bone" → "Yeezy 350"; "Air Jordan 4 Retro Bred Reimagined" → "Jordan 4"; "Nike Dunk Low Retro Panda" → "Dunk Low"; "Rick Owens DRKSHDW Ramones" → "Rick Owens"; "Rolex Submariner Date 126610LN" → "Rolex Submariner".
+Per i marchi di lusso/avanguardia senza modelli riconoscibili usa solo il nome del marchio.
+Prodotti:
+${list}
+Rispondi SOLO con un array JSON di stringhe, una per prodotto, nello stesso ordine. Niente altro testo.`;
+  try {
+    const completion = await groqCallWithRetry(client =>
+      client.chat.completions.create({ messages: [{ role: 'user', content: prompt }], model: TEXT_MODEL, temperature: 0, max_tokens: Math.min(2000, 30 * items.length + 50) })
+    );
+    const raw = (completion.choices[0]?.message?.content || '').trim();
+    const arr = JSON.parse(raw.slice(raw.indexOf('['), raw.lastIndexOf(']') + 1));
+    if (!Array.isArray(arr) || arr.length !== items.length) return [];
+    return arr.map((x: any) => (typeof x === 'string' ? x.trim().slice(0, 60) : ''));
+  } catch { return []; }
+}
+
 // Riassume una nota/task in un titolo BREVISSIMO (1-3 parole) per il widget promemoria.
 // Best-effort: se l'IA non è disponibile o fallisce, ripiega sulle prime parole del testo.
 export async function summarizeTaskText(text: string): Promise<string> {

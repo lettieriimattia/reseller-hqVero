@@ -1,0 +1,30 @@
+// ARCHIVIO — Analytics: riga di riquadri ROI % / Profitto netto / Vendite (step 8).
+// Sostituita da "Dati totali" (components/SalesTotals.tsx), che usa la QUOTA dell'utente su tutto lo storico.
+// Nota: questi riquadri usavano i valori PIENI dei pezzi e dipendevano dal filtro reparto del Magazzino.
+// Righe di App.tsx al commit "pre-step8 analytics". Non compilato (.txt). Vedi REMOVED_SECTIONS.md.
+
+            {/* KPI row 1: principali */}
+            <div className="grid grid-cols-3 gap-2 lg:gap-3">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
+                  <TrendingUp size={10} /> ROI
+                </p>
+                <p className={`text-2xl lg:text-3xl font-bold num ${parseFloat(roi) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{roi}%</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.roiSub')}</p>
+              </div>
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
+                  <Wallet size={10} /> {t('an.netProfitKpi')}
+                </p>
+                <p className={`text-2xl lg:text-3xl font-bold num ${profittoNetto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{eur0(profittoNetto)}</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.afterFees')} · {eur0(ricaviTotali)} {t('an.revenueLower')}</p>
+              </div>
+              {/* Rimosso: Riquadro KPI Stock → components/_archived/analytics-kpi-stock.tsx.txt (vedi REMOVED_SECTIONS.md). */}
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
+                  <DollarSign size={10} /> {t('an.sales')}
+                </p>
+                <p className="text-2xl lg:text-3xl font-bold text-brand-hi num">{soldItemsTotal.length}</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.totals')}</p>
+              </div>
+            </div>

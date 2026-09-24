@@ -5,7 +5,7 @@ import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimit';
 import { validate, aiScanSchema, priceEstimateSchema } from '../middleware/validate';
-import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, getVisionStatus, ListingPlatform, scanLotItems } from '../services/ai.service';
+import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, getVisionStatus, ListingPlatform, scanLotItems, groupModelNames } from '../services/ai.service';
 import { pokemonSearch } from '../services/pokemon.service';
 import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
 import { searchStockXCandidates } from '../services/stockx.service';
@@ -111,6 +111,40 @@ const scanItemsHandler = async (req: AuthRequest, res: Response) => {
 };
 router.post('/scan-items', scanItemsHandler);
 router.post('/scan-cards', scanItemsHandler); // compat
+
+// ==========================================
+// POST /api/ai/model-groups — modello di riferimento per nomi AMBIGUI (le regole fisse le fa l'app).
+// Risultati salvati in Setting ("mg1:<brand>|<nome>"): lo stesso nome non va MAI due volte all'IA,
+// per nessun utente. Body: { items: [{ brand, name }] } (max 60). Risposta: { groups: { "<brand>|<nome>": modello } }.
+// ==========================================
+router.post('/model-groups', async (req: AuthRequest, res: Response) => {
+  try {
+    const raw: any[] = Array.isArray(req.body?.items) ? req.body.items.slice(0, 60) : [];
+    const items = raw
+      .map(x => ({ brand: String(x?.brand || '').trim().slice(0, 80), name: String(x?.name || '').trim().slice(0, 160) }))
+      .filter(x => x.name);
+    const keyOf = (x: { brand: string; name: string }) => `${x.brand.toLowerCase()}|${x.name.toLowerCase()}`;
+    const uniq = [...new Map(items.map(x => [keyOf(x), x])).values()];
+    const saved = await prisma.setting.findMany({ where: { key: { in: uniq.map(x => `mg1:${keyOf(x)}`) } } });
+    const groups: Record<string, string> = {};
+    saved.forEach(s => { groups[s.key.slice(4)] = s.value; });
+    const missing = uniq.filter(x => !(keyOf(x) in groups));
+    if (missing.length > 0) {
+      const models = await groupModelNames(missing);
+      await Promise.all(missing.map(async (x, i) => {
+        const m = models[i];
+        if (!m) return; // IA non disponibile: nessun salvataggio, l'app usa le regole
+        groups[keyOf(x)] = m;
+        await prisma.setting.upsert({ where: { key: `mg1:${keyOf(x)}` }, update: { value: m }, create: { key: `mg1:${keyOf(x)}`, value: m } }).catch(() => {});
+      }));
+      logger.info('Raggruppamento modelli', { richiesti: uniq.length, giaSalvati: saved.length, allIA: missing.length });
+    }
+    res.json({ groups });
+  } catch (err: any) {
+    logger.error('Errore /ai/model-groups', { err: err.message });
+    res.json({ groups: {} });
+  }
+});
 
 // ==========================================
 // POST /api/ai/price - stima prezzo di mercato

@@ -1,0 +1,16 @@
+// ARCHIVIO — Magazzino: avviso giallo "N prodotti fermi da oltre 30 giorni · Riprezza →" (apriva lo strumento Pro di riprezzamento).
+// Sostituito (step 8, richiesta dell'utente) dal collegamento "Osserva i prodotti venduti" → Analytics › Dati totali.
+// Righe di App.tsx al commit "pre-step8 analytics". Non compilato (.txt). Vedi REMOVED_SECTIONS.md.
+
+            {/* Banner riprezzamento: prodotti fermi da oltre 30 giorni → apre lo strumento Pro */}
+            {magazzinoView === 'instock' && (() => {
+              const staleCount = products.filter((p: any) => p.status === 'IN STOCK' && (p.oldestDate || p.createdAt) && (Date.now() - new Date(p.oldestDate || p.createdAt).getTime()) / 86400000 > 30).length;
+              if (staleCount === 0) return null;
+              return (
+                <button onClick={() => openPlanModal('repricing')}
+                  className="w-full flex items-center justify-between gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl px-4 py-3 hover:bg-yellow-500/15 transition-colors">
+                  <span className="flex items-center gap-2 text-sm font-bold text-yellow-500"><AlertTriangle size={16} /> {staleCount} {t('mag.staleProducts')}</span>
+                  <span className="text-xs font-bold text-yellow-400 shrink-0">{t('mag.reprice')}</span>
+                </button>
+              );
+            })()}

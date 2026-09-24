@@ -160,3 +160,34 @@ Com'è ora la torta ("Magazzino per reparto"):
 - **Al centro**: il totale del magazzino ("In magazzino 1.620 €" oppure "6 pezzi").
 - **Toccando una fetta o la riga del reparto**: valore, numero di pezzi e % sul totale. Toccando fuori si chiude.
 - Verificata sui dati grezzi dell'account demo: 0 differenze.
+
+# Step 8 — Analytics panoramica (parte 1: punti 1 e 2 dell'utente)
+
+Fatto nel commit "step8: analytics panoramica (parte 1)". Punto di ripristino: il commit "pre-step8 analytics".
+Regola confermata dall'utente: **ogni cifra è sulla SUA quota**. Se un pezzo è in società al 50%, conta metà di ricavo, profitto e costo.
+
+| Sezione | Dove stava | Dove si trova ora il codice | Stato |
+|---|---|---|---|
+| Riquadri ROI % / Profitto netto / Vendite | `App.tsx`, Analytics | `components/_archived/analytics-kpi-roi-profitto-vendite.tsx.txt` | Rimossi, sostituiti da "Dati totali". Nota: usavano i valori pieni dei pezzi e cambiavano col filtro reparto del Magazzino. Il ROI verrà sostituito dal ricarico per reparto |
+| Avviso giallo "N prodotti fermi da oltre 30 giorni · Riprezza →" (apriva lo strumento Pro di riprezzamento) | `App.tsx`, **Magazzino** | `components/_archived/magazzino-banner-prodotti-fermi.tsx.txt` | Rimosso su richiesta dell'utente. Al suo posto, in alto a destra, c'è il collegamento **"Osserva i prodotti venduti →"**, che apre Analytics › Dati totali. ⚠️ Da qui non si arriva più allo strumento "Riprezza" |
+
+Aggiunto:
+- **`components/SalesTotals.tsx` — "Dati totali"**, in cima ad Analytics:
+  - Ricavi totali e Profitto netto su tutte le vendite, dalla prima a oggi;
+  - "Vendite totali": ogni mese con pezzi, ricavi e profitto; toccando un mese si aprono i pezzi, raggruppati per prodotto identico.
+- **`components/DeptStats.tsx` — "Osserva le statistiche dei tuoi prodotti venduti"**, sotto la torta:
+  - una riga per reparto, ordinate per ricavi, con ricavi, profitto e ricarico medio ponderato (profitto ÷ costo × 100, sulla quota);
+  - toccando un reparto, o "Guarda nel dettaglio", si apre la classifica per modello o per brand, ordinata per pezzi venduti;
+  - toccando un modello compaiono le singole vendite.
+- **`lib/modelGroup.ts` — raggruppamento dei nomi**: regole fisse (Yeezy, Jordan, Dunk, New Balance, Rick Owens…). I nomi che le regole non riconoscono vanno all'AI **una volta sola** tramite `POST /ai/model-groups` (in `src/routes/ai.ts` e `src/services/ai.service.ts`).
+  - Il risultato è salvato nella tabella `Setting` con chiavi `mg1:<marca>|<nome>`, senza modifiche al database, e anche nel browser.
+  - ⚠️ La parte AI funziona solo **dopo la pubblicazione del server**. Fino ad allora si usano solo le regole fisse.
+
+Verifiche:
+- **Dati di prova**, con nomi scritti in modi diversi e un pezzo al 50%: 0 differenze tra la pagina e un calcolo indipendente su totali, mesi, reparti, ricarico e classifica. Per esempio le Yeezy 350, scritte in 3 modi diversi, finiscono in un solo gruppo da 22 pezzi.
+- **App vera, account demo**: 0 differenze coi dati grezzi del server e 0 errori in console.
+
+**Da fare nella parte 2** (quando l'utente lo chiede):
+- "Il tuo prodotto migliore";
+- piattaforme;
+- eventuale somma dei Mesi precedenti ai totali.
