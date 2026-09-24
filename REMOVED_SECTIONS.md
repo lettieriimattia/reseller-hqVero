@@ -80,3 +80,30 @@ Sovrapposizioni lasciate apposta (non sono lo stesso dato):
 - **"Fermi da oltre 30 giorni"** nel "Da fare": è un'azione da fare, non solo un numero.
 - **Totale della torta 3D in "In magazzino"**: coincide col totale dell'Età del magazzino, ma divide il capitale per reparto invece che per età.
 - **Profitto netto in Analytics**: è su tutto lo storico, mentre la Dashboard mostra il mese.
+
+# Step 4 — Tracking: RIMOSSO DEFINITIVAMENTE
+
+Fatto nel commit "step4: rimosso tracking". Punto di ripristino: il commit "pre-step4 rimozione tracking".
+Tolta solo l'interfaccia: **dati e tabelle del database non sono stati toccati** (codici, stati e cronologie di tracciamento restano salvati). Tutto il codice tolto è in un unico file, `components/_archived/tracking-rimosso.tsx.txt`, un blocco per ogni pezzo.
+
+| Pezzo tolto | Dove stava | Stato |
+|---|---|---|
+| Pagina Tracking (spedizioni attive, eccezioni/resi, consegnate, "aggiungi in arrivo", aggiorna tutti) | `App.tsx` | Rimosso definitivamente |
+| Voce "Tracking" nella barra in alto e nella barra in basso (icona camion) | `App.tsx`, 3 barre di navigazione | Rimosso definitivamente. La barra in basso ora ha 4 icone (Dashboard, Magazzino, Catalogo, Analytics), distribuite in parti uguali |
+| Riquadro "Spedizioni in corso" | `App.tsx`, Dashboard | Rimosso definitivamente |
+| Riga "Da spedire" del "Da fare" (portava alla pagina Tracking) | `components/HomeLedger.tsx`, Dashboard | Rimosso definitivamente |
+| Modale "Codice di tracciamento" | `App.tsx` | Rimosso definitivamente |
+| Pulsanti "Track" / "Traccia" (scheda magazzino su computer, menu ⋯, dettaglio modello, dettaglio lotto, lista "Da spedire") | `App.tsx`, Magazzino | Rimosso definitivamente |
+| Link al corriere col codice (schede su telefono e su computer, dettaglio lotto, lista "Da spedire") | `App.tsx`, Magazzino | Rimosso definitivamente |
+| Etichette di stato "Transito" / "Consegnato" / "Eccezione" sulle schede | `App.tsx`, Magazzino | Rimosso definitivamente |
+| Voce "Vai a Tracking" nella palette comandi | `App.tsx` | Rimosso definitivamente |
+| Voce "Spedizioni & tracking" della guida (IT ed EN) | `App.tsx` | Rimosso definitivamente |
+
+Restano, perché non sono il tracking:
+- **"Spedisci"**: calcola le tariffe e crea l'etichetta di spedizione.
+- **Il segno "Da spedire"** nel Magazzino.
+- **L'etichetta "Spedito"** nella lista "Da spedire".
+
+⚠️ Cose lato server rimaste attive (non toccate, perché lo step riguardava solo l'interfaccia):
+- **Aggiornamento automatico del tracking**: in `src/services/tracking.service.ts`, sui pezzi che hanno già un codice. Quando un pacco risulta consegnato, invia la notifica "📦 Spedizione consegnata!" (tipo SALE) e l'email, e segna il pezzo come VENDUTO.
+- **Strumento `aggiungi_tracking` dell'assistente in chat**: può ancora salvare un codice.

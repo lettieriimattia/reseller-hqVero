@@ -219,7 +219,7 @@ export default function HomeLedger(props: Props) {
   ];
 
   const todo: { icon: typeof Truck; label: string; value: string; sub?: string; on: () => void; alert: boolean }[] = [
-    { icon: Truck, label: t('home.toShip'), value: int(props.toShipCount), on: props.onOpenShip, alert: props.toShipCount > 0 },
+    // Rimosso: riga "Da spedire" (portava alla pagina Tracking) → components/_archived/tracking-rimosso.tsx.txt
     { icon: AlertTriangle, label: t('home.stale'), value: int(props.staleCount), on: props.onOpenStale, alert: props.staleCount > 0 },
     { icon: StickyNote, label: t('home.notes'), value: int(props.openTasksCount), on: props.onOpenTasks, alert: false },
     // Rimosso: riga "Capitale in magazzino" → components/_archived/home-da-fare-capitale-magazzino.tsx.txt (vedi REMOVED_SECTIONS.md)

@@ -5329,7 +5329,6 @@ export default function App() {
               { id: 'chat', label: t('nav.messages'), icon: Mail },
             ] : []),
             { id: 'analytics', label: t('nav.analytics'), icon: BarChart3 },
-            { id: 'tracking', label: t('nav.tracking'), icon: Truck },
           ].map(tab => {
             const Icon = tab.icon;
             const active = currentView === tab.id;
@@ -5455,7 +5454,6 @@ export default function App() {
                 { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
                 { id: 'magazzino', label: 'Magazzino', icon: Package },
                 { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-                { id: 'tracking', label: 'Tracking', icon: Truck },
                 { id: 'settings', label: 'Impostazioni', icon: Settings },
               ].map(tab => {
                 const Icon = tab.icon;
@@ -5612,74 +5610,7 @@ export default function App() {
 
             {/* Rimosso: Dashboard (solo telefono): Migliori compratori / Migliori fornitori → components/_archived/dashboard-mobile-compratori-fornitori.tsx.txt (vedi REMOVED_SECTIONS.md). */}
 
-            {/* Spedizioni in corso */}
-            {(() => {
-              const active = products.filter((p: any) => p.trackingCode && ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING'));
-              const stLabel = (s?: string) => {
-                if (s === 'IN_TRANSIT') return { t: t('track.stInTransit'), c: 'bg-blue-500/20 text-blue-400' };
-                if (s === 'OUT_FOR_DELIVERY') return { t: t('track.stOutForDelivery'), c: 'bg-brand/20 text-brand-hi' };
-                if (s === 'EXCEPTION') return { t: t('track.stException'), c: 'bg-red-500/20 text-red-400' };
-                return { t: t('track.stPending'), c: 'bg-[var(--fill)] text-[var(--text-soft)]' };
-              };
-              return (
-                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-[9px] font-semibold text-[var(--text-faint)] tracking-[0.12em] uppercase flex items-center gap-2"><Truck size={12} /> {t('home.shipmentsInProgress')}{active.length > 0 ? ` (${active.length})` : ''}</p>
-                    <button onClick={() => navigateTo('tracking')} className="text-[10px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">{t('home.seeAll')}</button>
-                  </div>
-                  {active.length === 0 ? (
-                    <p className="text-sm text-[var(--text-soft)] text-center py-4">{t('home.noShipments')}</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {active.slice(0, 5).map((p: any) => {
-                        const st = stLabel(p.trackingStatus);
-                        return (
-                          <div key={p.id} onClick={() => navigateTo('tracking')}
-                            className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[var(--fill)] cursor-pointer transition-colors">
-                            <span className="text-xl shrink-0">{getCategoryIcon(p.category)}</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold truncate">{fullName(p.brand, p.name)}</p>
-                              <p className="text-[10px] text-[var(--text-faint)] font-mono truncate">{p.trackingCarrier || t('home.carrier')} · {p.trackingCode}</p>
-                              {/* Link DIRETTO al corriere (non apre la pagina tracking) */}
-                              <a href={trackingPublicUrl(p.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                                className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded-lg hover:bg-blue-500/20 transition-colors">
-                                {t('track.viewCarrier')} <ExternalLink size={11} className="opacity-80" />
-                              </a>
-                            </div>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${st.c}`}>{st.t}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </section>
-              );
-            })()}
-
-            {/* Catalogo che scorre — SOTTO tutto (scambiato con le spedizioni). */}
-            {dashPopular.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="sys-label">{t('dash.fromCatalog')}</p>
-                  <button onClick={() => navigateTo('catalog')} className="text-xs font-bold text-brand hover:text-brand-hi transition-colors">{t('dash.openCatalog')}</button>
-                </div>
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 cursor-pointer"
-                  onClick={() => navigateTo('catalog')}>
-                  <div className="flex gap-3.5 px-3 animate-marquee" style={{ width: 'max-content' }}>
-                    {[...dashPopular, ...dashPopular].map((it, i) => (
-                      <div key={i} className="w-28 shrink-0">
-                        <div className="w-28 h-28 rounded-xl bg-[#ededf1] overflow-hidden flex items-center justify-center border border-[var(--border-2)] p-1.5">
-                          {it.image ? <img src={proxyImg(it.image)} alt="" loading="lazy" className="w-full h-full object-contain" /> : null}
-                        </div>
-                        <p className="text-[11.5px] text-[var(--text-soft)] mt-1.5 truncate leading-tight">{it.name}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[var(--surface)] to-transparent" />
-                  <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[var(--surface)] to-transparent" />
-                </div>
-              </section>
-            )}
+            {/* Rimosso: Dashboard: riquadro "Spedizioni in corso" → components/_archived/tracking-rimosso.tsx.txt (vedi REMOVED_SECTIONS.md) */}
           </div>
         )}
 
@@ -5939,11 +5870,7 @@ export default function App() {
                               </div>
                               <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition}</p>
                               {p.trackingCode
-                                ? <p className="text-[11px] text-blue-400 mt-0.5">
-                                    <a href={trackingPublicUrl(p.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                                      className="inline-flex items-center gap-1 hover:text-blue-300 font-semibold">
-                                      📦 {p.trackingCode} <ExternalLink size={9} className="opacity-70" />
-                                    </a>{paid ? t('mag.awaitingBuyer') : ''}</p>
+                                ? (paid ? <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{t('mag.awaitingBuyer').replace(/^ · /, '')}</p> : null)
                                 : <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{t('mag.toShipHint')}</p>}
                             </div>
                           </div>
@@ -5953,7 +5880,7 @@ export default function App() {
                                 ? <button onClick={() => viewSavedLabel(p)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-brand/15 text-brand flex items-center justify-center gap-1.5"><Package size={13} /> {t('mag.viewLabel')}</button>
                                 : <button onClick={() => openShipping(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-brand/15 text-brand flex items-center justify-center gap-1.5"><Package size={13} /> {t('mag.createLabel')}</button>
                             ) : (
-                              <button onClick={() => openTrackingModal(g)} className="flex-1 py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)] flex items-center justify-center gap-1.5"><Truck size={13} /> {t('mag.tracking')}</button>
+                              null
                             )}
                             {!paid && (
                               <button onClick={() => toggleToShip(g, false)} className="px-3 py-2 rounded-lg text-xs font-bold bg-[var(--fill)] text-[var(--text-muted)]">{t('mag.shipped')}</button>
@@ -6011,9 +5938,7 @@ export default function App() {
                     const daysBadge = days !== null ? (
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${days > 30 ? 'bg-red-500/20 text-red-400' : days > 14 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-[var(--fill)] text-[var(--text-faint)]'}`}>{days}g</span>
                     ) : null;
-                    const trackBadge = g.trackingStatus ? (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500/20 text-blue-400' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500/20 text-green-400' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500/20 text-red-400' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? 'Transito' : g.trackingStatus === 'DELIVERED' ? 'Consegnato' : g.trackingStatus === 'OUT_FOR_DELIVERY' ? 'In consegna' : 'Track'}</span>
-                    ) : null;
+                    const trackBadge = null; // tracking rimosso (step 4)
 
                     return (
                     <React.Fragment key={groupKey}>
@@ -6054,15 +5979,6 @@ export default function App() {
                               {daysBadge}{trackBadge}
                             </div>
                             <p className="text-xs text-[var(--text-soft)] mt-1">{g.isModel ? modelSub(g) : <>{g.size} · {g.condition} · <span className="text-[var(--text-muted)] font-semibold">{eur0(g.purchasePrice)}</span></>}</p>
-                            {/* Tracking: link DIRETTO al corriere (senza aprire lo shipping). Solo prodotto singolo. */}
-                            {g.trackingCode && !g.isModel && !g.isLot && (
-                              <a href={trackingPublicUrl(g.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                                className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 hover:text-blue-300 max-w-full">
-                                <Truck size={10} className="shrink-0" />
-                                <span className="truncate">{g.trackingCarrier && g.trackingCarrier !== 'Auto' ? `${g.trackingCarrier} · ` : ''}{g.trackingCode}</span>
-                                <ExternalLink size={9} className="shrink-0 opacity-70" />
-                              </a>
-                            )}
                             {shares?.length > 0 && <p className="text-[10px] text-blue-400/70 mt-0.5 truncate">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                             {!bulkMode && (
                               <button onClick={(e) => { e.stopPropagation(); setNotesModalProduct(g); setNotesInput(g.notes || ''); }}
@@ -6073,7 +5989,6 @@ export default function App() {
                           </div>
                           {!bulkMode && (
                             <div className="flex flex-col gap-1 shrink-0">
-                              <button onClick={() => openTrackingModal(g)} className="px-3 py-1.5 bg-[var(--fill)] text-[var(--text-muted)] rounded-lg text-xs font-bold">{t('mag.track')}</button>
                               <button onClick={() => toggleToShip(g, !g.toShip)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold ${g.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-muted)]'}`}>{g.toShip ? t('mag.inList') : t('dash.toShip')}</button>
                               {MARKETPLACE_ENABLED && (
@@ -6118,7 +6033,6 @@ export default function App() {
                           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                             {g.quantity > 1 && <span className="text-[10px] bg-brand text-[var(--text)] px-2 py-0.5 rounded-full font-bold shadow">×{g.quantity}</span>}
                             {days !== null && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow ${days > 30 ? 'bg-red-500 text-[var(--text)]' : days > 14 ? 'bg-yellow-500 text-black' : 'bg-black/50 backdrop-blur text-[var(--text-muted)]'}`}>{days}g</span>}
-                            {g.trackingStatus && <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow ${g.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-500 text-[var(--text)]' : g.trackingStatus === 'DELIVERED' ? 'bg-green-500 text-[var(--text)]' : g.trackingStatus === 'EXCEPTION' ? 'bg-red-500 text-[var(--text)]' : 'bg-black/50 backdrop-blur text-[var(--text-muted)]'}`}><Truck size={9} />{g.trackingStatus === 'IN_TRANSIT' ? t('mag.trTransit') : g.trackingStatus === 'DELIVERED' ? t('mag.trDelivered') : g.trackingStatus === 'OUT_FOR_DELIVERY' ? t('mag.trOutForDelivery') : t('mag.track')}</span>}
                           </div>
                           {bulkMode && (
                             <div className={`absolute top-2 right-2 z-10 min-w-6 h-6 px-1 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-brand border-brand' : 'border-[var(--border-3)] bg-black/40 backdrop-blur'}`}>
@@ -6129,15 +6043,6 @@ export default function App() {
                         <div className="p-4 flex-1 flex flex-col items-start text-left">
                           <p className="font-bold text-base leading-tight line-clamp-2 w-full tracking-tight">{fullName(g.brand, g.name)}</p>
                           <p className="text-sm text-[var(--text-muted)] mt-1.5">{g.isModel ? modelSub(g) : `${g.size} · ${g.condition}`}</p>
-                          {/* Tracking: link DIRETTO al corriere (senza aprire lo shipping). Solo prodotto singolo. */}
-                          {g.trackingCode && !g.isModel && !g.isLot && (
-                            <a href={trackingPublicUrl(g.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                              className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 hover:text-blue-300 max-w-full">
-                              <Truck size={11} className="shrink-0" />
-                              <span className="truncate">{g.trackingCarrier && g.trackingCarrier !== 'Auto' ? `${g.trackingCarrier} · ` : ''}{g.trackingCode}</span>
-                              <ExternalLink size={10} className="shrink-0 opacity-70" />
-                            </a>
-                          )}
                           <p className="text-2xl font-black text-[var(--text)] mt-auto pt-2 num tracking-tight leading-none">{eur0(g.purchasePrice)}</p>
                           {shares?.length > 0 && <p className="text-[11px] text-blue-400/70 mt-1.5 truncate max-w-full">{shares.map((x:any)=>`${x.name} ${x.percentage}%`).join(' · ')}</p>}
                           {!bulkMode && (
@@ -6171,7 +6076,6 @@ export default function App() {
                                   <div className="fixed inset-0 z-[59]" onClick={() => setCardMenuKey(null)} />
                                   <div className="absolute right-0 bottom-full mb-1.5 w-52 z-[60] bg-[var(--surface-blur)] backdrop-blur-xl border border-[var(--border-2)] rounded-xl shadow-2xl overflow-hidden py-1">
                                     {[
-                                      { icon: Truck, label: g.trackingCode ? `${t('mag.track')} · ${g.trackingCode}` : t('mag.track'), run: () => cardOr(g, openTrackingModal) },
                                       { icon: Truck, label: g.toShip ? `${t('mag.inList')} ✓` : t('dash.toShip'), run: () => cardOr(g, gg => toggleToShip(gg, !gg.toShip)) },
                                       { icon: Repeat, label: t('mag.trade'), run: () => tradeFromCard(g) },
                                       ...(MARKETPLACE_ENABLED ? [{ icon: Store, label: g.isPublic ? t('mag.inShowcase') : t('mag.publish'), run: () => quickTogglePublic(g) }] : []),
@@ -7475,10 +7379,6 @@ export default function App() {
                     </div>
                     {/* Azioni per QUESTA taglia (traccia / da spedire / spedisci / elimina) → mai sul pezzo sbagliato. */}
                     <div className="flex items-center gap-1.5 flex-wrap pl-[2.1rem]">
-                      <button onClick={() => { setModelDetail(null); openTrackingModal(s.group); }}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors ${s.group.trackingCode ? 'bg-blue-500/15 text-blue-400' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
-                        <Truck size={11} /> {t('mag.track')}
-                      </button>
                       <button onClick={() => { setModelDetail(null); toggleToShip(s.group, !s.group.toShip); }}
                         className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors ${s.group.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
                         <Package size={11} /> {s.group.toShip ? t('mag.inList') : t('dash.toShip')}
@@ -7548,12 +7448,6 @@ export default function App() {
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold truncate">{fullName(p.brand, p.name)}</p>
                             <p className="text-[11px] text-[var(--text-soft)]">{p.size} · {p.condition} · {eur0(p.purchasePrice)}</p>
-                            {p.trackingCode && (
-                              <a href={trackingPublicUrl(p.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                                className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 hover:text-blue-300 max-w-full">
-                                <Truck size={10} className="shrink-0" /><span className="truncate">{p.trackingCarrier && p.trackingCarrier !== 'Auto' ? `${p.trackingCarrier} · ` : ''}{p.trackingCode}</span><ExternalLink size={9} className="shrink-0 opacity-70" />
-                              </a>
-                            )}
                           </div>
                           {!selecting && (
                           <div className="flex gap-1.5 shrink-0">
@@ -7567,10 +7461,6 @@ export default function App() {
                           {/* Azioni per QUESTO pezzo (traccia / da spedire / spedisci / elimina). */}
                           {!selecting && (
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <button onClick={(e) => { e.stopPropagation(); setLotDetail(null); openTrackingModal({ ...p, ids: [p.id] }); }}
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors ${p.trackingCode ? 'bg-blue-500/15 text-blue-400' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
-                                <Truck size={11} /> {t('mag.track')}
-                              </button>
                               <button onClick={(e) => { e.stopPropagation(); setLotDetail(null); toggleToShip({ ...p, ids: [p.id] }, !p.toShip); }}
                                 className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors ${p.toShip ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
                                 <Package size={11} /> {p.toShip ? t('mag.inList') : t('dash.toShip')}
@@ -7611,174 +7501,7 @@ export default function App() {
           </div>
         ), document.body)}
 
-        {/* ========== TRACKING PAGE ========== */}
-        {currentView === 'tracking' && (() => {
-          const allTracked = products.filter(p => p.trackingCode);
-          const active = allTracked.filter(p => ['PENDING','IN_TRANSIT','OUT_FOR_DELIVERY'].includes(p.trackingStatus || 'PENDING'));
-          const delivered = allTracked.filter(p => p.trackingStatus === 'DELIVERED');
-          const exceptions = allTracked.filter(p => p.trackingStatus === 'EXCEPTION' || p.trackingStatus === 'RETURNED');
-
-          const statusLabel = (s?: string) => {
-            if (s === 'IN_TRANSIT') return { text: t('track.stInTransit'), cls: 'bg-blue-500/20 text-blue-400', dot: 'bg-blue-400' };
-            if (s === 'OUT_FOR_DELIVERY') return { text: t('track.stOutForDelivery'), cls: 'bg-brand/20 text-brand-hi', dot: 'bg-brand-hi' };
-            if (s === 'DELIVERED') return { text: t('track.stDelivered'), cls: 'bg-green-500/20 text-green-400', dot: 'bg-green-400' };
-            if (s === 'EXCEPTION') return { text: t('track.stException'), cls: 'bg-red-500/20 text-red-400', dot: 'bg-red-400' };
-            if (s === 'RETURNED') return { text: t('track.stReturned'), cls: 'bg-brand/20 text-brand-hi', dot: 'bg-brand-hi' };
-            return { text: t('track.stPending'), cls: 'bg-[var(--fill)] text-[var(--text-soft)]', dot: 'bg-gray-600' };
-          };
-
-          const TrackCard = ({ p }: { p: Product }) => {
-            let photos: string[] = [];
-            try { photos = p.photos ? JSON.parse(p.photos) : []; } catch {}
-            const st = statusLabel(p.trackingStatus);
-            const dir = (p as any).trackingDirection || (p.status === 'VENDUTO' ? 'OUTBOUND' : 'INBOUND');
-            const updatedAgo = p.trackingUpdatedAt
-              ? (() => {
-                  const mins = Math.floor((Date.now() - new Date(p.trackingUpdatedAt).getTime()) / 60000);
-                  if (mins < 60) return `${mins}m ${t('track.ago')}`;
-                  const hrs = Math.floor(mins / 60);
-                  if (hrs < 24) return `${hrs}h ${t('track.ago')}`;
-                  return `${Math.floor(hrs / 24)}${t('track.agoDay')} ${t('track.ago')}`;
-                })()
-              : null;
-
-            return (
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden hover:border-[var(--border-2)] transition-all">
-                <div className="flex items-center gap-3 p-4">
-                  {photos.length > 0 ? (
-                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-[var(--border-2)]">
-                      <img src={photos[0]} alt="" className="w-full h-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-12 h-12 rounded-xl bg-[var(--fill)] flex items-center justify-center shrink-0 text-xl">
-                      {getCategoryIcon(p.category)}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-bold text-sm">{fullName(p.brand, p.name)}</p>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${dir === 'OUTBOUND' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-blue-500/15 text-blue-400'}`}>
-                        {dir === 'OUTBOUND' ? t('track.dirSale') : t('track.dirIncoming')}
-                      </span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shrink-0 ${st.cls}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-                        {st.text}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[var(--text-soft)] mt-0.5 font-mono truncate">{p.trackingCode}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-[10px] text-[var(--text-faint)] bg-[var(--fill)] px-2 py-0.5 rounded-full">{p.trackingCarrier}</span>
-                      {updatedAgo && <span className="text-[10px] text-[var(--text-faint)]">{t('track.updated')} {updatedAgo}</span>}
-                      {p.trackingCode && (
-                        <a href={trackingPublicUrl(p.trackingCode)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded-lg hover:bg-blue-500/20 transition-colors">
-                          {t('track.viewCarrier')} <ExternalLink size={11} className="opacity-80" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); setTimeout(() => openTrackingModal({ ...p, ids: [p.id], quantity: 1 }), 100); }}
-                    className="shrink-0 p-2 hover:bg-[var(--fill)] rounded-xl transition-colors text-[var(--text-soft)] hover:text-[var(--text)]">
-                    <Truck size={16} />
-                  </button>
-                </div>
-                {p.status === 'VENDUTO' && p.salePrice === 0 && (
-                  <div className="border-t border-yellow-800/40 bg-yellow-900/10 px-4 py-2.5 flex items-center justify-between">
-                    <p className="text-xs text-yellow-400 font-bold">{t('track.deliveredSaleToComplete')}</p>
-                    <button
-                      onClick={() => openSellModal([p.id], `${fullName(p.brand, p.name)}`, p)}
-                      className="text-[10px] bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 px-3 py-1.5 rounded-xl font-bold transition-colors">
-                      {t('track.complete')}
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          };
-
-          return (
-            <div className="space-y-8">
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-3xl font-semibold">{t('nav.tracking')}</h2>
-                  <p className="text-[var(--text-soft)] text-sm mt-1">{t('track.subtitle')}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={openIncoming}
-                    className="flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-colors">
-                    <Plus size={16} /> <span className="hidden sm:inline">{t('track.incoming')}</span><span className="sm:hidden">{t('track.incomingShort')}</span>
-                  </button>
-                  {active.length > 0 && (
-                    <button onClick={handleRefreshAllTrackings} disabled={isRefreshingAll}
-                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors">
-                      {isRefreshingAll ? <Loader2 className="animate-spin" size={16} /> : <Truck size={16} />}
-                      <span className="hidden sm:inline">{isRefreshingAll ? t('track.refreshing') : t('track.refreshAll')}</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: t('track.active'), value: active.length, color: 'text-blue-400', bg: 'bg-[var(--surface)] border-blue-500/20', glow: 'bg-blue-500/8' },
-                  { label: t('track.delivered'), value: delivered.length, color: 'text-emerald-400', bg: 'bg-[var(--surface)] border-green-500/20', glow: 'bg-green-500/8' },
-                  { label: t('track.exceptions'), value: exceptions.length, color: 'text-red-400', bg: 'bg-[var(--surface)] border-red-500/20', glow: 'bg-red-500/8' },
-                ].map(s => (
-                  <div key={s.label} className={`${s.bg} border rounded-2xl p-4 text-center relative overflow-hidden`}>
-                    <div className={`absolute inset-0 ${s.glow} pointer-events-none`} />
-                    <p className={`text-2xl lg:text-3xl font-bold ${s.color}`}>{s.value}</p>
-                    <p className="text-[9px] text-[var(--text-faint)] font-semibold tracking-[0.1em] uppercase mt-1.5">{s.label}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Nessun tracking */}
-              {allTracked.length === 0 && (
-                <div className="text-center py-16 bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
-                  <Truck className="mx-auto text-gray-800 mb-3" size={44} />
-                  <p className="text-[var(--text-muted)] font-semibold">{t('track.none')}</p>
-                  <p className="text-[var(--text-faint)] text-sm mt-1">{t('track.noneHint')}</p>
-                </div>
-              )}
-
-              {/* Sezione: Attive */}
-              {active.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-2">
-                    <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-                    {t('track.activeShipments')} ({active.length})
-                  </h3>
-                  {active.map(p => <TrackCard key={p.id} p={p} />)}
-                </div>
-              )}
-
-              {/* Sezione: Eccezioni / Resi */}
-              {exceptions.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-2">
-                    <span className="w-2 h-2 bg-red-400 rounded-full" />
-                    {t('track.exceptionsReturns')} ({exceptions.length})
-                  </h3>
-                  {exceptions.map(p => <TrackCard key={p.id} p={p} />)}
-                </div>
-              )}
-
-              {/* Sezione: Consegnate */}
-              {delivered.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-400 rounded-full" />
-                    {t('track.deliveredSection')} ({delivered.length})
-                  </h3>
-                  {delivered.map(p => <TrackCard key={p.id} p={p} />)}
-                </div>
-              )}
-            </div>
-          );
-        })()}
+        {/* Rimosso: Pagina Tracking → components/_archived/tracking-rimosso.tsx.txt (vedi REMOVED_SECTIONS.md) */}
 
         {/* ========== CATALOGO (BETA · solo admin) ========== */}
         {currentView === 'catalog' && (
@@ -8928,7 +8651,6 @@ export default function App() {
           { key: 'nav-dashboard', icon: LayoutDashboard, label: `${t('cmd.goTo')} ${t('nav.dashboard')}`, sub: '', run: () => navigateTo('dashboard') },
           { key: 'nav-magazzino', icon: Package, label: `${t('cmd.goTo')} ${t('nav.magazzino')}`, sub: '', run: () => navigateTo('magazzino') },
           { key: 'nav-analytics', icon: BarChart3, label: `${t('cmd.goTo')} ${t('nav.analytics')}`, sub: '', run: () => navigateTo('analytics') },
-          { key: 'nav-tracking', icon: Truck, label: `${t('cmd.goTo')} ${t('nav.tracking')}`, sub: '', run: () => navigateTo('tracking') },
           { key: 'nav-settings', icon: Settings, label: `${t('cmd.goTo')} ${t('nav.settings')}`, sub: '', run: () => navigateTo('settings') },
           { key: 'act-add', icon: Plus, label: t('mag.addProduct'), sub: t('cmd.addProductSub'), run: () => openAddForm() },
           ...(VALUATION_ENABLED ? [{ key: 'act-sourcing', icon: DollarSign, label: t('dash.valueLookup'), sub: t('cmd.valueLookupSub'), run: () => openSourcing() }] : []),
@@ -9123,7 +8845,6 @@ export default function App() {
               { id: 'chat',       icon: Mail },
             ] : []),
             { id: 'catalog',    icon: Layers },
-            { id: 'tracking',   icon: Truck },
             { id: 'analytics',  icon: BarChart3 },
           ];
           return (
@@ -11446,7 +11167,6 @@ export default function App() {
                 { icon: Plus, t: 'Add a product', d: 'Tap "+" and take a photo: the AI recognizes brand and model and fills in the fields. Check size/condition and save.' },
                 { icon: DollarSign, t: 'Sell & track profit', d: 'On a product tap "Sell": enter price, platform, fees and the sale date. HQ computes profit and margin automatically.' },
                 { icon: Sparkles, t: 'HQ assistant (chatbox)', d: 'The bar at the bottom is your assistant: write (or tap the mic and talk) in plain language. It can add products, look up a price ("what\'s the Dunk Panda worth?"), register a sale or create tasks for you. Tap "+" in the bar for a quick add.' },
-                { icon: Truck, t: 'Shipping & tracking', d: 'Add a tracking number both for incoming parcels (they enter stock on delivery) and for your sales. Once added, a link appears under the product name: tap it to open the carrier page directly. You can also set the status by hand (in transit, delivered…).' },
                 { icon: Users, t: 'Team & warehouses', d: 'Create warehouses/departments and invite partners with the code: profits are split by the percentages you set.' },
                 { icon: Bell, t: 'Notifications', d: 'Turn on push notifications from Settings for sales, deliveries and items sitting in stock too long.' },
                 { icon: Smartphone, t: 'Install the app on your phone', d: 'HQ works like a real full-screen app. On iPhone (Safari): tap the Share button → "Add to Home Screen". On Android (Chrome): menu ⋮ → "Install app". Then open it from the icon like any app.' },
@@ -11454,7 +11174,6 @@ export default function App() {
                 { icon: Plus, t: 'Aggiungi un prodotto', d: 'Premi "+" e scatta una foto: l\'IA riconosce brand e modello e compila i campi. Controlla taglia/condizione e salva.' },
                 { icon: DollarSign, t: 'Vendi e traccia il profitto', d: 'Sul prodotto premi "Vendi": inserisci prezzo, piattaforma, fee e la data di vendita. HQ calcola profitto e margine in automatico.' },
                 { icon: Sparkles, t: 'Assistente HQ (chatbox)', d: 'La barra in basso è il tuo assistente: scrivi (o tocca il microfono e parla) in linguaggio naturale. Può aggiungere prodotti, cercare un prezzo ("quanto vale la Dunk Panda?"), registrare una vendita o crearti dei promemoria. Il "+" nella barra apre l\'aggiunta rapida.' },
-                { icon: Truck, t: 'Spedizioni & tracking', d: 'Aggiungi il codice di tracciamento sia per i pacchi in arrivo (entrano in stock alla consegna) sia per le vendite. Una volta inserito, sotto il nome del prodotto compare un link: toccalo per aprire DIRETTO la pagina del corriere. Puoi anche aggiornare lo stato a mano (in transito, consegnato…).' },
                 { icon: Users, t: 'Team e magazzini', d: 'Crea magazzini/reparti e invita i soci col codice: i profitti si dividono con le percentuali impostate.' },
                 { icon: Bell, t: 'Notifiche', d: 'Attiva le notifiche push dalle Impostazioni per vendite, consegne e prodotti fermi da troppo tempo.' },
                 { icon: Smartphone, t: 'Installa l\'app sul telefono', d: 'HQ funziona come un\'app vera, a schermo intero. Su iPhone (Safari): tocca il tasto Condividi in basso → "Aggiungi a schermata Home". Su Android (Chrome): menu ⋮ in alto a destra → "Installa app" (o "Aggiungi a schermata Home"). Poi la apri dall\'icona come una qualsiasi app.' },
@@ -11829,146 +11548,7 @@ export default function App() {
         </div>
       )}
 
-      {trackingModalOpen && trackingProduct && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4" {...swipeBack(() => setTrackingModalOpen(false))}>
-          <div className="bg-[var(--surface)] border-t sm:border border-[var(--border-2)] rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-center mb-4 sm:hidden"><div className="w-10 h-1 bg-gray-700 rounded-full" /></div>
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <Truck className="text-blue-400" size={20} />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-base">{trackingProduct.status === 'VENDUTO' ? t('track.saleShipment') : t('track.incomingShipment')}</h3>
-                  <p className="text-xs text-[var(--text-soft)]">{trackingProduct.brand} {trackingProduct.name}</p>
-                </div>
-              </div>
-              <button onClick={() => setTrackingModalOpen(false)}>
-                <X size={20} className="text-[var(--text-soft)] hover:text-[var(--text)]" />
-              </button>
-            </div>
-
-            {/* Stato spedizione — stepper tappabile: mostra l'avanzamento e si aggiorna con un tap */}
-            {trackingProduct.trackingCode && (() => {
-              // Escrow: sugli articoli pagati in-app la consegna la conferma SOLO il
-              // compratore (chat). Il venditore non vede lo step "Consegnato".
-              const isEscrow = trackingProduct.status === 'PAGATO';
-              const steps = [
-                { key: 'PENDING', label: t('track.stPending'), icon: '⏳' },
-                { key: 'IN_TRANSIT', label: t('track.stInTransit'), icon: '🚚' },
-                { key: 'OUT_FOR_DELIVERY', label: t('track.stOutForDelivery'), icon: '📦' },
-                ...(isEscrow ? [] : [{ key: 'DELIVERED', label: t('track.stDelivered'), icon: '✅' }]),
-              ];
-              const cur = trackingProduct.trackingStatus || 'PENDING';
-              const isException = cur === 'EXCEPTION';
-              const curIdx = steps.findIndex(s => s.key === cur);
-              return (
-                <div className="mb-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest">{t('track.shipmentStatus')}</p>
-                    <button onClick={handleRefreshTracking} disabled={isRefreshingTracking}
-                      className="flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 font-bold disabled:opacity-50">
-                      {isRefreshingTracking ? <Loader2 className="animate-spin" size={11} /> : <Truck size={11} />} {t('track.refresh')}
-                    </button>
-                  </div>
-                  {/* Progressione a step: pieni fino allo stato corrente. Tap = imposta lo stato. */}
-                  <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
-                    {steps.map((s, i) => {
-                      const done = !isException && i <= curIdx;
-                      return (
-                        <button key={s.key} onClick={() => setManualStatus(s.key)}
-                          className={`py-2.5 rounded-xl text-center transition-colors ${done ? 'bg-brand text-white' : 'bg-[var(--fill)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
-                          <div className="text-base leading-none">{s.icon}</div>
-                          <div className="text-[9px] font-bold mt-1 leading-tight">{s.label}</div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="flex gap-2 mt-2.5">
-                    <button onClick={() => setManualStatus('EXCEPTION')}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${isException ? 'bg-red-500 text-white' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'}`}>
-                      {t('track.problemBtn')}
-                    </button>
-                    <a href={trackingPublicUrl(trackingProduct.trackingCode)} target="_blank" rel="noopener noreferrer"
-                      className="flex-1 py-2 rounded-xl text-xs font-bold bg-[var(--surface-2)] border border-[var(--border-2)] text-[var(--text-soft)] hover:text-[var(--text)] flex items-center justify-center gap-1 transition-colors">
-                      {t('track.viewCarrier')}
-                    </a>
-                  </div>
-                  <p className="text-[10px] text-[var(--text-faint)] mt-2 text-center">{t('track.tapStep')} · {trackingProduct.trackingCarrier} • {trackingProduct.trackingCode}</p>
-                  {isEscrow && <p className="text-[10px] text-[var(--text-faint)] mt-1 text-center">{t('track.buyerConfirms')}</p>}
-                </div>
-              );
-            })()}
-
-            {/* Storico eventi */}
-            {trackingDetail?.history?.length > 0 && (
-              <div className="mb-5">
-                <p className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest mb-3">{t('track.history')}</p>
-                <div className="space-y-0 max-h-44 overflow-y-auto pr-1">
-                  {(trackingDetail.history as any[]).map((ev: any, i: number) => (
-                    <div key={i} className="flex gap-3 text-xs">
-                      <div className="flex flex-col items-center pt-1">
-                        <div className={`w-2 h-2 rounded-full shrink-0 ${i === 0 ? 'bg-blue-400' : 'bg-gray-700'}`} />
-                        {i < trackingDetail.history.length - 1 && <div className="w-px flex-1 bg-[var(--fill)] my-1 min-h-[12px]" />}
-                      </div>
-                      <div className="pb-3">
-                        <p className="text-[var(--text)] font-medium">{ev.description || '—'}</p>
-                        {ev.location && <p className="text-[var(--text-soft)]">{ev.location}</p>}
-                        {ev.date && <p className="text-[var(--text-faint)] text-[10px]">{ev.date}</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Form aggiungi/modifica tracking */}
-            <div className="space-y-3 mb-5">
-              <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('track.trackingCodeLabel')}</label>
-                <input type="text" value={trackingInput}
-                  onChange={e => setTrackingInput(e.target.value.toUpperCase())}
-                  placeholder="ES: BRT123456789IT"
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-blue-500 font-mono text-sm uppercase"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2">{t('track.carrier')}</label>
-                <select value={trackingCarrierSel} onChange={e => setTrackingCarrierSel(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-[var(--text)] outline-none focus:border-blue-500">
-                  {(carrierList.length > 0 ? carrierList : [
-                    { key: 'Auto', label: 'Auto-detect' }, { key: 'BRT', label: 'BRT/Bartolini' },
-                    { key: 'GLS', label: 'GLS' }, { key: 'Poste Italiane', label: 'Poste Italiane' },
-                    { key: 'SDA', label: 'SDA' }, { key: 'DHL', label: 'DHL' },
-                    { key: 'UPS', label: 'UPS' }, { key: 'FedEx', label: 'FedEx' },
-                    { key: 'TNT', label: 'TNT' }, { key: 'Amazon Logistics', label: 'Amazon Logistics' },
-                    { key: 'Nexive', label: 'Nexive' },
-                  ]).map(c => (
-                    <option key={c.key} value={c.key}>{c.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              {trackingProduct.trackingCode && (
-                <button onClick={handleRemoveTracking}
-                  className="w-12 h-12 flex items-center justify-center bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded-xl transition-colors shrink-0">
-                  <Trash2 size={16} />
-                </button>
-              )}
-              <button onClick={() => setTrackingModalOpen(false)}
-                className="flex-1 bg-[var(--fill)] hover:bg-[var(--fill)] py-3 rounded-xl font-bold text-sm transition-colors">
-                {t('common.cancel')}
-              </button>
-              <button onClick={handleSaveTracking} disabled={!trackingInput.trim() || isSavingTracking}
-                className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2">
-                {isSavingTracking ? <Loader2 className="animate-spin" size={16} /> : <><Truck size={15} /> {t('common.save')}</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Rimosso: Modale "Codice di tracciamento" → components/_archived/tracking-rimosso.tsx.txt (vedi REMOVED_SECTIONS.md) */}
 
       {/* ========== TEAM PANEL ========== */}
       {teamPanelOpen && (() => {
