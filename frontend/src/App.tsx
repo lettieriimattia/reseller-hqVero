@@ -12,8 +12,7 @@ import { getLang, setLangStorage, translate, LANGUAGES, MARKETPLACE_ENABLED, typ
 // xlsx caricato on-demand (import dinamico) dentro gli handler: resta fuori dal bundle iniziale
 import HomeLedger from './components/HomeLedger';
 import AllocationPie3D from './components/AllocationPie3D';
-import AnalyticsExplorer from './components/AnalyticsExplorer';
-import DashboardKpis from './components/DashboardKpis';
+import ProfitRevenueBlock from './components/ProfitRevenueBlock';
 import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
@@ -5578,12 +5577,10 @@ export default function App() {
               </section>
             )}
 
-            {/* ESPLORA I NUMERI: grafico del periodo col confronto sul precedente, filtri incrociati, pezzi */}
-            <AnalyticsExplorer products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
-              getCategoryIcon={getCategoryIcon} fullName={fullName} onOpenProduct={openEditPiece} />
-
-            {/* KPI: ricavo ultimi 3 mesi, ricavo e profitto del mese, col confronto */}
-            <DashboardKpis products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale} />
+            {/* Rimosso: "Esplora i numeri" + 3 riquadri KPI → components/_archived/dashboard-esplora-e-kpi.tsx.txt (vedi REMOVED_SECTIONS.md) */}
+            {/* BLOCCO UNICO RICAVI / PROFITTI: numero grande del mese, confronto, grafico Mese / 3 mesi */}
+            <ProfitRevenueBlock products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
+              fullName={fullName} onOpenProduct={openEditPiece} />
 
             {/* HOME "A ETICHETTA": periodo (mese/trimestre/anno) confrontato col precedente,
                 codice a barre giornaliero, obiettivo + proiezione, coda Da fare, classifiche. */}

@@ -1,0 +1,12 @@
+// ARCHIVIO — Dashboard: "Esplora i numeri" (titolo, selettore 7gg/30gg/90gg/12 mesi/Anno/Tutto/Personalizzato,
+// barre per reparto / piattaforma / brand) + i 3 riquadri KPI (Ricavo ultimi 3 mesi, Ricavo del mese, Profitto del mese).
+// Sostituiti dal blocco unico components/ProfitRevenueBlock.tsx (step 6). Righe di App.tsx al commit "pre-step6".
+// I componenti restano nei loro file (components/AnalyticsExplorer.tsx, components/DashboardKpis.tsx), non mostrati.
+// Non compilato (.txt). Vedi REMOVED_SECTIONS.md.
+
+            {/* ESPLORA I NUMERI: grafico del periodo col confronto sul precedente, filtri incrociati, pezzi */}
+            <AnalyticsExplorer products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
+              getCategoryIcon={getCategoryIcon} fullName={fullName} onOpenProduct={openEditPiece} />
+
+            {/* KPI: ricavo ultimi 3 mesi, ricavo e profitto del mese, col confronto */}
+            <DashboardKpis products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale} />

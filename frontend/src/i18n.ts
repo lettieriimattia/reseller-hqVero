@@ -36,6 +36,12 @@ const it: Dict = {
   'dash.hello': 'Ciao',
   'dash.personal': 'Personale',
   // Esplora i numeri (AnalyticsExplorer)
+  // Blocco Ricavi / Profitti (Dashboard)
+  'pr.title': 'Ricavi e profitti', 'pr.profit': 'Profitto', 'pr.revenue': 'Ricavo', 'pr.show': 'Cosa vedere',
+  'pr.period': 'Periodo', 'pr.month': 'Mese', 'pr.3m': '3 mesi', 'pr.vs': 'vs', 'pr.noPrev': 'Nessuna vendita da confrontare in',
+  'pr.selection': 'selezione', 'pr.from': 'dal', 'pr.to': 'al',
+  'pr.hint': 'Tocca un giorno per il dettaglio · trascina per sommare più giorni · tocca fuori per tornare al mese',
+  'pr.hint3m': 'Tocca un mese per il dettaglio · trascina per sommarli · tocca fuori per tornare al mese corrente',
   'ex.title': 'Esplora i numeri',
   'ex.each': 'cad.', 'ex.total': 'totale', 'ex.avg': 'media', 'ex.product': 'prodotto', 'ex.products': 'prodotti', 'ex.costWord': 'costo',
   'kpi.rev3m': 'Ricavo ultimi 3 mesi', 'kpi.revMonth': 'Ricavo del mese', 'kpi.profitMonth': 'Profitto del mese', 'kpi.vs': 'vs',
@@ -2058,6 +2064,12 @@ const de: Dict = {
 // Chiavi delle NUOVE feature in inglese (aggiunte al dict `en` via merge sotto).
 const enExtra: Dict = {
   // Analytics explorer
+  // Revenue / profit block (Dashboard)
+  'pr.title': 'Revenue and profit', 'pr.profit': 'Profit', 'pr.revenue': 'Revenue', 'pr.show': 'Show',
+  'pr.period': 'Period', 'pr.month': 'Month', 'pr.3m': '3 months', 'pr.vs': 'vs', 'pr.noPrev': 'No sales to compare in',
+  'pr.selection': 'selection', 'pr.from': 'from', 'pr.to': 'to',
+  'pr.hint': 'Tap a day for details · drag to add up several days · tap outside to go back to the month',
+  'pr.hint3m': 'Tap a month for details · drag to add them up · tap outside to go back to this month',
   'ex.title': 'Explore your numbers',
   'ex.each': 'each', 'ex.total': 'total', 'ex.avg': 'avg', 'ex.product': 'product', 'ex.products': 'products', 'ex.costWord': 'cost',
   'kpi.rev3m': 'Revenue, last 3 months', 'kpi.revMonth': 'Revenue this month', 'kpi.profitMonth': 'Profit this month', 'kpi.vs': 'vs',

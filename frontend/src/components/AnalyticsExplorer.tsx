@@ -526,7 +526,7 @@ type SelItem = { p: XProduct; v: number; d: Date | null };
 
 // Elenco dei pezzi di una barra: i prodotti IDENTICI (stessa marca + stesso nome) diventano una riga
 // sola — "20× Yeezy … · 190 € cad. · totale 3.800 €". Toccando la riga si aprono i singoli pezzi.
-function SelectionList({ title, items, metric, fmt, t, sortBy, setSortBy, shown, setShown, onClose, onOpen, fullName, dShort, dateLocale }: {
+export function SelectionList({ title, items, metric, fmt, t, sortBy, setSortBy, shown, setShown, onClose, onOpen, fullName, dShort, dateLocale }: {
   title: string; items: SelItem[]; metric: Metric;
   fmt: (m: Metric, v: number | null) => string; t: (k: string) => string;
   sortBy: 'value' | 'date'; setSortBy: (s: 'value' | 'date') => void; shown: number; setShown: (n: number) => void;

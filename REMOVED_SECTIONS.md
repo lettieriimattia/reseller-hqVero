@@ -123,3 +123,23 @@ Migliorato nello stesso step, su richiesta dell'utente: l'elenco che compare toc
 # IDEE FUTURE PER ANALYTICS
 
 - "Valore magazzino al costo, cumulato mese per mese, per vedere la crescita del patrimonio (es. marzo 10k → giugno 15k). Da ricostruire con data acquisto/data vendita dei pezzi."
+
+# Step 6 — Blocco unico Ricavi / Profitti
+
+Fatto nel commit "step6: blocco ricavi e profitti". Punto di ripristino: il commit "pre-step6".
+
+| Sezione | Dove stava | Dove si trova ora il codice | Stato |
+|---|---|---|---|
+| "Esplora i numeri" in Dashboard: titolo, selettore 7gg / 30gg / 90gg / 12 mesi / Anno / Tutto / Personalizzato, barre per reparto / piattaforma / brand | `App.tsx` → `components/AnalyticsExplorer.tsx` | Righe tolte: `components/_archived/dashboard-esplora-e-kpi.tsx.txt`. Il componente resta intero in `AnalyticsExplorer.tsx`, ma non è più usato in nessuna pagina | Rimosso dalla Dashboard, recuperabile. ⚠️ Le barre **per reparto, piattaforma e brand** ora non compaiono più da nessuna parte: vanno portate in Analytics quando se ne farà il riordino |
+| 3 riquadri "Ricavo ultimi 3 mesi", "Ricavo del mese", "Profitto del mese" | `App.tsx` → `components/DashboardKpis.tsx` | Righe tolte: `components/_archived/dashboard-esplora-e-kpi.tsx.txt`. Il componente resta in `DashboardKpis.tsx`, non importato | Rimosso, recuperabile: sostituito dal blocco unico |
+
+Aggiunto: `components/ProfitRevenueBlock.tsx`, il blocco unico in cima alla Dashboard.
+- **Numero grande**: all'apertura il profitto del mese corrente, con il confronto sul mese precedente in € e in %.
+- **Interruttore Profitto / Ricavo**: l'ultima scelta viene ricordata.
+- **Viste**: "Mese" (una barra al giorno) e "3 mesi" (3 barre, una per mese di calendario).
+- **Tocco su una barra**: mostra il valore del giorno o del mese, con l'altra metrica accanto.
+- **Trascinamento**: mostra la somma dell'intervallo, con le date sotto.
+- **Tocco fuori dal blocco**: si torna al totale del mese.
+- Toccando una barra compare l'elenco dei pezzi, raggruppato come nello step 5.
+
+Calcoli: riusano `aggregate` e `SelectionList`, esportati da `AnalyticsExplorer.tsx`. Verificati barra per barra con un calcolo indipendente sui dati grezzi, sia con dati di prova (casi limite di orario inclusi) sia con i dati veri dell'account demo: **0 differenze**.
