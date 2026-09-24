@@ -12,7 +12,7 @@ interface XProduct {
   createdAt?: string; soldAt?: string; photos?: string;
 }
 
-type RangeKey = '7d' | '30d' | '90d' | '12m' | 'ytd' | 'all';
+type RangeKey = 'month' | '7d' | '30d' | '90d' | '12m' | 'ytd' | 'all' | 'custom';
 type Metric = 'profit' | 'revenue' | 'count' | 'margin' | 'spent';
 type Dim = 'category' | 'platform' | 'brand';
 type Range = { start: Date; end: Date };
@@ -31,7 +31,7 @@ interface Props {
 }
 
 const DAY = 86400000;
-const RANGES: RangeKey[] = ['7d', '30d', '90d', '12m', 'ytd', 'all'];
+const RANGES: RangeKey[] = ['month', '7d', '30d', '90d', '12m', 'ytd', 'all', 'custom'];
 const METRICS: Metric[] = ['profit', 'revenue', 'count', 'margin', 'spent'];
 const AGING = [
   { from: 0, to: 30, label: '0–30' },
@@ -49,6 +49,9 @@ const reducedMotion = () => { try { return window.matchMedia('(prefers-reduced-m
 const inR = (d: Date | null, r: Range) => !!d && d >= r.start && d < r.end;
 const dateOf = (s?: string) => (s ? new Date(s) : null);
 const cap1 = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+// Date "aaaa-mm-gg" per gli input type=date (ora locale, niente sorprese di fuso).
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const parseYmd = (v: string) => { const [y, m, d] = v.split('-').map(Number); return y && m && d ? new Date(y, m - 1, d) : null; };
 
 function firstPhoto(p: XProduct): string | null {
   try {
@@ -79,7 +82,11 @@ function useCountUp(value: number) {
 }
 
 export default function AnalyticsExplorer({ products, myProfitFactor, myCostFactor, t, dateLocale, getCategoryIcon, fullName, onOpenProduct }: Props) {
-  const [rangeKey, setRangeKey] = useState<RangeKey>('30d');
+  const [rangeKey, setRangeKey] = useState<RangeKey>('month');
+  const [custom, setCustom] = useState(() => {
+    const n = new Date();
+    return { from: ymd(new Date(n.getFullYear(), n.getMonth(), 1)), to: ymd(new Date(n.getFullYear(), n.getMonth() + 1, 0)) };
+  });
   const [zoom, setZoom] = useState<Range | null>(null);
   const [metric, setMetric] = useState<Metric>('profit');
   const [filters, setFilters] = useState<Record<Dim, string | null>>({ category: null, platform: null, brand: null });
@@ -90,7 +97,7 @@ export default function AnalyticsExplorer({ products, myProfitFactor, myCostFact
   const [shown, setShown] = useState(20);
   const chartRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setSel(null); setShown(20); }, [rangeKey, zoom, metric, filters]);
+  useEffect(() => { setSel(null); setShown(20); }, [rangeKey, custom, zoom, metric, filters]);
 
   const eur = (n: number) => new Intl.NumberFormat(dateLocale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0, useGrouping: 'always' as any }).format(Math.round(n) || 0);
   const int = (n: number) => new Intl.NumberFormat(dateLocale, { maximumFractionDigits: 0, useGrouping: 'always' as any }).format(Math.round(n) || 0);
@@ -104,6 +111,13 @@ export default function AnalyticsExplorer({ products, myProfitFactor, myCostFact
   const today1 = addDays(sod(now), 1);
   const baseRange = ((): Range => {
     switch (rangeKey) {
+      // Mese corrente intero: dal giorno 1 all'ultimo giorno del mese.
+      case 'month': return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: new Date(now.getFullYear(), now.getMonth() + 1, 1) };
+      case 'custom': {
+        let a = parseYmd(custom.from) || sod(now), b = parseYmd(custom.to) || sod(now);
+        if (b < a) [a, b] = [b, a];
+        return { start: a, end: addDays(b, 1) };
+      }
       case '7d': return { start: addDays(today1, -7), end: today1 };
       case '30d': return { start: addDays(today1, -30), end: today1 };
       case '90d': return { start: addDays(today1, -90), end: today1 };
@@ -119,7 +133,11 @@ export default function AnalyticsExplorer({ products, myProfitFactor, myCostFact
   })();
   const range = zoom || baseRange;
   const lenDays = Math.max(1, dayDiff(range.start, range.end));
-  const prevRange: Range = { start: addDays(range.start, -lenDays), end: range.start };
+  // Confronto: per "Mese" il mese precedente INTERO; altrimenti lo stesso numero di giorni appena prima.
+  const prevRange: Range = !zoom && rangeKey === 'month'
+    ? { start: new Date(range.start.getFullYear(), range.start.getMonth() - 1, 1), end: range.start }
+    : { start: addDays(range.start, -lenDays), end: range.start };
+  const shiftDays = dayDiff(prevRange.start, range.start); // barra i ↔ stessa posizione nel periodo precedente
 
   // Barre: giorni (≤45 gg), settimane (≤190 gg), altrimenti mesi.
   const buckets: Bucket[] = (() => {
@@ -179,7 +197,7 @@ export default function AnalyticsExplorer({ products, myProfitFactor, myCostFact
   const prev = agg(pool, prevRange, prevRange);
   const series = buckets.map(b => {
     const a = agg(pool, b, b);
-    const pb: Range = { start: addDays(b.start, -lenDays), end: addDays(b.end, -lenDays) };
+    const pb: Range = { start: addDays(b.start, -shiftDays), end: addDays(b.end, -shiftDays) };
     const pa = agg(pool, pb, pb);
     return { agg: a, prevAgg: pa };
   });
@@ -272,13 +290,34 @@ export default function AnalyticsExplorer({ products, myProfitFactor, myCostFact
         </div>
         <div role="tablist" aria-label={t('ex.period')} className="flex items-center gap-0.5 p-0.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] overflow-x-auto max-w-full">
           {RANGES.map(k => (
-            <button key={k} role="tab" aria-selected={!zoom && rangeKey === k} onClick={() => { setZoom(null); setRangeKey(k); }}
+            <button key={k} role="tab" aria-selected={!zoom && rangeKey === k} onClick={e => {
+              e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+              setZoom(null);
+              // "Personalizzato" parte dalle date che stai già guardando.
+              if (k === 'custom' && rangeKey !== 'custom') setCustom({ from: ymd(range.start), to: ymd(addDays(range.end, -1)) });
+              setRangeKey(k);
+            }}
               className={`px-2.5 py-1.5 rounded-md text-xs font-bold whitespace-nowrap transition-colors ${!zoom && rangeKey === k ? 'bg-[var(--text)] text-[var(--bg)]' : 'text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
               {t(`ex.r.${k}`)}
             </button>
           ))}
         </div>
       </div>
+
+      {/* Periodo personalizzato: date Da / A (selettore nativo, comodo anche su telefono) */}
+      {rangeKey === 'custom' && !zoom && (
+        <div className="grid grid-cols-2 gap-2 sm:max-w-md">
+          {(['from', 'to'] as const).map(f => (
+            <label key={f} className="flex flex-col gap-1">
+              <span className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-faint)]">{t(`ex.${f}`)}</span>
+              <input type="date" value={custom[f]} required
+                min={f === 'to' ? custom.from : undefined} max={f === 'from' ? custom.to : undefined}
+                onChange={e => { const v = e.target.value; if (parseYmd(v)) setCustom(c => ({ ...c, [f]: v })); }}
+                className="w-full min-h-[44px] bg-[var(--surface-2)] border border-[var(--border-2)] rounded-lg px-3 text-base sm:text-sm text-[var(--text)] outline-none focus:border-brand [color-scheme:dark] [.light_&]:[color-scheme:light]" />
+            </label>
+          ))}
+        </div>
+      )}
 
       {/* Filtri attivi */}
       {(activeFilters.length > 0 || zoom) && (

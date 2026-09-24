@@ -29,3 +29,13 @@ Come sono state rimosse:
 
 - La sezione "Piattaforme" ora occupa tutta la larghezza, perché "Soci" non le sta più accanto.
 - La riga Stock / Svendita occupa tutta la larghezza e non lascia più colonne vuote.
+
+# Spostamenti — step 1 dashboard
+
+Fatti nel commit "step1: esplora i numeri in dashboard". Punto di ripristino: il commit "pre-step1 dashboard".
+
+| Sezione | Da | A | Note |
+|---|---|---|---|
+| "Esplora i numeri" (`components/AnalyticsExplorer.tsx`): grafico del periodo, filtri per reparto / piattaforma / brand, età del magazzino | Pagina Analytics, in alto | Dashboard, in alto, subito sotto il saluto | In Analytics, al suo posto, c'è il commento `{/* Spostato: … */}`. Il componente è lo stesso, non è stato duplicato. Nuove funzioni: opzione **Mese** (predefinita: dal giorno 1 all'ultimo del mese corrente, confrontato con tutto il mese precedente) e **Personalizzato** (date Da / A) |
+
+In attesa di conferma, **non ancora tolto**: l'elemento bianco della Dashboard, cioè l'"etichetta" di `components/HomeLedger.tsx`.

@@ -5579,6 +5579,10 @@ export default function App() {
               </section>
             )}
 
+            {/* ESPLORA I NUMERI: grafico del periodo col confronto sul precedente, filtri incrociati, pezzi */}
+            <AnalyticsExplorer products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
+              getCategoryIcon={getCategoryIcon} fullName={fullName} onOpenProduct={openEditPiece} />
+
             {/* HOME "A ETICHETTA": periodo (mese/trimestre/anno) confrontato col precedente,
                 codice a barre giornaliero, obiettivo + proiezione, coda Da fare, classifiche. */}
             <HomeLedger
@@ -6503,9 +6507,7 @@ export default function App() {
               </button>
             </div>
 
-            {/* ===== ESPLORA I NUMERI: periodo, metrica, grafico, filtri incrociati, pezzi ===== */}
-            <AnalyticsExplorer products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
-              getCategoryIcon={getCategoryIcon} fullName={fullName} onOpenProduct={openEditPiece} />
+            {/* Spostato: "Esplora i numeri" ora sta in cima alla Dashboard (vedi REMOVED_SECTIONS.md) */}
 
             {/* Rimosso: Istogramma "Analisi" (Entrate / Uscite / Investimenti) → components/_archived/analytics-istogramma-entrate-uscite.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* ===== TORTA 3D: composizione per reparto (capitale € / quantità pezzi) ===== */}
