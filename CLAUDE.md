@@ -4,5 +4,7 @@
 
 ## Architettura informazioni
 
-- **DASHBOARD** = numeri economici immediati: ricavi, profitto, confronti col periodo precedente. Deve essere capibile anche da un principiante in 3 secondi.
-- **ANALYTICS** = analisi approfondite: miglior prodotto, miglior cliente, reparti, fornitori, piattaforme, brand.
+Regola da rispettare in tutti gli step futuri:
+
+- **DASHBOARD = SOLO RICAVI E PROFITTI.** Serve a capire in 3 secondi come sta andando il mese. Nient'altro: niente magazzino, niente reparti, niente clienti, niente fornitori, niente tracking.
+- **ANALYTICS = tutte le analisi**: magazzino, reparti, diagramma a torta, migliori prodotti, prodotti da migliorare, migliori clienti, fornitori, migliori canali di vendita, brand, percentuali. Il riordino di Analytics si farà in uno step futuro: finché non viene chiesto, non toccarla.
