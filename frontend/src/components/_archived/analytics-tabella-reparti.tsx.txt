@@ -1,0 +1,62 @@
+// ARCHIVIO — Tabella Reparti (con colonna sell-through)
+// Motivo: scelta: tenute le barre "Per reparto" di Esplora i numeri.
+// Blocco JSX tolto da App.tsx (righe 6820-6876 al commit "pre-step3").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato in App.tsx. Vedi REMOVED_SECTIONS.md.
+
+            {/* ---- Tabella Sell-Through per Categoria ---- */}
+            {userCategories.length > 0 && (() => {
+              const rows = userCategories.map(cat => {
+                const catP = products.filter(p => p.category === cat);
+                const catSold = catP.filter(p => p.status === 'VENDUTO');
+                const catStock = catP.filter(p => p.status === 'IN STOCK');
+                const profit = catSold.reduce((s, p) => s + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)), 0);
+                const capital = catStock.reduce((s, p) => s + p.purchasePrice, 0);
+                const daysArr = catSold.filter(p => p.soldAt && p.createdAt)
+                  .map(p => Math.floor((new Date(p.soldAt!).getTime() - new Date(p.createdAt!).getTime()) / 86400000));
+                const avgDays = daysArr.length ? Math.round(daysArr.reduce((a, b) => a + b, 0) / daysArr.length) : null;
+                const st = catP.length > 0 ? Math.round((catSold.length / catP.length) * 100) : 0;
+                return { cat, total: catP.length, sold: catSold.length, inStock: catStock.length, profit, capital, avgDays, st };
+              }).filter(r => r.total > 0);
+              if (rows.length === 0) return null;
+              return (
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <PieChartIcon className="text-[var(--text)]" size={15} />
+                    <h3 className="font-semibold">{t('an.depts')}</h3>
+                  </div>
+                  <div className="overflow-x-auto -mx-1">
+                    <table className="w-full text-[11px]">
+                      <thead>
+                        <tr className="border-b border-[var(--border-2)]">
+                          {[t('an.thDept'), t('an.thTotal'), t('an.thSold'), t('an.thStock'), t('an.sellThrough'), t('an.thCapital'), t('an.thProfit'), t('an.daysPerSaleShort')].map(h => (
+                            <th key={h} className="text-left text-[var(--text-faint)] font-semibold uppercase tracking-wider py-2 pr-4 last:pr-0">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--border)]">
+                        {rows.map(r => (
+                          <tr key={r.cat} className="hover:bg-[var(--fill)] transition-colors">
+                            <td className="py-2.5 pr-4 font-bold text-[var(--text)]">{getCategoryIcon(r.cat)} {r.cat}</td>
+                            <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.total}</td>
+                            <td className="py-2.5 pr-4 text-brand-hi num">{r.sold}</td>
+                            <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.inStock}</td>
+                            <td className="py-2.5 pr-4">
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 h-1.5 bg-[var(--fill)] rounded-full overflow-hidden">
+                                  <div className="h-full bg-brand rounded-full" style={{ width: `${r.st}%` }} />
+                                </div>
+                                <span className={`num font-semibold ${r.st >= 60 ? 'text-emerald-400' : r.st >= 30 ? 'text-yellow-400' : 'text-red-400'}`}>{r.st}%</span>
+                              </div>
+                            </td>
+                            <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{eur0(r.capital)}</td>
+                            <td className={`py-2.5 pr-4 num font-semibold ${r.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{r.profit >= 0 ? '+' : ''}{eur0(r.profit)}</td>
+                            <td className="py-2.5 text-[var(--text-soft)] num">{r.avgDays ?? '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              );
+            })()}
+

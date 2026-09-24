@@ -1,0 +1,9 @@
+// ARCHIVIO — Dashboard: classifiche "Per piattaforma" e "Per reparto"
+// Motivo: doppioni delle barre "Per piattaforma" / "Per reparto" di Esplora i numeri, nella stessa pagina.
+// Tolto da components/HomeLedger.tsx (righe 325-328 al commit "pre-step3").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato. Vedi REMOVED_SECTIONS.md.
+
+          <RankCard title={t('home.byPlatform')} empty={t('home.noSales')}
+            rows={data.platforms.map(r => ({ key: r.name, label: r.name, sub: `${r.count} ${t('home.salesWord')} · ${eur(r.revenue)}`, value: eur(r.profit), weight: r.revenue }))} />
+          <RankCard title={t('home.byDept')} empty={t('home.noSales')}
+            rows={data.depts.map(r => ({ key: r.name, label: r.name, icon: props.getCategoryIcon(r.name), sub: `${r.count} ${t('home.salesWord')}`, value: eur(r.profit), weight: Math.max(0, r.profit) }))} />

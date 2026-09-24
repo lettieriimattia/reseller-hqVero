@@ -53,3 +53,30 @@ Aggiunto: `components/DashboardKpis.tsx`, con 3 riquadri sotto a "Esplora i nume
 Riusano i calcoli dei riquadri tolti nella pulizia: `aggregate` e `valueOf`, spostati fuori dal componente in `AnalyticsExplorer.tsx` ed esportati, con la stessa logica. Se un periodo non ha vendite, mostrano "—".
 
 Resta in HomeLedger il selettore Mese / Trimestre / Anno: ora guida solo l'obiettivo, la proiezione e le classifiche sotto.
+
+# Step 3 — pulizia dei doppioni
+
+Fatto nel commit "step3: pulizia analytics". Punto di ripristino: il commit "pre-step3".
+
+La regola data dall'utente: ogni doppione va tolto, sia dentro la stessa pagina sia tra Dashboard e Analytics. Quale copia tenere l'ho deciso così:
+- **reparti, piattaforme e brand**: resta la versione di "Esplora i numeri" (scelta esplicita dell'utente per i reparti);
+- **compratori e fornitori**: restano in Analytics (regola di CLAUDE.md);
+- **capitale in magazzino**: resta l'"Età del magazzino".
+
+| Sezione | Dove stava | Dove si trova ora il codice | Stato |
+|---|---|---|---|
+| Tabella Reparti (totale, venduti, stock, **sell-through**, capitale, profitto, giorni per vendita) | `App.tsx`, Analytics | `components/_archived/analytics-tabella-reparti.tsx.txt` | Rimosso, recuperabile. Scelta dell'utente: tenute le barre "Per reparto". La colonna sell-through se n'è andata con la tabella |
+| Piattaforme (vendite, ricavi, fee e profitto per piattaforma) | `App.tsx`, Analytics | `components/_archived/analytics-piattaforme.tsx.txt` | Rimosso, recuperabile: doppione delle barre "Per piattaforma". ⚠️ Conteneva il punto di reintegro di **Soci** (da reintegrare, vedi sopra) |
+| Riquadro Stock + Svendita | `App.tsx`, Analytics | `components/_archived/analytics-riquadro-stock-svendita.tsx.txt` | Rimosso, recuperabile: doppione dello stock. Con lui è andato "Svendita" (valore di liquidazione), che non compare altrove |
+| Riquadro KPI Stock (riga ROI / Profitto / Stock / Vendite) | `App.tsx`, Analytics | `components/_archived/analytics-kpi-stock.tsx.txt` | Rimosso, recuperabile: doppione dell'Età del magazzino. La riga ora ha 3 riquadri: ROI, Profitto netto, Vendite |
+| Sottotitolo "· N% sell-through" del riquadro Vendite | `App.tsx`, Analytics | `components/_archived/analytics-vendite-sottotitolo-sellthrough.tsx.txt` (riga originale) | Rimosso: il sottotitolo ora è solo "Totali" |
+| Insights (pezzi fermi, vendite della settimana, reparto migliore, sell-through rate) | `App.tsx`, Analytics | `components/_archived/analytics-insights.tsx.txt` | Rimosso, recuperabile: ogni voce ripeteva un dato presente altrove |
+| Avviso pezzi fermi (dead stock) | `App.tsx`, Analytics | `components/_archived/analytics-avviso-pezzi-fermi.tsx.txt` | Rimosso, recuperabile: doppione di "Fermi da oltre 30 giorni" e dell'Età del magazzino |
+| Migliori compratori / Migliori fornitori (solo telefono) | `App.tsx`, Dashboard | `components/_archived/dashboard-mobile-compratori-fornitori.tsx.txt` | Rimosso, recuperabile: doppione di Compratori / Fornitori in Analytics |
+| Classifiche "Per piattaforma" e "Per reparto" | `components/HomeLedger.tsx`, Dashboard | `components/_archived/home-classifiche-piattaforma-reparto.tsx.txt` | Rimosso, recuperabile: doppione delle barre di "Esplora i numeri", nella stessa pagina. Resta "Pezzi più redditizi" |
+| Riga "Capitale in magazzino" del "Da fare" | `components/HomeLedger.tsx`, Dashboard | `components/_archived/home-da-fare-capitale-magazzino.tsx.txt` | Rimosso, recuperabile: doppione del totale dell'Età del magazzino |
+
+Sovrapposizioni lasciate apposta (non sono lo stesso dato):
+- **"Fermi da oltre 30 giorni"** nel "Da fare": è un'azione da fare, non solo un numero.
+- **Totale della torta 3D in "In magazzino"**: coincide col totale dell'Età del magazzino, ma divide il capitale per reparto invece che per età.
+- **Profitto netto in Analytics**: è su tutto lo storico, mentre la Dashboard mostra il mese.

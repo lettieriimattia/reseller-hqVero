@@ -5610,46 +5610,7 @@ export default function App() {
               fullName={fullName}
             />
 
-            {/* MOBILE: al posto del Libro Paga, due tabelle affiancate — migliori Buyer e Seller.
-                Tocca "Vedi tutti" per l'elenco completo con il numero di operazioni. Su desktop
-                queste (+ Insights + Libro Paga) vivono in Analytics. */}
-            <div className="grid grid-cols-2 gap-3 lg:hidden">
-              {(() => {
-                // Buyer/seller del PERIODO scelto in Personal (vendite per soldAt, acquisti per createdAt).
-                const buyerAgg: any[] = Object.values(products.filter((p: any) => p.status === 'VENDUTO' && (p.customer || '').trim() && inPersonalPeriod(p.soldAt || p.createdAt)).reduce((acc: any, p: any) => {
-                  const n = (p.customer || '').trim(); if (!acc[n]) acc[n] = { name: n, count: 0, revenue: 0 };
-                  acc[n].count++; acc[n].revenue += (p.salePrice || 0); return acc;
-                }, {})).sort((a: any, b: any) => b.revenue - a.revenue);
-                const sellerAgg: any[] = Object.values(products.filter((p: any) => (p.supplier || '').trim() && inPersonalPeriod(p.createdAt)).reduce((acc: any, p: any) => {
-                  const n = (p.supplier || '').trim(); if (!acc[n]) acc[n] = { name: n, count: 0, spent: 0 };
-                  acc[n].count++; acc[n].spent += (p.purchasePrice || 0); return acc;
-                }, {})).sort((a: any, b: any) => b.spent - a.spent);
-                const Card = ({ title, icon, rows, accent, onAll }: any) => (
-                  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3">
-                    <div className="flex items-center gap-1.5 mb-2">{icon}<p className="text-[11px] font-bold truncate">{title}</p></div>
-                    {rows.length === 0 ? <p className="text-[10px] text-[var(--text-faint)] py-2">{t('ct.noneYet')}</p> : (
-                      <div className="space-y-1">
-                        {rows.slice(0, 3).map((r: any, i: number) => (
-                          <div key={i} className="flex items-center justify-between gap-1 text-[11px]">
-                            <span className="truncate text-[var(--text-soft)]">{r.name}</span>
-                            <span className={`shrink-0 font-bold num ${accent}`}>×{r.count}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {rows.length > 0 && (
-                      <button onClick={onAll} className="mt-2 text-[10px] font-bold text-brand">{t('ct.seeAll')}</button>
-                    )}
-                  </div>
-                );
-                return (<>
-                  <Card title={t('ct.topBuyers')} icon={<Users size={12} className="text-emerald-400" />} rows={buyerAgg} accent="text-emerald-400"
-                    onAll={() => { setContactPageExpanded(null); setContactsPage('buyers'); }} />
-                  <Card title={t('ct.topSellers')} icon={<Package size={12} className="text-brand" />} rows={sellerAgg} accent="text-brand"
-                    onAll={() => { setContactPageExpanded(null); setContactsPage('sellers'); }} />
-                </>);
-              })()}
-            </div>
+            {/* Rimosso: Dashboard (solo telefono): Migliori compratori / Migliori fornitori → components/_archived/dashboard-mobile-compratori-fornitori.tsx.txt (vedi REMOVED_SECTIONS.md). */}
 
             {/* Spedizioni in corso */}
             {(() => {
@@ -6517,75 +6478,8 @@ export default function App() {
             {/* ===== TORTA 3D: composizione per reparto (capitale € / quantità pezzi) ===== */}
             <AllocationPie3D products={products} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale} getCategoryIcon={getCategoryIcon} />
 
-            {/* ===== STOCK (spostato qui dalla dashboard) ===== */}
-            <div className={`grid gap-3 ${liquidationValue > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              <button onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); }}
-                className="text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 hover:border-[var(--border-2)] transition-colors">
-                <p className="sys-label mb-1 flex items-center gap-1.5"><Layers size={10} /> {t('dash.stock')}</p>
-                <p className="text-xl lg:text-2xl font-extrabold num">{eur0(stockValore)}</p>
-                <p className="text-[10px] text-[var(--text-faint)] mt-1">{inStockItems.length} {t('dash.pieces')} · {t('dash.see')} →</p>
-              </button>
-              {liquidationValue > 0 && (
-                <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
-                  <p className="sys-label mb-1 flex items-center gap-1.5"><TrendingDown size={10} /> Svendita</p>
-                  <p className="text-xl lg:text-2xl font-extrabold num text-amber-400/90">{eur0(liquidationValue)}</p>
-                  <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('dash.stock')}</p>
-                </div>
-              )}
-            </div>
-
-            {/* ===== SMART INSIGHTS (spostati qui dalla dashboard) ===== */}
-            {(staleCount > 0 || weekSales.length > 0 || bestCategoryEntry?.profit > 0 || sellThroughRate > 0) && (
-            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-              <p className="text-[9px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.12em] mb-4 flex items-center gap-2"><Sparkles size={10} /> Insights</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {staleCount > 0 && (
-                  <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl cursor-pointer hover:border-[var(--border-2)] transition-colors"
-                    onClick={() => { setCurrentView('magazzino'); setSortField('date'); setSortDir('asc'); }}>
-                    <AlertTriangle size={16} className="text-red-400 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-[var(--text)]">{staleCount} {staleCount === 1 ? t('home.staleOne') : t('home.staleMany')} {t('home.over30')}</p>
-                      <p className="text-[10px] text-[var(--text-soft)]">{t('home.staleHint')}</p>
-                    </div>
-                    <span className="text-[10px] text-[var(--text-soft)] shrink-0">{t('dash.see')} →</span>
-                  </div>
-                )}
-                {weekSales.length > 0 && (
-                  <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl">
-                    <TrendingUp size={16} className="text-emerald-400 shrink-0" />
-                    <div>
-                      <p className="text-sm font-bold text-[var(--text)]">{weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')} {t('home.thisWeek')}{weekProfit > 0 && ` · +${eur0(weekProfit)}`}</p>
-                      <p className="text-[10px] text-[var(--text-soft)]">{t('home.goodPace')}</p>
-                    </div>
-                  </div>
-                )}
-                {bestCategoryEntry?.profit > 0 && (
-                  <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl">
-                    <span className="text-xl shrink-0">{getCategoryIcon(bestCategoryEntry.cat)}</span>
-                    <div>
-                      <p className="text-sm font-bold">{bestCategoryEntry.cat} {t('home.bestDeptSuffix')}</p>
-                      <p className="text-[10px] text-[var(--text-soft)]">+{eur0(bestCategoryEntry.profit)} · {bestCategoryEntry.count} {t('dash.salesPlural')}</p>
-                    </div>
-                  </div>
-                )}
-                {sellThroughRate > 0 && (
-                  <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <p className="text-xs text-[var(--text-muted)] font-semibold">{t('home.sellThrough')}</p>
-                        <p className="text-xs font-bold text-[var(--text)] num">{sellThroughRate}%</p>
-                      </div>
-                      <div className="h-1.5 bg-black/40 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full transition-all ${sellThroughRate >= 60 ? 'bg-green-500' : sellThroughRate >= 30 ? 'bg-yellow-500' : 'bg-gray-600'}`} style={{ width: `${sellThroughRate}%` }} />
-                      </div>
-                      <p className="text-[10px] text-[var(--text-faint)] mt-1">{globalSold.length} {t('home.soldOf')} {totalItems} {t('home.totalWord')}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </section>
-            )}
-
+            {/* Rimosso: Riquadro Stock + Svendita → components/_archived/analytics-riquadro-stock-svendita.tsx.txt (vedi REMOVED_SECTIONS.md). */}
+            {/* Rimosso: Insights (pezzi fermi, vendite della settimana, reparto migliore, sell-through rate) → components/_archived/analytics-insights.tsx.txt (vedi REMOVED_SECTIONS.md). */}
             {/* Rimosso: Libro paga soci → components/_archived/analytics-libro-paga-soci.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* Rimosso: Costi extra → components/_archived/analytics-costi-extra.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* ===== MESI STORICI (dati economici PRIMA dell'apertura del conto) ===== */}
@@ -6743,7 +6637,7 @@ export default function App() {
 
             {/* Rimosso: Conto economico mensile → components/_archived/analytics-conto-economico.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* KPI row 1: principali */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 gap-2 lg:gap-3">
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <TrendingUp size={10} /> ROI
@@ -6758,158 +6652,23 @@ export default function App() {
                 <p className={`text-2xl lg:text-3xl font-bold num ${profittoNetto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{eur0(profittoNetto)}</p>
                 <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.afterFees')} · {eur0(ricaviTotali)} {t('an.revenueLower')}</p>
               </div>
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
-                <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
-                  <Layers size={10} /> {t('dash.stock')}
-                </p>
-                <p className="text-2xl lg:text-3xl font-bold num">{eur0(stockValore)}</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.capitalLocked')}</p>
-              </div>
+              {/* Rimosso: Riquadro KPI Stock → components/_archived/analytics-kpi-stock.tsx.txt (vedi REMOVED_SECTIONS.md). */}
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
                 <p className="text-[10px] lg:text-xs font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase mb-3 flex items-center gap-1.5">
                   <DollarSign size={10} /> {t('an.sales')}
                 </p>
                 <p className="text-2xl lg:text-3xl font-bold text-brand-hi num">{soldItemsTotal.length}</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.totals')} · {sellThroughRate}% sell-through</p>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.totals')}</p>
               </div>
             </div>
 
             {/* Rimosso: Margine medio / Giorni medi di vendita / Sell-through → components/_archived/analytics-margine-giorni-sellthrough.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* Grafico Andamento rimosso da Analytics: è già in Dashboard (niente duplicati). */}
 
-            {/* Piattaforme */}
-            <div className="grid grid-cols-1 gap-5">
-              {platformBreakdown.length > 0 && (
-                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Store className="text-[var(--text)]" size={15} />
-                    <h3 className="font-semibold">{t('an.platforms')}</h3>
-                  </div>
-                  <div className="space-y-4">
-                    {platformBreakdown.map(([plat, stats]) => {
-                      const maxRev = platformBreakdown[0]?.[1]?.revenue || 1;
-                      const platMargin = stats.count > 0 ? stats.profit / stats.count : 0;
-                      return (
-                        <div key={plat}>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-sm font-bold">{plat}</span>
-                            <div className="flex items-center gap-3">
-                              <span className="text-[10px] text-[var(--text-soft)]">{stats.count} {t('an.salesAbbr')}</span>
-                              <span className="text-sm font-semibold text-green-400">+{eur0(stats.profit)}</span>
-                            </div>
-                          </div>
-                          <div className="h-2 bg-black/40 rounded-full overflow-hidden mb-1">
-                            <div className="h-full bg-gradient-to-r from-brand to-brand-hi rounded-full"
-                              style={{ width: `${(stats.revenue / maxRev) * 100}%` }} />
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[10px] text-[var(--text-faint)]">{eur0(stats.revenue)} {t('an.revenueLower')} · {eur0(stats.fees)} {t('an.fee')}</span>
-                            <span className="text-[10px] text-[var(--text-soft)]">{platMargin >= 0 ? '+' : ''}{eur0(platMargin)}/{t('an.salesAbbr')}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
-
-              {/* Rimosso: Soci → components/_archived/analytics-soci.tsx.txt (vedi REMOVED_SECTIONS.md) */}
-            </div>
-
+            {/* Rimosso: Piattaforme (conteneva anche il segnaposto di Soci) → components/_archived/analytics-piattaforme.tsx.txt (vedi REMOVED_SECTIONS.md). Qui c'era anche il punto di reintegro di "Soci" → components/_archived/analytics-soci.tsx.txt */}
             {/* Rimosso: Top 3 vendite → components/_archived/analytics-top3-vendite.tsx.txt (vedi REMOVED_SECTIONS.md) */}
-            {/* ---- Tabella Sell-Through per Categoria ---- */}
-            {userCategories.length > 0 && (() => {
-              const rows = userCategories.map(cat => {
-                const catP = products.filter(p => p.category === cat);
-                const catSold = catP.filter(p => p.status === 'VENDUTO');
-                const catStock = catP.filter(p => p.status === 'IN STOCK');
-                const profit = catSold.reduce((s, p) => s + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)), 0);
-                const capital = catStock.reduce((s, p) => s + p.purchasePrice, 0);
-                const daysArr = catSold.filter(p => p.soldAt && p.createdAt)
-                  .map(p => Math.floor((new Date(p.soldAt!).getTime() - new Date(p.createdAt!).getTime()) / 86400000));
-                const avgDays = daysArr.length ? Math.round(daysArr.reduce((a, b) => a + b, 0) / daysArr.length) : null;
-                const st = catP.length > 0 ? Math.round((catSold.length / catP.length) * 100) : 0;
-                return { cat, total: catP.length, sold: catSold.length, inStock: catStock.length, profit, capital, avgDays, st };
-              }).filter(r => r.total > 0);
-              if (rows.length === 0) return null;
-              return (
-                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <PieChartIcon className="text-[var(--text)]" size={15} />
-                    <h3 className="font-semibold">{t('an.depts')}</h3>
-                  </div>
-                  <div className="overflow-x-auto -mx-1">
-                    <table className="w-full text-[11px]">
-                      <thead>
-                        <tr className="border-b border-[var(--border-2)]">
-                          {[t('an.thDept'), t('an.thTotal'), t('an.thSold'), t('an.thStock'), t('an.sellThrough'), t('an.thCapital'), t('an.thProfit'), t('an.daysPerSaleShort')].map(h => (
-                            <th key={h} className="text-left text-[var(--text-faint)] font-semibold uppercase tracking-wider py-2 pr-4 last:pr-0">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[var(--border)]">
-                        {rows.map(r => (
-                          <tr key={r.cat} className="hover:bg-[var(--fill)] transition-colors">
-                            <td className="py-2.5 pr-4 font-bold text-[var(--text)]">{getCategoryIcon(r.cat)} {r.cat}</td>
-                            <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.total}</td>
-                            <td className="py-2.5 pr-4 text-brand-hi num">{r.sold}</td>
-                            <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{r.inStock}</td>
-                            <td className="py-2.5 pr-4">
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 h-1.5 bg-[var(--fill)] rounded-full overflow-hidden">
-                                  <div className="h-full bg-brand rounded-full" style={{ width: `${r.st}%` }} />
-                                </div>
-                                <span className={`num font-semibold ${r.st >= 60 ? 'text-emerald-400' : r.st >= 30 ? 'text-yellow-400' : 'text-red-400'}`}>{r.st}%</span>
-                              </div>
-                            </td>
-                            <td className="py-2.5 pr-4 text-[var(--text-muted)] num">{eur0(r.capital)}</td>
-                            <td className={`py-2.5 pr-4 num font-semibold ${r.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{r.profit >= 0 ? '+' : ''}{eur0(r.profit)}</td>
-                            <td className="py-2.5 text-[var(--text-soft)] num">{r.avgDays ?? '—'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-              );
-            })()}
-
-            {/* ---- Dead-Stock Alert ---- */}
-            {staleProducts.length > 0 && (
-              <section className="bg-[var(--surface)] border border-yellow-500/20 rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="text-yellow-500" size={15} />
-                    <h3 className="font-semibold">{t('an.deadStock')}</h3>
-                    <span className="bg-yellow-500/10 text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded-full">{staleProducts.length} {t('an.products')}</span>
-                  </div>
-                  <span className="text-[10px] text-[var(--text-faint)]">{t('an.staleFor')}{staleThreshold} {t('an.daysLocked')} · {eur0(staleProducts.reduce((s: number, p: any) => s + (p.purchasePrice || 0), 0))} {t('an.locked')}</span>
-                </div>
-                <div className="space-y-2">
-                  {staleProducts.slice(0, 5).map((p: any) => {
-                    const days = p.createdAt ? Math.floor((Date.now() - new Date(p.createdAt).getTime()) / 86400000) : 0;
-                    return (
-                      <div key={p.id} className="flex items-center gap-3 p-3 bg-[var(--surface-2)] rounded-xl">
-                        <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center flex-shrink-0">
-                          <span className="text-base">{getCategoryIcon(p.category)}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold truncate">{fullName(p.brand, p.name)}</p>
-                          <p className="text-[10px] text-[var(--text-soft)]">{p.size} · {p.condition}</p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-sm font-semibold text-[var(--text)]">{eur0((p.purchasePrice || 0))}</p>
-                          <p className="text-[10px] text-yellow-600">{days} {t('an.days')}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {staleProducts.length > 5 && (
-                    <p className="text-[11px] text-[var(--text-faint)] text-center pt-1">+{staleProducts.length - 5} {t('an.moreStale')}</p>
-                  )}
-                </div>
-              </section>
-            )}
+            {/* Rimosso: Tabella Reparti (con colonna sell-through) → components/_archived/analytics-tabella-reparti.tsx.txt (vedi REMOVED_SECTIONS.md). */}
+            {/* Rimosso: Avviso pezzi fermi (dead stock) → components/_archived/analytics-avviso-pezzi-fermi.tsx.txt (vedi REMOVED_SECTIONS.md). */}
           </div>
         )}
 

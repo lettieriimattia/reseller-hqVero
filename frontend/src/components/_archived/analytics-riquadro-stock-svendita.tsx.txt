@@ -1,0 +1,22 @@
+// ARCHIVIO — Riquadro Stock + Svendita
+// Motivo: doppione del riquadro Stock / Capitale in magazzino.
+// Blocco JSX tolto da App.tsx (righe 6520-6536 al commit "pre-step3").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato in App.tsx. Vedi REMOVED_SECTIONS.md.
+
+            {/* ===== STOCK (spostato qui dalla dashboard) ===== */}
+            <div className={`grid gap-3 ${liquidationValue > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              <button onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); }}
+                className="text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 hover:border-[var(--border-2)] transition-colors">
+                <p className="sys-label mb-1 flex items-center gap-1.5"><Layers size={10} /> {t('dash.stock')}</p>
+                <p className="text-xl lg:text-2xl font-extrabold num">{eur0(stockValore)}</p>
+                <p className="text-[10px] text-[var(--text-faint)] mt-1">{inStockItems.length} {t('dash.pieces')} · {t('dash.see')} →</p>
+              </button>
+              {liquidationValue > 0 && (
+                <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+                  <p className="sys-label mb-1 flex items-center gap-1.5"><TrendingDown size={10} /> Svendita</p>
+                  <p className="text-xl lg:text-2xl font-extrabold num text-amber-400/90">{eur0(liquidationValue)}</p>
+                  <p className="text-[10px] text-[var(--text-faint)] mt-1">{t('dash.stock')}</p>
+                </div>
+              )}
+            </div>
+

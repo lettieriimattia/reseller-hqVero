@@ -1,0 +1,44 @@
+// ARCHIVIO — Piattaforme (conteneva anche il segnaposto di Soci)
+// Motivo: doppione delle barre "Per piattaforma" di Esplora i numeri.
+// Blocco JSX tolto da App.tsx (righe 6780-6818 al commit "pre-step3").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato in App.tsx. Vedi REMOVED_SECTIONS.md.
+
+            {/* Piattaforme */}
+            <div className="grid grid-cols-1 gap-5">
+              {platformBreakdown.length > 0 && (
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Store className="text-[var(--text)]" size={15} />
+                    <h3 className="font-semibold">{t('an.platforms')}</h3>
+                  </div>
+                  <div className="space-y-4">
+                    {platformBreakdown.map(([plat, stats]) => {
+                      const maxRev = platformBreakdown[0]?.[1]?.revenue || 1;
+                      const platMargin = stats.count > 0 ? stats.profit / stats.count : 0;
+                      return (
+                        <div key={plat}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-sm font-bold">{plat}</span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-[10px] text-[var(--text-soft)]">{stats.count} {t('an.salesAbbr')}</span>
+                              <span className="text-sm font-semibold text-green-400">+{eur0(stats.profit)}</span>
+                            </div>
+                          </div>
+                          <div className="h-2 bg-black/40 rounded-full overflow-hidden mb-1">
+                            <div className="h-full bg-gradient-to-r from-brand to-brand-hi rounded-full"
+                              style={{ width: `${(stats.revenue / maxRev) * 100}%` }} />
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-[10px] text-[var(--text-faint)]">{eur0(stats.revenue)} {t('an.revenueLower')} · {eur0(stats.fees)} {t('an.fee')}</span>
+                            <span className="text-[10px] text-[var(--text-soft)]">{platMargin >= 0 ? '+' : ''}{eur0(platMargin)}/{t('an.salesAbbr')}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {/* Rimosso: Soci → components/_archived/analytics-soci.tsx.txt (vedi REMOVED_SECTIONS.md) */}
+            </div>
+

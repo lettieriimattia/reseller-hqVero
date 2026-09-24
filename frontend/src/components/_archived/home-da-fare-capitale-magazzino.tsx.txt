@@ -1,0 +1,6 @@
+// ARCHIVIO — Dashboard, "Da fare": riga "Capitale in magazzino"
+// Motivo: doppione del totale "In magazzino" dell'Età del magazzino, nella stessa pagina.
+// Tolto da components/HomeLedger.tsx (riga 225, elemento dell'array todo al commit "pre-step3").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato. Vedi REMOVED_SECTIONS.md.
+
+    { icon: Package, label: t('home.stock'), value: eur(props.stockValue), sub: `${int(props.inStockCount)} ${t('home.pcs')}`, on: props.onOpenStock, alert: false },

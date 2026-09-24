@@ -1,0 +1,57 @@
+// ARCHIVIO — Insights (pezzi fermi, vendite della settimana, reparto migliore, sell-through rate)
+// Motivo: tutti doppioni.
+// Blocco JSX tolto da App.tsx (righe 6537-6588 al commit "pre-step3").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato in App.tsx. Vedi REMOVED_SECTIONS.md.
+
+            {/* ===== SMART INSIGHTS (spostati qui dalla dashboard) ===== */}
+            {(staleCount > 0 || weekSales.length > 0 || bestCategoryEntry?.profit > 0 || sellThroughRate > 0) && (
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+              <p className="text-[9px] font-semibold text-[var(--text-soft)] uppercase tracking-[0.12em] mb-4 flex items-center gap-2"><Sparkles size={10} /> Insights</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {staleCount > 0 && (
+                  <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl cursor-pointer hover:border-[var(--border-2)] transition-colors"
+                    onClick={() => { setCurrentView('magazzino'); setSortField('date'); setSortDir('asc'); }}>
+                    <AlertTriangle size={16} className="text-red-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-[var(--text)]">{staleCount} {staleCount === 1 ? t('home.staleOne') : t('home.staleMany')} {t('home.over30')}</p>
+                      <p className="text-[10px] text-[var(--text-soft)]">{t('home.staleHint')}</p>
+                    </div>
+                    <span className="text-[10px] text-[var(--text-soft)] shrink-0">{t('dash.see')} →</span>
+                  </div>
+                )}
+                {weekSales.length > 0 && (
+                  <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl">
+                    <TrendingUp size={16} className="text-emerald-400 shrink-0" />
+                    <div>
+                      <p className="text-sm font-bold text-[var(--text)]">{weekSales.length} {weekSales.length === 1 ? t('dash.sale') : t('dash.salesPlural')} {t('home.thisWeek')}{weekProfit > 0 && ` · +${eur0(weekProfit)}`}</p>
+                      <p className="text-[10px] text-[var(--text-soft)]">{t('home.goodPace')}</p>
+                    </div>
+                  </div>
+                )}
+                {bestCategoryEntry?.profit > 0 && (
+                  <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl">
+                    <span className="text-xl shrink-0">{getCategoryIcon(bestCategoryEntry.cat)}</span>
+                    <div>
+                      <p className="text-sm font-bold">{bestCategoryEntry.cat} {t('home.bestDeptSuffix')}</p>
+                      <p className="text-[10px] text-[var(--text-soft)]">+{eur0(bestCategoryEntry.profit)} · {bestCategoryEntry.count} {t('dash.salesPlural')}</p>
+                    </div>
+                  </div>
+                )}
+                {sellThroughRate > 0 && (
+                  <div className="flex items-center gap-3 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-xs text-[var(--text-muted)] font-semibold">{t('home.sellThrough')}</p>
+                        <p className="text-xs font-bold text-[var(--text)] num">{sellThroughRate}%</p>
+                      </div>
+                      <div className="h-1.5 bg-black/40 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${sellThroughRate >= 60 ? 'bg-green-500' : sellThroughRate >= 30 ? 'bg-yellow-500' : 'bg-gray-600'}`} style={{ width: `${sellThroughRate}%` }} />
+                      </div>
+                      <p className="text-[10px] text-[var(--text-faint)] mt-1">{globalSold.length} {t('home.soldOf')} {totalItems} {t('home.totalWord')}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+            )}
+

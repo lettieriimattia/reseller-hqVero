@@ -1,0 +1,4 @@
+// ARCHIVIO — Sottotitolo del riquadro Vendite con il sell-through
+// Riga originale di App.tsx (riga 6773 al commit "pre-step3"). Ora il sottotitolo è solo "Totali".
+
+                <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('an.totals')} · {sellThroughRate}% sell-through</p>

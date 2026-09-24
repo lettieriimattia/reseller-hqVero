@@ -218,11 +218,11 @@ export default function HomeLedger(props: Props) {
     { label: t('home.bought'), value: eur(data.bought), delta: <span className="lbl-soft">{data.boughtPrev ? `${prevTitle} ${eur(data.boughtPrev)}` : '—'}</span> },
   ];
 
-  const todo = [
+  const todo: { icon: typeof Truck; label: string; value: string; sub?: string; on: () => void; alert: boolean }[] = [
     { icon: Truck, label: t('home.toShip'), value: int(props.toShipCount), on: props.onOpenShip, alert: props.toShipCount > 0 },
     { icon: AlertTriangle, label: t('home.stale'), value: int(props.staleCount), on: props.onOpenStale, alert: props.staleCount > 0 },
     { icon: StickyNote, label: t('home.notes'), value: int(props.openTasksCount), on: props.onOpenTasks, alert: false },
-    { icon: Package, label: t('home.stock'), value: eur(props.stockValue), sub: `${int(props.inStockCount)} ${t('home.pcs')}`, on: props.onOpenStock, alert: false },
+    // Rimosso: riga "Capitale in magazzino" → components/_archived/home-da-fare-capitale-magazzino.tsx.txt (vedi REMOVED_SECTIONS.md)
   ];
 
   const compareText = isCurrent
@@ -321,12 +321,9 @@ export default function HomeLedger(props: Props) {
 
       {/* ===== Classifiche del periodo ===== */}
       {hasAdvanced && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-5">
-          <RankCard title={t('home.byPlatform')} empty={t('home.noSales')}
-            rows={data.platforms.map(r => ({ key: r.name, label: r.name, sub: `${r.count} ${t('home.salesWord')} · ${eur(r.revenue)}`, value: eur(r.profit), weight: r.revenue }))} />
-          <RankCard title={t('home.byDept')} empty={t('home.noSales')}
-            rows={data.depts.map(r => ({ key: r.name, label: r.name, icon: props.getCategoryIcon(r.name), sub: `${r.count} ${t('home.salesWord')}`, value: eur(r.profit), weight: Math.max(0, r.profit) }))} />
-          <RankCard title={t('home.topItems')} empty={t('home.noSales')} className="md:col-span-2 lg:col-span-1"
+        <div className="grid grid-cols-1 gap-3 lg:gap-5">
+          {/* Rimosso: classifiche "Per piattaforma" / "Per reparto" → components/_archived/home-classifiche-piattaforma-reparto.tsx.txt (vedi REMOVED_SECTIONS.md) */}
+          <RankCard title={t('home.topItems')} empty={t('home.noSales')}
             rows={data.top.map(({ p, profit, roi }) => ({ key: p.id, label: props.fullName(p.brand, p.name), sub: `${p.platform || t('home.private')}${roi != null ? ` · ROI ${Math.round(roi)}%` : ''}`, value: eur(profit), weight: null }))} />
         </div>
       )}

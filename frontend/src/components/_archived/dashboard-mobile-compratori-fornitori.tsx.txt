@@ -1,0 +1,45 @@
+// ARCHIVIO — Dashboard (solo telefono): Migliori compratori / Migliori fornitori
+// Motivo: doppione di Compratori / Fornitori in Analytics.
+// Blocco JSX tolto da App.tsx (righe 5613-5652 al commit "pre-step3").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato in App.tsx. Vedi REMOVED_SECTIONS.md.
+
+            {/* MOBILE: al posto del Libro Paga, due tabelle affiancate — migliori Buyer e Seller.
+                Tocca "Vedi tutti" per l'elenco completo con il numero di operazioni. Su desktop
+                queste (+ Insights + Libro Paga) vivono in Analytics. */}
+            <div className="grid grid-cols-2 gap-3 lg:hidden">
+              {(() => {
+                // Buyer/seller del PERIODO scelto in Personal (vendite per soldAt, acquisti per createdAt).
+                const buyerAgg: any[] = Object.values(products.filter((p: any) => p.status === 'VENDUTO' && (p.customer || '').trim() && inPersonalPeriod(p.soldAt || p.createdAt)).reduce((acc: any, p: any) => {
+                  const n = (p.customer || '').trim(); if (!acc[n]) acc[n] = { name: n, count: 0, revenue: 0 };
+                  acc[n].count++; acc[n].revenue += (p.salePrice || 0); return acc;
+                }, {})).sort((a: any, b: any) => b.revenue - a.revenue);
+                const sellerAgg: any[] = Object.values(products.filter((p: any) => (p.supplier || '').trim() && inPersonalPeriod(p.createdAt)).reduce((acc: any, p: any) => {
+                  const n = (p.supplier || '').trim(); if (!acc[n]) acc[n] = { name: n, count: 0, spent: 0 };
+                  acc[n].count++; acc[n].spent += (p.purchasePrice || 0); return acc;
+                }, {})).sort((a: any, b: any) => b.spent - a.spent);
+                const Card = ({ title, icon, rows, accent, onAll }: any) => (
+                  <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3">
+                    <div className="flex items-center gap-1.5 mb-2">{icon}<p className="text-[11px] font-bold truncate">{title}</p></div>
+                    {rows.length === 0 ? <p className="text-[10px] text-[var(--text-faint)] py-2">{t('ct.noneYet')}</p> : (
+                      <div className="space-y-1">
+                        {rows.slice(0, 3).map((r: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between gap-1 text-[11px]">
+                            <span className="truncate text-[var(--text-soft)]">{r.name}</span>
+                            <span className={`shrink-0 font-bold num ${accent}`}>×{r.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {rows.length > 0 && (
+                      <button onClick={onAll} className="mt-2 text-[10px] font-bold text-brand">{t('ct.seeAll')}</button>
+                    )}
+                  </div>
+                );
+                return (<>
+                  <Card title={t('ct.topBuyers')} icon={<Users size={12} className="text-emerald-400" />} rows={buyerAgg} accent="text-emerald-400"
+                    onAll={() => { setContactPageExpanded(null); setContactsPage('buyers'); }} />
+                  <Card title={t('ct.topSellers')} icon={<Package size={12} className="text-brand" />} rows={sellerAgg} accent="text-brand"
+                    onAll={() => { setContactPageExpanded(null); setContactsPage('sellers'); }} />
+                </>);
+              })()}
+            </div>
