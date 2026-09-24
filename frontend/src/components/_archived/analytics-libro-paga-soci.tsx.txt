@@ -1,0 +1,32 @@
+// ARCHIVIO — Libro paga soci
+// Blocco JSX tolto dalla pagina Analytics di App.tsx (righe 6651-6678 al commit "pre-cleanup analitiche").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato in App.tsx. Vedi REMOVED_SECTIONS.md.
+
+            {/* ===== LIBRO PAGA SOCI (spostato qui dalla dashboard) ===== */}
+            {Object.keys(sociProfits).length > 1 && (
+              <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="sys-label flex items-center gap-1.5"><Trophy size={10} /> {t('home.payroll')}</p>
+                  <button onClick={() => setTeamPanelOpen(true)} className="text-[9px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">{t('home.detail')} →</button>
+                </div>
+                <div className="space-y-1.5">
+                  {Object.values(sociProfits).sort((a: any, b: any) => b.profit - a.profit).map((socio: any, idx: number) => {
+                    const maxP = Math.max(...Object.values(sociProfits).map((s: any) => s.profit), 1);
+                    return (
+                      <div key={idx} className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${socio.name === user.name ? 'bg-[var(--fill)] border border-[var(--border)]' : ''}`}>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: avatarColor(socio.name) }}>{avatarInitials(socio.name)}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="font-semibold text-sm truncate">{socio.name}</span>
+                            {socio.name === user.name && <span className="text-[9px] bg-[var(--fill)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full shrink-0">{t('home.you')}</span>}
+                          </div>
+                          <div className="h-0.5 bg-[var(--fill)] rounded-full overflow-hidden"><div className="h-full bg-[var(--fill-3)] rounded-full transition-all" style={{ width: `${(socio.profit / maxP) * 100}%` }} /></div>
+                        </div>
+                        <span className="font-extrabold text-[var(--teal)] shrink-0 text-sm num">{eur0(socio.profit)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+

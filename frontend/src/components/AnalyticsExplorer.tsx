@@ -301,14 +301,7 @@ export default function AnalyticsExplorer({ products, myProfitFactor, myCostFact
         </div>
       )}
 
-      {/* Metriche: tocca per mostrarla nel grafico */}
-      <div role="tablist" aria-label={t('ex.metric')} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-        {METRICS.map(m => (
-          <MetricTile key={m} m={m} active={metric === m} onClick={() => setMetric(m)}
-            value={valueOf(cur, m)} prev={valueOf(prev, m)} spark={series.map(s => valueOf(s.agg, m))}
-            label={t(`ex.m.${m}`)} fmt={fmt} t={t} sub={m === 'count' ? null : m === 'spent' ? null : `${int(cur.count)} ${cur.count === 1 ? t('ex.sale') : t('ex.sales')}`} />
-        ))}
-      </div>
+      {/* Rimosso: riquadri Profitto / Ricavi / Pezzi venduti / Margine / Acquistato → components/_archived/explorer-riquadri-riassuntivi.tsx.txt (vedi REMOVED_SECTIONS.md). Il grafico mostra il profitto netto. */}
 
       {/* Grafico */}
       <div>

@@ -1,0 +1,41 @@
+// ARCHIVIO — Soci
+// Blocco JSX tolto dalla pagina Analytics di App.tsx (righe 7111-7147 al commit "pre-cleanup analitiche").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato in App.tsx. Vedi REMOVED_SECTIONS.md.
+
+              {Object.keys(sociProfits).length > 0 && (
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="text-brand-hi" size={15} />
+                    <h3 className="font-semibold">{t('an.partners')}</h3>
+                  </div>
+                  <div className="space-y-4">
+                    {Object.values(sociProfits)
+                      .sort((a: any, b: any) => b.profit - a.profit)
+                      .map((socio: any, idx) => {
+                        const maxP = Math.max(...Object.values(sociProfits).map((s: any) => s.profit), 1);
+                        const medals = ['🥇', '🥈', '🥉'];
+                        return (
+                          <div key={idx}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm w-5">{medals[idx] || ''}</span>
+                                <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-[9px] text-white" style={{ backgroundColor: avatarColor(socio.name) }}>
+                                  {avatarInitials(socio.name)}
+                                </div>
+                                <span className="text-sm font-bold">{socio.name}</span>
+                                {socio.name === user.name && (
+                                  <span className="text-[9px] bg-brand/20 text-[var(--text)] px-1.5 py-0.5 rounded-full">{t('an.you')}</span>
+                                )}
+                              </div>
+                              <span className="font-semibold text-green-400">{eur0(socio.profit)}</span>
+                            </div>
+                            <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full"
+                                style={{ width: `${(socio.profit / maxP) * 100}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </section>
+              )}

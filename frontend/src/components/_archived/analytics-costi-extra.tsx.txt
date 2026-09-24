@@ -1,0 +1,56 @@
+// ARCHIVIO — Costi extra
+// Blocco JSX tolto dalla pagina Analytics di App.tsx (righe 6679-6730 al commit "pre-cleanup analitiche").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato in App.tsx. Vedi REMOVED_SECTIONS.md.
+
+            {/* ===== COSTI EXTRA (accordion, chiuso di default per non invadere le analytics) ===== */}
+            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+              <button type="button" onClick={() => setExpensesOpen(o => !o)} className="w-full flex items-center gap-2">
+                <Wallet size={18} className="text-amber-400" />
+                <h3 className="text-lg font-bold tracking-tighter">{t('an.extraCosts')}</h3>
+                {!hasFeature('accounting') && <PlanLock plan="Pro" />}
+                <span className="text-[11px] text-[var(--text-faint)] ml-auto num">
+                  {expenses.length > 0 ? `${expenses.length} ${t('an.entries')} · -${eur0(expenses.reduce((a: number, e: any) => a + (e.amount || 0), 0))}` : t('an.none')}
+                </span>
+                <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${expensesOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {!expensesOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('an.extraCostsHint')}</p>}
+              {expensesOpen && (<>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 mt-4">
+                <input type="number" step="0.01" min="0" value={expAmount} onChange={e => setExpAmount(e.target.value)}
+                  placeholder={t('an.amount')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand" />
+                <input type="text" value={expDesc} onChange={e => setExpDesc(e.target.value)}
+                  placeholder={t('an.description')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand" />
+                <select value={expCat} onChange={e => setExpCat(e.target.value)}
+                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand">
+                  {[['Sacchetti', t('an.catBags')], ['Spedizioni', t('an.catShipping')], ['Materiali', t('an.catMaterials')], ['Commissioni', t('an.catFees')], ['Altro', t('an.catOther')]].map(([v, lbl]) => <option key={v} value={v}>{lbl}</option>)}
+                </select>
+                {warehouses.filter((w: any) => !w.parentId).length > 1 ? (
+                  <select value={expWarehouse || baseWarehouse?.id || ''} onChange={e => setExpWarehouse(e.target.value)}
+                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand">
+                    {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                ) : <div className="hidden sm:block" />}
+              </div>
+              <button onClick={addExpense} disabled={isAddingExp}
+                className="w-full sm:w-auto px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors disabled:opacity-50 mb-3">
+                {isAddingExp ? <Loader2 className="animate-spin inline" size={16} /> : t('an.addCost')}
+              </button>
+              {expenses.length > 0 && (
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {expenses.slice(0, 30).map((e: any) => (
+                    <div key={e.id} className="flex items-center justify-between gap-2 bg-[var(--surface-2)] rounded-lg px-3 py-2">
+                      <div className="min-w-0">
+                        <span className="text-sm text-[var(--text)] truncate">{e.description}</span>
+                        <span className="text-[10px] text-[var(--text-faint)] ml-2">{e.category} · {e.date ? new Date(e.date).toLocaleDateString('it-IT') : ''}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-sm font-bold num text-amber-400">-{(e.amount || 0).toFixed(2)}€</span>
+                        <button onClick={() => deleteExpense(e.id)} className="text-[var(--text-faint)] hover:text-red-400"><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              </>)}
+            </section>
+

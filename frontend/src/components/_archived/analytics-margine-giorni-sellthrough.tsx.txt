@@ -1,0 +1,28 @@
+// ARCHIVIO — Margine medio / Giorni medi di vendita / Sell-through
+// Blocco JSX tolto dalla pagina Analytics di App.tsx (righe 7049-7072 al commit "pre-cleanup analitiche").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato in App.tsx. Vedi REMOVED_SECTIONS.md.
+
+            {/* KPI row 2: metriche operative */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
+                <p className={`text-[clamp(14px,4.2vw,20px)] font-bold num tracking-tight leading-none whitespace-nowrap ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-brand-hi' : 'text-red-400'}`}>
+                  {avgMarginPct >= 0 ? '+' : ''}{avgMarginPct.toFixed(1)}%
+                </p>
+                <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
+                  <span className="sm:hidden">{t('an.marginShort')}</span>
+                  <span className="hidden sm:inline">{t('an.marginAvg')}</span>
+                </p>
+              </div>
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
+                <p className="text-xl font-bold text-brand-hi num">{Math.round(avgDaysToSell)}</p>
+                <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
+                  <span className="sm:hidden">{t('an.daysPerSaleShort')}</span>
+                  <span className="hidden sm:inline">{t('an.daysPerSaleLong')}</span>
+                </p>
+              </div>
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
+                <p className="text-xl font-bold text-[var(--text)] num">{sellThroughRate}%</p>
+                <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">Sell-through</p>
+              </div>
+            </div>
+

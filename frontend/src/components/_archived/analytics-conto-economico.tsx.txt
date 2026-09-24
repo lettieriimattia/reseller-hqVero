@@ -1,0 +1,137 @@
+// ARCHIVIO — Conto economico mensile
+// Blocco JSX tolto dalla pagina Analytics di App.tsx (righe 6884-7016 al commit "pre-cleanup analitiche").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato in App.tsx. Vedi REMOVED_SECTIONS.md.
+
+            {/* ===== CONTO ECONOMICO MENSILE ===== */}
+            {(() => {
+              const monthSold = products.filter((p: any) => {
+                if (p.status !== 'VENDUTO' || !p.soldAt) return false;
+                const d = new Date(p.soldAt);
+                return d.getFullYear() === reportMonth.y && d.getMonth() === reportMonth.m;
+              });
+              const ricavi = monthSold.reduce((a: number, p: any) => a + (p.salePrice || 0), 0);
+              const costo = monthSold.reduce((a: number, p: any) => a + p.purchasePrice, 0);
+              const fees = monthSold.reduce((a: number, p: any) => a + (p.fees || 0), 0);
+              // Costi extra del mese (sacchetti, spedizioni…): entrano nell'utile netto
+              const speseMese = expenses.filter((e: any) => { const d = new Date(e.date); return d.getFullYear() === reportMonth.y && d.getMonth() === reportMonth.m; });
+              const totSpese = speseMese.reduce((a: number, e: any) => a + (e.amount || 0), 0);
+              const netto = ricavi - costo - fees - totSpese;
+              const roi = costo > 0 ? (netto / costo * 100) : 0;
+              // Investimenti del mese = capitale immesso in magazzino (pezzi ACQUISTATI nel mese).
+              const investiti = products.filter((p: any) => { const d = new Date(p.createdAt); return d.getFullYear() === reportMonth.y && d.getMonth() === reportMonth.m; }).reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0);
+              // Bolle stile "Trade Republic": Entrate / Uscite / Investimenti (area ∝ valore).
+              const usciteTot = costo + fees + totSpese;
+              const bubbleMax = Math.max(ricavi, usciteTot, investiti, 1);
+              const bubbleR = (v: number) => Math.round(56 + 96 * Math.sqrt(Math.max(v, 0) / bubbleMax)); // diametro px
+              // Confronto col mese precedente
+              const pm = reportMonth.m === 0 ? { y: reportMonth.y - 1, m: 11 } : { y: reportMonth.y, m: reportMonth.m - 1 };
+              const prevSold = products.filter((p: any) => { if (p.status !== 'VENDUTO' || !p.soldAt) return false; const d = new Date(p.soldAt); return d.getFullYear() === pm.y && d.getMonth() === pm.m; });
+              const prevNetto = prevSold.reduce((a: number, p: any) => a + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)), 0);
+              const hasPrev = prevSold.length > 0;
+              const deltaPct = prevNetto !== 0 ? ((netto - prevNetto) / Math.abs(prevNetto) * 100) : (netto > 0 ? 100 : 0);
+              // Export CSV del mese
+              const exportMonth = () => {
+                const rows = [['Brand', 'Nome', 'Taglia', 'Acquisto', 'Vendita', 'Fee', 'Profitto', 'Piattaforma', 'Data vendita']];
+                monthSold.forEach((p: any) => rows.push([
+                  p.brand, p.name, p.size || '', String(p.purchasePrice), String(p.salePrice || 0), String(p.fees || 0),
+                  ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)).toFixed(2), p.platform || '',
+                  p.soldAt ? new Date(p.soldAt).toLocaleDateString('it-IT') : '',
+                ]));
+                // Costi extra del mese in coda al CSV (per il commercialista)
+                speseMese.forEach((e: any) => rows.push([
+                  'COSTO EXTRA', e.description || '', '', '0', '0', '0',
+                  (-(e.amount || 0)).toFixed(2), e.category || '',
+                  e.date ? new Date(e.date).toLocaleDateString('it-IT') : '',
+                ]));
+                const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+                const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `report-${reportMonth.y}-${String(reportMonth.m + 1).padStart(2, '0')}.csv`; a.click();
+                URL.revokeObjectURL(url);
+              };
+              const label = new Date(reportMonth.y, reportMonth.m, 1).toLocaleDateString(lang === 'it' ? 'it-IT' : lang === 'es' ? 'es-ES' : lang === 'de' ? 'de-DE' : 'en-US', { month: 'long', year: 'numeric' });
+              const shift = (delta: number) => setReportMonth(({ y, m }) => {
+                const nm = m + delta;
+                return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 };
+              });
+              const byPlat: Record<string, number> = {};
+              monthSold.forEach((p: any) => { const k = p.platform || 'Privato'; byPlat[k] = (byPlat[k] || 0) + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)); });
+              const topPlat = Object.entries(byPlat).sort((a, b) => b[1] - a[1])[0];
+              // Profitto per reparto (del mese)
+              const byCat: Record<string, number> = {};
+              monthSold.forEach((p: any) => { const k = p.category || 'Altro'; byCat[k] = (byCat[k] || 0) + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)); });
+              const catRows = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+              const maxCatAbs = Math.max(...catRows.map(([, v]) => Math.abs(v)), 1);
+              const now = new Date();
+              const isCurrent = reportMonth.y === now.getFullYear() && reportMonth.m === now.getMonth();
+              return (
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4 gap-2">
+                    <h3 className="font-semibold">{t('an.incomeStatement')}</h3>
+                    <div className="flex items-center gap-2">
+                      {monthSold.length > 0 && (
+                        <button onClick={exportMonth} title="Esporta CSV del mese"
+                          className="flex items-center gap-1.5 bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--text-soft)] hover:text-[var(--text)] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors">
+                          <Download size={13} /> <span className="hidden sm:inline">{t('an.export')}</span>
+                        </button>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => shift(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg">‹</button>
+                        <span className="text-sm font-bold capitalize min-w-[110px] sm:min-w-[130px] text-center">{label}</span>
+                        <button onClick={() => shift(1)} disabled={isCurrent}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg disabled:opacity-30">›</button>
+                      </div>
+                    </div>
+                  </div>
+                  {monthSold.length === 0 ? (
+                    <p className="text-center py-8 text-sm text-[var(--text-soft)] capitalize">{t('an.noSalesIn')} {label}</p>
+                  ) : (
+                    <>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
+                        <p className="sys-label mb-1">{t('an.revenue')}</p>
+                        <p className="text-2xl font-extrabold num text-[var(--teal)]">{eur0(ricavi)}</p>
+                        <p className="text-[11px] text-[var(--text-soft)] mt-1">{monthSold.length} {monthSold.length === 1 ? t('dash.sale') : t('dash.salesPlural')}</p>
+                      </div>
+                      <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
+                        <p className="sys-label mb-1">{t('an.costsFees')}</p>
+                        <p className="text-2xl font-extrabold num text-[var(--text-soft)]">-{eur0((costo + fees))}</p>
+                        <p className="text-[11px] text-[var(--text-soft)] mt-1">{eur0(costo)} {t('an.goods')} · {eur0(fees)} {t('an.fee')}</p>
+                      </div>
+                      <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
+                        <p className="sys-label mb-1">{t('an.netProfit')}</p>
+                        <p className={`text-2xl font-extrabold num ${netto >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>{netto >= 0 ? '+' : ''}{eur0(netto)}</p>
+                        <p className="text-[11px] text-[var(--text-soft)] mt-1">
+                          ROI {roi >= 0 ? '+' : ''}{roi.toFixed(0)}%
+                          {hasPrev && <span className={`ml-1.5 font-bold ${deltaPct >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>{deltaPct >= 0 ? '▲' : '▼'}{Math.abs(deltaPct).toFixed(0)}% <span className="font-normal text-[var(--text-faint)]">{t('an.vsPrevMonth')}</span></span>}
+                        </p>
+                      </div>
+                      <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
+                        <p className="sys-label mb-1">{t('an.topPlatform')}</p>
+                        <p className="text-2xl font-extrabold truncate">{topPlat ? topPlat[0] : '—'}</p>
+                        {topPlat && <p className="text-[11px] text-[var(--text-soft)] mt-1 num">{topPlat[1] >= 0 ? '+' : ''}{eur0(topPlat[1])} {t('an.profit')}</p>}
+                      </div>
+                    </div>
+                    {catRows.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-3">{t('an.profitByDept')}</p>
+                        <div className="space-y-2">
+                          {catRows.map(([cat, val]) => (
+                            <div key={cat} className="flex items-center gap-3">
+                              <span className="text-xs w-24 shrink-0 truncate flex items-center gap-1.5"><span>{getCategoryIcon(cat)}</span>{cat}</span>
+                              <div className="flex-1 h-2 bg-[var(--fill)] rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${val >= 0 ? 'bg-emerald-500' : 'bg-red-500'}`} style={{ width: `${(Math.abs(val) / maxCatAbs) * 100}%` }} />
+                              </div>
+                              <span className={`text-xs font-bold num w-16 text-right ${val >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{val >= 0 ? '+' : ''}{eur0(val)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    </>
+                  )}
+                </section>
+              );
+            })()}
+

@@ -6507,80 +6507,12 @@ export default function App() {
             <AnalyticsExplorer products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
               getCategoryIcon={getCategoryIcon} fullName={fullName} onOpenProduct={openEditPiece} />
 
-            {/* ===== GRAFICO A BARRE SOVRAPPOSTE (ultimi 6 mesi): Entrate/Uscite/Investimenti impilate.
-                Tocca una barra per selezionare quel mese (aggiorna il conto economico sotto). ===== */}
-            {(() => {
-              // Colori dal tema: Entrate = inchiostro principale (spicca), Investimenti = accento,
-              // Uscite = grigio tenue (recede). Cambiano da soli col tema chiaro/scuro.
-              const COL = { Entrate: 'var(--text)', Uscite: 'var(--text-faint)', Investimenti: 'var(--accent)' };
-              const legend = [
-                { k: 'Entrate', c: COL.Entrate, lbl: t('bub.income'), val: bubbleMonth.ricavi },
-                { k: 'Uscite', c: COL.Uscite, lbl: t('bub.expenses'), val: bubbleMonth.uscite },
-                { k: 'Investimenti', c: COL.Investimenti, lbl: t('bub.invest'), val: bubbleMonth.investiti },
-              ];
-              const maxTot = Math.max(...barMonths.map(mm => mm.ricavi + mm.uscite + mm.investiti), 1);
-              const H = 200;
-              // Frecce: scorri il set di 6 mesi (sposta il mese selezionato di ±6).
-              const shiftSet = (dd: number) => setReportMonth(({ y, m }) => { const nm = m + dd; return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 }; });
-              const now = new Date(); const isCurrent = reportMonth.y === now.getFullYear() && reportMonth.m === now.getMonth();
-              return (
-                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-5">
-                  <div className="flex items-start justify-between gap-2 mb-4 flex-wrap">
-                    <div>
-                      <h3 className="font-bold text-lg">{t('bub.analysis')}</h3>
-                      <div className="flex items-center gap-3.5 mt-1.5 flex-wrap">
-                        {legend.map(l => (
-                          <div key={l.k} className="flex items-center gap-1.5 text-[11px] lg:text-xs text-[var(--text-soft)]"><span className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{ background: l.c }} />{l.lbl}</div>
-                        ))}
-                      </div>
-                    </div>
-                    {/* Frecce: scorrono di UN mese alla volta (anche coi tasti ← → su PC) */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => shiftSet(-1)} aria-label="Mese precedente" className="w-10 h-10 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-2xl flex items-center justify-center">‹</button>
-                      <button onClick={() => shiftSet(1)} disabled={isCurrent} aria-label="Mese successivo" className="w-10 h-10 rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-2xl disabled:opacity-30 flex items-center justify-center">›</button>
-                    </div>
-                  </div>
-                  {/* Barre — più grandi e visibili */}
-                  <div className="flex items-end justify-between gap-2 sm:gap-3" style={{ height: H + 26 }}>
-                    {barMonths.map(mm => {
-                      const sum = mm.ricavi + mm.uscite + mm.investiti;
-                      const h = maxTot > 0 ? (sum / maxTot) * H : 0;
-                      const seg = (v: number) => sum > 0 ? Math.max(0, (v / sum) * h) : 0;
-                      const active = mm.y === reportMonth.y && mm.m === reportMonth.m;
-                      return (
-                        <button key={`${mm.y}-${mm.m}`} onClick={() => setReportMonth({ y: mm.y, m: mm.m })}
-                          className="flex-1 flex flex-col items-center gap-2 group min-w-0">
-                          <div className="w-full flex flex-col justify-end" style={{ height: H }}>
-                            <div className={`w-full max-w-[96px] mx-auto rounded-t-xl overflow-hidden flex flex-col-reverse transition-all ${active ? 'ring-2 ring-white/30 brightness-110' : 'opacity-85 group-hover:opacity-100'}`} style={{ height: h || 3 }}>
-                              <div style={{ height: seg(mm.ricavi), background: COL.Entrate }} />
-                              <div style={{ height: seg(mm.uscite), background: COL.Uscite }} />
-                              <div style={{ height: seg(mm.investiti), background: COL.Investimenti }} />
-                            </div>
-                          </div>
-                          <span className={`text-[11.5px] lg:text-[13px] capitalize truncate max-w-full ${active ? 'text-[var(--text)] font-black' : 'text-[var(--text-faint)]'}`}>{mm.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {/* Dettaglio del mese selezionato */}
-                  <div className="space-y-2 border-t border-[var(--border)] pt-3 mt-3">
-                    {legend.map(l => (
-                      <div key={l.k} className="flex items-center gap-3">
-                        <span className="w-3 h-3 rounded-[3px] shrink-0" style={{ background: l.c }} />
-                        <span className="text-sm font-bold flex-1 truncate">{l.lbl}</span>
-                        <span className="text-sm font-bold num text-[var(--text-soft)]">{l.val.toFixed(2)}€</span>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              );
-            })()}
-
+            {/* Rimosso: Istogramma "Analisi" (Entrate / Uscite / Investimenti) → components/_archived/analytics-istogramma-entrate-uscite.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* ===== TORTA 3D: composizione per reparto (capitale € / quantità pezzi) ===== */}
             <AllocationPie3D products={products} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale} getCategoryIcon={getCategoryIcon} />
 
             {/* ===== STOCK (spostato qui dalla dashboard) ===== */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className={`grid gap-3 ${liquidationValue > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
               <button onClick={() => { setCurrentView('magazzino'); setMagazzinoView('instock'); }}
                 className="text-left bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 hover:border-[var(--border-2)] transition-colors">
                 <p className="sys-label mb-1 flex items-center gap-1.5"><Layers size={10} /> {t('dash.stock')}</p>
@@ -6648,86 +6580,8 @@ export default function App() {
             </section>
             )}
 
-            {/* ===== LIBRO PAGA SOCI (spostato qui dalla dashboard) ===== */}
-            {Object.keys(sociProfits).length > 1 && (
-              <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="sys-label flex items-center gap-1.5"><Trophy size={10} /> {t('home.payroll')}</p>
-                  <button onClick={() => setTeamPanelOpen(true)} className="text-[9px] text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors">{t('home.detail')} →</button>
-                </div>
-                <div className="space-y-1.5">
-                  {Object.values(sociProfits).sort((a: any, b: any) => b.profit - a.profit).map((socio: any, idx: number) => {
-                    const maxP = Math.max(...Object.values(sociProfits).map((s: any) => s.profit), 1);
-                    return (
-                      <div key={idx} className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${socio.name === user.name ? 'bg-[var(--fill)] border border-[var(--border)]' : ''}`}>
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: avatarColor(socio.name) }}>{avatarInitials(socio.name)}</div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <span className="font-semibold text-sm truncate">{socio.name}</span>
-                            {socio.name === user.name && <span className="text-[9px] bg-[var(--fill)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full shrink-0">{t('home.you')}</span>}
-                          </div>
-                          <div className="h-0.5 bg-[var(--fill)] rounded-full overflow-hidden"><div className="h-full bg-[var(--fill-3)] rounded-full transition-all" style={{ width: `${(socio.profit / maxP) * 100}%` }} /></div>
-                        </div>
-                        <span className="font-extrabold text-[var(--teal)] shrink-0 text-sm num">{eur0(socio.profit)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {/* ===== COSTI EXTRA (accordion, chiuso di default per non invadere le analytics) ===== */}
-            <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-              <button type="button" onClick={() => setExpensesOpen(o => !o)} className="w-full flex items-center gap-2">
-                <Wallet size={18} className="text-amber-400" />
-                <h3 className="text-lg font-bold tracking-tighter">{t('an.extraCosts')}</h3>
-                {!hasFeature('accounting') && <PlanLock plan="Pro" />}
-                <span className="text-[11px] text-[var(--text-faint)] ml-auto num">
-                  {expenses.length > 0 ? `${expenses.length} ${t('an.entries')} · -${eur0(expenses.reduce((a: number, e: any) => a + (e.amount || 0), 0))}` : t('an.none')}
-                </span>
-                <ChevronDown size={18} className={`text-[var(--text-soft)] transition-transform ${expensesOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {!expensesOpen && <p className="text-[11px] text-[var(--text-faint)] mt-1">{t('an.extraCostsHint')}</p>}
-              {expensesOpen && (<>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 mt-4">
-                <input type="number" step="0.01" min="0" value={expAmount} onChange={e => setExpAmount(e.target.value)}
-                  placeholder={t('an.amount')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand" />
-                <input type="text" value={expDesc} onChange={e => setExpDesc(e.target.value)}
-                  placeholder={t('an.description')} className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand" />
-                <select value={expCat} onChange={e => setExpCat(e.target.value)}
-                  className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand">
-                  {[['Sacchetti', t('an.catBags')], ['Spedizioni', t('an.catShipping')], ['Materiali', t('an.catMaterials')], ['Commissioni', t('an.catFees')], ['Altro', t('an.catOther')]].map(([v, lbl]) => <option key={v} value={v}>{lbl}</option>)}
-                </select>
-                {warehouses.filter((w: any) => !w.parentId).length > 1 ? (
-                  <select value={expWarehouse || baseWarehouse?.id || ''} onChange={e => setExpWarehouse(e.target.value)}
-                    className="bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl px-3 py-2 text-sm outline-none focus:border-brand">
-                    {warehouses.filter((w: any) => !w.parentId).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
-                  </select>
-                ) : <div className="hidden sm:block" />}
-              </div>
-              <button onClick={addExpense} disabled={isAddingExp}
-                className="w-full sm:w-auto px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors disabled:opacity-50 mb-3">
-                {isAddingExp ? <Loader2 className="animate-spin inline" size={16} /> : t('an.addCost')}
-              </button>
-              {expenses.length > 0 && (
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {expenses.slice(0, 30).map((e: any) => (
-                    <div key={e.id} className="flex items-center justify-between gap-2 bg-[var(--surface-2)] rounded-lg px-3 py-2">
-                      <div className="min-w-0">
-                        <span className="text-sm text-[var(--text)] truncate">{e.description}</span>
-                        <span className="text-[10px] text-[var(--text-faint)] ml-2">{e.category} · {e.date ? new Date(e.date).toLocaleDateString('it-IT') : ''}</span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-sm font-bold num text-amber-400">-{(e.amount || 0).toFixed(2)}€</span>
-                        <button onClick={() => deleteExpense(e.id)} className="text-[var(--text-faint)] hover:text-red-400"><Trash2 size={14} /></button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              </>)}
-            </section>
-
+            {/* Rimosso: Libro paga soci → components/_archived/analytics-libro-paga-soci.tsx.txt (vedi REMOVED_SECTIONS.md) */}
+            {/* Rimosso: Costi extra → components/_archived/analytics-costi-extra.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* ===== MESI STORICI (dati economici PRIMA dell'apertura del conto) ===== */}
             <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
               <button type="button" onClick={() => setManualOpen(o => !o)} className="w-full flex items-center gap-2">
@@ -6881,139 +6735,7 @@ export default function App() {
               );
             })()}
 
-            {/* ===== CONTO ECONOMICO MENSILE ===== */}
-            {(() => {
-              const monthSold = products.filter((p: any) => {
-                if (p.status !== 'VENDUTO' || !p.soldAt) return false;
-                const d = new Date(p.soldAt);
-                return d.getFullYear() === reportMonth.y && d.getMonth() === reportMonth.m;
-              });
-              const ricavi = monthSold.reduce((a: number, p: any) => a + (p.salePrice || 0), 0);
-              const costo = monthSold.reduce((a: number, p: any) => a + p.purchasePrice, 0);
-              const fees = monthSold.reduce((a: number, p: any) => a + (p.fees || 0), 0);
-              // Costi extra del mese (sacchetti, spedizioni…): entrano nell'utile netto
-              const speseMese = expenses.filter((e: any) => { const d = new Date(e.date); return d.getFullYear() === reportMonth.y && d.getMonth() === reportMonth.m; });
-              const totSpese = speseMese.reduce((a: number, e: any) => a + (e.amount || 0), 0);
-              const netto = ricavi - costo - fees - totSpese;
-              const roi = costo > 0 ? (netto / costo * 100) : 0;
-              // Investimenti del mese = capitale immesso in magazzino (pezzi ACQUISTATI nel mese).
-              const investiti = products.filter((p: any) => { const d = new Date(p.createdAt); return d.getFullYear() === reportMonth.y && d.getMonth() === reportMonth.m; }).reduce((a: number, p: any) => a + (p.purchasePrice || 0), 0);
-              // Bolle stile "Trade Republic": Entrate / Uscite / Investimenti (area ∝ valore).
-              const usciteTot = costo + fees + totSpese;
-              const bubbleMax = Math.max(ricavi, usciteTot, investiti, 1);
-              const bubbleR = (v: number) => Math.round(56 + 96 * Math.sqrt(Math.max(v, 0) / bubbleMax)); // diametro px
-              // Confronto col mese precedente
-              const pm = reportMonth.m === 0 ? { y: reportMonth.y - 1, m: 11 } : { y: reportMonth.y, m: reportMonth.m - 1 };
-              const prevSold = products.filter((p: any) => { if (p.status !== 'VENDUTO' || !p.soldAt) return false; const d = new Date(p.soldAt); return d.getFullYear() === pm.y && d.getMonth() === pm.m; });
-              const prevNetto = prevSold.reduce((a: number, p: any) => a + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)), 0);
-              const hasPrev = prevSold.length > 0;
-              const deltaPct = prevNetto !== 0 ? ((netto - prevNetto) / Math.abs(prevNetto) * 100) : (netto > 0 ? 100 : 0);
-              // Export CSV del mese
-              const exportMonth = () => {
-                const rows = [['Brand', 'Nome', 'Taglia', 'Acquisto', 'Vendita', 'Fee', 'Profitto', 'Piattaforma', 'Data vendita']];
-                monthSold.forEach((p: any) => rows.push([
-                  p.brand, p.name, p.size || '', String(p.purchasePrice), String(p.salePrice || 0), String(p.fees || 0),
-                  ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)).toFixed(2), p.platform || '',
-                  p.soldAt ? new Date(p.soldAt).toLocaleDateString('it-IT') : '',
-                ]));
-                // Costi extra del mese in coda al CSV (per il commercialista)
-                speseMese.forEach((e: any) => rows.push([
-                  'COSTO EXTRA', e.description || '', '', '0', '0', '0',
-                  (-(e.amount || 0)).toFixed(2), e.category || '',
-                  e.date ? new Date(e.date).toLocaleDateString('it-IT') : '',
-                ]));
-                const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-                const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = `report-${reportMonth.y}-${String(reportMonth.m + 1).padStart(2, '0')}.csv`; a.click();
-                URL.revokeObjectURL(url);
-              };
-              const label = new Date(reportMonth.y, reportMonth.m, 1).toLocaleDateString(lang === 'it' ? 'it-IT' : lang === 'es' ? 'es-ES' : lang === 'de' ? 'de-DE' : 'en-US', { month: 'long', year: 'numeric' });
-              const shift = (delta: number) => setReportMonth(({ y, m }) => {
-                const nm = m + delta;
-                return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 };
-              });
-              const byPlat: Record<string, number> = {};
-              monthSold.forEach((p: any) => { const k = p.platform || 'Privato'; byPlat[k] = (byPlat[k] || 0) + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)); });
-              const topPlat = Object.entries(byPlat).sort((a, b) => b[1] - a[1])[0];
-              // Profitto per reparto (del mese)
-              const byCat: Record<string, number> = {};
-              monthSold.forEach((p: any) => { const k = p.category || 'Altro'; byCat[k] = (byCat[k] || 0) + ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)); });
-              const catRows = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
-              const maxCatAbs = Math.max(...catRows.map(([, v]) => Math.abs(v)), 1);
-              const now = new Date();
-              const isCurrent = reportMonth.y === now.getFullYear() && reportMonth.m === now.getMonth();
-              return (
-                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-4 gap-2">
-                    <h3 className="font-semibold">{t('an.incomeStatement')}</h3>
-                    <div className="flex items-center gap-2">
-                      {monthSold.length > 0 && (
-                        <button onClick={exportMonth} title="Esporta CSV del mese"
-                          className="flex items-center gap-1.5 bg-[var(--surface-2)] border border-[var(--border-2)] hover:border-[var(--border-3)] text-[var(--text-soft)] hover:text-[var(--text)] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors">
-                          <Download size={13} /> <span className="hidden sm:inline">{t('an.export')}</span>
-                        </button>
-                      )}
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => shift(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg">‹</button>
-                        <span className="text-sm font-bold capitalize min-w-[110px] sm:min-w-[130px] text-center">{label}</span>
-                        <button onClick={() => shift(1)} disabled={isCurrent}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fill)] text-[var(--text-muted)] text-lg disabled:opacity-30">›</button>
-                      </div>
-                    </div>
-                  </div>
-                  {monthSold.length === 0 ? (
-                    <p className="text-center py-8 text-sm text-[var(--text-soft)] capitalize">{t('an.noSalesIn')} {label}</p>
-                  ) : (
-                    <>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                      <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
-                        <p className="sys-label mb-1">{t('an.revenue')}</p>
-                        <p className="text-2xl font-extrabold num text-[var(--teal)]">{eur0(ricavi)}</p>
-                        <p className="text-[11px] text-[var(--text-soft)] mt-1">{monthSold.length} {monthSold.length === 1 ? t('dash.sale') : t('dash.salesPlural')}</p>
-                      </div>
-                      <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
-                        <p className="sys-label mb-1">{t('an.costsFees')}</p>
-                        <p className="text-2xl font-extrabold num text-[var(--text-soft)]">-{eur0((costo + fees))}</p>
-                        <p className="text-[11px] text-[var(--text-soft)] mt-1">{eur0(costo)} {t('an.goods')} · {eur0(fees)} {t('an.fee')}</p>
-                      </div>
-                      <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
-                        <p className="sys-label mb-1">{t('an.netProfit')}</p>
-                        <p className={`text-2xl font-extrabold num ${netto >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>{netto >= 0 ? '+' : ''}{eur0(netto)}</p>
-                        <p className="text-[11px] text-[var(--text-soft)] mt-1">
-                          ROI {roi >= 0 ? '+' : ''}{roi.toFixed(0)}%
-                          {hasPrev && <span className={`ml-1.5 font-bold ${deltaPct >= 0 ? 'text-[var(--teal)]' : 'text-[var(--rust)]'}`}>{deltaPct >= 0 ? '▲' : '▼'}{Math.abs(deltaPct).toFixed(0)}% <span className="font-normal text-[var(--text-faint)]">{t('an.vsPrevMonth')}</span></span>}
-                        </p>
-                      </div>
-                      <div className="bg-[var(--surface-2)] ring-1 ring-white/[0.02] rounded-xl p-4">
-                        <p className="sys-label mb-1">{t('an.topPlatform')}</p>
-                        <p className="text-2xl font-extrabold truncate">{topPlat ? topPlat[0] : '—'}</p>
-                        {topPlat && <p className="text-[11px] text-[var(--text-soft)] mt-1 num">{topPlat[1] >= 0 ? '+' : ''}{eur0(topPlat[1])} {t('an.profit')}</p>}
-                      </div>
-                    </div>
-                    {catRows.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-[var(--border)]">
-                        <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)] font-bold mb-3">{t('an.profitByDept')}</p>
-                        <div className="space-y-2">
-                          {catRows.map(([cat, val]) => (
-                            <div key={cat} className="flex items-center gap-3">
-                              <span className="text-xs w-24 shrink-0 truncate flex items-center gap-1.5"><span>{getCategoryIcon(cat)}</span>{cat}</span>
-                              <div className="flex-1 h-2 bg-[var(--fill)] rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full ${val >= 0 ? 'bg-emerald-500' : 'bg-red-500'}`} style={{ width: `${(Math.abs(val) / maxCatAbs) * 100}%` }} />
-                              </div>
-                              <span className={`text-xs font-bold num w-16 text-right ${val >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{val >= 0 ? '+' : ''}{eur0(val)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    </>
-                  )}
-                </section>
-              );
-            })()}
-
+            {/* Rimosso: Conto economico mensile → components/_archived/analytics-conto-economico.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* KPI row 1: principali */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
@@ -7046,34 +6768,11 @@ export default function App() {
               </div>
             </div>
 
-            {/* KPI row 2: metriche operative */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
-                <p className={`text-[clamp(14px,4.2vw,20px)] font-bold num tracking-tight leading-none whitespace-nowrap ${avgMarginPct >= 20 ? 'text-emerald-400' : avgMarginPct >= 0 ? 'text-brand-hi' : 'text-red-400'}`}>
-                  {avgMarginPct >= 0 ? '+' : ''}{avgMarginPct.toFixed(1)}%
-                </p>
-                <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
-                  <span className="sm:hidden">{t('an.marginShort')}</span>
-                  <span className="hidden sm:inline">{t('an.marginAvg')}</span>
-                </p>
-              </div>
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
-                <p className="text-xl font-bold text-brand-hi num">{Math.round(avgDaysToSell)}</p>
-                <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">
-                  <span className="sm:hidden">{t('an.daysPerSaleShort')}</span>
-                  <span className="hidden sm:inline">{t('an.daysPerSaleLong')}</span>
-                </p>
-              </div>
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3 text-center">
-                <p className="text-xl font-bold text-[var(--text)] num">{sellThroughRate}%</p>
-                <p className="text-[9px] text-[var(--text-faint)] font-semibold mt-1.5 leading-tight">Sell-through</p>
-              </div>
-            </div>
-
+            {/* Rimosso: Margine medio / Giorni medi di vendita / Sell-through → components/_archived/analytics-margine-giorni-sellthrough.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* Grafico Andamento rimosso da Analytics: è già in Dashboard (niente duplicati). */}
 
-            {/* Piattaforme + Soci — 2 colonne su desktop */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Piattaforme */}
+            <div className="grid grid-cols-1 gap-5">
               {platformBreakdown.length > 0 && (
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
@@ -7108,81 +6807,10 @@ export default function App() {
                 </section>
               )}
 
-              {Object.keys(sociProfits).length > 0 && (
-                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Users className="text-brand-hi" size={15} />
-                    <h3 className="font-semibold">{t('an.partners')}</h3>
-                  </div>
-                  <div className="space-y-4">
-                    {Object.values(sociProfits)
-                      .sort((a: any, b: any) => b.profit - a.profit)
-                      .map((socio: any, idx) => {
-                        const maxP = Math.max(...Object.values(sociProfits).map((s: any) => s.profit), 1);
-                        const medals = ['🥇', '🥈', '🥉'];
-                        return (
-                          <div key={idx}>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm w-5">{medals[idx] || ''}</span>
-                                <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-[9px] text-white" style={{ backgroundColor: avatarColor(socio.name) }}>
-                                  {avatarInitials(socio.name)}
-                                </div>
-                                <span className="text-sm font-bold">{socio.name}</span>
-                                {socio.name === user.name && (
-                                  <span className="text-[9px] bg-brand/20 text-[var(--text)] px-1.5 py-0.5 rounded-full">{t('an.you')}</span>
-                                )}
-                              </div>
-                              <span className="font-semibold text-green-400">{eur0(socio.profit)}</span>
-                            </div>
-                            <div className="h-2 bg-black/40 rounded-full overflow-hidden">
-                              <div className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full"
-                                style={{ width: `${(socio.profit / maxP) * 100}%` }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </section>
-              )}
+              {/* Rimosso: Soci → components/_archived/analytics-soci.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             </div>
 
-            {/* Top 3 prodotti più redditizi */}
-            {globalSold.filter(p => p.salePrice && p.salePrice > 0).length >= 3 && (() => {
-              const top = [...globalSold]
-                .filter(p => p.salePrice && p.salePrice > 0)
-                .map(p => ({ ...p, profit: (p.salePrice || 0) - p.purchasePrice - (p.fees || 0) }))
-                .sort((a, b) => b.profit - a.profit)
-                .slice(0, 3);
-              return (
-                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Trophy className="text-[var(--text)]" size={15} />
-                    <h3 className="font-semibold">{t('an.top3')}</h3>
-                  </div>
-                  <div className="space-y-3">
-                    {top.map((p, i) => {
-                      const medals = ['🥇', '🥈', '🥉'];
-                      const margin = p.purchasePrice > 0 ? ((p.profit / p.purchasePrice) * 100) : 0;
-                      return (
-                        <div key={p.id} className="flex items-center gap-3 p-3 bg-[var(--surface-2)] rounded-xl">
-                          <span className="text-lg shrink-0">{medals[i]}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm truncate">{fullName(p.brand, p.name)}</p>
-                            <p className="text-[10px] text-[var(--text-soft)]">{p.size} · {p.platform} · {eur0(p.purchasePrice)}→{eur0((p.salePrice || 0))}</p>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="font-semibold text-green-400">+{eur0(p.profit)}</p>
-                            <p className="text-[10px] text-green-600">+{margin.toFixed(0)}%</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            })()}
-
+            {/* Rimosso: Top 3 vendite → components/_archived/analytics-top3-vendite.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* ---- Tabella Sell-Through per Categoria ---- */}
             {userCategories.length > 0 && (() => {
               const rows = userCategories.map(cat => {

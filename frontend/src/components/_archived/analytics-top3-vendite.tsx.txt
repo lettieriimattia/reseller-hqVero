@@ -1,0 +1,40 @@
+// ARCHIVIO — Top 3 vendite
+// Blocco JSX tolto dalla pagina Analytics di App.tsx (righe 7150-7185 al commit "pre-cleanup analitiche").
+// Non compilato (.txt): per reintegrarlo, rincollalo nel punto segnato in App.tsx. Vedi REMOVED_SECTIONS.md.
+
+            {/* Top 3 prodotti più redditizi */}
+            {globalSold.filter(p => p.salePrice && p.salePrice > 0).length >= 3 && (() => {
+              const top = [...globalSold]
+                .filter(p => p.salePrice && p.salePrice > 0)
+                .map(p => ({ ...p, profit: (p.salePrice || 0) - p.purchasePrice - (p.fees || 0) }))
+                .sort((a, b) => b.profit - a.profit)
+                .slice(0, 3);
+              return (
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Trophy className="text-[var(--text)]" size={15} />
+                    <h3 className="font-semibold">{t('an.top3')}</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {top.map((p, i) => {
+                      const medals = ['🥇', '🥈', '🥉'];
+                      const margin = p.purchasePrice > 0 ? ((p.profit / p.purchasePrice) * 100) : 0;
+                      return (
+                        <div key={p.id} className="flex items-center gap-3 p-3 bg-[var(--surface-2)] rounded-xl">
+                          <span className="text-lg shrink-0">{medals[i]}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm truncate">{fullName(p.brand, p.name)}</p>
+                            <p className="text-[10px] text-[var(--text-soft)]">{p.size} · {p.platform} · {eur0(p.purchasePrice)}→{eur0((p.salePrice || 0))}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="font-semibold text-green-400">+{eur0(p.profit)}</p>
+                            <p className="text-[10px] text-green-600">+{margin.toFixed(0)}%</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })()}
+
