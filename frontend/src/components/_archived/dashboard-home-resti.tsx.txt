@@ -1,0 +1,80 @@
+// ARCHIVIO — Dashboard (step 5 parte 2): tolti gli elementi che non riguardano ricavi o profitti.
+// Selettore periodo, "Da fare" (pezzi fermi → Analytics; note → menu in alto), "Pezzi più redditizi", striscia "Dal catalogo".
+// Non compilato (.txt). Vedi REMOVED_SECTIONS.md.
+
+// ===== Selettore periodo Mese / Trimestre / Anno con frecce — HomeLedger.tsx righe 234-252 al commit "pre-step5 parte 2" =====
+      {/* Selettore periodo: tipo + frecce. */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div role="tablist" aria-label={t('home.period')} className="flex p-0.5 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+          {(['month', 'quarter', 'year'] as Kind[]).map(k => (
+            <button key={k} role="tab" aria-selected={kind === k} onClick={() => { setKind(k); setOffset(0); setHover(null); }}
+              className={`px-3 lg:px-3.5 py-1.5 rounded-md text-[12.5px] font-semibold transition-colors ${kind === k ? 'bg-[var(--text)] text-[var(--bg)]' : 'text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
+              {t(`home.${k}`)}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <button onClick={() => { setOffset(o => o - 1); setHover(null); }} aria-label={t('home.prevPeriod')}
+            className="p-2 rounded-lg text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--fill)]"><ChevronLeft size={16} /></button>
+          <span className="hq-mono text-[11.5px] uppercase tracking-[0.04em] text-[var(--text)] min-w-[9.5rem] text-center">{periodTitle}</span>
+          <button onClick={() => { setOffset(o => Math.min(0, o + 1)); setHover(null); }} disabled={isCurrent} aria-label={t('home.nextPeriod')}
+            className="p-2 rounded-lg text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--fill)] disabled:opacity-25 disabled:hover:bg-transparent"><ChevronRight size={16} /></button>
+        </div>
+      </div>
+
+
+// ===== Riquadro "Da fare" (Fermi da oltre 30 giorni → spostato in Analytics; Note aperte → spostate nel menu in alto) — HomeLedger.tsx righe 301-318 al commit "pre-step5 parte 2" =====
+          <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-2 lg:p-2.5">
+            <p className="sys-label px-2 pt-2 pb-1.5">{t('home.todo')}</p>
+            {todo.map(row => {
+              const Icon = row.icon;
+              return (
+                <button key={row.label} onClick={row.on}
+                  className="w-full flex items-center gap-3 px-2 py-2.5 rounded-lg hover:bg-[var(--fill)] text-left group">
+                  <span className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 ${row.alert ? 'bg-brand/15 text-brand-hi' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}><Icon size={15} /></span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[13px] font-semibold text-[var(--text)] truncate">{row.label}</span>
+                    {row.sub && <span className="block text-[11px] text-[var(--text-faint)]">{row.sub}</span>}
+                  </span>
+                  <span className={`num font-bold text-[15px] ${row.alert ? 'text-[var(--text)]' : 'text-[var(--text-soft)]'}`}>{row.value}</span>
+                  <ChevronRight size={14} className="text-[var(--text-faint)] group-hover:text-[var(--text-soft)]" />
+                </button>
+              );
+            })}
+          </section>
+
+// ===== Classifica "Pezzi più redditizi" — HomeLedger.tsx righe 322-329 al commit "pre-step5 parte 2" =====
+      {/* ===== Classifiche del periodo ===== */}
+      {hasAdvanced && (
+        <div className="grid grid-cols-1 gap-3 lg:gap-5">
+          {/* Rimosso: classifiche "Per piattaforma" / "Per reparto" → components/_archived/home-classifiche-piattaforma-reparto.tsx.txt (vedi REMOVED_SECTIONS.md) */}
+          <RankCard title={t('home.topItems')} empty={t('home.noSales')}
+            rows={data.top.map(({ p, profit, roi }) => ({ key: p.id, label: props.fullName(p.brand, p.name), sub: `${p.platform || t('home.private')}${roi != null ? ` · ROI ${Math.round(roi)}%` : ''}`, value: eur(profit), weight: null }))} />
+        </div>
+      )}
+
+// ===== Striscia "Dal catalogo" in fondo alla Dashboard — App.tsx al commit "pre-step5 parte 2" =====
+            {/* Catalogo che scorre — SOTTO tutto (scambiato con le spedizioni). */}
+            {dashPopular.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="sys-label">{t('dash.fromCatalog')}</p>
+                  <button onClick={() => navigateTo('catalog')} className="text-xs font-bold text-brand hover:text-brand-hi transition-colors">{t('dash.openCatalog')}</button>
+                </div>
+                <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 cursor-pointer"
+                  onClick={() => navigateTo('catalog')}>
+                  <div className="flex gap-3.5 px-3 animate-marquee" style={{ width: 'max-content' }}>
+                    {[...dashPopular, ...dashPopular].map((it, i) => (
+                      <div key={i} className="w-28 shrink-0">
+                        <div className="w-28 h-28 rounded-xl bg-[#ededf1] overflow-hidden flex items-center justify-center border border-[var(--border-2)] p-1.5">
+                          {it.image ? <img src={proxyImg(it.image)} alt="" loading="lazy" className="w-full h-full object-contain" /> : null}
+                        </div>
+                        <p className="text-[11.5px] text-[var(--text-soft)] mt-1.5 truncate leading-tight">{it.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[var(--surface)] to-transparent" />
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[var(--surface)] to-transparent" />
+                </div>
+              </section>
+            )}

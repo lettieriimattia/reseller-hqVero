@@ -21,7 +21,7 @@ import {
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
   Users, Camera, UserPlus, Bell, Shield, Sparkles, AlertTriangle, TrendingDown,
   KeyRound, Copy, LogOut, Eye, EyeOff, Trophy, Trash2, Download, ArrowUpDown, Lock, Truck, StickyNote, ChevronDown, Mail, Sun, Moon, ScanFace,
-  Image as ImageIcon, Lightbulb, Bug, HelpCircle, MoreHorizontal, Send,
+  Image as ImageIcon, ChevronRight, Lightbulb, Bug, HelpCircle, MoreHorizontal, Send,
   Footprints, Shirt, Watch, ShoppingBag, Gem, Glasses, SprayCan, Smartphone,
   Disc3, ToyBrick, Coins, BookOpen, Palette, Guitar, Stamp, ScanLine, Check, Share2, CalendarDays, MessageCircle, SlidersHorizontal, ExternalLink, Repeat
 } from 'lucide-react';
@@ -5375,6 +5375,7 @@ export default function App() {
                   {MARKETPLACE_ENABLED && (
                     <button onClick={() => { setTopMenuOpen(false); navigateTo('wallet'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors"><Wallet size={16} /> {t('nav.wallet')}</button>
                   )}
+                  <button onClick={() => { setTopMenuOpen(false); setTaskPanelOpen(true); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors"><StickyNote size={16} /> <span className="flex-1 text-left">{t('home.notes')}</span>{tasks.filter(x => !x.done).length > 0 && <span className="num text-[11px] font-bold px-1.5 rounded-full bg-brand/15 text-brand-hi">{tasks.filter(x => !x.done).length}</span>}</button>
                   <button onClick={() => { setTopMenuOpen(false); setGuideOpen(true); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors"><BookOpen size={16} /> {t('hdr.guide')}</button>
                   <button onClick={() => { setTopMenuOpen(false); setSupportOpen(true); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors"><HelpCircle size={16} /> {t('hdr.support')}</button>
                   <button onClick={() => { setTopMenuOpen(false); setPrivacyOpen(true); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[var(--text-soft)] hover:bg-[var(--fill)] hover:text-[var(--text)] transition-colors"><Lock size={16} /> {t('hdr.privacy')}</button>
@@ -5422,6 +5423,17 @@ export default function App() {
             <button onClick={() => navigateTo('settings')}
               className={`lg:hidden p-2 rounded-xl transition-colors ${currentView === 'settings' ? 'text-brand' : 'text-[var(--text-muted)] hover:bg-[var(--fill)]'}`}>
               <Settings size={18} />
+            </button>
+
+            {/* Note — SOLO mobile (su computer sono nel menu ⋯): spostate qui dal "Da fare" della Dashboard. */}
+            <button onClick={() => setTaskPanelOpen(true)} aria-label={t('home.notes')}
+              className="lg:hidden relative p-2 rounded-xl hover:bg-[var(--fill)] transition-colors">
+              <StickyNote size={18} className="text-[var(--text-muted)]" />
+              {tasks.filter(x => !x.done).length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-brand text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  {Math.min(9, tasks.filter(x => !x.done).length)}
+                </span>
+              )}
             </button>
 
             {/* Notifiche — SOLO mobile (su desktop la campanella è nella sidebar GENERAL). */}
@@ -5614,30 +5626,7 @@ export default function App() {
 
             {/* Rimosso: Dashboard: riquadro "Spedizioni in corso" → components/_archived/tracking-rimosso.tsx.txt (vedi REMOVED_SECTIONS.md) */}
 
-            {/* Catalogo che scorre — SOTTO tutto (scambiato con le spedizioni). */}
-            {dashPopular.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="sys-label">{t('dash.fromCatalog')}</p>
-                  <button onClick={() => navigateTo('catalog')} className="text-xs font-bold text-brand hover:text-brand-hi transition-colors">{t('dash.openCatalog')}</button>
-                </div>
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 cursor-pointer"
-                  onClick={() => navigateTo('catalog')}>
-                  <div className="flex gap-3.5 px-3 animate-marquee" style={{ width: 'max-content' }}>
-                    {[...dashPopular, ...dashPopular].map((it, i) => (
-                      <div key={i} className="w-28 shrink-0">
-                        <div className="w-28 h-28 rounded-xl bg-[#ededf1] overflow-hidden flex items-center justify-center border border-[var(--border-2)] p-1.5">
-                          {it.image ? <img src={proxyImg(it.image)} alt="" loading="lazy" className="w-full h-full object-contain" /> : null}
-                        </div>
-                        <p className="text-[11.5px] text-[var(--text-soft)] mt-1.5 truncate leading-tight">{it.name}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[var(--surface)] to-transparent" />
-                  <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[var(--surface)] to-transparent" />
-                </div>
-              </section>
-            )}
+            {/* Rimosso: striscia "Dal catalogo" → components/_archived/dashboard-home-resti.tsx.txt (il catalogo resta nella sua pagina) */}
           </div>
         )}
 
@@ -6408,6 +6397,19 @@ export default function App() {
             {/* Rimosso: Istogramma "Analisi" (Entrate / Uscite / Investimenti) → components/_archived/analytics-istogramma-entrate-uscite.tsx.txt (vedi REMOVED_SECTIONS.md) */}
             {/* ===== TORTA 3D: composizione per reparto (capitale € / quantità pezzi) ===== */}
             <AllocationPie3D products={products} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale} getCategoryIcon={getCategoryIcon} />
+
+            {/* ===== PEZZI FERMI DA OLTRE 30 GIORNI (spostato qui dal "Da fare" della Dashboard) ===== */}
+            {staleCount > 0 && (
+              <button onClick={() => { setStaleOnly(true); navigateTo('magazzino'); }}
+                className="w-full flex items-center gap-3 bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--border-2)] rounded-2xl px-4 py-3.5 text-left transition-colors">
+                <span className="w-9 h-9 rounded-lg bg-brand/15 text-brand-hi flex items-center justify-center shrink-0"><AlertTriangle size={17} /></span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-bold">{staleCount} {staleCount === 1 ? t('home.staleOne') : t('home.staleMany')} {t('home.over30')}</span>
+                  <span className="block text-[11px] text-[var(--text-faint)]">{t('an.staleOpen')}</span>
+                </span>
+                <ChevronRight size={16} className="text-[var(--text-faint)] shrink-0" />
+              </button>
+            )}
 
             {/* ===== STATISTICHE DEI PRODOTTI VENDUTI: per reparto → classifica modelli/brand → singole vendite ===== */}
             <DeptStats products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}

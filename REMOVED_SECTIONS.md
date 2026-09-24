@@ -206,3 +206,19 @@ Non fatto, perché l'utente ha detto che per ora restano come sono: **piattaform
 Verifiche:
 - **Dati di prova**, con 2 mesi a mano (uno senza vendite, uno sovrapposto a un mese con vendite): 0 differenze.
 - **App vera, account demo**: 0 differenze e 0 errori in console.
+
+# Step 5 — parte 2: lista confermata dall'utente
+
+Fatto nel commit "step5 parte 2: dashboard solo ricavi e profitti". Punto di ripristino: il commit "pre-step5 parte 2".
+Il codice tolto è raccolto in `components/_archived/dashboard-home-resti.tsx.txt`, con un blocco per ogni pezzo.
+
+| Elemento della Dashboard | Decisione | Dove sta ora |
+|---|---|---|
+| Obiettivo mensile + proiezione | **Tenuto**: riguarda il profitto | Dashboard, sotto il blocco Ricavi/Profitti. Resta sempre sul mese corrente |
+| Selettore Mese / Trimestre / Anno con frecce | **Archiviato** | `_archived/dashboard-home-resti.tsx.txt` |
+| "Da fare → Fermi da oltre 30 giorni" | **Spostato in Analytics** | Riquadro sotto la torta del magazzino; toccandolo si apre il Magazzino filtrato sui pezzi fermi. Compare solo se ce ne sono |
+| "Da fare → Note aperte" | **Spostato nel menu in alto** | Su computer, voce "Note aperte" nel menu ⋯, con il numero delle note. Su telefono, icona accanto alla campanella, con il numero |
+| Pezzi più redditizi | **Archiviato** | `_archived/dashboard-home-resti.tsx.txt`. In Analytics c'è "Il tuo prodotto migliore" |
+| Striscia "Dal catalogo" | **Archiviata** | `_archived/dashboard-home-resti.tsx.txt`. Il catalogo resta nella sua pagina |
+
+La Dashboard ora contiene solo il saluto con il pulsante "Aggiungi", il blocco Ricavi/Profitti e l'obiettivo mensile. Per chi non ha ancora prodotti compare anche il benvenuto.

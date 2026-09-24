@@ -231,30 +231,12 @@ export default function HomeLedger(props: Props) {
 
   return (
     <div className="space-y-3 lg:space-y-5">
-      {/* Selettore periodo: tipo + frecce. */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div role="tablist" aria-label={t('home.period')} className="flex p-0.5 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
-          {(['month', 'quarter', 'year'] as Kind[]).map(k => (
-            <button key={k} role="tab" aria-selected={kind === k} onClick={() => { setKind(k); setOffset(0); setHover(null); }}
-              className={`px-3 lg:px-3.5 py-1.5 rounded-md text-[12.5px] font-semibold transition-colors ${kind === k ? 'bg-[var(--text)] text-[var(--bg)]' : 'text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
-              {t(`home.${k}`)}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-1">
-          <button onClick={() => { setOffset(o => o - 1); setHover(null); }} aria-label={t('home.prevPeriod')}
-            className="p-2 rounded-lg text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--fill)]"><ChevronLeft size={16} /></button>
-          <span className="hq-mono text-[11.5px] uppercase tracking-[0.04em] text-[var(--text)] min-w-[9.5rem] text-center">{periodTitle}</span>
-          <button onClick={() => { setOffset(o => Math.min(0, o + 1)); setHover(null); }} disabled={isCurrent} aria-label={t('home.nextPeriod')}
-            className="p-2 rounded-lg text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--fill)] disabled:opacity-25 disabled:hover:bg-transparent"><ChevronRight size={16} /></button>
-        </div>
-      </div>
-
+      {/* Rimosso: selettore Mese / Trimestre / Anno → components/_archived/dashboard-home-resti.tsx.txt. L'obiettivo resta sul mese corrente. */}
       <div className="grid grid-cols-1 gap-3 lg:gap-5">
         {/* Rimosso: etichetta bianca (profitto, caselle, codice a barre) → components/_archived/home-etichetta-bianca.tsx.txt (vedi REMOVED_SECTIONS.md) */}
 
         {/* ===== Colonna destra: obiettivo + da fare ===== */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-5 content-start">
+        <div className="grid grid-cols-1 gap-3 lg:gap-5 content-start">
           <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 lg:p-5">
             <div className="flex items-center justify-between">
               <p className="sys-label flex items-center gap-1.5"><Target size={12} /> {t('home.goal')}</p>
@@ -298,35 +280,11 @@ export default function HomeLedger(props: Props) {
             </div>
           </section>
 
-          <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-2 lg:p-2.5">
-            <p className="sys-label px-2 pt-2 pb-1.5">{t('home.todo')}</p>
-            {todo.map(row => {
-              const Icon = row.icon;
-              return (
-                <button key={row.label} onClick={row.on}
-                  className="w-full flex items-center gap-3 px-2 py-2.5 rounded-lg hover:bg-[var(--fill)] text-left group">
-                  <span className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 ${row.alert ? 'bg-brand/15 text-brand-hi' : 'bg-[var(--fill)] text-[var(--text-soft)]'}`}><Icon size={15} /></span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-[13px] font-semibold text-[var(--text)] truncate">{row.label}</span>
-                    {row.sub && <span className="block text-[11px] text-[var(--text-faint)]">{row.sub}</span>}
-                  </span>
-                  <span className={`num font-bold text-[15px] ${row.alert ? 'text-[var(--text)]' : 'text-[var(--text-soft)]'}`}>{row.value}</span>
-                  <ChevronRight size={14} className="text-[var(--text-faint)] group-hover:text-[var(--text-soft)]" />
-                </button>
-              );
-            })}
-          </section>
+          {/* Rimosso: "Da fare" → components/_archived/dashboard-home-resti.tsx.txt (pezzi fermi in Analytics, note nel menu in alto) */}
         </div>
       </div>
 
-      {/* ===== Classifiche del periodo ===== */}
-      {hasAdvanced && (
-        <div className="grid grid-cols-1 gap-3 lg:gap-5">
-          {/* Rimosso: classifiche "Per piattaforma" / "Per reparto" → components/_archived/home-classifiche-piattaforma-reparto.tsx.txt (vedi REMOVED_SECTIONS.md) */}
-          <RankCard title={t('home.topItems')} empty={t('home.noSales')}
-            rows={data.top.map(({ p, profit, roi }) => ({ key: p.id, label: props.fullName(p.brand, p.name), sub: `${p.platform || t('home.private')}${roi != null ? ` · ROI ${Math.round(roi)}%` : ''}`, value: eur(profit), weight: null }))} />
-        </div>
-      )}
+      {/* Rimosso: "Pezzi più redditizi" → components/_archived/dashboard-home-resti.tsx.txt (in Analytics c'è "Il tuo prodotto migliore") */}
     </div>
   );
 }
