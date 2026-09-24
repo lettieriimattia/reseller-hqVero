@@ -15,6 +15,7 @@ import AllocationPie3D from './components/AllocationPie3D';
 import ProfitRevenueBlock from './components/ProfitRevenueBlock';
 import SalesTotals from './components/SalesTotals';
 import DeptStats from './components/DeptStats';
+import BestProduct from './components/BestProduct';
 import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
@@ -6400,7 +6401,7 @@ export default function App() {
 
             {/* ===== DATI TOTALI: ricavi e profitto su tutto lo storico + vendite mese per mese ===== */}
             <SalesTotals products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
-              fullName={fullName} onOpenProduct={openEditPiece} focusSignal={salesFocus} />
+              fullName={fullName} onOpenProduct={openEditPiece} focusSignal={salesFocus} manualMonths={manualMonths} />
 
             {/* Spostato: "Esplora i numeri" ora sta in cima alla Dashboard (vedi REMOVED_SECTIONS.md) */}
 
@@ -6411,6 +6412,9 @@ export default function App() {
             {/* ===== STATISTICHE DEI PRODOTTI VENDUTI: per reparto → classifica modelli/brand → singole vendite ===== */}
             <DeptStats products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
               fullName={fullName} onOpenProduct={openEditPiece} getCategoryIcon={getCategoryIcon} apiCall={apiCall} />
+
+            {/* ===== IL TUO PRODOTTO MIGLIORE (richiudibile, calcolo fisso) ===== */}
+            <BestProduct products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale} />
 
             {/* Rimosso: Riquadro Stock + Svendita → components/_archived/analytics-riquadro-stock-svendita.tsx.txt (vedi REMOVED_SECTIONS.md). */}
             {/* Rimosso: Insights (pezzi fermi, vendite della settimana, reparto migliore, sell-through rate) → components/_archived/analytics-insights.tsx.txt (vedi REMOVED_SECTIONS.md). */}

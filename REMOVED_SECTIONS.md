@@ -187,7 +187,22 @@ Verifiche:
 - **Dati di prova**, con nomi scritti in modi diversi e un pezzo al 50%: 0 differenze tra la pagina e un calcolo indipendente su totali, mesi, reparti, ricarico e classifica. Per esempio le Yeezy 350, scritte in 3 modi diversi, finiscono in un solo gruppo da 22 pezzi.
 - **App vera, account demo**: 0 differenze coi dati grezzi del server e 0 errori in console.
 
-**Da fare nella parte 2** (quando l'utente lo chiede):
-- "Il tuo prodotto migliore";
-- piattaforme;
-- eventuale somma dei Mesi precedenti ai totali.
+
+# Step 8 — parte 2
+
+Fatto nel commit "step8: analytics panoramica (parte 2)". Punto di ripristino: il commit "pre-step8 parte 2". **In questa parte non è stato tolto niente.**
+
+Aggiunto:
+- **`components/BestProduct.tsx` — "Il tuo prodotto migliore"**, sotto le statistiche per reparto. Si può richiudere e l'app ricorda se è aperto o chiuso.
+  - Mostra il modello, raggruppato come nelle statistiche, con il profitto totale più alto sulla quota dell'utente: pezzi venduti, profitto, ricarico % e una frase di spiegazione.
+  - Il calcolo è fisso, senza AI: usa al massimo i raggruppamenti già salvati.
+- **"Mesi precedenti" sommati ai "Dati totali"**:
+  - ricavo inserito a mano e profitto (ricavo − costo) si **sommano** a Ricavi totali e Profitto netto;
+  - nell'elenco "Vendite totali" il mese compare con l'etichetta "inserito a mano"; se ci sono anche vendite registrate nell'app, i valori si sommano;
+  - nessun'altra parte dell'app è cambiata: Dashboard, statistiche per reparto, torta e prodotto migliore usano solo le vendite registrate.
+
+Non fatto, perché l'utente ha detto che per ora restano come sono: **piattaforme e brand**. Il brand compare già nel dettaglio "Per brand".
+
+Verifiche:
+- **Dati di prova**, con 2 mesi a mano (uno senza vendite, uno sovrapposto a un mese con vendite): 0 differenze.
+- **App vera, account demo**: 0 differenze e 0 errori in console.

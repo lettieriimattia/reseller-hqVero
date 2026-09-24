@@ -43,6 +43,10 @@ const it: Dict = {
   'pr.hint': 'Tocca un giorno per il dettaglio · trascina per sommare più giorni · tocca fuori per tornare al mese',
   'pr.hint3m': 'Tocca un mese per il dettaglio · trascina per sommarli · tocca fuori per tornare al mese corrente',
   // Analytics: Dati totali + statistiche per reparto
+  'tot.manual': 'inserito a mano', 'tot.manualOnly': 'Mese inserito a mano in "Mesi precedenti": nessun pezzo da mostrare.', 'tot.inclManual': '+ mesi precedenti inseriti a mano',
+  'best.title': 'Il tuo prodotto migliore', 'best.sold': 'Venduti',
+  'best.why': 'Hai venduto {n} di {model} con {profit} di profitto: in media {each} a pezzo, con un ricarico del {markup}. È il modello che ti ha fatto guadagnare di più.',
+  'best.whyOne': 'Con una sola vendita di {model} hai fatto {profit} di profitto (ricarico {markup}): è il modello che ti ha fatto guadagnare di più.',
   'tot.title': 'Dati totali', 'tot.sub': 'Tutte le vendite registrate, sulla tua quota', 'tot.since': 'dal',
   'tot.revenue': 'Ricavi totali', 'tot.profit': 'Profitto netto', 'tot.salesAll': 'Vendite totali', 'tot.none': 'Nessuna vendita registrata',
   'tot.revenueShort': 'ricavi', 'tot.profitShort': 'profitto',
@@ -2081,6 +2085,10 @@ const enExtra: Dict = {
   'pr.hint': 'Tap a day for details · drag to add up several days · tap outside to go back to the month',
   'pr.hint3m': 'Tap a month for details · drag to add them up · tap outside to go back to this month',
   // Analytics: totals + department stats
+  'tot.manual': 'added manually', 'tot.manualOnly': 'Month added manually in "Previous months": no items to show.', 'tot.inclManual': '+ previous months added manually',
+  'best.title': 'Your best product', 'best.sold': 'Sold',
+  'best.why': 'You sold {n} of {model} for {profit} of profit: {each} per item on average, with a {markup} markup. It is the model that earned you the most.',
+  'best.whyOne': 'A single sale of {model} made you {profit} of profit ({markup} markup): it is the model that earned you the most.',
   'tot.title': 'All-time totals', 'tot.sub': 'Every sale recorded, on your share', 'tot.since': 'since',
   'tot.revenue': 'Total revenue', 'tot.profit': 'Net profit', 'tot.salesAll': 'All sales', 'tot.none': 'No sales recorded',
   'tot.revenueShort': 'revenue', 'tot.profitShort': 'profit',

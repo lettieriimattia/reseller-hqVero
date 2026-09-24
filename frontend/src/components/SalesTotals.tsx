@@ -15,12 +15,14 @@ interface Props {
   fullName: (brand?: string, name?: string) => string;
   onOpenProduct: (id: string) => void;
   focusSignal: number; // cambia quando si arriva dal collegamento del Magazzino
+  // "Mesi precedenti" inseriti a mano (fatturato e costi prima di usare l'app): si SOMMANO ai totali.
+  manualMonths: { year: number; month: number; revenue?: number; cost?: number }[];
 }
 
 const ALL = { start: new Date(1970, 0, 1), end: new Date(2999, 0, 1) };
 const cap1 = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-export default function SalesTotals({ products, myProfitFactor, myCostFactor, t, dateLocale, fullName, onOpenProduct, focusSignal }: Props) {
+export default function SalesTotals({ products, myProfitFactor, myCostFactor, t, dateLocale, fullName, onOpenProduct, focusSignal, manualMonths }: Props) {
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'value' | 'date'>('date');
@@ -39,21 +41,36 @@ export default function SalesTotals({ products, myProfitFactor, myCostFactor, t,
   const int = (n: number) => new Intl.NumberFormat(dateLocale, { maximumFractionDigits: 0, useGrouping: 'always' as any }).format(n);
   const dShort = (d: Date) => d.toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' });
 
-  const tot = aggregate(products, ALL, ALL, myProfitFactor, myCostFactor);
+  const sales = aggregate(products, ALL, ALL, myProfitFactor, myCostFactor);
+  const manualRev = manualMonths.reduce((a, m) => a + (m.revenue || 0), 0);
+  const manualProfit = manualMonths.reduce((a, m) => a + (m.revenue || 0) - (m.cost || 0), 0);
+  // Totali cumulati: vendite registrate nell'app + mesi precedenti inseriti a mano.
+  const tot = { revenue: sales.revenue + manualRev, profit: sales.profit + manualProfit, count: sales.count };
   const sold = useMemo(() => products.filter(p => p.status === 'VENDUTO' && p.soldAt), [products]);
-  const first = sold.reduce<Date | null>((a, p) => { const d = new Date(p.soldAt as string); return !a || d < a ? d : a; }, null);
+  const first = [...sold.map(p => new Date(p.soldAt as string)), ...manualMonths.map(m => new Date(m.year, m.month, 1))]
+    .reduce<Date | null>((a, d) => (!a || d < a ? d : a), null);
 
-  // Mesi con almeno una vendita, dal più recente.
+  // Mesi con almeno una vendita o un mese inserito a mano, dal più recente.
   const months = useMemo(() => {
-    const m = new Map<string, { key: string; start: Date; end: Date }>();
-    sold.forEach(p => {
-      const d = new Date(p.soldAt as string);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      if (!m.has(key)) m.set(key, { key, start: new Date(d.getFullYear(), d.getMonth(), 1), end: new Date(d.getFullYear(), d.getMonth() + 1, 1) });
+    const keyOf = (y: number, mo: number) => `${y}-${String(mo + 1).padStart(2, '0')}`;
+    const m = new Map<string, { key: string; start: Date; end: Date; manual: { revenue: number; profit: number } | null }>();
+    const ensure = (y: number, mo: number) => {
+      const key = keyOf(y, mo);
+      if (!m.has(key)) m.set(key, { key, start: new Date(y, mo, 1), end: new Date(y, mo + 1, 1), manual: null });
+      return m.get(key)!;
+    };
+    sold.forEach(p => { const d = new Date(p.soldAt as string); ensure(d.getFullYear(), d.getMonth()); });
+    manualMonths.forEach(mm => {
+      const e = ensure(mm.year, mm.month);
+      const prev = e.manual || { revenue: 0, profit: 0 };
+      e.manual = { revenue: prev.revenue + (mm.revenue || 0), profit: prev.profit + (mm.revenue || 0) - (mm.cost || 0) };
     });
-    return [...m.values()].sort((a, b) => b.start.getTime() - a.start.getTime()).map(x => ({ ...x, agg: aggregate(products, x, x, myProfitFactor, myCostFactor) }));
+    return [...m.values()].sort((a, b) => b.start.getTime() - a.start.getTime()).map(x => {
+      const a = aggregate(products, x, x, myProfitFactor, myCostFactor);
+      return { ...x, agg: { count: a.count, revenue: a.revenue + (x.manual?.revenue || 0), profit: a.profit + (x.manual?.profit || 0) } };
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sold, products]);
+  }, [sold, products, manualMonths]);
 
   const itemsOf = (r: { start: Date; end: Date }) => sold
     .filter(p => { const d = new Date(p.soldAt as string); return d >= r.start && d < r.end; })
@@ -63,7 +80,7 @@ export default function SalesTotals({ products, myProfitFactor, myCostFactor, t,
     <section ref={ref} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 sm:p-5 scroll-mt-24" aria-label={t('tot.title')}>
       <h3 className="font-bold text-lg">{t('tot.title')}</h3>
       <p className="text-[12.5px] text-[var(--text-soft)] mt-0.5">
-        {t('tot.sub')}{first ? ` · ${t('tot.since')} ${first.toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}
+        {t('tot.sub')}{manualMonths.length > 0 ? ` ${t('tot.inclManual')}` : ''}{first ? ` · ${t('tot.since')} ${first.toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}
       </p>
 
       <div className="grid grid-cols-2 gap-3 mt-4">
@@ -98,7 +115,11 @@ export default function SalesTotals({ products, myProfitFactor, myCostFactor, t,
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${isOpen ? 'bg-[var(--fill-2)]' : 'hover:bg-[var(--fill)]'}`}>
                     <span className="flex-1 min-w-0">
                       <span className="block text-sm font-bold">{label}</span>
-                      <span className="block text-[11px] text-[var(--text-faint)] num">{int(m.agg.count)} {m.agg.count === 1 ? t('ex.pc') : t('ex.pcs')} · {t('tot.revenueShort')} {eur(m.agg.revenue)}</span>
+                      <span className="block text-[11px] text-[var(--text-faint)] num">
+                        {m.agg.count > 0 && <>{int(m.agg.count)} {m.agg.count === 1 ? t('ex.pc') : t('ex.pcs')} · </>}
+                        {t('tot.revenueShort')} {eur(m.agg.revenue)}
+                        {m.manual && <span className="ml-1.5 px-1.5 py-px rounded bg-[var(--fill)] text-[var(--text-soft)]">{t('tot.manual')}</span>}
+                      </span>
                     </span>
                     <span className="text-right shrink-0">
                       <span className={`block text-sm font-extrabold num ${m.agg.profit < 0 ? 'text-[var(--down)]' : ''}`}>{eur(m.agg.profit)}</span>
@@ -106,7 +127,10 @@ export default function SalesTotals({ products, myProfitFactor, myCostFactor, t,
                     </span>
                     <ChevronDown size={14} className={`text-[var(--text-faint)] transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
                   </button>
-                  {isOpen && (
+                  {isOpen && m.agg.count === 0 && (
+                    <p className="text-xs text-[var(--text-soft)] px-3 py-2">{t('tot.manualOnly')}</p>
+                  )}
+                  {isOpen && m.agg.count > 0 && (
                     <div className="mt-1.5">
                       <SelectionList title={label} items={itemsOf(m)} metric="profit" fmt={(_m, v) => (v === null ? '—' : eur(v))} t={t}
                         sortBy={sortBy} setSortBy={setSortBy} shown={shown} setShown={setShown} onClose={() => setMonth(null)}
