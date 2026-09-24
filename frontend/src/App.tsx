@@ -12,6 +12,7 @@ import { getLang, setLangStorage, translate, LANGUAGES, MARKETPLACE_ENABLED, typ
 // xlsx caricato on-demand (import dinamico) dentro gli handler: resta fuori dal bundle iniziale
 import HomeLedger from './components/HomeLedger';
 import AllocationPie3D from './components/AllocationPie3D';
+import AnalyticsExplorer from './components/AnalyticsExplorer';
 import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
@@ -6501,6 +6502,10 @@ export default function App() {
                 <Download size={15} /> {t('an.accountantCsv')}
               </button>
             </div>
+
+            {/* ===== ESPLORA I NUMERI: periodo, metrica, grafico, filtri incrociati, pezzi ===== */}
+            <AnalyticsExplorer products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
+              getCategoryIcon={getCategoryIcon} fullName={fullName} onOpenProduct={openEditPiece} />
 
             {/* ===== GRAFICO A BARRE SOVRAPPOSTE (ultimi 6 mesi): Entrate/Uscite/Investimenti impilate.
                 Tocca una barra per selezionare quel mese (aggiorna il conto economico sotto). ===== */}
