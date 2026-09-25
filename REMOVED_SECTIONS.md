@@ -288,3 +288,19 @@ Collaudo **completo** fatto con un database PostgreSQL di prova in Docker e il s
 - **esito**: 0 differenze, 0 errori.
 
 Nel prossimo step: collegamento con acquisti e vendite.
+
+# Step 11 — Liquidità collegata ad acquisti e vendite
+
+Fatto nel commit "step11: liquidità collegata". Punto di ripristino: il commit "pre-step11". Regole in `CLAUDE.md`, sezione "Collegamento con acquisti e vendite".
+
+Nessuna sezione rimossa: solo aggiunte.
+- **Database**: tabella nuova `LiquidityLink`; in `LiquidityMovement` due colonne facoltative (`groupId`, `weightCents`). Nessun dato esistente modificato.
+- **Server**: `src/services/liquidityLink.service.ts`; in `liquidity.ts` le rotte `/links`; in `products.ts` il ricalcolo dopo modifica, eliminazione, ripristino e reso.
+- **App**: `PaymentPicker.tsx` ("Pagato con" / "Incassato su", con "Dividi") e `LinkedPayments.tsx` (scheda del pezzo: vedi e "Cambia" la fonte, oppure "Collega" per i pezzi vecchi).
+- I campi compaiono solo quando il server pubblicato ha la Liquidità: fino alla pubblicazione restano nascosti.
+
+Non collegati di proposito (da fare in futuro se serve): lotti, scambi, chat, marketplace, Shopify, vendite automatiche. Acquisti e vendite precedenti allo step 11 non vengono collegati retroattivamente.
+
+Collaudo su database di prova Docker (dati cancellati alla fine):
+- **server**: acquisto a debito, con conto, diviso (somma sbagliata rifiutata), vendita su conto, a credito, modifiche, cambio fonte, eliminazione, ripristino, reso → 0 differenze;
+- **interfaccia**: gli stessi passaggi fatti dai moduli veri (Aggiungi, Vendi, scheda del pezzo) → 0 differenze, 0 errori in console.

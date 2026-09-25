@@ -353,6 +353,8 @@ function DetailSheet({ detail, data, onClose, onChanged, apiCall, tx, eur, dateL
       case 'SETTLE_IN': return tx(`${f} ha pagato su ${t}`, `${f} paid into ${t}`);
       case 'SETTLE_OUT': return tx(`Pagato ${t} da ${f}`, `Paid ${t} from ${f}`);
       case 'PERSON_TRANSFER': return tx(`${f} ha pagato ${t} per te`, `${f} paid ${t} for you`);
+      case 'PURCHASE': return m.note || tx('Acquisto', 'Purchase');
+      case 'SALE': return m.note || tx('Vendita', 'Sale');
       default: return m.kind;
     }
   };
@@ -389,7 +391,7 @@ function DetailSheet({ detail, data, onClose, onChanged, apiCall, tx, eur, dateL
                   <span className="block text-[11px] text-[var(--text-faint)] truncate">{new Date(m.date).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: 'numeric' })}{m.note && m.note !== describe(m) ? ` · ${m.note}` : ''}</span>
                 </span>
                 <span className={`text-sm font-extrabold num shrink-0 ${s > 0 ? 'text-[var(--up)]' : 'text-[var(--down)]'}`}>{eur(s * m.amountCents, true)}</span>
-                <button onClick={() => remove(m)} aria-label={tx('Elimina movimento', 'Delete movement')} className="p-1.5 rounded-md text-[var(--text-faint)] hover:text-[var(--down)] hover:bg-[var(--fill)] shrink-0"><Trash2 size={14} /></button>
+                {m.kind !== 'PURCHASE' && m.kind !== 'SALE' && <button onClick={() => remove(m)} aria-label={tx('Elimina movimento', 'Delete movement')} className="p-1.5 rounded-md text-[var(--text-faint)] hover:text-[var(--down)] hover:bg-[var(--fill)] shrink-0"><Trash2 size={14} /></button>}
               </li>); })}
           </ul>
         )}

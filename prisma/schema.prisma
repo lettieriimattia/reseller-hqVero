@@ -676,9 +676,13 @@ model LiquidityMovement {
   id           String   @id @default(cuid())
   userId       String
   date         DateTime @default(now())
-  amountCents  Int      // sempre > 0
-  kind         String   // OPENING | DEPOSIT | WITHDRAW | TRANSFER | CREDIT | DEBT | SETTLE_IN | SETTLE_OUT | PERSON_TRANSFER
+  amountCents  Int      // > 0 per le operazioni manuali; può diventare 0 in un gruppo acquisto/vendita (pezzi eliminati/resi)
+  kind         String   // OPENING | DEPOSIT | WITHDRAW | TRANSFER | CREDIT | DEBT | SETTLE_IN | SETTLE_OUT | PERSON_TRANSFER | PURCHASE | SALE
   note         String?
+  // Collegamento ad acquisti/vendite: le parti di uno stesso pagamento condividono groupId.
+  // weightCents = importo della parte al momento dell'operazione: serve a ridistribuire in proporzione se i prezzi cambiano.
+  groupId      String?
+  weightCents  Int?
 
   fromAccountId String?
   toAccountId   String?
@@ -692,8 +696,26 @@ model LiquidityMovement {
   createdAt    DateTime @default(now())
 
   @@index([userId, date])
+  @@index([groupId])
   @@index([fromAccountId])
   @@index([toAccountId])
   @@index([fromPersonId])
   @@index([toPersonId])
+}
+
+// Collega un gruppo di pagamento (acquisto o vendita) ai pezzi coinvolti.
+// L'importo del gruppo si RICALCOLA sempre dai pezzi (prezzo × quota), così modifiche, eliminazioni,
+// ripristini e resi aggiornano da soli i movimenti e il bilancio non sballa mai.
+model LiquidityLink {
+  id        String   @id @default(cuid())
+  userId    String
+  groupId   String
+  productId String
+  role      String   // PURCHASE | SALE
+  factor    Float    // quota dell'utente al momento dell'operazione (costo per gli acquisti, utile per le vendite)
+  createdAt DateTime @default(now())
+
+  @@unique([groupId, productId])
+  @@index([productId])
+  @@index([userId])
 }

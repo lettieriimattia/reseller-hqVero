@@ -30,3 +30,14 @@ Tipi di operazione (`kind`):
 - PERSON_TRANSFER: una persona ne paga un'altra per conto dell'utente.
 
 Server: `src/routes/liquidity.ts`. App: `frontend/src/components/Liquidity.tsx`.
+
+### Collegamento con acquisti e vendite (step 11)
+- Aggiungi prodotto → **"Pagato con"** obbligatorio; Vendi → **"Incassato su"** obbligatorio (entra il netto: prezzo − fee). Opzioni: un conto, una persona (debito/credito) oppure "Dividi" su più fonti (la somma deve essere uguale al totale, altrimenti non si salva). Default = ultima scelta (localStorage `hq-liq-last-PURCHASE/SALE`).
+- Un acquisto o una vendita (anche di più pezzi insieme) = un **gruppo**: `LiquidityLink` (pezzo ↔ gruppo, ruolo PURCHASE/SALE, quota mia `factor`) + movimenti con lo stesso `groupId` e kind PURCHASE/SALE.
+- **Importi sempre con la MIA quota**: PURCHASE = Σ round(prezzo acquisto × quota × 100); SALE = Σ round((prezzo vendita − fee) × quota × 100). Li calcola il server, il client non decide l'importo.
+- Modifica / elimina / ripristina / reso di un pezzo → `recalcForProducts` / `unlinkSale` ricalcolano il gruppo: le parti si ridistribuiscono in proporzione (`weightCents`). Un pezzo eliminato o non più venduto esce dal totale, quindi il movimento si annulla da solo.
+- I movimenti collegati NON si eliminano dalla Liquidità: si cambiano dalla scheda del pezzo ("Cambia", `PUT /liquidity/links/:groupId`).
+- Acquisti e vendite fatti prima dello step 11 non sono collegati (niente retroattivo). Si possono collegare a mano dalla scheda ("Collega").
+- NON collegati (per ora): lotti, scambi, chat, marketplace, Shopify, vendite automatiche.
+
+Servizio: `src/services/liquidityLink.service.ts`. App: `components/PaymentPicker.tsx`, `components/LinkedPayments.tsx`.

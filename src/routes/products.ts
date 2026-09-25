@@ -25,6 +25,7 @@ import { checkProductQuota, requireFeature } from '../middleware/plan';
 import { isFeatureLive } from '../config/plans';
 import { isAdminEmail } from '../config/admins';
 import { logger } from '../utils/logger';
+import { recalcForProducts, unlinkSale } from '../services/liquidityLink.service';
 import { imageMatchesTitle } from '../utils/imageConsistency';
 
 // Quanto un titolo del catalogo combacia con la query (0..1) = frazione delle parole della
@@ -904,6 +905,8 @@ router.post('/:id/return', requireFeature('returns'), async (req: AuthRequest, r
       });
     }
 
+    // Liquidità: reso → il pezzo esce dal gruppo della vendita
+    await unlinkSale(req.params.id).catch((e: any) => logger.error('Liquidità: ricalcolo non riuscito', { err: e?.message, productId: req.params.id }));
     res.json(updated);
   } catch (err: any) {
     logger.error('Errore POST /products/:id/return', { err: err.message });
@@ -1017,6 +1020,8 @@ router.put('/:id/edit', validate(editProductSchema), async (req: AuthRequest, re
       resource: p.id, metadata: { changes: { brand, name, purchasePrice } },
     });
 
+    // Liquidità: prezzi/fee cambiati → importi del pagamento ricalcolati
+    await recalcForProducts([req.params.id]).catch((e: any) => logger.error('Liquidità: ricalcolo non riuscito', { err: e?.message, productId: req.params.id }));
     res.json(p);
   } catch (err: any) {
     logger.error('Errore PUT /products/:id/edit', { err: err.message });
@@ -1074,6 +1079,8 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
       metadata: { brand: product.brand, name: product.name, softDelete: true },
     });
 
+    // Liquidità: il pezzo eliminato esce dai suoi pagamenti (importi ricalcolati)
+    await recalcForProducts([req.params.id]).catch((e: any) => logger.error('Liquidità: ricalcolo non riuscito', { err: e?.message, productId: req.params.id }));
     res.json({ success: true });
   } catch (err: any) {
     logger.error('Errore DELETE /products/:id', { err: err.message });
@@ -1109,6 +1116,8 @@ router.post('/:id/restore', async (req: AuthRequest, res: Response) => {
       metadata: { brand: product.brand, name: product.name, restored: true },
     });
 
+    // Liquidità: il pezzo ripristinato rientra nei suoi pagamenti
+    await recalcForProducts([req.params.id]).catch((e: any) => logger.error('Liquidità: ricalcolo non riuscito', { err: e?.message, productId: req.params.id }));
     res.json({ success: true });
   } catch (err: any) {
     logger.error('Errore POST /products/:id/restore', { err: err.message });

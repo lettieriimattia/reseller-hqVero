@@ -18,6 +18,8 @@ import DeptStats from './components/DeptStats';
 import BestProduct from './components/BestProduct';
 import StaleProducts from './components/StaleProducts';
 import Liquidity from './components/Liquidity';
+import PaymentPicker, { type Part as PayPart, type LiqAccount, type LiqPerson } from './components/PaymentPicker';
+import LinkedPayments from './components/LinkedPayments';
 import { stockAgeDays } from './components/AnalyticsExplorer';
 import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
@@ -540,6 +542,14 @@ export default function App() {
   
   // ----- FORM PRODOTTO -----
   const [isFormOpen, setIsFormOpen] = useState(false);
+  // Liquidità nei moduli: conti/persone per "Pagato con" / "Incassato su". null = server senza Liquidità → campi nascosti.
+  const [liq, setLiq] = useState<{ accounts: LiqAccount[]; people: LiqPerson[] } | null>(null);
+  const [addPay, setAddPay] = useState<PayPart[] | null>(null);
+  const [sellPay, setSellPay] = useState<PayPart[] | null>(null);
+  const fetchLiq = async () => {
+    try { const { ok, data } = await apiCall<any>('/liquidity'); setLiq(ok && Array.isArray(data?.accounts) ? { accounts: data.accounts, people: data.people || [] } : null); }
+    catch { setLiq(null); }
+  };
   const [isSaving, setIsSaving] = useState(false);
   
   const [category, setCategory] = useState('');
@@ -3657,10 +3667,15 @@ export default function App() {
       : undefined;
     const finalShares = isSharedPurchase && productShares.length > 0 ? productShares : snapshotShares;
 
+    // Liquidità: "Pagato con" obbligatorio (se il server la supporta)
+    if (liq && !addPay) { showToast(lang === 'en' ? 'Choose "Paid with"' : 'Scegli "Pagato con"', 'err'); setIsSaving(false); return; }
+    const payParts = liq ? addPay : null;
+    const payFactor = newPieceCostFactor();
+    const createdIds: string[] = [];
     let hasError = false;
     try {
       for (let i = 0; i < qty; i++) {
-        const { ok } = await apiCall('/products', {
+        const { ok, data: created } = await apiCall<any>('/products', {
           method: 'POST',
           body: JSON.stringify({
             category: effCategory, brand: finalBrand, name: finalName,
@@ -3681,8 +3696,14 @@ export default function App() {
           }),
         });
         if (!ok) hasError = true;
+        else if (created?.id) createdIds.push(created.id);
       }
-      
+      // Collega l'acquisto alla Liquidità (un solo pagamento per tutti i pezzi aggiunti insieme)
+      if (payParts && createdIds.length === qty) {
+        const lk = await apiCall<any>('/liquidity/links', { method: 'POST', body: JSON.stringify({ role: 'PURCHASE', productIds: createdIds, factors: Object.fromEntries(createdIds.map(id => [id, payFactor])), parts: payParts }) });
+        if (!lk.ok) showToast(lang === 'en' ? 'Item saved, but the payment was not recorded: link it from the item card.' : 'Prodotto salvato, ma il pagamento non è stato registrato: collegalo dalla scheda del pezzo.', 'warn');
+      }
+
       if (hasError) showToast(t('ts.saveError2'), 'err');
       else {
         await fetchProducts();
@@ -3705,6 +3726,36 @@ export default function App() {
     } finally { setIsSaving(false); }
   };
   
+  // Aprendo l'aggiunta o la scheda di un pezzo: ricarica conti/persone della Liquidità (e azzera la scelta)
+  useEffect(() => { if (isFormOpen) { setAddPay(null); fetchLiq(); } }, [isFormOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (editModalOpen) fetchLiq(); }, [editModalOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  const newPieceCostFactor = () => {
+    const wh = selectedWarehouseId || baseWarehouse?.id;
+    const team = teamData.find((t: any) => t.warehouseId === wh);
+    const shares = isSharedPurchase && productShares.length > 0 ? productShares
+      : team?.members?.length > 0 ? team.members.map((m: any) => ({ userId: m.userId, name: m.name, percentage: m.percentage })) : undefined;
+    return myCostFactor({ warehouseId: wh, customShares: shares ? JSON.stringify(shares) : undefined } as any);
+  };
+  // Totale "Pagato con" di un'aggiunta: stessa formula del server (per pezzo, arrotondato al centesimo)
+  const addPayTotalCents = () => {
+    const qty = parseInt(quantity) || 1, tot = parseFloat(price);
+    if (isNaN(tot) || tot <= 0) return 0;
+    return qty * Math.max(0, Math.round((tot / qty) * newPieceCostFactor() * 100));
+  };
+  // Totale "Incassato su" di una vendita: (prezzo − fee) per pezzo × mia quota, come il server
+  const sellPayCalc = () => {
+    if (!productToSell) return { total: 0, ids: [] as string[], factors: {} as Record<string, number> };
+    const qty = parseInt(sellQuantity) || 1;
+    const ids = productToSell.ids.slice(0, qty);
+    const unitSale = round2(parseFloat(sellPrice) / qty);
+    const extra = sellExtraCosts.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0);
+    const unitFees = round2(((parseFloat(sellFees) || 0) + extra) / qty);
+    const factors: Record<string, number> = {};
+    let total = 0;
+    ids.forEach(id => { const p = products.find(x => x.id === id); const f = p ? myProfitFactor(p) : 1; factors[id] = f; total += Math.max(0, Math.round(((unitSale || 0) - (unitFees || 0)) * f * 100)); });
+    return { total: isNaN(total) ? 0 : total, ids, factors };
+  };
+
   const openSellModal = (ids: string[], itemName: string, p: Product) => {
     setProductToSell({
       ids, name: itemName, maxQty: ids.length,
@@ -3719,6 +3770,7 @@ export default function App() {
     setSellExtraCosts([]); setSellExtraOpen(false);
     setSellTrackingCode(''); setSellTrackingCarrier('Auto');
     setSellModalOpen(true);
+    setSellPay(null); fetchLiq();
   };
 
   // Vendita dalla card: MODELLO/LOTTO sono contenitori multi-taglia/pezzo → aprono il dettaglio
@@ -3752,6 +3804,8 @@ export default function App() {
     
     // Data vendita: default oggi, ma se l'utente la cambia la inviamo (soldDate).
     const soldDate = sellDate && sellDate !== new Date().toISOString().slice(0, 10) ? sellDate : undefined;
+    if (liq && !sellPay) { showToast(lang === 'en' ? 'Choose "Received into"' : 'Scegli "Incassato su"', 'err'); return; }
+    const salePay = liq ? { parts: sellPay, ...sellPayCalc() } : null;
     let hasError = false;
     for (const id of idsToProcess) {
       const { ok } = await apiCall(`/products/${id}`, {
@@ -3768,6 +3822,11 @@ export default function App() {
           body: JSON.stringify({ trackingCode: sellTrackingCode.trim(), carrier: sellTrackingCarrier, direction: 'OUTBOUND' }),
         });
       }
+    }
+    // Collega l'incasso alla Liquidità (un solo incasso per tutti i pezzi venduti insieme)
+    if (!hasError && salePay?.parts) {
+      const lk = await apiCall<any>('/liquidity/links', { method: 'POST', body: JSON.stringify({ role: 'SALE', productIds: idsToProcess, factors: salePay.factors, parts: salePay.parts }) });
+      if (!lk.ok) showToast(lang === 'en' ? 'Sale saved, but the income was not recorded: link it from the item card.' : 'Vendita salvata, ma l\'incasso non è stato registrato: collegalo dalla scheda del pezzo.', 'warn');
     }
     if (hasError) showToast(t('ts.sellError'), 'err');
     else {
@@ -9539,6 +9598,8 @@ export default function App() {
                 );
               })()}
               
+              {/* Liquidità: da dove escono i soldi di questo acquisto */}
+              {liq && <PaymentPicker role="PURCHASE" totalCents={addPayTotalCents()} accounts={liq.accounts} people={liq.people} lang={lang} dateLocale={dateLocale} onChange={setAddPay} />}
               <button type="submit" disabled={isSaving}
                 className="w-full bg-brand hover:bg-brand-hi py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
                 {isSaving ? <Loader2 className="animate-spin" size={20} /> : t('form.saveProduct')}
@@ -9769,6 +9830,8 @@ export default function App() {
                 <p className="text-[10px] text-[var(--text-faint)] mt-1.5">{t('sell.trackingHint')}</p>
               </div>
 
+              {/* Liquidità: dove entra l'incasso netto (prezzo − fee) */}
+              {liq && <PaymentPicker role="SALE" totalCents={sellPayCalc().total} accounts={liq.accounts} people={liq.people} lang={lang} dateLocale={dateLocale} onChange={setSellPay} />}
               <button type="submit"
                 className="w-full bg-green-600 hover:bg-green-500 py-3 rounded-xl font-bold transition-colors">
                 {t('sell.confirm')}
@@ -10232,6 +10295,12 @@ export default function App() {
               })()}
 
               <div className="flex gap-3">
+                {/* Liquidità: pagamento dell'acquisto e incasso della vendita di questo pezzo (modificabili) */}
+                {liq && productToEdit && (productToEdit.ids?.length ?? 1) === 1 && (() => {
+                  const pid = productToEdit.ids?.[0] || productToEdit.id;
+                  const p = products.find(x => x.id === pid);
+                  return p ? <LinkedPayments product={p as any} profitFactor={myProfitFactor(p)} costFactor={myCostFactor(p)} liq={liq} apiCall={apiCall} lang={lang} dateLocale={dateLocale} onSaved={fetchLiq} showToast={showToast} /> : null;
+                })()}
                 <button type="submit" disabled={isSaving}
                   className="flex-1 bg-brand hover:bg-brand-hi py-3 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center">
                   {isSaving ? <Loader2 className="animate-spin" size={20} /> : t('edit.save')}

@@ -9,6 +9,7 @@ import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { logger } from '../utils/logger';
+import { createGroup, replaceParts, linksForProduct, LinkError } from '../services/liquidityLink.service';
 
 const router = Router();
 router.use(authenticate);
@@ -62,7 +63,7 @@ router.get('/movements', async (req: AuthRequest, res: Response) => {
     const userId = uid(req);
     const accountId = req.query.accountId ? String(req.query.accountId) : null;
     const personId = req.query.personId ? String(req.query.personId) : null;
-    const where: any = { userId };
+    const where: any = { userId, amountCents: { gt: 0 } };
     if (accountId) where.OR = [{ fromAccountId: accountId }, { toAccountId: accountId }];
     if (personId) where.OR = [{ fromPersonId: personId }, { toPersonId: personId }];
     const rows = await prisma.liquidityMovement.findMany({
@@ -206,9 +207,38 @@ router.delete('/movements/:id', async (req: AuthRequest, res: Response) => {
   try {
     const m = await prisma.liquidityMovement.findFirst({ where: { id: req.params.id, userId: uid(req) } });
     if (!m) return res.status(404).json({ error: 'Movimento non trovato' });
+    // I movimenti di acquisti/vendite seguono il pezzo: si cambiano dalla sua scheda, non si eliminano da qui.
+    if (m.groupId) return res.status(400).json({ error: 'Questo movimento è collegato a un acquisto o a una vendita: modificalo dalla scheda del pezzo.' });
     await prisma.liquidityMovement.delete({ where: { id: m.id } });
     res.json({ ok: true });
   } catch (err: any) { logger.error('Errore DELETE /liquidity/movements', { err: err.message }); res.status(500).json({ error: "Errore nell'eliminare il movimento" }); }
+});
+
+// ==========================================
+// Collegamento con acquisti e vendite (gruppi di pagamento)
+// ==========================================
+const linkErr = (res: Response, err: any, what: string) => {
+  if (err instanceof LinkError) return res.status(err.status).json({ error: err.message });
+  logger.error(`Errore ${what}`, { err: err.message });
+  return res.status(500).json({ error: 'Errore nel registrare il pagamento' });
+};
+// GET /liquidity/links?productId=… — pagamenti collegati a un pezzo (per la scheda)
+router.get('/links', async (req: AuthRequest, res: Response) => {
+  try { res.json(await linksForProduct(uid(req), String(req.query.productId || ''))); }
+  catch (err: any) { linkErr(res, err, 'GET /liquidity/links'); }
+});
+// POST /liquidity/links { role: PURCHASE|SALE, productIds, factors: {id: quota}, parts: [{accountId|personId|personName, amountCents}] }
+router.post('/links', async (req: AuthRequest, res: Response) => {
+  try {
+    const b = req.body || {};
+    const date = b.date ? new Date(b.date) : undefined;
+    res.status(201).json(await createGroup(uid(req), String(b.role || '').toUpperCase() as any, Array.isArray(b.productIds) ? b.productIds.map(String) : [], b.factors || {}, b.parts, date && !isNaN(date.getTime()) ? date : undefined));
+  } catch (err: any) { linkErr(res, err, 'POST /liquidity/links'); }
+});
+// PUT /liquidity/links/:groupId { parts } — cambia la fonte di un pagamento già collegato
+router.put('/links/:groupId', async (req: AuthRequest, res: Response) => {
+  try { res.json(await replaceParts(uid(req), req.params.groupId, req.body?.parts)); }
+  catch (err: any) { linkErr(res, err, 'PUT /liquidity/links'); }
 });
 
 export default router;
