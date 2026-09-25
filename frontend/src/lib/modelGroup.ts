@@ -90,7 +90,7 @@ export async function resolveUncertain(items: { brand: string; name: string }[],
   if (todo.length === 0) return cache;
   todo.forEach(x => attempted.add(aiKey(x.brand, x.name))); // una sola richiesta per nome in questa sessione
   try {
-    const { ok, data } = await apiCall<{ groups: Record<string, string> }>('/ai/model-groups', { method: 'POST', body: JSON.stringify({ items: todo }) });
+    const { ok, data } = await apiCall<{ groups: Record<string, string> }>('/api/ai/model-groups', { method: 'POST', body: JSON.stringify({ items: todo }) });
     if (ok && data?.groups) { Object.assign(cache, data.groups); writeAiCache(cache); }
   } catch { /* server vecchio o IA assente: restano le regole */ }
   return cache;

@@ -632,3 +632,68 @@ model PriceCheckLog {
   @@index([ipHash])
   @@index([createdAt])
 }
+
+// ==========================================
+// LIQUIDITÀ (personale per utente, i soci non la vedono)
+// Regola: i SALDI NON SI SCRIVONO MAI. Derivano sempre dai movimenti:
+// saldo (conto o persona) = somma movimenti in entrata − somma movimenti in uscita.
+// Per una persona, saldo positivo = mi deve soldi (credito), negativo = le devo soldi (debito).
+// Importi in CENTESIMI interi (niente errori di arrotondamento).
+// ==========================================
+model LiquidityAccount {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  type      String   // CASH | BANK | CRYPTO | PLATFORM | OTHER
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movementsOut LiquidityMovement[] @relation("MovFromAccount")
+  movementsIn  LiquidityMovement[] @relation("MovToAccount")
+
+  @@index([userId])
+}
+
+model LiquidityPerson {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  note      String?
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movementsOut LiquidityMovement[] @relation("MovFromPerson")
+  movementsIn  LiquidityMovement[] @relation("MovToPerson")
+
+  @@index([userId])
+}
+
+// Ogni operazione sposta `amountCents` DA una sorgente A una destinazione. Sorgente e destinazione sono
+// un conto, una persona oppure "l'esterno" (null). Almeno una delle due non è esterna, e non coincidono.
+model LiquidityMovement {
+  id           String   @id @default(cuid())
+  userId       String
+  date         DateTime @default(now())
+  amountCents  Int      // sempre > 0
+  kind         String   // OPENING | DEPOSIT | WITHDRAW | TRANSFER | CREDIT | DEBT | SETTLE_IN | SETTLE_OUT | PERSON_TRANSFER
+  note         String?
+
+  fromAccountId String?
+  toAccountId   String?
+  fromPersonId  String?
+  toPersonId    String?
+  fromAccount   LiquidityAccount? @relation("MovFromAccount", fields: [fromAccountId], references: [id])
+  toAccount     LiquidityAccount? @relation("MovToAccount", fields: [toAccountId], references: [id])
+  fromPerson    LiquidityPerson?  @relation("MovFromPerson", fields: [fromPersonId], references: [id])
+  toPerson      LiquidityPerson?  @relation("MovToPerson", fields: [toPersonId], references: [id])
+
+  createdAt    DateTime @default(now())
+
+  @@index([userId, date])
+  @@index([fromAccountId])
+  @@index([toAccountId])
+  @@index([fromPersonId])
+  @@index([toPersonId])
+}

@@ -27,6 +27,7 @@ import trackingRoutes from './src/routes/tracking';
 import adminRoutes from './src/routes/admin';
 import templateRoutes from './src/routes/templates';
 import analyticsRoutes from './src/routes/analytics';
+import liquidityRoutes from './src/routes/liquidity';
 import taskRoutes from './src/routes/tasks';
 import shareRoutes, { publicShareRouter } from './src/routes/share';
 import signalsRouter from './src/routes/signals';
@@ -340,7 +341,7 @@ app.use((req, res, next) => {
     p.startsWith('/team') || p.startsWith('/warehouses') || p.startsWith('/notifications') ||
     p.startsWith('/tracking') || p.startsWith('/market') || p.startsWith('/chat') ||
     p.startsWith('/billing') || p.startsWith('/admin') || p.startsWith('/shipping') ||
-    p.startsWith('/analytics') || p.startsWith('/upload') || p.startsWith('/feedback') || p.startsWith('/push');
+    p.startsWith('/analytics') || p.startsWith('/liquidity') || p.startsWith('/upload') || p.startsWith('/feedback') || p.startsWith('/push');
   if (isApi) return res.status(503).json({ maintenance: true, error: 'Aggiornamento in corso, riprova tra poco.' });
   return next();
 });
@@ -387,6 +388,7 @@ app.use('/tracking', trackingRoutes);
 app.use('/admin', adminRoutes);
 app.use('/templates', templateRoutes);
 app.use('/analytics', analyticsRoutes);
+app.use('/liquidity', liquidityRoutes); // Liquidità personale: conti, crediti/debiti, movimenti
 app.use('/tasks', taskRoutes);
 app.use('/share', shareRoutes);   // gestione vetrine condivise (autenticato)
 app.use('/market', marketRoutes);   // vetrina pubblica (GET senza login) + contatta

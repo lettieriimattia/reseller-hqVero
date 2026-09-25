@@ -17,6 +17,7 @@ import SalesTotals from './components/SalesTotals';
 import DeptStats from './components/DeptStats';
 import BestProduct from './components/BestProduct';
 import StaleProducts from './components/StaleProducts';
+import Liquidity from './components/Liquidity';
 import { stockAgeDays } from './components/AnalyticsExplorer';
 import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
@@ -520,7 +521,7 @@ export default function App() {
   // Cresce quando si tocca "Osserva i prodotti venduti": apre Analytics › Dati totali.
   const [salesFocus, setSalesFocus] = useState(0);
   const [currentView, setCurrentView] = useState<'dashboard' | 'magazzino' | 'analytics' | 'tracking' | 'settings' | 'admin' | 'market' | 'chat' | 'wallet' | 'catalog'>('dashboard');
-  const [magazzinoView, setMagazzinoView] = useState<'instock' | 'sold' | 'toship'>('instock');
+  const [magazzinoView, setMagazzinoView] = useState<'instock' | 'sold' | 'toship' | 'liquidity'>('instock');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
   const [filtersOpen, setFiltersOpen] = useState(false); // pannello filtri collassabile (magazzino minimal)
@@ -5687,10 +5688,11 @@ export default function App() {
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
                       magazzinoView === 'instock' ? 'bg-brand text-[var(--text)]' : 'text-[var(--text-soft)]'
                     }`}>{t('mag.inStock')}</button>
-                  <button onClick={() => { setMagazzinoView('sold'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
+                  {/* Rimosso: pulsante "Venduti" → components/_archived/magazzino-scheda-venduti.tsx.txt. I venduti restano in Analytics › Dati totali (collegamento "Osserva i prodotti venduti") */}
+                  <button onClick={() => { setMagazzinoView('liquidity'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
                     className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
-                      magazzinoView === 'sold' ? 'bg-green-600 text-[var(--text)]' : 'text-[var(--text-soft)]'
-                    }`}>{t('mag.sold')}</button>
+                      magazzinoView === 'liquidity' ? 'bg-brand text-[var(--text)]' : 'text-[var(--text-soft)]'
+                    }`}>{lang === 'en' ? 'Liquidity' : 'Liquidità'}</button>
                 </div>
                 {bulkMode && (
                   <button onClick={() => { setBulkMode(false); setSelectedGroupKeys(new Set()); }}
@@ -5701,7 +5703,7 @@ export default function App() {
               </div>
 
               {/* Ricerca — su DESKTOP: reparto inline (come prima). Su MOBILE: tasto Filtri. */}
-              <div className="flex gap-2 lg:gap-3 lg:flex-1 lg:justify-end mt-2 lg:mt-0">
+              {magazzinoView !== 'liquidity' && (<div className="flex gap-2 lg:gap-3 lg:flex-1 lg:justify-end mt-2 lg:mt-0">
                 <div className="relative flex-1 lg:max-w-md">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-soft)]" size={16} />
                   <input type="text" placeholder={t('mag.searchPlaceholder')}
@@ -5730,8 +5732,12 @@ export default function App() {
                     </button>
                   );
                 })()}
-              </div>
+              </div>)}
             </div>
+            {/* LIQUIDITÀ: conti, crediti e debiti (saldi calcolati dai movimenti) */}
+            {magazzinoView === 'liquidity' ? (
+              <Liquidity apiCall={apiCall} lang={lang} dateLocale={dateLocale} showToast={showToast} />
+            ) : (<>
 
             {/* DESKTOP: barra filtri originale, SEMPRE visibile (ordina/condizione/prezzo). */}
             {magazzinoView === 'instock' && (
@@ -6361,6 +6367,7 @@ export default function App() {
                 </>
               )}
             </div>
+            </>)}
           </div>
         )}
         

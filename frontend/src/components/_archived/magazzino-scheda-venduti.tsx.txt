@@ -1,0 +1,9 @@
+// ARCHIVIO — Magazzino: pulsante della scheda "Venduti" (step 10). Al suo posto c'è "Liquidità".
+// La vista 'sold' (elenco dei venduti) resta nel codice ma non è più raggiungibile da qui: i venduti si vedono
+// in Analytics › Dati totali › Vendite totali (collegamento "Osserva i prodotti venduti" in cima al Magazzino).
+// Non compilato (.txt). Vedi REMOVED_SECTIONS.md.
+
+                  <button onClick={() => { setMagazzinoView('sold'); setBulkMode(false); setSelectedGroupKeys(new Set()); }}
+                    className={`flex-1 lg:flex-none px-2 lg:px-4 py-1.5 text-[11px] lg:text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
+                      magazzinoView === 'sold' ? 'bg-green-600 text-[var(--text)]' : 'text-[var(--text-soft)]'
+                    }`}>{t('mag.sold')}</button>

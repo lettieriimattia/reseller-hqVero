@@ -22,14 +22,14 @@ export function applyMerges(model: string, m: Merges): string {
 
 export async function loadServerMerges(apiCall: ApiCall): Promise<Merges | null> {
   try {
-    const { ok, data } = await apiCall<{ merges: Merges }>('/ai/model-merges');
+    const { ok, data } = await apiCall<{ merges: Merges }>('/api/ai/model-merges');
     if (ok && data?.merges && typeof data.merges === 'object') { writeLocal(data.merges); return data.merges; }
   } catch { /* server vecchio: restano quelle del browser */ }
   return null;
 }
 export async function saveMerges(m: Merges, apiCall: ApiCall) {
   writeLocal(m);
-  try { await apiCall('/ai/model-merges', { method: 'PUT', body: JSON.stringify({ merges: m }) }); } catch { /* ok: resta nel browser */ }
+  try { await apiCall('/api/ai/model-merges', { method: 'PUT', body: JSON.stringify({ merges: m }) }); } catch { /* ok: resta nel browser */ }
 }
 
 export type MergeGroup = { from: string[]; to: string };
@@ -74,7 +74,7 @@ export function parseMergeInstruction(text: string, names: string[]): MergeGroup
 
 export async function askAiMerge(text: string, names: string[], apiCall: ApiCall): Promise<MergeGroup[] | null> {
   try {
-    const { ok, data } = await apiCall<{ groups: MergeGroup[] }>('/ai/model-merge', { method: 'POST', body: JSON.stringify({ instruction: text, names }) });
+    const { ok, data } = await apiCall<{ groups: MergeGroup[] }>('/api/ai/model-merge', { method: 'POST', body: JSON.stringify({ instruction: text, names }) });
     if (!ok) return null; // server non ancora aggiornato
     return Array.isArray(data?.groups) ? data.groups : [];
   } catch { return null; }

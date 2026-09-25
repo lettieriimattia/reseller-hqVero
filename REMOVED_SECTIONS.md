@@ -265,3 +265,26 @@ Verifiche:
 - **Dati di prova con età diverse**: ordine giusto, 60 giorni esatti non fermo, 61 sì, data d'ingresso più vecchia rispettata, quota 50% e % sullo stock corretti.
 
 Nota sul "bug" visto durante le prove: **non era dell'app**. Il server dell'anteprima locale (localhost:5180) si era spento e lo script di prova interrogava una pagina che non c'era più. Gli script ora controllano prima che il server risponda.
+
+# Step 10 — Liquidità (conti, crediti, debiti)
+
+Fatto nel commit "step10: liquidità conti". Punto di ripristino: il commit "pre-step10 liquidità". Descrizione completa e regola dei saldi in `CLAUDE.md`, sezione "Liquidità".
+
+| Sezione | Dove stava | Dove si trova ora il codice | Stato |
+|---|---|---|---|
+| Pulsante della scheda "Venduti" nel Magazzino | `App.tsx` | `components/_archived/magazzino-scheda-venduti.tsx.txt` | Sostituito da **"Liquidità"**. L'elenco dei venduti resta nel codice ma non è più raggiungibile dal Magazzino: i venduti si vedono in Analytics › Dati totali, tramite il collegamento "Osserva i prodotti venduti", che resta in cima al Magazzino |
+
+Aggiunto:
+- **Database**: 3 tabelle nuove (`LiquidityAccount`, `LiquidityPerson`, `LiquidityMovement`). Solo aggiunte, nessuna tabella esistente modificata.
+- **Server**: `src/routes/liquidity.ts`, registrato in `server.ts` sotto `/liquidity`.
+- **App**: `components/Liquidity.tsx`.
+
+Corretto nello stesso step: il raggruppamento AI dei nomi (step 8) e le unioni dei modelli (step 9) chiamavano `/ai/...` invece di `/api/ai/...`. Non avrebbero funzionato neanche dopo la pubblicazione. Ora il percorso è verificato sul server locale.
+
+Collaudo **completo** fatto con un database PostgreSQL di prova in Docker e il server avviato in locale, senza toccare i dati veri:
+- **operazioni**: saldi, crediti e debiti, pagamenti parziali o superiori al dovuto, pagamenti tra persone, persone create al volo, eliminazione di movimenti, 8 casi sbagliati rifiutati;
+- **riservatezza**: un secondo utente non vede e non può toccare nulla;
+- **interfaccia** su computer e telefono;
+- **esito**: 0 differenze, 0 errori.
+
+Nel prossimo step: collegamento con acquisti e vendite.

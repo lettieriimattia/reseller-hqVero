@@ -8,3 +8,25 @@ Regola da rispettare in tutti gli step futuri:
 
 - **DASHBOARD = SOLO RICAVI E PROFITTI.** Serve a capire in 3 secondi come sta andando il mese. Nient'altro: niente magazzino, niente reparti, niente clienti, niente fornitori, niente tracking.
 - **ANALYTICS = tutte le analisi**: magazzino, reparti, diagramma a torta, migliori prodotti, prodotti da migliorare, migliori clienti, fornitori, migliori canali di vendita, brand, percentuali. Il riordino di Analytics si farà in uno step futuro: finché non viene chiesto, non toccarla.
+
+## Liquidità (Magazzino › scheda "Liquidità")
+
+Bilancio **personale** dei soldi dell'utente: i soci non lo vedono, perché tutto è filtrato per `userId`.
+- **Conti** (`LiquidityAccount`): nome, tipo (Contanti, Conto corrente, Crypto, Saldo piattaforma, Altro). Il valore delle crypto si inserisce a mano in €.
+- **Persone** (`LiquidityPerson`): hanno un solo saldo netto. Positivo = mi deve (credito, verde); negativo = le devo (debito, rosso).
+- **Movimenti** (`LiquidityMovement`): ogni operazione sposta `amountCents` (centesimi interi) DA una sorgente A una destinazione. Sorgente e destinazione possono essere un conto, una persona o "l'esterno" (null).
+- **TOTALE** = somma dei conti + somma dei saldi delle persone (crediti − debiti).
+
+**REGOLA: i saldi derivano SEMPRE dai movimenti, non si scrivono mai a mano.**
+- Saldo (di un conto o di una persona) = somma dei movimenti in entrata − somma di quelli in uscita.
+- Il saldo iniziale di un conto è anch'esso un movimento (OPENING / OPENING_NEG).
+- Per correggere un errore si elimina il movimento: il saldo si ricalcola da solo.
+- Non aggiungere mai campi "saldo" alle tabelle.
+
+Tipi di operazione (`kind`):
+- DEPOSIT / WITHDRAW / TRANSFER: movimenti tra conti o con l'esterno;
+- CREDIT / DEBT: crediti e debiti, anche "dal nulla", cioè senza passare da un conto;
+- SETTLE_IN / SETTLE_OUT: saldo di un credito o di un debito, anche parziale o superiore al dovuto (in quel caso il saldo della persona si inverte);
+- PERSON_TRANSFER: una persona ne paga un'altra per conto dell'utente.
+
+Server: `src/routes/liquidity.ts`. App: `frontend/src/components/Liquidity.tsx`.
