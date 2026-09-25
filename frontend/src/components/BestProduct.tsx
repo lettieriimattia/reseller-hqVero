@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { ChevronDown, Trophy } from 'lucide-react';
 import type { XProduct } from './AnalyticsExplorer';
 import { groupFor, aiKey, readAiCache } from '../lib/modelGroup';
+import { readMerges, applyMerges } from '../lib/modelMerges';
 
 interface Props {
   products: XProduct[];
@@ -23,11 +24,11 @@ export default function BestProduct({ products, myProfitFactor, myCostFactor, t,
   const int = (n: number) => new Intl.NumberFormat(dateLocale, { maximumFractionDigits: 0 }).format(n);
 
   const best = useMemo(() => {
-    const ai = readAiCache();
+    const ai = readAiCache(), merges = readMerges();
     const m = new Map<string, { model: string; n: number; profit: number; cost: number; revenue: number; depts: Set<string> }>();
     products.filter(p => p.status === 'VENDUTO' && p.soldAt).forEach(p => {
       const g = groupFor(p.brand, p.name);
-      const model = g.confident ? g.model : (ai[aiKey(p.brand, p.name)] || g.model);
+      const model = applyMerges(g.confident ? g.model : (ai[aiKey(p.brand, p.name)] || g.model), merges); // rispetta le unioni dell'utente
       const f = myProfitFactor(p);
       const r = m.get(model) || { model, n: 0, profit: 0, cost: 0, revenue: 0, depts: new Set<string>() };
       r.n++; r.profit += ((p.salePrice || 0) - p.purchasePrice - (p.fees || 0)) * f; r.revenue += (p.salePrice || 0) * f;

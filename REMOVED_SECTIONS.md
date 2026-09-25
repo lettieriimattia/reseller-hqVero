@@ -222,3 +222,18 @@ Il codice tolto è raccolto in `components/_archived/dashboard-home-resti.tsx.tx
 | Striscia "Dal catalogo" | **Archiviata** | `_archived/dashboard-home-resti.tsx.txt`. Il catalogo resta nella sua pagina |
 
 La Dashboard ora contiene solo il saluto con il pulsante "Aggiungi", il blocco Ricavi/Profitti e l'obiettivo mensile. Per chi non ha ancora prodotti compare anche il benvenuto.
+
+# Step 9 — Chat a pulsante + "Chiedi all'AI" per unire i modelli
+
+Fatto nel commit "step9: chat a pulsante e unioni AI". Punto di ripristino: il commit "pre-step9 chat e unioni AI".
+
+| Sezione | Dove stava | Dove si trova ora il codice | Stato |
+|---|---|---|---|
+| Barra flottante "Chiedi a HQVault" (telefono e computer) | `components/AssistantChat.tsx` | `components/_archived/chat-barra-flottante.tsx.txt` | Sostituita da **due pulsanti rotondi in basso a destra**: "+" (aggiungi prodotto) e aeroplano di carta (apre l'assistente). Dentro la chat aperta la barra di scrittura resta com'era |
+
+Aggiunto: il pulsante **"✨ Chiedi all'AI"** in Analytics › "I più venduti", solo nella vista "Per modello". Serve a unire i modelli con una frase (es. "unisci Yeezy 350, Yeezy 700 e Yeezy Slide sotto Yeezy").
+- **Frasi semplici** ("unisci A, B e C sotto X", "raggruppa tutte le yeezy"): le capisce l'app da sola, **senza AI e senza costi** (`lib/modelMerges.ts`).
+- **Frasi libere o con errori di battitura** ("unisci le easy"): vanno all'AI tramite `POST /ai/model-merge`. L'AI può scegliere **solo** tra i nomi presenti in classifica.
+- **Funzionamento**: prima si vede un'anteprima, poi si conferma; ogni unione si può annullare ("Annulla unione").
+- **Dove si salvano le unioni**: nel browser e sull'account (`GET/PUT /ai/model-merges`, tabella `Setting`, chiave `mgu:<userId>`), quindi valgono su tutti i dispositivi. Le rispettano sia la classifica sia "Il tuo prodotto migliore".
+- ⚠️ La parte AI e il salvataggio sull'account funzionano **dopo la pubblicazione del server**. Fino ad allora funzionano le frasi semplici, con le unioni salvate nel browser.

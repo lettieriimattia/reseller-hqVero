@@ -243,6 +243,33 @@ Rispondi SOLO con un array JSON di stringhe, una per prodotto, nello stesso ordi
   } catch { return []; }
 }
 
+// Traduce una richiesta dell'utente ("metti insieme tutte le easy", "unisci le jordan alte e basse") in
+// unioni di modelli, scegliendo SOLO tra i nomi passati. Risposta: [{ from: [nomi della lista], to: "nome" }].
+// Qualsiasi nome non presente nella lista viene scartato. Se l'IA fallisce → [].
+export async function interpretModelMerge(instruction: string, names: string[]): Promise<{ from: string[]; to: string }[]> {
+  const prompt = `Nel gestionale di un reseller, questi sono i MODELLI in una classifica di prodotti venduti:
+${names.map(n => `- ${n}`).join('\n')}
+L'utente chiede: "${instruction}"
+Capisci quali modelli della lista vuole unire (anche con errori di battitura: "easy"/"yezzy" = Yeezy, "jordon" = Jordan) e con quale nome finale.
+Se non indica il nome finale, scegli il nome comune più semplice (es. "Yeezy").
+Rispondi SOLO con JSON: {"groups":[{"to":"Nome finale","from":["nome esatto della lista", "..."]}]}. Usa nei "from" SOLO nomi copiati esattamente dalla lista. Se la richiesta non è chiara: {"groups":[]}.`;
+  try {
+    const completion = await groqCallWithRetry(client =>
+      client.chat.completions.create({ messages: [{ role: 'user', content: prompt }], model: TEXT_MODEL, temperature: 0, max_tokens: 800 })
+    );
+    const raw = (completion.choices[0]?.message?.content || '').trim();
+    const obj = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+    const allowed = new Map(names.map(n => [n.toLowerCase(), n]));
+    return (Array.isArray(obj?.groups) ? obj.groups : [])
+      .map((g: any) => ({
+        to: String(g?.to || '').trim().slice(0, 80),
+        from: [...new Set((Array.isArray(g?.from) ? g.from : []).map((f: any) => allowed.get(String(f).trim().toLowerCase())).filter(Boolean))] as string[],
+      }))
+      .filter((g: { to: string; from: string[] }) => g.to && g.from.length > 0)
+      .slice(0, 10);
+  } catch { return []; }
+}
+
 // Riassume una nota/task in un titolo BREVISSIMO (1-3 parole) per il widget promemoria.
 // Best-effort: se l'IA non è disponibile o fallisce, ripiega sulle prime parole del testo.
 export async function summarizeTaskText(text: string): Promise<string> {

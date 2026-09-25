@@ -5,9 +5,10 @@
 // ordinate per pezzi venduti) → toccando un modello, le sue singole vendite.
 // Modelli: regole fisse (lib/modelGroup) + IA solo per i nomi incerti, con risultato salvato.
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, X, Package } from 'lucide-react';
+import { ChevronDown, ChevronRight, X, Package, Sparkles, Loader2, Check } from 'lucide-react';
 import type { XProduct } from './AnalyticsExplorer';
 import { groupFor, aiKey, readAiCache, resolveUncertain } from '../lib/modelGroup';
+import { readMerges, applyMerges, loadServerMerges, saveMerges, parseMergeInstruction, askAiMerge, addMerges, removeTarget, type Merges, type MergeGroup } from '../lib/modelMerges';
 
 type ApiCall = <T = any>(path: string, opts?: RequestInit) => Promise<{ ok: boolean; data: T; status: number }>;
 interface Props {
@@ -30,6 +31,14 @@ export default function DeptStats({ products, myProfitFactor, myCostFactor, t, d
   const [openRow, setOpenRow] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [ai, setAi] = useState<Record<string, string>>(readAiCache);
+  // Unioni decise dall'utente ("Chiedi all'AI") — salvate sull'account.
+  const [merges, setMerges] = useState<Merges>(readMerges);
+  const [askOpen, setAskOpen] = useState(false);
+  const [askText, setAskText] = useState('');
+  const [askBusy, setAskBusy] = useState(false);
+  const [preview, setPreview] = useState<MergeGroup[] | null>(null);
+  const [askMsg, setAskMsg] = useState('');
+  useEffect(() => { loadServerMerges(apiCall).then(m => { if (m) setMerges(m); }); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   const eur = (n: number) => new Intl.NumberFormat(dateLocale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0, useGrouping: 'always' as any }).format(Math.round(n) || 0);
   const int = (n: number) => new Intl.NumberFormat(dateLocale, { maximumFractionDigits: 0, useGrouping: 'always' as any }).format(n);
@@ -48,7 +57,8 @@ export default function DeptStats({ products, myProfitFactor, myCostFactor, t, d
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sold]);
-  const modelOf = (p: XProduct) => { const g = groupFor(p.brand, p.name); return g.confident ? g.model : (ai[aiKey(p.brand, p.name)] || g.model); };
+  const baseModelOf = (p: XProduct) => { const g = groupFor(p.brand, p.name); return g.confident ? g.model : (ai[aiKey(p.brand, p.name)] || g.model); };
+  const modelOf = (p: XProduct) => applyMerges(baseModelOf(p), merges);
 
   const add = (m: Map<string, Row>, key: string, p: XProduct) => {
     const f = myProfitFactor(p), cf = myCostFactor(p);
@@ -72,9 +82,41 @@ export default function DeptStats({ products, myProfitFactor, myCostFactor, t, d
     sold.filter(p => deptOf(p) === dept).forEach(p => add(m, by === 'model' ? modelOf(p) : groupFor(p.brand, p.name).brand, p));
     return [...m.values()].sort((a, b) => b.n - a.n || b.revenue - a.revenue);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sold, dept, by, ai]);
+  }, [sold, dept, by, ai, merges]);
   const maxN = Math.max(1, ...ranking.map(r => r.n));
-  const pick = (d: string | null) => { setDept(d); setOpenRow(null); setShowAll(false); };
+  const pick = (d: string | null) => { setDept(d); setOpenRow(null); setShowAll(false); setPreview(null); setAskMsg(''); };
+
+  // ---------- "Chiedi all'AI": unisci modelli ----------
+  const deptBases = useMemo(() => (dept ? [...new Set(sold.filter(p => deptOf(p) === dept).map(baseModelOf))] : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sold, dept, ai]);
+  const mergeNames = [...new Set([...deptBases, ...deptBases.map(b => applyMerges(b, merges))])];
+  // Unioni attive in questo reparto: nome finale → modelli che ci sono confluiti.
+  const activeMerges = (() => {
+    const m = new Map<string, string[]>();
+    deptBases.forEach(b => { const to = applyMerges(b, merges); if (to !== b) m.set(to, [...(m.get(to) || []), b]); });
+    return [...m.entries()];
+  })();
+  const ask = async () => {
+    const text = askText.trim();
+    if (!text) return;
+    setAskMsg(''); setPreview(null);
+    const local = parseMergeInstruction(text, mergeNames);           // frasi semplici: niente IA
+    if (local) { setPreview([local]); return; }
+    setAskBusy(true);
+    const groups = await askAiMerge(text, mergeNames, apiCall);       // frasi libere: IA
+    setAskBusy(false);
+    if (groups === null) setAskMsg(t('ds.aiOffline'));
+    else if (groups.length === 0) setAskMsg(t('ds.aiNotUnderstood'));
+    else setPreview(groups);
+  };
+  const confirmMerge = () => {
+    if (!preview) return;
+    const next = addMerges(merges, preview);
+    setMerges(next); saveMerges(next, apiCall);
+    setPreview(null); setAskText(''); setAskMsg(t('ds.aiDone'));
+  };
+  const undoMerge = (to: string) => { const next = removeTarget(merges, to); setMerges(next); saveMerges(next, apiCall); };
 
   const seg = (on: boolean) => `px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap transition-colors ${on ? 'bg-[var(--text)] text-[var(--bg)]' : 'text-[var(--text-soft)] hover:text-[var(--text)]'}`;
 
@@ -144,6 +186,53 @@ export default function DeptStats({ products, myProfitFactor, myCostFactor, t, d
                   <button key={k} role="radio" aria-checked={by === k} onClick={() => { setBy(k); setOpenRow(null); setShowAll(false); }} className={seg(by === k)}>{t(k === 'model' ? 'ds.byModel' : 'ds.byBrand')}</button>
                 ))}
               </div>
+              {by === 'model' && (
+                <button onClick={() => { setAskOpen(o => !o); setAskMsg(''); setPreview(null); }} aria-expanded={askOpen}
+                  className={`ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors align-top mt-3 ${askOpen ? 'bg-brand/15 border-brand/40 text-brand-hi' : 'border-[var(--border-2)] text-[var(--text-soft)] hover:text-[var(--text)]'}`}>
+                  <Sparkles size={13} /> {t('ds.askAi')}
+                </button>
+              )}
+
+              {/* Chiedi all'AI: unisci modelli con una frase */}
+              {by === 'model' && askOpen && (
+                <div className="mt-3 rounded-xl border border-brand/30 bg-brand/[0.05] p-3">
+                  <form onSubmit={e => { e.preventDefault(); ask(); }} className="flex gap-2">
+                    <input value={askText} onChange={e => setAskText(e.target.value)} placeholder={t('ds.askPlaceholder')} aria-label={t('ds.askAi')}
+                      className="flex-1 min-w-0 bg-[var(--surface)] border border-[var(--border-2)] rounded-lg px-3 py-2 text-base sm:text-sm outline-none focus:border-brand" />
+                    <button type="submit" disabled={askBusy || !askText.trim()}
+                      className="px-3.5 py-2 rounded-lg bg-brand text-white text-sm font-bold disabled:opacity-40 flex items-center gap-1.5 shrink-0">
+                      {askBusy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} {t('ds.askSend')}
+                    </button>
+                  </form>
+                  <p className="text-[11px] text-[var(--text-faint)] mt-1.5">{t('ds.askHint')}</p>
+                  {preview && (
+                    <div className="mt-3 rounded-lg bg-[var(--surface)] border border-[var(--border-2)] p-3">
+                      <p className="text-xs font-bold text-[var(--text-soft)]">{t('ds.previewTitle')}</p>
+                      {preview.map(g => (
+                        <p key={g.to} className="text-sm mt-1.5"><span className="text-[var(--text-soft)]">{g.from.join(', ')}</span> <span className="text-[var(--text-faint)]">→</span> <b>{g.to}</b></p>
+                      ))}
+                      <div className="flex gap-2 mt-3">
+                        <button onClick={confirmMerge} className="flex-1 py-2 rounded-lg bg-[var(--text)] text-[var(--bg)] text-sm font-bold flex items-center justify-center gap-1.5"><Check size={15} /> {t('ds.confirm')}</button>
+                        <button onClick={() => setPreview(null)} className="px-4 py-2 rounded-lg border border-[var(--border-2)] text-sm font-bold text-[var(--text-soft)]">{t('ds.cancel')}</button>
+                      </div>
+                    </div>
+                  )}
+                  {askMsg && <p className="text-xs text-[var(--text-soft)] mt-2">{askMsg}</p>}
+                  {activeMerges.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-[var(--border)]">
+                      <p className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-faint)] mb-1.5">{t('ds.activeMerges')}</p>
+                      <ul className="space-y-1">
+                        {activeMerges.map(([to, from]) => (
+                          <li key={to} className="flex items-center gap-2 text-xs">
+                            <span className="flex-1 min-w-0 truncate"><b>{to}</b> <span className="text-[var(--text-faint)]">← {from.join(', ')}</span></span>
+                            <button onClick={() => undoMerge(to)} aria-label={`${t('ds.undo')} ${to}`} className="px-2 py-1 rounded-md text-[11px] font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--fill)] shrink-0">{t('ds.undo')}</button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <ul className="mt-3 space-y-1">
                 {ranking.slice(0, showAll ? undefined : TOP).map((r, i) => {

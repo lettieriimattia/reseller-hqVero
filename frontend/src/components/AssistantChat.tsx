@@ -518,19 +518,22 @@ export default function AssistantChat({ apiCall, showToast, onAction, lang = 'it
         </div>
       )}
 
-      {/* Barra flottante (chat chiusa) — solo telefono, sopra la bottom-nav.
-          Nascosta quando è attiva la selezione multipla (barra bulk), per non sovrapporsi. */}
+      {/* Chat chiusa: due pulsanti rotondi in basso a destra (al posto della barra lunga).
+          "+" = aggiungi prodotto · aeroplano = apri l'assistente. Su telefono stanno sopra la barra di navigazione;
+          nascosti durante la selezione multipla (hideBar) per non coprire la barra azioni. */}
       {!open && !hideBar && (
-        <div className="lg:hidden fixed left-3 right-3 z-[45]" style={{ bottom: kbInset > 0 ? kbInset + 10 : 'calc(var(--bottom-nav-h, 84px) + 24px)' }}>
-          {bar}
-        </div>
-      )}
-
-      {/* DESKTOP: barra chatbox in basso CENTRATA (stile Gemini/ChatGPT), nell'area contenuto.
-          Nascosta anche qui durante la selezione multipla (hideBar), così non copre la barra azioni. */}
-      {!open && !hideBar && (
-        <div className="hidden lg:block fixed bottom-6 left-0 right-0 z-[45] px-6 pointer-events-none">
-          <div className="max-w-2xl mx-auto pointer-events-auto">{bar}</div>
+        <div className="fixed z-[45] right-4 lg:right-6 flex items-center gap-2.5 bottom-[calc(var(--bottom-nav-h,84px)+16px)] lg:bottom-6">
+          <button onClick={() => { onPlus?.(); }} aria-label={tx('Aggiungi prodotto', 'Add product')}
+            className="w-11 h-11 rounded-full flex items-center justify-center bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/30 hover:from-teal-400 hover:to-emerald-500 transition-all active:scale-90">
+            <Plus size={22} />
+          </button>
+          <button onClick={() => setOpen(true)} aria-label={tx('Chiedi a HQVault', 'Ask HQVault')} title={tx('Chiedi a HQVault', 'Ask HQVault')}
+            className="relative w-14 h-14 rounded-full flex items-center justify-center bg-gradient-to-br from-brand to-brand-lo text-white shadow-[0_10px_34px_-6px_rgba(var(--brand-rgb),0.7)] hover:from-brand-hi hover:to-brand transition-all active:scale-90">
+            <Send size={22} className="-ml-0.5" />
+            {(convo || wakeOn) && (
+              <span className={`absolute top-0.5 right-0.5 w-3 h-3 rounded-full ring-2 ring-[var(--bg)] animate-pulse ${convo ? 'bg-red-400' : 'bg-teal-200'}`} />
+            )}
+          </button>
         </div>
       )}
     </>

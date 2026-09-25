@@ -5,11 +5,11 @@
 
 export interface ModelGroup { model: string; brand: string; confident: boolean }
 
-const strip = (s: string) => (s || '')
+export const strip = (s: string) => (s || '')
   .normalize('NFD').replace(/[̀-ͯ]/g, '')
   .toLowerCase().replace(/[’'`"()[\]]/g, ' ').replace(/[^a-z0-9+\s.-]/g, ' ')
   .replace(/\s+/g, ' ').trim();
-const title = (s: string) => s.split(' ').filter(Boolean).map(w => (/^\d/.test(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
+export const title = (s: string) => s.split(' ').filter(Boolean).map(w => (/^\d/.test(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
 
 // Marchi che si raggruppano per MARCHIO (modelli con nomi poco standard).
 const BRAND_ONLY = ['rick owens', 'drkshdw', 'chrome hearts', 'maison margiela', 'raf simons', 'comme des garcons', 'vivienne westwood',

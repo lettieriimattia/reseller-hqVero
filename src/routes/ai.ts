@@ -5,7 +5,7 @@ import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimit';
 import { validate, aiScanSchema, priceEstimateSchema } from '../middleware/validate';
-import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, getVisionStatus, ListingPlatform, scanLotItems, groupModelNames } from '../services/ai.service';
+import { scanProduct, scanProductAuto, estimateMarketPrice, generateListing, getVisionStatus, ListingPlatform, scanLotItems, groupModelNames, interpretModelMerge } from '../services/ai.service';
 import { pokemonSearch } from '../services/pokemon.service';
 import { kicksSearch, isKicksConfigured } from '../services/kicksdb.service';
 import { searchStockXCandidates } from '../services/stockx.service';
@@ -111,6 +111,46 @@ const scanItemsHandler = async (req: AuthRequest, res: Response) => {
 };
 router.post('/scan-items', scanItemsHandler);
 router.post('/scan-cards', scanItemsHandler); // compat
+
+// ==========================================
+// Unioni di modelli decise dall'UTENTE ("unisci Yeezy 350, Yeezy 700 e Yeezy Slide sotto Yeezy").
+// GET/PUT /api/ai/model-merges: mappa { "modello di partenza (minuscolo)": "modello di destinazione" },
+// salvata per utente in Setting ("mgu:<userId>") → vale su tutti i suoi dispositivi.
+// POST /api/ai/model-merge: l'IA traduce una frase libera in unioni, SOLO tra i nomi che l'app le passa.
+// ==========================================
+router.get('/model-merges', async (req: AuthRequest, res: Response) => {
+  try {
+    const s = await prisma.setting.findUnique({ where: { key: `mgu:${req.user!.userId}` } });
+    res.json({ merges: s ? JSON.parse(s.value) : {} });
+  } catch { res.json({ merges: {} }); }
+});
+router.put('/model-merges', async (req: AuthRequest, res: Response) => {
+  try {
+    const raw = req.body?.merges && typeof req.body.merges === 'object' ? req.body.merges : {};
+    const merges: Record<string, string> = {};
+    Object.entries(raw).slice(0, 2000).forEach(([k, v]) => {
+      if (typeof v === 'string' && k.trim() && v.trim()) merges[k.trim().toLowerCase().slice(0, 120)] = v.trim().slice(0, 80);
+    });
+    const key = `mgu:${req.user!.userId}`;
+    await prisma.setting.upsert({ where: { key }, update: { value: JSON.stringify(merges) }, create: { key, value: JSON.stringify(merges) } });
+    res.json({ ok: true, count: Object.keys(merges).length });
+  } catch (err: any) {
+    logger.error('Errore /ai/model-merges', { err: err.message });
+    res.status(500).json({ error: 'Salvataggio unioni non riuscito' });
+  }
+});
+router.post('/model-merge', async (req: AuthRequest, res: Response) => {
+  try {
+    const instruction = String(req.body?.instruction || '').trim().slice(0, 400);
+    const names: string[] = (Array.isArray(req.body?.names) ? req.body.names : []).map((n: any) => String(n).trim().slice(0, 80)).filter(Boolean).slice(0, 150);
+    if (!instruction || names.length === 0) return res.json({ groups: [] });
+    const groups = await interpretModelMerge(instruction, names);
+    res.json({ groups });
+  } catch (err: any) {
+    logger.error('Errore /ai/model-merge', { err: err.message });
+    res.json({ groups: [] });
+  }
+});
 
 // ==========================================
 // POST /api/ai/model-groups — modello di riferimento per nomi AMBIGUI (le regole fisse le fa l'app).
