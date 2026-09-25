@@ -16,6 +16,8 @@ import ProfitRevenueBlock from './components/ProfitRevenueBlock';
 import SalesTotals from './components/SalesTotals';
 import DeptStats from './components/DeptStats';
 import BestProduct from './components/BestProduct';
+import StaleProducts from './components/StaleProducts';
+import { stockAgeDays } from './components/AnalyticsExplorer';
 import {
   Package, BarChart3, Plus, TrendingUp, Wallet, CheckCircle, Search, LayoutDashboard,
   PieChart as PieChartIcon, Loader2, Layers, DollarSign, Store, X, Edit, Settings,
@@ -2408,7 +2410,7 @@ export default function App() {
 
   // ---- SMART METRICS ----
   const inStockItems = products.filter(p => p.status === 'IN STOCK');
-  const staleCount = inStockItems.filter(p => p.createdAt && Math.floor((Date.now() - new Date(p.createdAt).getTime()) / 86400000) > 30).length;
+  const staleCount = inStockItems.filter(p => stockAgeDays(p as any) > staleThreshold).length;
   const week7d = new Date(Date.now() - 7 * 86400000);
   const weekSales = globalSold.filter(p => p.soldAt && new Date(p.soldAt) >= week7d);
   // Profitto settimanale PERSONALE (la mia quota, non il totale del team).
@@ -2446,7 +2448,7 @@ export default function App() {
       const minP = parseFloat(filterPriceMin); const maxP = parseFloat(filterPriceMax);
       if (!isNaN(minP) && p.purchasePrice < minP) return false;
       if (!isNaN(maxP) && p.purchasePrice > maxP) return false;
-      if (staleOnly && !(p.createdAt && Math.floor((Date.now() - new Date(p.createdAt).getTime()) / 86400000) > 30)) return false;
+      if (staleOnly && !(stockAgeDays(p as any) > staleThreshold)) return false;
       return true;
     });
     const grouped = Object.values(base.reduce((acc, p) => {
@@ -3918,6 +3920,12 @@ export default function App() {
   // Modifica di UNA SINGOLA vendita (dalla tendina compratori): apre l'edit sul pezzo esatto,
   // così ogni vendita mantiene la SUA data/cliente/prezzo (i venduti identici sono raggruppati:
   // un edit di gruppo scriverebbe la stessa data su tutti i pezzi).
+  // "Riprezza" (Analytics › prodotti fermi): va al Magazzino, apre la scheda e porta il cursore sul prezzo.
+  const repriceProduct = (id: string) => {
+    navigateTo('magazzino');
+    openEditPiece(id);
+    setTimeout(() => { const el = document.getElementById('edit-quick-sale') as HTMLInputElement | null; el?.scrollIntoView({ block: 'center' }); el?.focus(); }, 350);
+  };
   const openEditPiece = (id: string) => {
     const prod: any = products.find((p: any) => p.id === id);
     if (!prod) return;
@@ -6398,18 +6406,9 @@ export default function App() {
             {/* ===== TORTA 3D: composizione per reparto (capitale € / quantità pezzi) ===== */}
             <AllocationPie3D products={products} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale} getCategoryIcon={getCategoryIcon} />
 
-            {/* ===== PEZZI FERMI DA OLTRE 30 GIORNI (spostato qui dal "Da fare" della Dashboard) ===== */}
-            {staleCount > 0 && (
-              <button onClick={() => { setStaleOnly(true); navigateTo('magazzino'); }}
-                className="w-full flex items-center gap-3 bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--border-2)] rounded-2xl px-4 py-3.5 text-left transition-colors">
-                <span className="w-9 h-9 rounded-lg bg-brand/15 text-brand-hi flex items-center justify-center shrink-0"><AlertTriangle size={17} /></span>
-                <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-bold">{staleCount} {staleCount === 1 ? t('home.staleOne') : t('home.staleMany')} {t('home.over30')}</span>
-                  <span className="block text-[11px] text-[var(--text-faint)]">{t('an.staleOpen')}</span>
-                </span>
-                <ChevronRight size={16} className="text-[var(--text-faint)] shrink-0" />
-              </button>
-            )}
+            {/* ===== PRODOTTI FERMI: in magazzino da più di N giorni (Impostazioni, predefinito 60) — richiudibile ===== */}
+            <StaleProducts products={products} myCostFactor={myCostFactor} threshold={staleThreshold} t={t} dateLocale={dateLocale}
+              fullName={fullName} getCategoryIcon={getCategoryIcon} onReprice={repriceProduct} />
 
             {/* ===== STATISTICHE DEI PRODOTTI VENDUTI: per reparto → classifica modelli/brand → singole vendite ===== */}
             <DeptStats products={products} myProfitFactor={myProfitFactor} myCostFactor={myCostFactor} t={t} dateLocale={dateLocale}
@@ -10028,7 +10027,7 @@ export default function App() {
               {productToEdit.status !== 'VENDUTO' && (
                 <div>
                   <label className="text-[10px] font-bold text-[var(--text-soft)] uppercase tracking-widest block mb-2 flex items-center gap-1.5"><TrendingDown size={12} className="text-amber-400" /> Prezzo svendita <span className="font-normal text-[var(--text-faint)] normal-case tracking-normal">(sell panic, facoltativo)</span></label>
-                  <input type="number" step="0.01" value={editQuickSale} onChange={e => setEditQuickSale(e.target.value)} placeholder="A quanto lo daresti per venderlo SUBITO?"
+                  <input id="edit-quick-sale" type="number" step="0.01" value={editQuickSale} onChange={e => setEditQuickSale(e.target.value)} placeholder="A quanto lo daresti per venderlo SUBITO?"
                     className="w-full bg-[var(--surface-2)] border border-[var(--border-2)] rounded-xl p-3 text-sm focus:border-brand outline-none" />
                 </div>
               )}

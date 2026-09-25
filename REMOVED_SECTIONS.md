@@ -237,3 +237,31 @@ Aggiunto: il pulsante **"✨ Chiedi all'AI"** in Analytics › "I più venduti",
 - **Funzionamento**: prima si vede un'anteprima, poi si conferma; ogni unione si può annullare ("Annulla unione").
 - **Dove si salvano le unioni**: nel browser e sull'account (`GET/PUT /ai/model-merges`, tabella `Setting`, chiave `mgu:<userId>`), quindi valgono su tutti i dispositivi. Le rispettano sia la classifica sia "Il tuo prodotto migliore".
 - ⚠️ La parte AI e il salvataggio sull'account funzionano **dopo la pubblicazione del server**. Fino ad allora funzionano le frasi semplici, con le unioni salvate nel browser.
+
+# Step 9 (bis) — Prodotti fermi
+
+Fatto nel commit "step9: prodotti fermi". Punto di ripristino: il commit "pre-step9 prodotti fermi".
+
+**Definizione unica di "fermo"**: un pezzo è fermo se è in magazzino da **più** di N giorni (esattamente N non basta). N si imposta in Impostazioni › "Prodotti fermi" (campo "Fermo dopo … giorni", predefinito 60). La stessa soglia vale per:
+- il riquadro in Analytics;
+- il filtro "fermi" del Magazzino, che prima usava 30 giorni fissi;
+- le notifiche con lo sconto suggerito.
+
+L'età si calcola come nell'"Età del magazzino" archiviata: `stockAgeDays` in `components/AnalyticsExplorer.tsx`, dalla data d'ingresso più vecchia del pezzo, o dalla data di creazione, fino a oggi.
+
+| Sezione | Dove stava | Dove si trova ora il codice | Stato |
+|---|---|---|---|
+| Riquadro "N prodotti fermi da oltre 30 giorni" (soglia fissa 30 gg, aggiunto nello step 5 parte 2) | `App.tsx`, Analytics | `components/_archived/analytics-riquadro-fermi-30gg.tsx.txt` | Sostituito dal nuovo riquadro |
+
+Aggiunto: `components/StaleProducts.tsx`, un riquadro richiudibile in Analytics, sotto la torta.
+- **Chiuso**: "Hai N prodotti fermi · X € di capitale bloccato" (capitale = costo d'acquisto sulla quota dell'utente). Se non ci sono pezzi fermi, mostra un messaggio positivo.
+- **Aperto**:
+  - la tabella per reparto: quanti pezzi fermi, % sullo stock del reparto, capitale bloccato;
+  - l'elenco dal più vecchio, con nome, taglia, giorni, costo e prezzo attuale. Il prezzo è il "Prezzo svendita" della scheda; se manca, il valore di mercato; altrimenti "—".
+- **"Riprezza"**: apre la scheda del pezzo nel Magazzino con il cursore sul campo "Prezzo svendita" (id `edit-quick-sale`).
+
+Verifiche:
+- **App vera, account demo**, su computer e telefono: 0 differenze coi dati grezzi e 0 errori.
+- **Dati di prova con età diverse**: ordine giusto, 60 giorni esatti non fermo, 61 sì, data d'ingresso più vecchia rispettata, quota 50% e % sullo stock corretti.
+
+Nota sul "bug" visto durante le prove: **non era dell'app**. Il server dell'anteprima locale (localhost:5180) si era spento e lo script di prova interrogava una pagina che non c'era più. Gli script ora controllano prima che il server risponda.

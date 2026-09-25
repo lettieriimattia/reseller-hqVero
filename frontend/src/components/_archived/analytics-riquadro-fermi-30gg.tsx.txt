@@ -1,0 +1,16 @@
+// ARCHIVIO — Analytics: riquadro "N prodotti fermi da oltre 30 giorni" (soglia fissa 30 gg) aggiunto nello step 5 parte 2.
+// Sostituito (commit "step9: prodotti fermi") da components/StaleProducts.tsx, con la soglia delle Impostazioni.
+// Non compilato (.txt). Vedi REMOVED_SECTIONS.md.
+
+            {/* ===== PEZZI FERMI DA OLTRE 30 GIORNI (spostato qui dal "Da fare" della Dashboard) ===== */}
+            {staleCount > 0 && (
+              <button onClick={() => { setStaleOnly(true); navigateTo('magazzino'); }}
+                className="w-full flex items-center gap-3 bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--border-2)] rounded-2xl px-4 py-3.5 text-left transition-colors">
+                <span className="w-9 h-9 rounded-lg bg-brand/15 text-brand-hi flex items-center justify-center shrink-0"><AlertTriangle size={17} /></span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-bold">{staleCount} {staleCount === 1 ? t('home.staleOne') : t('home.staleMany')} {t('home.over30')}</span>
+                  <span className="block text-[11px] text-[var(--text-faint)]">{t('an.staleOpen')}</span>
+                </span>
+                <ChevronRight size={16} className="text-[var(--text-faint)] shrink-0" />
+              </button>
+            )}

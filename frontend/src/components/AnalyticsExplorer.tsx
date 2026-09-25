@@ -9,7 +9,7 @@ import { X, ArrowUpRight, ArrowDownRight, RotateCcw, ZoomOut, Package, ChevronDo
 export interface XProduct {
   id: string; category?: string; brand: string; name: string; size?: string; status: string;
   purchasePrice: number; salePrice?: number; fees?: number; platform?: string;
-  createdAt?: string; soldAt?: string; photos?: string;
+  createdAt?: string; soldAt?: string; photos?: string; oldestDate?: string; quickSalePrice?: number; marketPriceAvg?: number;
 }
 
 type RangeKey = 'month' | '7d' | '30d' | '90d' | '12m' | 'ytd' | 'all' | 'custom';
@@ -48,6 +48,11 @@ const dayDiff = (a: Date, b: Date) =>
 const reducedMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
 const inR = (d: Date | null, r: Range) => !!d && d >= r.start && d < r.end;
 const dateOf = (s?: string) => (s ? new Date(s) : null);
+// Giorni in magazzino (calcolo dell'"Età del magazzino"): dalla data d'ingresso più vecchia del pezzo (o di creazione) a oggi.
+export const stockAgeDays = (p: { createdAt?: string; oldestDate?: string }, now = new Date()) => {
+  const s = p.oldestDate || p.createdAt;
+  return s ? Math.max(0, dayDiff(new Date(s), now)) : 0;
+};
 const cap1 = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 // Date "aaaa-mm-gg" per gli input type=date (ora locale, niente sorprese di fuso).
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -264,7 +269,7 @@ export default function AnalyticsExplorer({ products, myProfitFactor, myCostFact
 
   // ---------- Età del magazzino ----------
   const stock = products.filter(p => p.status === 'IN STOCK' && matches(p, 'platform'));
-  const ageOf = (p: XProduct) => (p.createdAt ? Math.max(0, dayDiff(new Date(p.createdAt), now)) : 0);
+  const ageOf = (p: XProduct) => stockAgeDays(p, now);
   const aging = AGING.map(b => {
     const items = stock.filter(p => { const a = ageOf(p); return a >= b.from && a <= b.to; });
     return { ...b, items, capital: items.reduce((s, p) => s + spentOf(p), 0) };
